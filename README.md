@@ -1,8 +1,13 @@
 # KRYPTA – roguelike-FPS
 
-Ett raycaster-FPS i Doom/Quake 1-stil som är en roguelike: varje runda är fem slumpade våningar i sex biomer och
+Ett raycaster-FPS i Doom/Quake 1-stil som är en roguelike: varje runda är fem slumpade våningar i åtta biomer och
 en boss längst ner. Tangenterna går att byta, och handkontroll och mobil stöds. Öppna `index.html` via en lokal webbserver (`python3 -m http.server` i den här
 mappen) och klicka **NY RUNDA**.
+
+**Om repot:** spelet flyttades hit från `felixarvid2/test`, där det låg i mappen `retrofps/`. Historiken följde med.
+Spelet behöver inget byggsteg. Skripten i `tools/` som bygger om grafik, ljud och kort läser däremot källpaketen
+(`assets/2d-pixel`, `assets/3d-models`, `assets/audio` med flera) från `felixarvid2/test`. De förutsätter fortfarande den gamla
+mappstrukturen: kör dem från en mapp som innehåller både källpaketens `assets/` och det här repot som `retrofps/`.
 
 **Kontroller:** WASD gå · mus sikta · vänsterklick skjut · högerklick sikta med vapnet · R ladda om ·
 E öppna dörr, kista, hemlig vägg, använd föremål eller handla · Shift spring · 1–8/Q/mushjul byt vapen · C dina kort ·
