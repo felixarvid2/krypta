@@ -105,6 +105,17 @@ const MOD_KEYS = {
   activeCd: 'Andel kortare nedräkning för den aktiva förmågan',
   secretChance: 'Chans (0-1) till fler hemliga trappor',
   mealPower: 'Andel starkare måltider',
+  // version 7: smyg, mörker, lampan, spel, banken, vapenvana, krönikesidor och gravskatter
+  stealthDmg: 'Andel extra skada mot ovetande fiender (smyganfall)',
+  noiseReduce: 'Andel mindre ljud du för',
+  detectSlow: 'Andel långsammare upptäckt',
+  lampBattery: 'Andel längre batteritid för lampan',
+  lampRadius: 'Extra ljusradie för lampan (platt)',
+  gambleLuck: 'Andel bättre odds hos spelaren',
+  bankInterest: 'Andel extra ränta på banken',
+  masteryXp: 'Andel snabbare vapenvana',
+  pageSouls: 'Extra själar per krönikesida (platt)',
+  goldFind: 'Andel mer guld från högar och sarkofager',
 };
 const KEYS = Object.keys(MOD_KEYS);
 
@@ -368,6 +379,47 @@ const DEFS = [
   ['solfjadern', 'SOLFJÄDERN', 'legendarisk', {}, 1, 'TRE PILAR I EN SOLFJÄDER', { weapon: 'bow', wup: 'bw_triple' }],
   ['krutpilen', 'KRUTPILEN', 'sallsynt', {}, 1, 'PILARNA EXPLODERAR\nVID TRÄFF', { weapon: 'bow', wup: 'bw_explosive' }],
   ['atervandaren', 'ÅTERVÄNDAREN', 'ovanlig', {}, 1, 'PILAR SOM TRÄFFAR\nKOMMER TILLBAKA DIREKT', { weapon: 'bow', wup: 'bw_retrieve' }],
+  // ---- version 7: pakter och uppgraderingar för kastknivarna, stridshammaren och musköten ----
+  ['pakt_kniv', 'LÖNNMÖRDARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR KNIVAR\n4 UNIKA UPPGRADERINGAR\nBARA KASTKNIVAR RESTEN AV RUNDAN', { pact: 'knives', bad: 1 }],
+  ['pakt_hammare', 'BERGAKUNGENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nHAMMAREN BEHÖVER INGEN AMMO\n4 UNIKA UPPGRADERINGAR\nBARA STRIDSHAMMARE RESTEN AV RUNDAN', { pact: 'hammer', bad: 1 }],
+  ['pakt_musköt', 'MUSKETÖRENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR KULOR\n4 UNIKA UPPGRADERINGAR\nBARA MUSKÖT RESTEN AV RUNDAN', { pact: 'musket', bad: 1, icon: 'assets/cards/pakt_muskot.png' }],
+  ['knivsolfjadern', 'KNIVSOLFJÄDERN', 'legendarisk', {}, 1, 'TRE KNIVAR I EN SOLFJÄDER', { weapon: 'knives', wup: 'kn_fan' }],
+  ['giftleggen', 'GIFTEGGEN', 'ovanlig', {}, 1, 'KNIVARNA FÖRGIFTAR\nFIENDEN', { weapon: 'knives', wup: 'kn_poison' }],
+  ['aterkastet', 'ÅTERKASTET', 'ovanlig', {}, 1, 'KNIVAR SOM MISSAR\nKOMMER TILLBAKA', { weapon: 'knives', wup: 'kn_return' }],
+  ['rygghugget', 'RYGGHUGGET', 'sallsynt', {}, 1, 'KNIVAR BAKIFRÅN ÄR\nALLTID KRITISKA', { weapon: 'knives', wup: 'kn_crit' }],
+  ['jordbavaren', 'JORDBÄVAREN', 'sallsynt', {}, 1, 'LADDAT SLAG GER ETT\nSTÖRRE JORDSKALV', { weapon: 'hammer', wup: 'hm_quake' }],
+  ['dunslaget', 'DÅNSLAGET', 'ovanlig', {}, 1, 'SLAGEN BEDÖVAR\nFIENDEN LÄNGRE', { weapon: 'hammer', wup: 'hm_stun' }],
+  ['krossaren', 'KROSSAREN', 'sallsynt', {}, 1, 'FRUSNA FIENDER OCH\nSTENFIENDER SPLITTRAS\nDIREKT', { weapon: 'hammer', wup: 'hm_shatter' }],
+  ['hammarkastet', 'HAMMARKASTET', 'legendarisk', {}, 1, 'HÖGERKLICK KASTAR\nHAMMAREN SOM EN BUMERANG', { weapon: 'hammer', wup: 'hm_throw' }],
+  ['hagelladdningen', 'HAGELLADDNINGEN', 'legendarisk', {}, 1, 'HAGELLADDNING:\nFEM KULOR PER SKOTT', { weapon: 'musket', wup: 'mk_buck' }],
+  ['kruthornet', 'KRUTHORNET', 'ovanlig', {}, 1, 'SNABBARE OMLADDNING', { weapon: 'musket', wup: 'mk_fast' }],
+  ['krutroken', 'KRUTRÖKEN', 'ovanlig', {}, 1, 'RÖKEN FÖRVIRRAR\nFIENDERNA', { weapon: 'musket', wup: 'mk_smoke' }],
+  ['bajonetten', 'BAJONETTEN', 'sallsynt', {}, 1, 'HÖGERKLICK:\nEN BAJONETTSTÖT', { weapon: 'musket', wup: 'mk_bayonet' }],
+  // ---- version 7: smyg, mörker, lampan, spel, banken, vapenvana, krönikesidor och gravskatter ----
+  // vanliga
+  ['smygskorna', 'SMYGSKORNA', 'vanlig', { noiseReduce: 0.2 }, 3, '20 % MINDRE LJUD'],
+  ['tystlaten', 'TYSTLÅTEN', 'vanlig', { detectSlow: 0.15 }, 3, '15 % LÅNGSAMMARE\nUPPTÄCKT'],
+  ['lyktbararen', 'LYKTBÄRAREN', 'vanlig', { lampBattery: 0.25 }, 4, '+25 % BATTERITID\nFÖR LAMPAN'],
+  ['lyckostjarnan', 'LYCKOSTJÄRNAN', 'vanlig', { gambleLuck: 0.1 }, 3, '+10 % BÄTTRE ODDS\nHOS SPELAREN'],
+  ['guldfrot', 'GULDFRÖET', 'vanlig', { bankInterest: 0.1 }, 3, '+10 % RÄNTA PÅ BANKEN'],
+  ['ovningssvardet', 'ÖVNINGSSVÄRDET', 'vanlig', { masteryXp: 0.15 }, 4, '+15 % SNABBARE VAPENVANA'],
+  ['sjalastenen', 'SJÄLASTENEN', 'vanlig', { pageSouls: 1 }, 3, '+1 SJÄL PER KRÖNIKESIDA'],
+  ['guldsallet', 'GULDSÅLLET', 'vanlig', { goldFind: 0.15 }, 3, '+15 % GULD FRÅN HÖGAR\nOCH SARKOFAGER'],
+  // ovanliga
+  ['kastdolkarna', 'KASTDOLKARNA', 'ovanlig', { stealthDmg: 0.3, critChance: 0.04 }, 2, '+30 % SMYGSKADA\n+4 % KRITCHANS'],
+  ['lyktsmeden', 'LYKTSMEDEN', 'ovanlig', { lampRadius: 1, lampBattery: 0.15 }, 2, '+1 LJUSRADIE FÖR LAMPAN\n+15 % BATTERITID', { unlock: 15 }],
+  ['bankirens_sigill', 'BANKIRENS SIGILL', 'ovanlig', { bankInterest: 0.15, goldMul: 0.05 }, 2, '+15 % RÄNTA PÅ BANKEN\n+5 % GULD'],
+  ['gyllene_skarabeen', 'DEN GYLLENE SKARABÉN', 'ovanlig', { goldFind: 0.2, luck: 0.05 }, 2, '+20 % GULD FRÅN HÖGAR\nOCH SARKOFAGER\n+5 % LYCKA'],
+  ['vapenboken', 'VAPENMÄSTARENS BOK', 'ovanlig', { masteryXp: 0.25, dmg: 0.05 }, 2, '+25 % SNABBARE VAPENVANA\n+5 % SKADA', { unlock: 15 }],
+  ['nattblinda_ogat', 'DET NATTBLINDA ÖGAT', 'ovanlig', { stealthDmg: 0.5, lampRadius: -1 }, 1, '+50 % SMYGSKADA\n-1 LJUSRADIE FÖR LAMPAN', { curse: true, bad: 1, unlock: 20 }],
+  // sällsynta
+  ['gravplundraren', 'GRAVPLUNDRAREN', 'sallsynt', { goldFind: 0.3, pageSouls: 1, trapResist: 0.1 }, 1, '+30 % GULD FRÅN HÖGAR\nOCH SARKOFAGER\n+1 SJÄL PER KRÖNIKESIDA\n-10 % SKADA FRÅN FÄLLOR', { unlock: 25 }],
+  ['skuggkappan', 'SKUGGKAPPAN', 'sallsynt', { noiseReduce: 0.3, detectSlow: 0.25, dodge: 0.03 }, 1, '30 % MINDRE LJUD\n25 % LÅNGSAMMARE UPPTÄCKT\n+3 % CHANS ATT UNDVIKA', { unlock: 25 }],
+  ['blodiga_kronikan', 'DEN BLODIGA KRÖNIKAN', 'sallsynt', { pageSouls: 2, masteryXp: 0.2 }, 1, '+2 SJÄLAR PER KRÖNIKESIDA\n+20 % SNABBARE VAPENVANA'],
+  ['skuldbrevet', 'SKULDBREVET', 'sallsynt', { bankInterest: 0.3, gambleLuck: 0.2, maxHp: -20 }, 1, '+30 % RÄNTA PÅ BANKEN\n+20 % BÄTTRE ODDS\nHOS SPELAREN\n-20 MAX HP', { curse: true, bad: 1 }],
+  // legendariska
+  ['faraonens_mask', 'FARAONENS MASK', 'legendarisk', { goldFind: 0.4, goldMul: 0.15, bankInterest: 0.15, pageSouls: 1 }, 1, '+40 % GULD FRÅN HÖGAR\nOCH SARKOFAGER\n+15 % GULD\n+15 % RÄNTA PÅ BANKEN\n+1 SJÄL PER KRÖNIKESIDA', { unlock: 50 }],
+  ['morkrets_furste', 'MÖRKRETS FURSTE', 'legendarisk', { stealthDmg: 0.6, noiseReduce: 0.3, detectSlow: 0.3, lampRadius: 1 }, 1, '+60 % SMYGSKADA\n30 % MINDRE LJUD\n30 % LÅNGSAMMARE UPPTÄCKT\n+1 LJUSRADIE FÖR LAMPAN', { unlock: 50 }],
 ];
 
 // ---------- Set och synergier ----------
@@ -383,12 +435,15 @@ const SETS = {
   alkemi: { name: 'ALKEMISTENS LÄRA', text: '+20 % STARKARE DRYCKER\n+15 % FLER DRYCKER\n-10 % PRISER HOS ALKEMIST OCH PRÄST', mods: { potionPower: 0.2, potionChance: 0.15, npcDiscount: 0.1 } },
   flock:  { name: 'FLOCKENS BAND',    text: '+25 % STARKARE FÖLJESLAGARE\n+5 % CHANS TILL ALLIERADE\n+1 HP PER DÖDAD FIENDE', mods: { petPower: 0.25, allyChance: 0.05, killHeal: 1 } },
   aska:   { name: 'ASKANS ARV',       text: '-20 % SKADA FRÅN HETTA OCH ELD\n+15 % BRANDSKADA\n+5 % BRANDCHANS', mods: { heatResist: 0.2, fireDmg: 0.15, burnChance: 0.05 } },
+  skuggor: { name: 'NATTENS VÄG', text: '+25 % SMYGSKADA\n20 % MINDRE LJUD\n15 % LÅNGSAMMARE UPPTÄCKT', mods: { stealthDmg: 0.25, noiseReduce: 0.2, detectSlow: 0.15 } },
+  oknen:  { name: 'ÖKNENS GÅTA',      text: '+25 % GULD FRÅN HÖGAR OCH SARKOFAGER\n+1 SJÄL PER KRÖNIKESIDA\n-15 % SKADA FRÅN FÄLLOR', mods: { goldFind: 0.25, pageSouls: 1, trapResist: 0.15 } },
   jakt:   { name: 'JÄGARENS LÄRA',    text: '+20 % SKADA VID HUVUDTRÄFF\n10 % CHANS ATT PILEN KOMMER TILLBAKA\n+10 % TRÄFFSÄKERHET', mods: { headshot: 0.2, arrowRetrieve: 0.1, accuracy: 0.1 } },
 };
 // Synergitaggar: kort med samma tagg spelar bra ihop (t.ex. eld + explosion, krit + kritskada).
 const SYN = { eld: 'ELD', krit: 'KRIT', gift: 'GIFT', frost: 'FROST', blixt: 'BLIXT', skold: 'SKÖLD', guld: 'GULD', liv: 'LIV', rusning: 'RUSNING', skugga: 'SKUGGA', granat: 'GRANAT',
   dryck: 'DRYCK', flock: 'FLOCK', blod: 'BLOD', narstrid: 'NÄRSTRID',
-  runa: 'RUNOR', mana: 'MANA', jakt: 'JAKT', mat: 'MÅLTID', formaga: 'FÖRMÅGA', hemlig: 'HEMLIGHET' };
+  runa: 'RUNOR', mana: 'MANA', jakt: 'JAKT', mat: 'MÅLTID', formaga: 'FÖRMÅGA', hemlig: 'HEMLIGHET',
+  ljus: 'LAMPAN', spel: 'SPEL OCH BANK', vana: 'VAPENVANA', sjal: 'SJÄLAR' };
 // set och syn för alla kort samlas här: id: [set eller '', syn-taggar...]
 const TAGS = {
   // eld och explosioner
@@ -399,10 +454,10 @@ const TAGS = {
   prismakronan: ['frost', 'frost', 'eld', 'gift', 'blixt'],
   // guld
   guldbaggen: ['guld', 'guld'], hangande_lappen: ['guld', 'guld'], att_gora: ['guld', 'guld'], idolen: ['guld', 'guld'],
-  lyckokatten: ['guld', 'guld'], baronen: ['guld', 'guld'], packet: ['', 'guld'], midasmasken: ['', 'guld'], horisonten: ['', 'guld', 'liv'], feltrycket: ['', 'guld'],
+  lyckokatten: ['guld', 'guld'], baronen: ['guld', 'guld'], packet: ['', 'guld'], horisonten: ['', 'guld', 'liv'], feltrycket: ['', 'guld'],
   // krit
   korsriddaren: ['krit', 'krit'], offerkniven: ['krit', 'krit'], glasogat: ['krit', 'krit', 'liv'], schablonen: ['krit', 'krit', 'liv'],
-  sollinsen: ['krit', 'krit', 'eld'], solkonungen: ['', 'krit'], offerdolken: ['', 'krit'], snedkronet: ['', 'krit', 'gift'],
+  sollinsen: ['krit', 'krit', 'eld'], solkonungen: ['', 'krit'], snedkronet: ['', 'krit', 'gift'],
   // skuggor
   regnbagsfjadern: ['skugga', 'skugga'], halvmane: ['skugga', 'skugga'], inbrottstjuven: ['skugga', 'skugga'], snedsteget: ['skugga', 'skugga', 'rusning'],
   spakortet: ['skugga', 'skugga'], maskerna: ['skugga', 'skugga'], ansiktslos: ['', 'skugga'],
@@ -433,6 +488,14 @@ const TAGS = {
   blixtstenen: ['', 'formaga'], andekortet: ['', 'formaga'], svarta_gavan: ['', 'formaga'],
   blinken: ['', 'formaga'], tidsbubblan: ['', 'formaga'], skoldbubblan: ['', 'formaga'], valnadskallet: ['', 'formaga'], jordskalvet: ['', 'formaga'],
   stjarnkartan: ['', 'hemlig'], skattbrevet: ['', 'hemlig'], fullmanen: ['', 'hemlig'],
+  // version 7: NATTENS VÄG (smyg, mörker och knivar) och ÖKNENS GÅTA (guld, gravkammare och faraonen)
+  smygskorna: ['skuggor', 'skugga'], tystlaten: ['skuggor', 'skugga'], kastdolkarna: ['skuggor', 'skugga', 'krit'], skuggkappan: ['skuggor', 'skugga'],
+  morkrets_furste: ['skuggor', 'skugga', 'ljus'], offerdolken: ['skuggor', 'krit', 'skugga'],
+  guldsallet: ['oknen', 'guld'], gyllene_skarabeen: ['oknen', 'guld'], gravplundraren: ['oknen', 'guld', 'sjal'], faraonens_mask: ['oknen', 'guld', 'spel', 'sjal'],
+  midasmasken: ['oknen', 'guld'],
+  nattblinda_ogat: ['', 'skugga', 'ljus'], lyktbararen: ['', 'ljus'], lyktsmeden: ['', 'ljus'],
+  lyckostjarnan: ['', 'spel'], guldfrot: ['', 'spel', 'guld'], bankirens_sigill: ['', 'spel', 'guld'], skuldbrevet: ['', 'spel'],
+  ovningssvardet: ['', 'vana'], vapenboken: ['', 'vana'], blodiga_kronikan: ['', 'vana', 'sjal'], sjalastenen: ['', 'sjal'],
 };
 
 const ALL = DEFS.map(([id, name, rarity, mods, max, text, extra]) => {
@@ -541,6 +604,10 @@ const FMT = {
   manaRegen: ['p', 'SNABBARE MANA'], arrowRetrieve: ['p', 'CHANS ATT PILEN KOMMER TILLBAKA'], questGold: ['p', 'GULD FRÅN UPPDRAG'],
   campfireHeal: ['p', 'BÄTTRE VILA VID LÄGERELDEN'], activeCd: ['p', 'KORTARE NEDRÄKNING'], secretChance: ['p', 'CHANS TILL HEMLIGA TRAPPOR'],
   mealPower: ['p', 'STARKARE MÅLTIDER'],
+  stealthDmg: ['p', 'SMYGSKADA'], noiseReduce: ['p', 'MINDRE LJUD'], detectSlow: ['p', 'LÅNGSAMMARE UPPTÄCKT'],
+  lampBattery: ['p', 'LAMPANS BATTERITID'], lampRadius: ['n', 'LAMPANS LJUSRADIE'], gambleLuck: ['p', 'BÄTTRE ODDS HOS SPELAREN'],
+  bankInterest: ['p', 'RÄNTA PÅ BANKEN'], masteryXp: ['p', 'SNABBARE VAPENVANA'], pageSouls: ['n', 'SJÄLAR PER KRÖNIKESIDA'],
+  goldFind: ['p', 'GULD FRÅN HÖGAR OCH SARKOFAGER'],
 };
 const INVERT = { damageTaken: true };
 const num = v => String(Math.round(v * 100) / 100).replace('.', ',');
@@ -565,7 +632,7 @@ function modLines(cardOrMods) {
 // ett steg sällsyntare (högst legendarisk) och samma bild. Pakter, vapenuppgraderingar och kort
 // som bara kan tas en gång kan inte smältas.
 const FUSE_MUL = 1.6;
-const PLURAL = { KULA: 'KULOR', RUTA: 'RUTOR', GRANAT: 'GRANATER', RUNPLATS: 'RUNPLATSER' }; // '+1 KULA' blir '+2 KULOR'
+const PLURAL = { KULA: 'KULOR', RUTA: 'RUTOR', GRANAT: 'GRANATER', RUNPLATS: 'RUNPLATSER', SJÄL: 'SJÄLAR' }; // '+1 KULA' blir '+2 KULOR'
 function isFused(id) { return typeof id === 'string' && id.length > 1 && id.charAt(id.length - 1) === '+'; }
 function baseId(id) { return isFused(id) ? id.slice(0, -1) : id; }
 function fusable(card) { return !!card && !card.fused && !card.pact && !card.weapon && !card.active && card.max >= 2; }
@@ -593,7 +660,7 @@ function fuseText(card, mods) {
     text = text.slice(0, at) + b + text.slice(at + a.length);
     pos = at + b.length;
   }
-  if (text != null) return { text: text.replace(/\b(\d+) (MAX )?(KULA|RUTA|GRANAT|RUNPLATS)\b/g, (m, n, mx, w) => (n === '1' ? m : n + ' ' + (mx || '') + PLURAL[w])), bad: card.bad || 0 };
+  if (text != null) return { text: text.replace(/\b(\d+) (MAX )?(KULA|RUTA|GRANAT|RUNPLATS|SJÄL)(?![A-ZÅÄÖ])/g, (m, n, mx, w) => (n === '1' ? m : n + ' ' + (mx || '') + PLURAL[w])), bad: card.bad || 0 };
   const lines = modLines(mods), good = lines.filter(l => l.good), bad = lines.filter(l => !l.good);
   return { text: good.concat(bad).map(l => l.text).join('\n'), bad: bad.length };
 }
@@ -686,7 +753,7 @@ function preview(card, mods, ownedIds) {
 // ---------- Dragning ----------
 // Vikten skiftar mot sällsyntare med djup (våning, 0..) och luck (summan av luck-modden, 0.1 per kort).
 const CURSE_WEIGHT = 0.8; // förbannade kort dyker upp ibland
-const PACT_WEIGHT = 1.0, UPGRADE_WEIGHT = 7; // fjorton pakter: en pakt syns i ungefär var fjärde dragning; efter pakten kommer uppgraderingarna tätt
+const PACT_WEIGHT = 0.82, UPGRADE_WEIGHT = 7; // sjutton pakter (vikten sänkt så att de syns lika ofta som de fjorton förut): en pakt i ungefär var fjärde dragning; efter pakten kommer uppgraderingarna tätt
 function rarityWeight(rarity, depth, luck) {
   const t = Math.max(0, (depth || 0) * 0.25 + (luck || 0) * 2.5); // 0 = början av rundan
   const base = RARITY[rarity].weight;
@@ -731,8 +798,21 @@ function price(card, depth, discount) {
   return Math.max(5, Math.round(p / 5) * 5);
 }
 
+// ---------- Försäljning ----------
+// sellPrice(kort eller id, djup): guld för att sälja kortet, ungefär 40 % av butikspriset (utan rabatt).
+// Förbannade kort ger 0 (de kostar guld att bli av med hos prästen), pakter och vapenuppgraderingar
+// kan inte säljas (0). Ett sammansmält eller förädlat kort säljs som sin högre sällsynthet.
+const SELL_SHARE = 0.4;
+function sellPrice(card, depth) {
+  if (typeof card === 'string') card = byId(card);
+  if (!card || !RARITY[card.rarity] || card.curse || card.pact || card.weapon) return 0;
+  return Math.max(5, Math.round(price(card, depth, 0) * SELL_SHARE / 5) * 5);
+}
+const canSell = card => sellPrice(card, 0) > 0;
+
 const WEAPON_NAME = { pistol: 'PISTOL', shotgun: 'HAGELGEVÄR', rifle: 'GEVÄR', smg: 'KPIST', dbshotgun: 'DUBBELBÖSSA', crossbow: 'ARMBORST', flaregun: 'SIGNALPISTOL', sniper: 'PRICKSKYTTE',
-  axe: 'YXA', flamer: 'ELDKASTARE', launcher: 'GRANATKASTARE', nailgun: 'SPIKGEVÄR', staff: 'BLIXTSTAV', bow: 'LÅNGBÅGE' };
+  axe: 'YXA', flamer: 'ELDKASTARE', launcher: 'GRANATKASTARE', nailgun: 'SPIKGEVÄR', staff: 'BLIXTSTAV', bow: 'LÅNGBÅGE',
+  knives: 'KASTKNIVAR', hammer: 'STRIDSHAMMARE', musket: 'MUSKÖT' };
 // etikett ovanför kortets namn: förbannelse, pakt, aktiv förmåga ('AKTIV · 8 S'), vilket vapen uppgraderingen hör till eller sammansmält
 const activeTag = card => 'AKTIV · ' + num(card.cd || 0) + ' S';
 function tag(card) {
@@ -746,5 +826,6 @@ function describe(card) {
 }
 
 window.Cards = { ALL, byId, RARITY, RARITY_ORDER, MOD_KEYS, WEAPON_NAME, SETS, SYN, draw, computeMods, price, describe, tag, setProgress, synergy, modLines,
-  fuse, canFuse, fusable, isFused, baseId, FUSE_MUL, refine, canRefine, refinable, activeOf, fmtVal, modLabel, diffLines, preview };
+  fuse, canFuse, fusable, isFused, baseId, FUSE_MUL, refine, canRefine, refinable, activeOf, fmtVal, modLabel, diffLines, preview,
+  sellPrice, canSell, SELL_SHARE };
 })();

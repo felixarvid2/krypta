@@ -32,7 +32,7 @@ const store = {
 const DEVICE = (() => { try { return matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window ? 'mobil' : 'dator'; } catch (e) { return 'dator'; } })(); // inställningar sparas per enhetstyp
 const settings = Object.assign({ sens: 1, vol: 0.8, muted: false, diff: 1, fov: 74, gamma: 1, shake: 1, xstyle: 'kors', xcolor: '', fps: false, lowfx: false, bob: true,
   vibrate: true, lefty: false, btnScale: 1, map: 1 }, store.get('settings.' + DEVICE, null) || store.get('settings', {}));
-if (params.has('diff')) settings.diff = clamp(+params.get('diff'), 0, 3);
+if (params.has('diff')) settings.diff = clamp(+params.get('diff'), 0, 4);
 const saveSettings = () => { store.set('settings.' + DEVICE, settings); store.set('settings', settings); };
 applyFov();
 const profile = Object.assign({ souls: 0, unlocked: [], runs: 0, wins: 0, bestDepth: 0, bestScore: 0, history: [] }, store.get('profile', {}));
@@ -130,7 +130,28 @@ const ACH = [
   ['dq', 'DAGSVERKET', 'KLARA ALLA TRE DAGENS UPPDRAG', p => !!(p.dq && p.dq.list.every(q => q.done))],
   ['knight10', 'RIDDARDRÅPAREN', 'DÖDA 10 DÖDSRIDDARE', p => ((p.bestiary || {})['Ð'] || 0) >= 10, p => [(p.bestiary || {})['Ð'] || 0, 10]],
   ['worm10', 'MASKFÅNGAREN', 'DÖDA 10 LAVAMASKAR', p => ((p.bestiary || {})['Þ'] || 0) >= 10, p => [(p.bestiary || {})['Þ'] || 0, 10]],
-  ['allbiomes', 'VÄRLDSVANDRAREN', 'KLARA EN VÅNING I ALLA ÅTTA BIOMER', p => Object.keys(p.biomeFloors || {}).length >= 8, p => [Object.keys(p.biomeFloors || {}).length, 8]],
+  ['allbiomes', 'VÄRLDSVANDRAREN', 'KLARA EN VÅNING I ALLA NIO BIOMER', p => Object.keys(p.biomeFloors || {}).length >= 9, p => [Object.keys(p.biomeFloors || {}).length, 9]],
+  // version 7
+  ['pharaoh', 'GRAVENS HERRE', 'BESEGRA FARAONEN', p => !!(p.bossWins || {}).pharaoh],
+  ['knives100', 'KNIVKASTAREN', 'DÖDA 100 FIENDER MED KASTKNIVARNA', p => ((p.wkills || {}).knives || 0) >= 100, p => [(p.wkills || {}).knives || 0, 100]],
+  ['hammer100', 'SMEDENS ARM', 'DÖDA 100 FIENDER MED STRIDSHAMMAREN', p => ((p.wkills || {}).hammer || 0) >= 100, p => [(p.wkills || {}).hammer || 0, 100]],
+  ['musket100', 'MUSKETÖREN', 'DÖDA 100 FIENDER MED MUSKÖTEN', p => ((p.wkills || {}).musket || 0) >= 100, p => [(p.wkills || {}).musket || 0, 100]],
+  ['stealth25', 'SKUGGAN', 'DÖDA 25 FIENDER UTAN ATT BLI UPPTÄCKT', p => (p.stealthKills || 0) >= 25, p => [p.stealthKills || 0, 25]],
+  ['stealth10run', 'OSEDD', 'DÖDA 10 FIENDER OSEDD I EN RUNDA', p => (p.bestStealth || 0) >= 10, p => [p.bestStealth || 0, 10]],
+  ['pages10', 'SIDSAMLAREN', 'HITTA 10 KRÖNIKESIDOR', p => (p.pages || []).length >= 10, p => [(p.pages || []).length, 10]],
+  ['pagesall', 'KRÖNIKÖREN', 'HITTA ALLA SIDOR I KRÖNIKAN', p => (p.pages || []).length >= 40, p => [(p.pages || []).length, 40]],
+  ['gamble10', 'TURFÅGELN', 'VINN 10 GÅNGER HOS SPELAREN', p => (p.gambleWins || 0) >= 10, p => [p.gambleWins || 0, 10]],
+  ['bank5', 'SPARAREN', 'SÄTT IN GULD I BANKEN 5 GÅNGER', p => (p.bankDeposits || 0) >= 5, p => [p.bankDeposits || 0, 5]],
+  ['wanderer', 'VANDRARENS VÄN', 'FÖLJ VANDRAREN TILL SLUTET', p => (p.wanderSteps || 0) >= 3],
+  ['thief', 'MÄSTERTJUVEN', 'STJÄL FRÅN KÖPMANNEN', p => (p.steals || 0) >= 1],
+  ['haggle', 'KÖPSLAGAREN', 'PRUTA 5 GÅNGER', p => (p.haggles || 0) >= 5, p => [p.haggles || 0, 5]],
+  ['sarco10', 'GRAVPLUNDRAREN', 'ÖPPNA 10 SARKOFAGER', p => (p.sarcophagi || 0) >= 10, p => [p.sarcophagi || 0, 10]],
+  ['mastery5', 'VAPENMÄSTAREN', 'NÅ VANA NIVÅ 5 MED ETT VAPEN', p => (p.masteryMax || 0) >= 5],
+  ['maze', 'LABYRINTENS BARN', 'TA DIG UT UR LABYRINTEN', p => (p.mazesWon || 0) >= 1],
+  ['hunt', 'BOSSJÄGAREN', 'BESEGRA ALLA BOSSAR I BOSSJAKTEN', p => (p.huntsWon || 0) >= 1],
+  ['dark', 'MÖRKRETS VANDRARE', 'NÅ VÅNING 4 I MÖRKERLÄGET', p => ((p.cmodeBest || {}).dark || 0) >= 4],
+  ['combo2', 'DUBBEL UTMANING', 'NÅ VÅNING 3 MED TVÅ UTMANINGAR SAMTIDIGT', p => Object.entries(p.cmodeBest || {}).some(([k, v]) => k.includes('+') && v >= 3)],
+  ['story', 'BERÄTTAREN', 'VINN EN RUNDA I BERÄTTELSELÄGET', p => !!p.storyWin],
 ];
 function checkAch() {
   profile.ach = profile.ach || [];
@@ -139,13 +160,24 @@ function checkAch() {
     if (profile.ach.includes(id)) continue;
     let ok = false; try { ok = !!test(profile, run); } catch (e) { ok = false; }
     if (!ok) continue;
-    profile.ach.push(id); profile.souls += 10; saveProfile();
+    profile.ach.push(id); profile.achD = Object.assign({}, profile.achD, { [id]: new Date().toISOString().slice(0, 10) }); profile.souls += 10; saveProfile();
     if (state !== 'title') { say('PRESTATION: ' + name + ' (+10 SJÄLAR)', 3); play('gem', 0.8, 0.8); }
   }
   dqCheck();
 }
 function showNews() {
-  CardUI.list('NYHETER', 'VERSION 6: 200 NYA FÖRBÄTTRINGAR', [
+  CardUI.list('NYHETER', 'VERSION 7: 200 NYA FÖRBÄTTRINGAR', [
+    { label: 'VERSION 7', head: true, color: '#ffd070' },
+    { label: 'TRE NYA VAPEN', text: 'KASTKNIVARNA (PLOCKA UPP DEM IGEN), STRIDSHAMMAREN (HÅLL FÖR ETT MARKSLAG) OCH MUSKÖTEN (ETT SKOTT, GENOMBORRAR, KRUTRÖK) – MED PAKTER OCH VAPENVANA' },
+    { label: 'GRAVKAMMAREN', text: 'EN NY BIOM MED KVICKSAND, RULLANDE STENBLOCK, SARKOFAGER, SOLSTRÅLAR OCH SANDSTORM. FEM NYA FIENDER OCH DEN ÅTTONDE BOSSEN: FARAONEN.' },
+    { label: 'SMYG', text: 'FIENDERNA UPPTÄCKER DIG GRADVIS. DUCKA I MÖRKRET, KASTA STENAR (G), AKTA LARMKLOCKOR OCH DÖDA OSEDD FÖR GULD.' },
+    { label: 'FICKLAMPAN', text: 'L TÄNDER LAMPAN. BATTERIER FINNS PÅ VÅNINGARNA – MEN FIENDERNA SER LJUSET.' },
+    { label: 'KRÖNIKAN', text: '40 SIDOR OM KRYPTANS HISTORIA. HITTA DEM (þ) PÅ VÅNINGARNA OCH LÄS DEM FRÅN STARTSKÄRMEN.' },
+    { label: 'NYA NPC:ER', text: 'SPELAREN (TÄRNING, HÖGRE/LÄGRE, LYCKOHJUL), BANKIREN (RÄNTA, SJÄLAR) OCH VANDRAREN MED EN UPPDRAGSKEDJA. PRUTA, STJÄL OCH SÄLJ HOS KÖPMANNEN.' },
+    { label: 'KORT', text: '20 NYA KORT, TVÅ NYA SET, PAKTER FÖR DE NYA VAPNEN, GLANS PÅ OVANLIGA KORT, KORTSÖKNING OCH FÖRSÄLJNING.' },
+    { label: 'NYA LÄGEN', text: 'LABYRINTEN, BOSSJAKTEN, MÅNADENS UTMANING, MÖRKERLÄGET OCH KOMBINERADE UTMANINGAR. ÖVA MOT VALFRI FIENDE.' },
+    { label: 'META', text: 'TJUVEN OCH ÖKENVANDRAREN, TRE NYA UPPGRADERINGAR PÅ ALTARET, 20 PRESTATIONER, TITLAR, TRE SPARPLATSER OCH BERÄTTELSELÄGET.' },
+    { label: 'TILLGÄNGLIGHET', text: 'UPPLÄSNING, VISUELLA LJUDSIGNALER, MINSKA RÖRELSE, HUD-LÄGEN, VÄXLA SIKTE, STÖRRE MENYER PÅ MOBIL OCH EN PAUSMENY (ENTER).' },
     { label: 'VERSION 6', head: true, color: '#ffb070' },
     { label: 'TRE NYA VAPEN', text: 'SPIKGEVÄRET, BLIXTSTAVEN (MANA, LADDAT KLOT) OCH LÅNGBÅGEN (SPÄNN OCH SLÄPP) – MED EGNA PAKTER' },
     { label: 'FEM NYA FIENDER', text: 'NEKROMANT, ELDELEMENTAL, LAVAMASK, DÖDSRIDDARE OCH BANSHEE' }, { label: 'VULKANEN', text: 'LAVAFLODER, ASKREGN, HETTA, UTBROTT – OCH ELDKUNGEN' },
@@ -177,6 +209,11 @@ function showManual() {
     { label: 'VÄRLDEN', head: true, color: '#ffd24a' }, { label: 'LAVA', text: 'BRÄNNER – HOPPA ÖVER.' }, { label: 'VATTEN OCH NÄT', text: 'SAKTAR NED. NÄT BRINNER.' }, { label: 'IS', text: 'HALT.' },
     { label: 'NYCKLAR', text: 'ÖPPNAR LÅSTA DÖRRAR OCH KISTOR.' }, { label: 'SPAKAR', text: 'ÖPPNAR JÄRNGALLER NÅGONSTANS PÅ VÅNINGEN.' }, { label: 'SPRUCKNA VÄGGAR', text: 'SPRÄNG DEM MED GRANATER ELLER KRUTFAT.' },
     { label: 'SMEDJAN', text: 'GER VAPNET +12 % SKADA PER NIVÅ OCH FÄSTER RUNOR.' },
+    { label: 'VERSION 7', head: true, color: '#ffd070' }, { label: 'SMYG', text: 'ÖGAT OCH ÖRAT I HÖRNET VISAR HUR SYNLIG OCH HÖRBAR DU ÄR. FIENDER FYLLER EN MÄTARE (? SEDAN !!) INNAN DE SER DIG. DUCKA I MÖRKER, KASTA STENAR MED G OCH SLÅ BAKIFRÅN FÖR ATT DÖDA DIREKT.' },
+    { label: 'FICKLAMPAN', text: 'L TÄNDER OCH SLÄCKER. BATTERIET RÄCKER EN STUND; BATTERIER (¼) LADDAR. LJUSET SKRÄMMER BANSHEER MEN SYNS PÅ LÅNGT HÅLL.' },
+    { label: 'GRAVKAMMAREN', text: 'HOPPA UR KVICKSANDEN. SPRING FRÅN STENBLOCKEN. SOLEN BRÄNNER – SKUGGAN SVALKAR. SARKOFAGER GER SKATT ELLER EN MUMIE.' },
+    { label: 'KRÖNIKAN', text: 'SIDORNA SPARAS MELLAN RUNDOR OCH GER SJÄLAR FÖRSTA GÅNGEN. NÄR ALLA ÄR HITTADE VÄNTAR EN HEMLIG SIDA.' },
+    { label: 'VAPENVANA', text: 'VARJE VAPEN GÅR UPP I NIVÅ (1–5) NÄR DU ANVÄNDER DET. VARJE NIVÅ GER 4 % MER SKADA.' },
     { label: 'VERSION 6', head: true, color: '#ffb070' }, { label: 'RUNOR', text: 'RUNSTENAR (ª) GER RUNOR. EN RUNA PER VAPEN: ELD TÄNDER, IS SAKTAR NED, GIFT FÖRGIFTAR, STORM SLÅR NED BLIXT, BLOD HELAR, EKO UPPREPAR.' },
     { label: 'LÄGERELDEN', text: 'EN SAK PER ELD: VILA, SMIDA, FÖRÄDLA ETT KORT ELLER LAGA MAT AV KÖTT FRÅN DJUR.' }, { label: 'ANSLAGSTAVLAN', text: 'TRE SIDOUPPDRAG PER VÅNING MED GULD, KORT ELLER RUNOR SOM BELÖNING.' },
     { label: 'FÖRMÅGOR', text: 'KORT MÄRKTA AKTIV GER EN FÖRMÅGA PÅ T (STJÄRNKNAPPEN PÅ MOBIL). DÖDANDEN LADDAR DEN SNABBARE.' }, { label: 'VULKANEN', text: 'HETTAN STIGER NÄRA LAVA – VATTEN OCH ISDRYCKEN KYLER. SE UPP FÖR LAVABOMBER.' },
@@ -186,7 +223,7 @@ function showCodex() { const sets = s => new Set(s || []); CardUI.codex(Cards.AL
 function showAchievements() {
   const got = profile.ach || [];
   CardUI.list('PRESTATIONER', `${got.length} AV ${ACH.length} · VARJE GER 10 SJÄLAR`, ACH.map(([id, name, text, , prog]) => { const pr = prog && !got.includes(id) ? prog(profile) : null; // framsteg för räknande prestationer
-    return { label: (got.includes(id) ? '★ ' : '☆ ') + name, text: text + (pr ? ` (${Math.min(pr[0], pr[1])}/${pr[1]})` : ''), color: got.includes(id) ? '#ffd24a' : '', dim: !got.includes(id) }; }), () => refreshTitle());
+    return { label: (got.includes(id) ? '★ ' : '☆ ') + name, text: text + (pr ? ` (${Math.min(pr[0], pr[1])}/${pr[1]})` : '') + (got.includes(id) && (profile.achD || {})[id] ? ' · ' + profile.achD[id] : ''), color: got.includes(id) ? '#ffd24a' : '', dim: !got.includes(id) }; }), () => refreshTitle());
 }
 function enemyIcon(t, dark) { // första bilden i fiendens stillastående animation
   try { const f = enemyFrames[t] && enemyFrames[t].idle[0]; if (!f) return null; const c = document.createElement('canvas'); c.width = f.w; c.height = f.h; const g = c.getContext('2d'), im = g.createImageData(f.w, f.h);
@@ -195,7 +232,7 @@ function enemyIcon(t, dark) { // första bilden i fiendens stillastående animat
 function showBestiary() {
   const b = profile.bestiary || {};
   const by = profile.deathsBy || {};
-  const rows = Object.entries(ENEMY_DEFS).map(([t, d]) => b[t] ? { img: enemyIcon(t), label: d.name, text: `${WEAK[t] ? 'SVAGHET: ' + WEAK[t] + ' · ' : ''}DÖDADE ${b[t]}${by[d.name] ? ` · DÖDADE DIG ${by[d.name]}` : ''} · HP ${d.hp} · SKADA ${d.dmg} · FART ${d.speed}` + (d.tip ? ' · ' + d.tip : '') } : { img: enemyIcon(t, true), label: '???', text: 'INTE MÖTT ÄNNU', dim: true });
+  const rows = Object.entries(ENEMY_DEFS).map(([t, d]) => b[t] ? { img: enemyIcon(t), label: d.name, text: `${WEAK[t] ? 'SVAGHET: ' + WEAK[t] + ' · ' : ''}DÖDADE ${b[t]}${by[d.name] ? ` · DÖDADE DIG ${by[d.name]}` : ''} · HP ${d.hp} · SKADA ${d.dmg} · FART ${d.speed}` + (d.tip ? ' · ' + d.tip : '') + ((profile.bestBiomes || {})[t] ? ' · FINNS I: ' + profile.bestBiomes[t].map(x => BIOME_NAME[x] || x).join(', ') : '') } : { img: enemyIcon(t, true), label: '???', text: 'INTE MÖTT ÄNNU', dim: true });
   for (const [id, bd] of Object.entries(BOSSES)) { const n = (profile.bossWins || {})[id] || 0; rows.push(n ? { label: bd.title || bd.name, text: `BESEGRAD ${n} GÅNG${n > 1 ? 'ER' : ''}`, color: '#ff8a5a' } : { label: '??? (BOSS)', text: 'INTE BESEGRAD', dim: true }); }
   CardUI.list('BESTIARIUM', `${Object.keys(b).length} AV ${Object.keys(ENEMY_DEFS).length} FIENDER`, rows, () => refreshTitle());
 }
@@ -223,15 +260,16 @@ function showProfile() {
     { label: 'TOPP 5', head: true, color: '#ffd24a' },
     ...h.slice().sort((a, b) => b.score - a.score).slice(0, 5).map((r, i) => ({ label: `${i + 1}. ${r.score} P`, text: `VÅNING ${r.depth} · ${r.kills} DÖDADE · FRÖ ${r.seed}${r.win ? ' · SEGER' : ''}` })),
     { label: 'SENASTE RUNDOR', head: true, color: '#ffd24a' },
-    ...h.slice(0, 8).map(r => ({ label: `${r.win ? 'SEGER' : r.cause === 'GAV UPP' ? 'GAV UPP' : 'DOG'} VÅNING ${r.depth}`, text: [BIOME_NAME[r.biome] || '', r.cause && r.cause !== 'GAV UPP' ? 'DÖDAD AV ' + r.cause : '', r.daily ? 'DAGENS' : '', DIFF[r.diff ?? 1] ? DIFF[r.diff ?? 1].name : ''].filter(Boolean).join(' · '), dim: !r.win })),
+    ...h.slice(0, 10).map(r => ({ label: `${r.win ? 'SEGER' : r.cause === 'GAV UPP' ? 'GAV UPP' : 'DOG'} VÅNING ${r.depth}`, text: [r.cls && CLASSES[r.cls] ? CLASSES[r.cls].name : '', r.biomes && r.biomes.length > 1 ? r.biomes.map(b => (BIOME_NAME[b] || b).slice(0, 4)).join('→') : BIOME_NAME[r.biome] || '', r.cmode ? cmodeNames(r.cmode) : '', r.cause && r.cause !== 'GAV UPP' ? 'DÖDAD AV ' + r.cause : '', r.daily ? 'DAGENS' : '', DIFF[r.diff ?? 1] ? DIFF[r.diff ?? 1].name : ''].filter(Boolean).join(' · '), dim: !r.win })),
   ];
   CardUI.list('PROFIL', '', rows, () => refreshTitle());
 }
-const DIFF = [
+const DIFF = [ // index 4 = berättelseläget (visas först)
   { name: 'LÄTT', dmg: 0.55, hp: 0.8, ammo: 1.4, speed: 0.9, souls: 0.7 },
   { name: 'NORMAL', dmg: 1, hp: 1, ammo: 1, speed: 1, souls: 1 },
   { name: 'SVÅR', dmg: 1.45, hp: 1.3, ammo: 0.75, speed: 1.12, souls: 1.5 },
   { name: 'MARDRÖM', dmg: 1.9, hp: 1.6, ammo: 0.6, speed: 1.22, souls: 2.2 },
+  { name: 'BERÄTTELSE', dmg: 0.3, hp: 0.6, ammo: 1.8, speed: 0.85, souls: 0.4 },
 ];
 const diff = () => DIFF[settings.diff];
 
@@ -505,6 +543,7 @@ function applyVolume() { if (master) master.gain.value = settings.muted ? 0 : se
 const SUBS = { growl: 'MORRANDE', hiss: 'VÄSANDE', roar: 'VRÅL', bossroar: 'BOSSENS VRÅL', door: 'EN DÖRR', gate: 'ETT GALLER', moan: 'STÖNANDE', bell: 'KLOCKOR', fireburst: 'EXPLOSION', bigboom: 'SMÄLL', arrow: 'EN PIL', gas: 'PYSANDE GAS', spider: 'SPINDEL', bat: 'FLADDERMÖSS', hound: 'SKALL', fuse: 'STUBIN' };
 let subs = [];
 function play(name, vol = 1, rate = 1, opt = {}) {
+  if (opt.x !== undefined && settings.soundCues) soundCue(name, opt.x, opt.y);
   if (settings.subtitles && SUBS[name] && opt.x !== undefined && state === 'play') { const rel = Math.atan2(Math.sin(Math.atan2(opt.y - P.y, opt.x - P.x) - P.a), Math.cos(Math.atan2(opt.y - P.y, opt.x - P.x) - P.a)), dist = Math.hypot(opt.x - P.x, opt.y - P.y);
     if (dist < 16 && !subs.some(s => s.n === name)) { subs.push({ n: name, text: `[${SUBS[name]} ${Math.abs(rel) < 0.6 ? 'FRAMFÖR' : Math.abs(rel) > 2.4 ? 'BAKOM' : rel > 0 ? 'TILL HÖGER' : 'TILL VÄNSTER'}]`, t: 2 }); if (subs.length > 3) subs.shift(); } }
   if (!actx || !snd[name]) return null;
@@ -586,14 +625,17 @@ const CLASSES = {
   jagare: { name: 'JÄGAREN', text: 'ARMBORST OCH EN VARGVALP SOM FÖLJESLAGARE', color: '#b0c080', cost: 50, mods: { petPower: 0.2 }, weapon: 'crossbow', pet: 'pup' },
   spejare: { name: 'SPEJAREN', text: 'LÅNGBÅGE OCH LYKTAN SOM FÖLJESLAGARE', color: '#a0c0a0', cost: 55, mods: { headshot: 0.15 }, weapon: 'bow', pet: 'lantern' },
   smed: { name: 'SMEDEN', text: 'PISTOLEN SMIDD TILL NIVÅ 2 MED EN ELDRUNA', color: '#d08040', cost: 55, mods: { armorPerFloor: 5 }, smith: true },
+  tjuv: { name: 'TJUVEN', text: 'KASTKNIVAR, +30 % SMYGSKADA, 20 % TYSTARE OCH 3 EXTRA STENAR', color: '#9090d0', cost: 60, mods: { stealthDmg: 0.3, noiseReduce: 0.2, detectSlow: 0.1 }, weapon: 'knives', stones: 3 },
+  oken: { name: 'ÖKENVANDRAREN', text: 'MUSKÖT, TÅL HETTA, +20 % GULD FRÅN HÖGAR OCH LÄNGRE BATTERI', color: '#e0b060', cost: 65, mods: { heatResist: 0.4, goldFind: 0.2, lampBattery: 0.3 }, weapon: 'musket' },
   plundrare: { name: 'PLUNDRAREN', text: '80 GULD, +10 % FART, BÄTTRE TUR OCH MAGNET', color: '#ffd24a', cost: 50, mods: { moveSpeed: 0.1, magnet: 1, luck: 0.06 }, gold: 80 },
 };
 const classOpen = id => !CLASSES[id].cost || (profile.classes || []).includes(id);
 function applyClassStart() {
   const c = CLASSES[run.cls]; if (!c) return;
-  if (c.weapon && run.cmode !== 'pistol') { const i = weaponIndex(c.weapon); P.has[i] = true; P.mags[i] = effMag(i); const w = WEAPONS[i]; P.ammo[w.ammo] = Math.min(AMMO[w.ammo].max, P.ammo[w.ammo] + { r556: 40, shells: 16 }[w.ammo] || 20); }
+  if (c.weapon && !cmode('pistol')) { const i = weaponIndex(c.weapon); P.has[i] = true; P.mags[i] = effMag(i); const w = WEAPONS[i]; P.ammo[w.ammo] = Math.min(AMMO[w.ammo].max, P.ammo[w.ammo] + { r556: 40, shells: 16 }[w.ammo] || 20); }
   if (c.armor) P.armor += c.armor; if (c.grenades) P.grenades = c.grenades; if (c.gold) run.gold += c.gold;
   if (c.pet && !run.pet) run.pet = c.pet;
+  if (c.stones) P.stones += c.stones;
   if (c.smith) { run.wlvl = { pistol: 2 }; run.wrunes = { pistol: ['fire'] }; }
 }
 const stat = (k, n = 1) => { profile[k] = (profile[k] || 0) + n; };
@@ -607,7 +649,7 @@ function recomputeMods() {
 const up = k => UP.has(k) && !!run && WEAPONS[P.weapon].id === run.pact;
 
 const plain = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '');
-function say(t, d = 2.5) { msgs.unshift({ text: plain(t), t: d }); if (msgs.length > 3) msgs.length = 3; }
+function say(t, d = 2.5) { msgs.unshift({ text: plain(t), t: d }); if (msgs.length > 3) msgs.length = 3; if (settings.tts && t && d >= 2.5 && state !== 'title') speak(t); }
 
 // ---------- Runda och våningar ----------
 const dailySeed = () => { const d = new Date(); return RNG.hash(`krypta-${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`); };
@@ -631,9 +673,12 @@ function newRun(seed, daily) {
   run.cardRng = RNG(run.seed).fork('kort');
   newMission();
   if (daily) run.modifier = RNG(run.seed).fork('dagens').pick(DAILY_MODS);
-  run.cmode = run.practice || daily ? '' : CMODES[settings.cmode] ? settings.cmode || '' : '';
+  run.cmode = run.practice || daily ? '' : (settings.cmode || '').split('+').filter(x => x && CMODES[x]).join('+');
   resetPlayer(); recomputeMods(); if (settings.pet && PETS[settings.pet] && petOpen(settings.pet)) run.pet = settings.pet; applyClassStart();
-  if (run.cmode === 'onehit') { P.hp = 1; P.armor = 0; }
+  if (cmode('onehit')) { P.hp = 1; P.armor = 0; }
+  if (cmode('dark')) P.battery += 120; // mörkerläget: extra batteri
+  if (meta('stones')) P.stones += 2 * meta('stones');
+  if (meta('mastery')) run.wxp = Object.fromEntries(WEAPONS.map(w => [w.id, MASTERY[1]])); // vapenvana från start
   if (meta('startrune')) { run.wrunes = run.wrunes || {}; run.wrunes.pistol = (run.wrunes.pistol || []).concat(RUNE_IDS[(Math.random() * RUNE_IDS.length) | 0]).slice(-runeSlots()); }
   if (!run.practice) { profile.runs++; saveProfile(); dailyReward(); }
 }
@@ -664,10 +709,10 @@ function loadFloor(depth) {
   saveRun();
 }
 function saveRun() { // ögonblicksbild vid våningens start, raderas vid död (permadöd)
-  store.set('run', { run: Object.assign({}, run, { cardRng: undefined }), p: { hp: P.hp, armor: P.armor, has: P.has, ammo: P.ammo, mags: P.mags, weapon: P.weapon, potions: P.potions || [], grenades: P.grenades, keys: P.keys }, score });
+  store.set(runKey(), { run: Object.assign({}, run, { cardRng: undefined }), p: { hp: P.hp, armor: P.armor, has: P.has, ammo: P.ammo, mags: P.mags, weapon: P.weapon, potions: P.potions || [], grenades: P.grenades, keys: P.keys }, score });
 }
 function loadRunSave() {
-  const s = store.get('run', null); if (!s) return false;
+  const s = store.get(runKey(), null); if (!s) return false;
   run = Object.assign({}, s.run); run.cardRng = RNG(RNG.hash(run.seed + ':kort:' + run.depth));
   const pad = (a, v) => WEAPONS.map((_, i) => a[i] ?? v); // äldre sparningar hade fyra vapen
   Object.assign(P, { hp: s.p.hp, armor: s.p.armor, has: pad(s.p.has, false), ammo: Object.assign(NOAMMO(), s.p.ammo), mags: pad(s.p.mags, 0), weapon: s.p.weapon, potions: s.p.potions || [], grenades: s.p.grenades ?? P.grenades, keys: s.p.keys ?? P.keys });
@@ -687,6 +732,7 @@ function startLevel(level) {
   map = lvl.map.map(r => r.split('')); mh = map.length; mw = map[0].length;
   icicles.length = 0; groundFires.length = 0; spores.length = 0; challenge = null; iceSteps = {}; P.cold = 0; waves = []; clones = []; mirrors = []; darkT = 0; doors = {}; ents = []; items = []; pots = []; torches = []; chests = []; merchants = []; particles = []; projectiles = []; numbers.length = 0; fuses.length = 0; portals = []; hazards = []; decals.length = 0;
   lvlStat.shots = lvlStat.hits = lvlStat.taken = 0; lvlStat.healed = 0;
+  if (run) run.floorStealth = 0;
   guardianE = null; kills = 0; totalEnemies = 0; secrets = 0; totalSecrets = 0; itemsTaken = 0; totalItems = 0; levelTime = 0; boss = null; bossBanner = 0;
   light = new Float32Array(mw * mh); lcol = settings.colorLight === false ? null : new Float32Array(mw * mh * 3); seen = new Uint8Array(mw * mh); flow = new Int16Array(mw * mh).fill(-1); flowCell = -1;
   const lrng = RNG(RNG.hash(run.seed + ':spawn:' + run.depth));
@@ -742,12 +788,13 @@ function startLevel(level) {
   if (run.floorCurse) for (const e of ents) if (!e.boss) { e.hp = e.maxHp = e.maxHp * 1.2; e.d = { ...e.d, dmg: e.d.dmg * 1.3 }; }
   if (!boss && !merchants.length && run.depth >= 2 && lrng.next() < 0.15) { const sp = randomFreeCell(lrng); if (sp) { merchants.push({ x: sp[0], y: sp[1], stock: null, wander: true }); map[sp[1] | 0][sp[0] | 0] = 'M'; logEvent('VANDRANDE KÖPMAN'); } } // vandrande köpman
   if (floorEvent === 'mist') fogMul = 1.8; else fogMul = 1;
-  P.vx = P.vy = 0; P.flash = 0; P.hurt = 0; P.camZ = 0.5; P.deadT = 0; P.shake = 0; P.haste = 0;
+  P.vx = P.vy = 0; P.flash = 0; P.hurt = 0; P.roll = 0; P.camZ = 0.5; P.deadT = 0; P.shake = 0; P.haste = 0;
   P.hp = Math.min(P.hp, maxHp()); P.shield = mod('shield');
   WS.state = 'draw'; WS.t = 0; WS.aim = 0; WS.shot = 99;
   hurtDir = []; msgs.length = 0;
   state = 'play';
   if (!boss) levelBanner = 3; // stort titelkort med namn och biom
+  if (run && lvl.biome && !boss) run.biomes = (run.biomes || []).concat(lvl.biome);
   else say(lvl.name, 3);
   if (boss) { bossIntro = 2.2; boss.cd = Math.max(boss.cd, 3); }
   if (boss) { bossBanner = 3.5; slowmo = 1.2; play('stinger', 0.8); if (window.Music) Music.sting('boss'); setTimeout(() => play('bossroar', 0.9, 0.8), 600); }
@@ -986,8 +1033,8 @@ function updateLight() {
   if (lcol) { if (settings.colorLight === false || settings.lowfx) lcol = null; else lcol.fill(0); }
   else if (settings.colorLight !== false && !settings.lowfx && light) lcol = new Float32Array(mw * mh * 3);
   const darkK = darkT > 0 ? Math.max(0.15, 1 - Math.min(1, darkT) * 0.85) : 1;
-  light.fill(lvl.ambient * (dmod('dark') ? 0.6 : 1) * darkK * (boss && boss.phase === 3 && !boss.dead ? 0.75 + 0.25 * Math.sin(tmr * 3) : 1) * (floorEvent === 'dark' ? 0.3 : 1));
-  for (const t of torches) {
+  light.fill(lvl.ambient * (dmod('dark') ? 0.6 : 1) * darkK * (boss && boss.phase === 3 && !boss.dead ? 0.75 + 0.25 * Math.sin(tmr * 3) : 1) * (floorEvent === 'dark' ? 0.3 : 1) * (cmode('dark') ? 0.12 : 1));
+  for (const t of cmode('dark') ? [] : torches) {
     const wind = lvl.sky ? 1.8 : 1; // facklorna fladdrar i vinden utomhus
     const fl = 0.85 + 0.1 * wind * Math.sin(tmr * 9 + t.ph) + 0.06 * wind * Math.sin(tmr * 23 + t.ph * 3);
     const k = t.prop && t.prop.used ? 0.15 : 1; // använd brunn och släckt altare lyser knappt
@@ -1332,7 +1379,7 @@ function render() {
   } catch (err) { spriteError(err, s); }
   applyGrade();
   if (P.hp < maxHp() * 0.3 && state === 'play' && settings.lowHpGray !== false) desaturate(0.55 * (1 - P.hp / (maxHp() * 0.3))); // låg HP: bilden gråas
-  if (Math.abs(P.roll) > 0.002 && state === 'play') { // lutning vid sidosteg
+  if (Math.abs(P.roll) > 0.002 && (state === 'play' || state === 'dead')) { // lutning vid sidosteg och fall vid döden
     rollCtx.putImageData(frame, 0, 0);
     ctx.save(); ctx.translate(W / 2, VH / 2); ctx.rotate(P.roll); ctx.scale(1.05, 1.05); ctx.drawImage(rollCan, -W / 2, -VH / 2); ctx.restore();
   } else ctx.putImageData(frame, 0, 0);
@@ -1506,7 +1553,7 @@ function drawWorldOverlay() { // skadesiffror, livmätare för eliter
     if (e.dead || e.boss || e.hidden || (e.ghost || 0) > 0.5) continue;
     const p = project(e.x, e.y, e.d.size * 1.2 + 0.08); if (!p) continue;
     const y = Math.round(p.sy) - 4;
-    if (!e.alert && e.detect > 0.05) { const w = 8, x0 = Math.round(p.sx - w / 2), y1 = y - 9; ctx.fillStyle = '#000a'; ctx.fillRect(x0 - 1, y1 - 1, w + 2, 5); ctx.fillStyle = e.detect > 0.66 ? '#ff6040' : e.detect > 0.33 ? '#ffd24a' : '#e8e8e8'; ctx.fillRect(x0, y1, Math.round(w * e.detect), 3); ctx.fillStyle = '#fff'; ctx.fillRect(x0 + 3, y1 + 1, 2, 1); } // upptäcktsmätaren (ögat)
+    if (!e.alert && e.detect > 0.05) { const w = 8, x0 = Math.round(p.sx - w / 2), y1 = y - 9; ctx.fillStyle = '#000a'; ctx.fillRect(x0 - 1, y1 - 1, w + 2, 5); ctx.fillStyle = e.detect > 0.66 ? '#ff6040' : e.detect > 0.33 ? '#ffd24a' : '#e8e8e8'; ctx.fillRect(x0, y1, Math.round(w * e.detect), 3); ctx.fillStyle = '#fff'; ctx.fillRect(x0 + 3, y1 + 1, 2, 1); if (e.detect > 0.33) txt(e.detect > 0.66 ? '!!' : '?', x0 + w + 2, y1 - 3, e.detect > 0.66 ? '#ff6040' : '#ffd24a', 1, true, 0.85); } // upptäcktsmätaren (ögat), med form för färgblinda
     if (e.spotT > 0) txt('!', Math.round(p.sx - 3), y - 12 - Math.round(Math.sin(e.spotT * 9) * 2), '#ff5030', 1, true, Math.min(1, e.spotT * 3)); // har sett dig
     if (settings.enemyBars === false || (!e.elite && (e.hp >= e.maxHp || p.scale < 14))) continue; // vanliga fiender visar mätaren när de skadats
     const w = Math.round(clamp(p.scale * (e.elite ? 0.6 : 0.35), e.elite ? 12 : 8, e.elite ? 40 : 20)), x = Math.round(p.sx - w / 2);
@@ -1545,7 +1592,7 @@ function drawHUD() {
     gr.addColorStop(0, `rgba(${h.col || '220,0,0'},${0.55 * h.t})`); gr.addColorStop(1, `rgba(${h.col || '220,0,0'},0)`);
     g.fillStyle = gr; g.fillRect(sx - 46, sy - 46, 92, 92);
   }
-  if (P.hurt > 0) { g.fillStyle = `rgba(190,0,0,${Math.min(0.45, P.hurt * 0.6)})`; g.fillRect(0, 0, W, VH); }
+  if (P.hurt > 0) { g.fillStyle = `rgba(${P.hurtCol || '190,0,0'},${Math.min(0.45, P.hurt * 0.6)})`; g.fillRect(0, 0, W, VH); }
   if (P.pick > 0 && !settings.noFlash) { g.fillStyle = `rgba(255,230,120,${P.pick * 0.22})`; g.fillRect(0, 0, W, VH); }
   if (P.boom > 0 && !settings.noFlash) { g.fillStyle = `rgba(255,240,210,${P.boom.toFixed(3)})`; g.fillRect(0, 0, W, VH); } // nära explosion
   if (state === 'play' && up('bullettime') && WS.aim > 0.8) { g.fillStyle = 'rgba(90,140,255,0.13)'; g.fillRect(0, 0, W, VH); } // tidsstoppet
@@ -1581,6 +1628,7 @@ function drawHUD() {
     g.fillStyle = '#f0e0c0'; g.fillRect(x, y, w * Math.max(0, hb.shownHp) / hb.maxHp, 4);
     g.fillStyle = hb.guardian ? '#c050ff' : hb.phase === 3 ? '#ff5020' : '#d02818'; g.fillRect(x, y, w * Math.max(0, hb.hp) / hb.maxHp, 4);
     g.fillStyle = '#000'; g.fillRect(Math.round(x + w / 3), y - 1, 1, 6); g.fillRect(Math.round(x + w * 2 / 3), y - 1, 1, 6); // fasgränser
+    g.fillStyle = '#0007'; for (let i = 1; i < 12; i++) if (i % 4) g.fillRect(Math.round(x + w * i / 12), y, 1, 4); // segment
     if (hb.enraged) txt('RASANDE', x + w + 4, y - 1, tmr % 0.5 < 0.25 ? '#ff4030' : '#a02010');
     txt(hb.d.name, (W - textW(hb.d.name)) / 2, y + 7, '#ffd24a');
   }
@@ -1640,7 +1688,7 @@ function drawHUD() {
   if (WS.nameT > 0 && state === 'play') { const w = WEAPONS[P.weapon], nm = w.name; txt(nm, (W - textW(nm)) / 2, VH - 24, '#ffd24a', 1, true, Math.min(1, WS.nameT * 2));
     const info = `SKADA ${Math.round(w.dmg * (w.pellets || 1) * 10)} · ${w.melee ? 'NÄRSTRID' : (1 / w.delay).toFixed(1) + ' SKOTT/S'}${wlvl(w.id) ? ' · NIVÅ ' + wlvl(w.id) : ''}`; txt(info, (W - textW(info)) / 2, VH - 14, '#c9a87a', 1, true, Math.min(1, WS.nameT * 2)); }
   if (WS.boost && state === 'play') txt('+15%', W / 2 + 12, HORIZON - 14, '#9fe060', 1, true, 0.8);
-  if (state === 'play') { drawBowAim(g); drawStaffCharge(g); drawAbilityHud(g); drawTutorial(g); drawHammerCharge(g); drawStealthHud(g); drawLampHud(g); }
+  if (state === 'play') { drawBowAim(g); drawStaffCharge(g); drawAbilityHud(g); drawTutorial(g); drawHammerCharge(g); drawStealthHud(g); drawLampHud(g); drawCues(g); }
   if (state === 'play') drawHudExtras(g);
   if (wheel && !wheel.open && performance.now() - wheel.t0 > 260) wheel.open = true;
   if (wheel && wheel.open && state === 'play') drawWheel(g);
@@ -2305,7 +2353,7 @@ function killEnemy(e) {
   if (mod('shieldOnKill')) P.shield = Math.min(mod('shield') + 30, P.shield + mod('shieldOnKill'));
   if (Math.random() < mod('killExplode')) explode(e.x, e.y, 12 * (1 + mod('dmg')), 1.6);
   if (!e.boss && !boss && kills >= totalEnemies && totalEnemies > 2) { slowmo = Math.max(slowmo, 0.9); say('VÅNINGEN ÄR RENSAD', 2); } // sista fienden: slow motion
-  profile.bestiary = profile.bestiary || {}; if (!e.boss) profile.bestiary[e.type] = (profile.bestiary[e.type] || 0) + 1; run.wkills = run.wkills || {}; run.wkills[WEAPONS[P.weapon].id] = (run.wkills[WEAPONS[P.weapon].id] || 0) + 1;
+  profile.bestiary = profile.bestiary || {}; if (!e.boss) { profile.bestiary[e.type] = (profile.bestiary[e.type] || 0) + 1; if (lvl.biome) { const bb = profile.bestBiomes = profile.bestBiomes || {}; bb[e.type] = bb[e.type] || []; if (!bb[e.type].includes(lvl.biome)) bb[e.type].push(lvl.biome); } } run.wkills = run.wkills || {}; run.wkills[WEAPONS[P.weapon].id] = (run.wkills[WEAPONS[P.weapon].id] || 0) + 1;
   play('gore', 0.5, rnd(0.9, 1.2), { x: e.x, y: e.y });
   const dsnd = { S: ['bonesnap', 1], K: ['bonesnap', 0.8], N: ['bonesnap', 0.7], R: ['bonesnap', 1.2], V: ['pain', 1.2], I: ['hiss', 1.5], L: ['splat', 0.6], l: ['splat', 1.2], O: ['pain', 0.9], W: ['pain', 0.6] }[e.type] || ['pain', 0.8];
   play(dsnd[0], 0.5, dsnd[1] * rnd(0.92, 1.08), { x: e.x, y: e.y });
@@ -2330,7 +2378,7 @@ function killEnemy(e) {
     for (let i = 0; i < 4; i++) dropItem('gold', e.x, e.y);
     dropItem(Math.random() < 0.5 ? 'health' : 'ammo', e.x, e.y);
     if (e.elite.id === 'explosive') explode(e.x, e.y, 18, 1.8, true);
-    if (Math.random() < 0.06 + mod('weaponDrop')) { const miss = WEAPONS.map((w, i) => i).filter(i => !P.has[i]); if (miss.length && !run.pact && run.cmode !== 'pistol') { dropItem(WEAPONS[miss[(Math.random() * miss.length) | 0]].id, e.x, e.y); say('ELITEN TAPPADE ETT VAPEN', 2); } }
+    if (Math.random() < 0.06 + mod('weaponDrop')) { const miss = WEAPONS.map((w, i) => i).filter(i => !P.has[i]); if (miss.length && !run.pact && !cmode('pistol')) { dropItem(WEAPONS[miss[(Math.random() * miss.length) | 0]].id, e.x, e.y); say('ELITEN TAPPADE ETT VAPEN', 2); } }
     if (hasMod(e, 'splitter')) for (let i = 0; i < 2; i++) { const a = rnd(0, TAU), o = makeEnemy(e.type, e.x + Math.cos(a) * 0.5, e.y + Math.sin(a) * 0.5); o.hp = o.maxHp = o.maxHp * 0.45; o.d = { ...o.d, size: o.d.size * 0.75 }; o.alert = true; o.minion = true; ents.push(o); totalEnemies++; spawnPuff(o.x, o.y, 4); }
     if (e.eliteGoldDone !== true) { e.eliteGoldDone = true; const g = Math.round(8 * mod('eliteGold')); if (g > 0) run.gold += g; }
   } else {
@@ -2340,7 +2388,7 @@ function killEnemy(e) {
     if (Math.random() < 0.5) dropItem('gold', e.x, e.y);
   }
   // portal: när våningens sista elit dör, eller när alla fiender är döda
-  if (!boss && !run.survival && !portals.length && ((e.elite && !ents.some(o => o.elite && !o.dead)) || kills >= Math.ceil(totalEnemies * (run.cmode === 'quick' ? 0.6 : 1)))) {
+  if (!boss && !run.survival && !(run.practice && run.practice.enemy) && !portals.length && ((e.elite && !ents.some(o => o.elite && !o.dead)) || kills >= Math.ceil(totalEnemies * (cmode('quick') ? 0.6 : 1)))) {
     if (e.elite) spawnPortal(e.x, e.y, 'floor'); else spawnPortal(P.x + Math.cos(P.a) * 1.8, P.y + Math.sin(P.a) * 1.8, 'floor');
   }
 }
@@ -2858,8 +2906,10 @@ const ownedCount = () => { const o = {}; if (run) for (const id of run.owned) o[
 // utmaningslägen: ett slag, bara pistol, inga kort
 const CMODES = { '': { name: 'INGEN UTMANING', text: 'VANLIG RUNDA' }, onehit: { name: 'ETT SLAG', text: '1 HP – EN TRÄFF OCH DU ÄR DÖD. +50 % SJÄLAR' },
   quick: { name: 'SNABB RUNDA', text: 'PORTALEN ÖPPNAS NÄR 60 % AV FIENDERNA ÄR DÖDA. −30 % SJÄLAR' },
-  pistol: { name: 'BARA PISTOL', text: 'ANDRA VAPEN BLIR AMMO OCH GULD. +30 % SJÄLAR' }, nocards: { name: 'INGA KORT', text: 'KORTVAL BLIR GULD. +40 % SJÄLAR' } };
-const cmode = id => !!(run && run.cmode === id);
+  pistol: { name: 'BARA PISTOL', text: 'ANDRA VAPEN BLIR AMMO OCH GULD. +30 % SJÄLAR' }, nocards: { name: 'INGA KORT', text: 'KORTVAL BLIR GULD. +40 % SJÄLAR' },
+  dark: { name: 'MÖRKER', text: 'BARA FICKLAMPAN LYSER – FACKLORNA ÄR SLOCKNADE. +35 % SJÄLAR' } };
+const CMODE_SOULS = { onehit: 1.5, pistol: 1.3, nocards: 1.4, quick: 0.7, dark: 1.35 };
+const cmode = id => !!(run && run.cmode && run.cmode.split('+').includes(id)); // lägen kan kombineras: 'onehit+dark'
 // vibrationsmönster
 const VIB = { pickup: [12], kill: [18, 30, 18], boss: [90, 40, 140], potion: [25, 25, 25], level: [40, 60, 40], fuse: [30, 20, 60], headshot: [10, 15, 30], hurt: null };
 function vib(k) { if (settings.vibrate === false || !navigator.vibrate || !VIB[k] || !isTouch()) return; try { navigator.vibrate(VIB[k]); } catch (e) { /* ingen vibration */ } }
@@ -3489,6 +3539,11 @@ const DQ = [
   { id: 'floors', text: n => `KLARA ${n} VÅNINGAR`, n: 4, c: p => p.floors || 0 },
   { id: 'runes', text: n => `FÄST ${n} RUNOR`, n: 1, c: p => p.runesSocketed || 0 },
   { id: 'abilities', text: n => `ANVÄND EN FÖRMÅGA ${n} GÅNGER`, n: 3, c: p => p.abilities || 0 },
+  { id: 'stealth', text: n => `DÖDA ${n} FIENDER OSEDD`, n: 5, c: p => p.stealthKills || 0 },
+  { id: 'pages', text: n => `HITTA ${n} KRÖNIKESIDA`, n: 1, c: p => p.pagesFound || 0 },
+  { id: 'sarco', text: n => `ÖPPNA ${n} SARKOFAGER`, n: 2, c: p => p.sarcophagi || 0 },
+  { id: 'gamble', text: n => `SPELA ${n} GÅNGER HOS SPELAREN`, n: 2, c: p => p.gambles || 0 },
+  { id: 'mastery', text: n => `HÖJ VAPENVANAN ${n} GÅNGER`, n: 3, c: p => p.masteryUps || 0 },
 ];
 function dailyQuests() {
   const day = today();
@@ -3507,6 +3562,11 @@ function showStats() {
   rows.push({ label: 'ÖVERLEVNAD', head: true, color: '#ffd24a' }, { label: 'BÄSTA VÅG', text: String(p.survivalBest || 0) }, ...(p.survivalTop || []).slice(0, 5).map((s, i) => ({ label: `${i + 1}. VÅG ${s.wave}`, text: s.d })));
   rows.push({ label: 'BOSSAR', head: true, color: '#ffd24a' }, ...BOSS_IDS.map(id => ({ label: BOSSES[id].name, text: `BESEGRAD ${(p.bossWins || {})[id] || 0} GÅNGER · BÄSTA TID ${(p.bossTimes || {})[id] ? fmtT(p.bossTimes[id]) : '–'}` })));
   if (p.rushBest) rows.push({ label: 'BOSSRUSH', text: 'BÄSTA TID ' + fmtT(p.rushBest) });
+  rows.push({ label: 'REKORD PER LÄGE', head: true, color: '#ffd24a' }, { label: 'LABYRINTEN', text: p.mazeBest ? 'BÄSTA TID ' + fmtT(p.mazeBest) + ` · ${p.mazesWon || 0} GÅNGER UTE` : '–' }, { label: 'BOSSJAKTEN', text: p.huntBest ? 'BÄSTA TID ' + fmtT(p.huntBest) : '–' },
+    ...Object.entries(p.cmodeBest || {}).map(([k, v]) => ({ label: cmodeNames(k) || k, text: `VÅNING ${v}${(p.cmodeWins || {})[k] ? ' · VUNNEN' : ''}` })));
+  rows.push({ label: 'SMYG, LAMPA OCH EKONOMI', head: true, color: '#a0a0ff' }, { label: 'OSEDDA DÖDANDEN', text: `${p.stealthKills || 0} (BÄSTA RUNDA ${p.bestStealth || 0})` }, { label: 'LAMPAN TÄND', text: `${p.lampToggles || 0} GÅNGER` },
+    { label: 'HOS SPELAREN', text: `${p.gambles || 0} SPEL · ${p.gambleWins || 0} VINSTER` }, { label: 'BANKEN', text: `${p.bankDeposits || 0} INSÄTTNINGAR` }, { label: 'KRÖNIKAN', text: `${pagesFound().length} AV ${CHRONICLE.length} SIDOR` },
+    { label: 'KÖPMANNEN', text: `${p.haggles || 0} PRUTNINGAR · ${p.steals || 0} STÖLDER · ${p.cardsSold || 0} SÅLDA KORT` }, { label: 'SARKOFAGER', text: String(p.sarcophagi || 0) });
   rows.push({ label: 'BIOMER', head: true, color: '#ffd24a' }, ...BIOME_IDS.map(b => { const wk = Object.entries((p.wkillsBiome || {})[b] || {}).sort((x, y) => y[1] - x[1])[0]; return { label: BIOME_NAME[b], text: `${(p.biomeFloors || {})[b] || 0} VÅNINGAR${wk ? ' · FAVORITVAPEN ' + ((WEAPONS[weaponIndex(wk[0])] || {}).name || wk[0]) : ''}` }; }));
   rows.push({ label: 'VANLIGASTE DÖDSORSAKER', head: true, color: '#ff7060' }, ...Object.entries(p.deathsBy || {}).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, v]) => ({ label: k, text: `${v} GÅNG${v > 1 ? 'ER' : ''}` })));
   rows.push({ label: 'TOTALT', head: true, color: '#ffd24a' }, { label: 'TOTAL SKADA', text: String(p.totalDmg || 0) }, { label: 'HUVUDTRÄFFAR', text: String(p.headshots || 0) }, { label: 'RUNOR FÄSTA', text: String(p.runesSocketed || 0) }, { label: 'SIDOUPPDRAG', text: String(p.quests || 0) }, { label: 'HEMLIGA VÅNINGAR', text: String(p.secretFloors || 0) }, { label: 'MÅLTIDER', text: String(p.meals || 0) });
@@ -3707,10 +3767,6 @@ function openSarcophagus(pr) {
   else if (r < 0.85) { const n = 3 + Math.round(4 * (1 + mod('goldFind'))); for (let i = 0; i < n; i++) dropItem('gold', pr.x, pr.y); if (Math.random() < 0.3) dropItem(Math.random() < 0.5 ? 'potion' : 'rune', pr.x, pr.y); say('SARKOFAGEN GÖMDE SKATTER', 1.5); }
   else { items.push({ type: 'cardpick', x: pr.x - Math.cos(P.a) * 0.3, y: pr.y - Math.sin(P.a) * 0.3, taken: false, drop: true, luck: 0.8, title: 'FARAONENS GÅVA' }); say('NÅGOT GLIMMAR I SARKOFAGEN', 1.5); }
 }
-function drawBeams() { // ljusstrålar från takhål
-  if (!lvl.beams || settings.lowfx) return;
-  for (const b of lvl.beams) { const x = b.x + 0.5, y = b.y + 0.5; if (Math.abs(x - P.x) > 14 || Math.abs(y - P.y) > 14) continue; drawSprite(fx.parts.beam ? fx.parts.beam[0] : fx.hit[1], x, y, 1.15, 0, false, 0.9 + 0.1 * Math.sin(tmr + b.x), 0, 0, true, [255, 230, 170]); }
-}
 function beamDust(dt) { if (!lvl.beams || settings.lowfx) return; for (const b of lvl.beams) if (Math.random() < dt * 3 && Math.abs(b.x - P.x) < 10 && Math.abs(b.y - P.y) < 10) particles.push({ x: b.x + rnd(0.2, 0.8), y: b.y + rnd(0.2, 0.8), z: rnd(0.1, 0.9), vx: rnd(-0.05, 0.05), vy: rnd(-0.05, 0.05), vz: -0.05, life: 3, maxLife: 3, img: fx.parts.dust_mote ? fx.parts.dust_mote[0] : fx.hit[1], size: 0.015, add: true, tint: [255, 230, 170], fade: true, drift: true }); }
 // ---------- Version 7: Krönikan – 40 sidor om Kryptans historia (och en hemlig slutsida) ----------
 const CHRONICLE = [
@@ -3805,7 +3861,7 @@ function detectTick(e, dt, dist, los) { // fiender upptäcker dig gradvis; true 
     e.detect = Math.min(1, (e.detect || 0) + dt * rate);
     if (e.detect > 0.35 && !e.susp) { e.susp = true; play('suspicious', 0.35, rnd(0.9, 1.1), { x: e.x, y: e.y }); e.inv = { x: P.x, y: P.y }; }
   } else e.detect = Math.max(0, (e.detect || 0) - dt * 0.25);
-  if (e.detect >= 1) { e.detect = 0; e.susp = false; if (e.sleep) e.sleep = false; play('detect', 0.4, rnd(0.95, 1.1), { x: e.x, y: e.y }); spawnText(e.x, e.y, '!', '#ff5030'); e.spotT = 0.8; alertEnemy(e, true); return true; }
+  if (e.detect >= 1) { e.detect = 0; e.susp = false; if (e.sleep) e.sleep = false; play('detect', 0.4, rnd(0.95, 1.1), { x: e.x, y: e.y }); spawnText(e.x, e.y, '!', '#ff5030'); e.spotT = 0.8; e.flash = Math.max(e.flash || 0, 0.25); alertEnemy(e, true); return true; }
   return false;
 }
 function investigate(e, dt) { // gå mot ljudet du hörde
@@ -3958,6 +4014,108 @@ function sellCards(onDone) {
   const price = c => Cards.sellPrice ? Cards.sellPrice(c, run.depth) : Math.round(Cards.price(c, run.depth, 0) * 0.4);
   if (!own.length) { say('DU HAR INGA KORT ATT SÄLJA', 1.5); onDone(); return; }
   openUI(() => CardUI.list('SÄLJ ETT KORT', 'KÖPMANNEN BETALAR UNGEFÄR 40 % AV PRISET', own.map(c => ({ label: c.name, text: `${price(c)} GULD · ${c.text || ''}`, onClick: () => { CardUI.close(); run.owned.splice(run.owned.indexOf(c.id), 1); recomputeMods(); const g = price(c); run.gold += g; play('coin', 0.8); say(`SÅLDE ${c.name} FÖR ${g} GULD`, 2); stat('cardsSold'); closeUI(); onDone(); } })), () => { closeUI(); onDone(); }));
+}
+// ---------- Version 7: labyrintläget ----------
+function beginMaze() {
+  if (!Gen.maze) { document.getElementById('status').textContent = 'LABYRINTEN ÄR INTE KLAR ÄN'; return; }
+  document.getElementById('title').hidden = true; canvas.focus(); ensureAudio(); practice = null;
+  newRun(RNG.randomSeed(), false); run.maze = { limit: 300 }; run.cmode = ''; P.hp = maxHp();
+  const biome = RNG(run.seed).pick(BIOME_IDS), L = Gen.maze(RNG.hash(run.seed + ':labyrint'), { biome });
+  L.name = L.name || 'LABYRINTEN'; L.maze = true; run.depth = 2; startLevel(L);
+  say('HITTA UTGÅNGEN INNAN TIDEN TAR SLUT', 3); lockPointer();
+}
+function updateMaze(dt) {
+  if (!run.maze || state !== 'play') return;
+  const left = run.maze.limit - levelTime;
+  if (left < 30 && Math.floor(left) !== Math.floor(left + dt)) play('labyrinth_tick', 0.5, left < 10 ? 1.3 : 1);
+  if (left <= 0) { run.cause = 'TIDEN TOG SLUT'; P.hp = 0; hurtPlayer(9999); }
+}
+function mazeDone() { // utgången nådd i labyrinten
+  const t = Math.round(levelTime); profile.mazeBest = Math.min(profile.mazeBest || 1e9, t); stat('mazesWon');
+  say(`UTE UR LABYRINTEN PÅ ${fmtTime(t)}`, 3); endRun(true);
+}
+// ---------- Version 7: bossjakten – alla bossar i valfri ordning ----------
+function bossHuntPick() {
+  const left = run.hunt.left;
+  if (!left.length) { const t = Math.round(run.time); profile.huntBest = Math.min(profile.huntBest || 1e9, t); stat('huntsWon'); endRun(true); return; }
+  P.hp = maxHp(); P.grenades = Math.min(GREN_MAX(), P.grenades + 2);
+  openUI(() => CardUI.choice({ title: 'BOSSJAKTEN', subtitle: `${BOSS_IDS.length - left.length} AV ${BOSS_IDS.length} BESEGRADE · TID ${fmtTime(run.time)}. VÄLJ NÄSTA BOSS.`,
+    options: left.map(id => ({ label: BOSSES[id].name, text: BOSSES[id].title || '' })) }, i => {
+    closeUI(); const id = left.splice(i, 1)[0]; run.hunt.cur = id;
+    const L = Gen.boss(RNG.hash(run.seed + ':jakt:' + id), { arena: BOSSES[id].arena, boss: id }); L.bossId = id; run.depth = FLOORS + 1; startLevel(L); lockPointer();
+  }));
+}
+function beginBossHunt() {
+  document.getElementById('title').hidden = true; canvas.focus(); ensureAudio(); practice = null;
+  newRun(RNG.randomSeed(), false); run.cmode = ''; P.hp = maxHp(); run.bossrush = true; run.hunt = { left: BOSS_IDS.slice() };
+  for (let i = 1; i <= 4; i++) { P.has[i] = true; P.mags[i] = WEAPONS[i].mag; } P.ammo = Object.assign(NOAMMO(), { p9: 120, r556: 90, shells: 30, bolts: 20, flares: 10 });
+  state = 'play'; bossHuntPick();
+}
+// ---------- Version 7: tre sparplatser ----------
+const runKey = () => 'run' + (settings.slot ? '.' + settings.slot : '');
+// ---------- Version 7: titlar ----------
+const TITLES = [
+  ['', 'INGEN TITEL', () => true], ['vandrare', 'VANDRAREN', p => p.runs >= 1], ['djupdykare', 'DJUPDYKAREN', p => p.bestDepth >= 6], ['segrare', 'SEGRAREN', p => p.wins >= 1],
+  ['skugga', 'SKUGGAN', p => (p.stealthKills || 0) >= 25], ['kronikor', 'KRÖNIKÖREN', p => (p.pages || []).length >= 20], ['bossjagare', 'BOSSJÄGAREN', p => Object.keys(p.bossWins || {}).length >= 4],
+  ['spelare', 'SPELAREN', p => (p.gambleWins || 0) >= 10], ['rik', 'GULDKUNGEN', p => (p.bankDeposits || 0) >= 5], ['ododlig', 'DEN ODÖDLIGE', p => (p.survivalBest || 0) >= 25], ['faraon', 'FARAONENS ARVTAGARE', p => !!(p.bossWins || {}).pharaoh],
+];
+const titleOpen = id => { const t = TITLES.find(x => x[0] === id); try { return !!t && t[2](profile); } catch (e) { return false; } };
+// ---------- Version 7: kombinerade utmaningslägen ----------
+const cmodeNames = s => (s || '').split('+').filter(x => CMODES[x]).map(x => CMODES[x].name).join(' + ');
+// ---------- Version 7: visuella ljudsignaler och uppläsning ----------
+const CUE_SOUNDS = new Set(['growl', 'roar', 'hiss', 'steps', 'detect', 'suspicious', 'door', 'gate', 'alarm_bell', 'spider', 'hound', 'icewolf', 'banshee', 'mummy', 'scarab', 'jackal', 'thief', 'lavaworm', 'worm_emerge', 'bossroar', 'fuse', 'grenade_beep']);
+let cues = [];
+function soundCue(name, x, y) {
+  if (!settings.soundCues || state !== 'play' || !CUE_SOUNDS.has(name)) return;
+  const d = Math.hypot(x - P.x, y - P.y); if (d > 14) return;
+  let a = Math.atan2(y - P.y, x - P.x) - P.a; a = Math.atan2(Math.sin(a), Math.cos(a));
+  if (Math.abs(a) < 0.5 && hasLOS(P.x, P.y, x, y)) return; // syns redan
+  cues.push({ a, t: 1.2, near: d < 5 }); if (cues.length > 8) cues.shift();
+}
+function drawCues(g) {
+  for (const c of cues) { c.t -= 1 / 60; const r = 30, x = W / 2 + Math.sin(c.a) * r, y = HORIZON - Math.cos(c.a) * r * 0.8, al = Math.min(1, c.t * 2);
+    g.fillStyle = c.near ? `rgba(255,120,80,${al})` : `rgba(255,230,160,${al * 0.8})`; g.beginPath(); g.arc(x, y, c.near ? 3 : 2, 0, TAU); g.fill(); }
+  cues = cues.filter(c => c.t > 0);
+}
+// ---------- Version 7: smygmusik ----------
+let sneakT = 0, sneakMusic = false;
+function sneakMusicTick(dt) {
+  if (!window.Music || settings.music === false || boss) return;
+  const quiet = P.crouch > 0.5 && !ents.some(e => e.alert && !e.dead && !e.dormant && Math.hypot(e.x - P.x, e.y - P.y) < 14);
+  sneakT = quiet ? sneakT + dt : 0;
+  if (!sneakMusic && sneakT > 3) { sneakMusic = true; Music.play('stealth'); }
+  else if (sneakMusic && !quiet) { sneakMusic = false; playMusic(); }
+}
+// ---------- Version 7: pausmenyn (mobil och knappen ENTER) ----------
+function pauseMenu() {
+  openUI(() => CardUI.choice({ title: 'PAUS', subtitle: `VÅNING ${run.depth} · ${run.gold} GULD · ${run.owned.length} KORT`, cancel: 0,
+    options: [{ label: 'FORTSÄTT', text: '' }, { label: 'INSTÄLLNINGAR', text: '' }, { label: 'KARTA', text: '' }, { label: 'KORTLEKEN', text: '' }, { label: 'KRÖNIKAN', text: `${pagesFound().length} AV ${CHRONICLE.length} SIDOR` }, { label: 'GE UPP', text: 'AVSLUTA RUNDAN' }] }, i => {
+    closeUI('pause');
+    if (i === 0) resume();
+    else if (i === 1) openSettingsUI();
+    else if (i === 2) { pauseMap = !pauseMap; }
+    else if (i === 3) showDeck();
+    else if (i === 4) openUI(() => showChronicle(() => closeUI('pause')));
+    else if (i === 5) abandonRun();
+  }));
+}
+// ---------- Version 7: övning mot en fiende ----------
+function beginEnemyPractice(type) {
+  practice = { enemy: type }; document.getElementById('title').hidden = true; canvas.focus(); ensureAudio();
+  newRun(RNG.randomSeed(), false); run.practice = { enemy: type, god: true };
+  const L = Gen.floor(RNG.hash(run.seed + ':övning'), 1, { biome: 'dungeon' }); L.name = 'ÖVNING: ' + ENEMY_DEFS[type].name;
+  run.depth = 2; startLevel(L); ents.length = 0; totalEnemies = 0; kills = 0; run.practiceT = 1;
+  for (let i = 1; i < WEAPONS.length; i++) { P.has[i] = true; P.mags[i] = effMag(i); } for (const k in AMMO) P.ammo[k] = AMMO[k].max;
+  say('ÖVNING: ' + ENEMY_DEFS[type].name + ' – OÄNDLIG AMMO OCH HÄLSA', 3); lockPointer();
+}
+function anyFreeCell(minD) { // en slumpad fri ruta en bit från spelaren
+  for (let i = 0; i < 300; i++) { const x = (Math.random() * mw | 0) + 0.5, y = (Math.random() * mh | 0) + 0.5; if (Math.hypot(x - P.x, y - P.y) >= minD && freeSpot(x, y, 0.9)) return [x, y]; }
+  return null;
+}
+function practiceTick(dt) {
+  if (!run.practice || !run.practice.enemy) return;
+  if (run.practice.god) { P.hp = Math.max(P.hp, maxHp() * 0.5); for (let i = 0; i < WEAPONS.length; i++) if (P.has[i]) P.ammo[WEAPONS[i].ammo] = AMMO[WEAPONS[i].ammo].max; } // oändlig ammo och hälsa
+  if (!ents.some(e => !e.dead)) { run.practiceT -= dt; if (run.practiceT <= 0) { run.practiceT = 2; for (let i = 0; i < 3; i++) { const s = freeSpotFar(4, 9) || freeSpotFar(1.8, 4) || anyFreeCell(3); if (s) { const e = makeEnemy(run.practice.enemy, s[0], s[1]); e.alert = true; ents.push(e); totalEnemies++; spawnPuff(s[0], s[1], 6); } } } }
 }
 // ---------- Utmaningsrummet: tre vågor ----------
 let challenge = null;
@@ -4121,7 +4279,7 @@ const numbers = []; // skadesiffror som flyger upp
 function spawnNumber(x, y, dmg, crit) {
   for (let i = numbers.length - 1; i >= Math.max(0, numbers.length - 6); i--) { const n = numbers[i]; if (typeof n.v === 'number' && n.t > 0.6 && n.crit === crit && Math.hypot(n.x - x, n.y - y) < 0.45) { n.v += Math.max(1, Math.round(dmg * 10)); n.t = 0.8; n.z = Math.min(n.z, 0.95); n.big = true; return; } } // snabba träffar klumpas ihop
   numbers.push({ x: x + rnd(-0.15, 0.15), y: y + rnd(-0.15, 0.15), z: 0.9, v: Math.max(1, Math.round(dmg * 10)), crit, t: 0.8 }); if (numbers.length > 40) numbers.shift(); }
-const maxHp = () => run && run.cmode === 'onehit' ? 1 : (dmod('light') ? 75 : 100) + mod('maxHp') + meta('hp') * 10 + (run && run.blessed ? 20 : 0) + (run && run.mealHp || 0) + (settings.assistHp ? 50 : 0);
+const maxHp = () => run && cmode('onehit') ? 1 : (dmod('light') ? 75 : 100) + mod('maxHp') + meta('hp') * 10 + (run && run.blessed ? 20 : 0) + (run && run.mealHp || 0) + (settings.assistHp ? 50 : 0);
 // själaaltaret: bestående uppgraderingar som köps med själar på startskärmen
 const META = [
   { id: 'hp', name: 'HÄRDAD', text: '+10 MAX HP PER NIVÅ', max: 3, cost: [30, 60, 100] },
@@ -4140,10 +4298,13 @@ const META = [
   { id: 'runeslot', name: 'RUNSMEDEN', text: 'EN ANDRA RUNPLATS I VARJE VAPEN', max: 1, cost: [90] },
   { id: 'camp', name: 'VANDRARENS ELD', text: 'LÄGERELDAR DYKER UPP OFTARE', max: 1, cost: [50] },
   { id: 'startrune', name: 'ARVSRUNAN', text: 'BÖRJA RUNDAN MED EN RUNA I PISTOLEN', max: 1, cost: [70] },
+  { id: 'lamp', name: 'LYKTMAKAREN', text: '+40 SEKUNDERS BATTERI I FICKLAMPAN PER NIVÅ', max: 2, cost: [30, 60] },
+  { id: 'stones', name: 'STENSAMLAREN', text: '+2 KASTSTENAR VID START PER NIVÅ', max: 2, cost: [20, 40] },
+  { id: 'mastery', name: 'VAPENSKOLAN', text: 'ALLA VAPEN BÖRJAR PÅ VANA NIVÅ 2', max: 1, cost: [90] },
 ];
 const meta = id => (profile.meta && profile.meta[id]) || 0;
 function openAltar() {
-  const items = () => META.map(m => ({ kind: 'meta', id: m.id, label: `${m.name} ${meta(m.id)}/${m.max}`, text: meta(m.id) >= m.max ? 'FULLT' : m.text, price: meta(m.id) >= m.max ? 0 : m.cost[meta(m.id)], owned: meta(m.id) >= m.max }));
+  const items = () => META.map(m => ({ kind: 'meta', id: m.id, label: `${meta(m.id) >= m.max ? '✓ ' : meta(m.id) ? '◐ ' : ''}${m.name} ${meta(m.id)}/${m.max}`, text: meta(m.id) >= m.max ? 'KÖPT – ' + m.text : meta(m.id) ? `KÖPT ${meta(m.id)} AV ${m.max} – ` + m.text : m.text, price: meta(m.id) >= m.max ? 0 : m.cost[meta(m.id)], owned: meta(m.id) >= m.max }));
   CardUI.shop(items(), profile.souls, item => {
     const m = META.find(x => x.id === item.id);
     if (item.owned || profile.souls < item.price) return { ok: false, gold: profile.souls };
@@ -4166,7 +4327,9 @@ function hurtPlayer(d, fx0, fy0, kind) {
 
   if (fx0 !== undefined && (boss || guardianE)) { const b = boss || guardianE; if (Math.hypot(b.x - fx0, b.y - fy0) < 3) taunt(b); }
   noteDamage(d, fx0, fy0, kind);
+  if (run && run.practice && run.practice.god) d = Math.min(d, Math.max(0, P.hp - 1)); // övning: du kan inte dö
   P.hp -= d; P.hurt = 0.35; P.shake = Math.max(P.shake, 1.2); lvlStat.taken += d;
+  { const c = run.cause || ''; P.hurtCol = /LAVA|ELD|BRAND|HETTA|SOL|BOMB|EXPLOS/.test(c) ? '230,110,20' : /GIFT|SLEM|SPINDEL|SKARAB/.test(c) ? '60,170,40' : /IS|FROST|KYL|SNÖ/.test(c) ? '60,140,230' : /BLIXT|STORM/.test(c) ? '170,120,255' : '190,0,0'; }
   if (settings.vibrate !== false && navigator.vibrate) try { navigator.vibrate(Math.min(120, 20 + d * 4)); } catch (e) { /* ingen vibration */ }
   play('hurt', 0.8, rnd(0.9, 1.1)); rumble(Math.min(1, 0.3 + d / 30), 160);
   if (fx0 !== undefined) hurtDir.push({ ang: Math.atan2(fy0 - P.y, fx0 - P.x), t: 1, col: kind === 'proj' ? '255,120,0' : kind === 'melee' ? '220,0,0' : '200,60,200' });
@@ -4279,7 +4442,7 @@ function draftUI(cards, opts, cb) { // kortval med synergi, NY-märken, förvisn
   const seen = new Set(profile.cardsSeen), n = cards.length, luck = opts.luck;
   const mark = cs => { for (const c of cs) if (c && !profile.cardsSeen.includes(c.id)) profile.cardsSeen.push(c.id); saveProfile(); };
   mark(cards);
-  if (run.cmode === 'nocards') { const g = 25 + run.depth * 3; run.gold += g; say(`INGA KORT: +${g} GULD I STÄLLET`, 2); play('coin', 0.7); setTimeout(() => cb(null), 0); return; } // utmaningsläget
+  if (cmode('nocards')) { const g = 25 + run.depth * 3; run.gold += g; say(`INGA KORT: +${g} GULD I STÄLLET`, 2); play('coin', 0.7); setTimeout(() => cb(null), 0); return; } // utmaningsläget
   const o = Object.assign({ owned: run.owned.slice(), seen, ownedCount: ownedCount(), mods: Object.assign({}, M) }, opts);
   if (run.banishFloor !== run.depth) o.banish = card => { run.banished = run.banished || []; run.banished.push(card.id); run.banishFloor = run.depth; const r = drawCards(1, { luck })[0] || null; if (r) mark([r]); return r; };
   const price = () => (run.freeRerolls || 0) > 0 ? 0 : 15 + 10 * (run.draftRerolls || 0);
@@ -4333,7 +4496,7 @@ function shopItems(m) {
       { kind: 'rune', label: 'RUNSTEN', text: 'EN SLUMPAD RUNA ATT FÄSTA I ETT VAPEN', price: Math.round(70 * (1 - disc)) },
       { kind: 'potion', act: 'potion', pot: 'heal', color: '#e04848', label: 'LÄKEDRYCK', text: '+50 HÄLSA NÄR DU DRICKER DEN (H)', price: Math.round(35 * (1 - disc)) },
       ...(isBossDepth(run.depth + 1) ? [] : [{ kind: 'map', label: 'KARTOGRAFENS KARTA', text: 'HELA NÄSTA VÅNING SYNS PÅ KARTAN', price: Math.round(30 * (1 - disc)) }]),
-      ...((run.depth >= 3 || m.shadow || (run.seed + run.depth) % 3 === 0) && !run.pact && run.cmode !== 'pistol' && WEAPONS.some((w, i) => !P.has[i]) ? [(() => { const miss = WEAPONS.map((w, i) => i).filter(i => !P.has[i]), i = miss[(run.depth * 7) % miss.length]; return { kind: 'weapon', label: WEAPONS[i].name, text: 'ETT NYTT VAPEN', price: Math.round(120 * (1 - disc)), wid: WEAPONS[i].id }; })()] : []),
+      ...((run.depth >= 3 || m.shadow || (run.seed + run.depth) % 3 === 0) && !run.pact && !cmode('pistol') && WEAPONS.some((w, i) => !P.has[i]) ? [(() => { const miss = WEAPONS.map((w, i) => i).filter(i => !P.has[i]), i = miss[(run.depth * 7) % miss.length]; return { kind: 'weapon', label: WEAPONS[i].name, text: 'ETT NYTT VAPEN', price: Math.round(120 * (1 - disc)), wid: WEAPONS[i].id }; })()] : []),
       { kind: 'grenade', label: 'GRANAT', text: '+1 GRANAT', price: Math.round(25 * (1 - disc)) },
       { kind: 'gamble', label: 'TÄRNINGSSPEL', text: 'SATSA 30 GULD: HÄLFTEN AV GÅNGERNA FÅR DU 70', price: 30 },
       { kind: 'mystery', label: 'MYSTERIEKORT', text: 'ETT OKÄNT KORT, MINST SÄLLSYNT', price: Math.round(90 * (1 - disc)) },
@@ -4341,7 +4504,7 @@ function shopItems(m) {
   }
   // efter en pakt: inga andra pakter och bara uppgraderingar för det egna vapnet
   m.stock = m.stock.filter(s => s.kind !== 'card' || (!(run.pact && s.card.pact) && (!s.card.weapon || s.card.weapon === run.pact)));
-  if (run.cmode === 'nocards') m.stock = m.stock.filter(s => s.kind !== 'card' && s.kind !== 'mystery' && s.kind !== 'purge');
+  if (cmode('nocards')) m.stock = m.stock.filter(s => s.kind !== 'card' && s.kind !== 'mystery' && s.kind !== 'purge');
   if (!m.saleDone) { m.saleDone = true; const c = m.stock.filter(s => s.kind === 'card' && s.price); const it = c[(Math.random() * c.length) | 0]; if (it) { it.price = Math.round(it.price * 0.6); it.label = 'REA: ' + it.card.name; } } // ett erbjudande per butik
   if (!m.stock.some(s => s.act === 'haggle')) m.stock.push({ kind: 'gamble', act: 'haggle', label: 'PRUTA', text: 'CHANS TILL 15 % RABATT – ELLER SURARE PRISER', price: 0 }, { kind: 'curse', act: 'steal', label: 'STJÄL', text: 'TA EN VARA GRATIS – KÖPMANNEN BLIR DIN FIENDE', price: 0 },
     { kind: 'gamble', act: 'sellcard', label: 'SÄLJ ETT KORT', text: 'FÅ GULD FÖR ETT KORT DU INTE VILL HA', price: 0 }, { kind: 'potion', act: 'sellpot', label: 'SÄLJ EN DRYCK', text: '+15 GULD', price: 0 }, { kind: 'rune', act: 'sellrune', label: 'SÄLJ EN RUNA', text: '+30 GULD', price: 0 });
@@ -4415,6 +4578,7 @@ function stepSound() { // fotsteg låter olika på gräs, grus, trä och sten
   if (/grass/.test(n)) return ['step_grass', 0.22, 1];
   if (/gravel|dirt|mud|cave/.test(n)) return ['step_gravel', 0.16, 1];
   if (/wood/.test(n)) return ['step_wood', 0.2, 1];
+  if (/sand|desert/.test(n)) return snd.step_sand ? ['step_sand', 0.2, rnd(0.9, 1.1)] : ['step_gravel', 0.12, rnd(0.65, 0.75)]; // mjuk sand
   return ['steps', 0.1, 1.65];
 }
 function update(dt) {
@@ -4435,7 +4599,7 @@ function update(dt) {
   for (const f of flashes) f.t -= dt; while (flashes.length && flashes[0].t <= 0) flashes.shift();
   P.boom = Math.max(0, P.boom - dt);
   if (map && state === 'play') updateWeather(dt);
-  if (state === 'dead' || state === 'runover') { P.deadT += dt; P.camZ = Math.max(0.12, 0.5 - P.deadT * 0.8); return; }
+  if (state === 'dead' || state === 'runover') { P.deadT += dt; P.camZ = Math.max(0.12, 0.5 - P.deadT * 0.8); if (state === 'dead' && !settings.reduceMotion) P.roll += (0.32 - P.roll) * Math.min(1, dt * 1.6); return; }
   if (state !== 'play') return;
   levelTime += dt; run.time += dt;
   if (mod('regen') > 0) heal(mod('regen') * dt, true);
@@ -4466,7 +4630,7 @@ function update(dt) {
   for (const pt of pots) if (!pt.broken) pushOut(P, pt.x, pt.y, 0.45);
   for (const c of chests) pushOut(P, c.x, c.y, 0.5);
   const speed = Math.hypot(P.vx, P.vy);
-  P.bobAmp += (clamp(speed / 3.1, 0, 1.4) - P.bobAmp) * Math.min(1, dt * 8);
+  P.bobAmp += (clamp(speed / 3.1 * (P.runK > 0.5 && !settings.reduceMotion ? 1.2 : 1), 0, 1.6) - P.bobAmp) * Math.min(1, dt * 8);
   P.bob += dt * (4 + speed * 2.2);
   if (speed > 0.8 && onGround()) { stepT -= dt * speed / 3.1; if (stepT <= 0) { const st = stepSound(); play(st[0], st[1] * (P.crouch > 0.5 ? 0.4 : 1), rnd(0.9, 1.1) * st[2]); stepT = 0.42; if (P.crouch < 0.5) noise(speed > 4 ? 5 : 1.8); } } // springande fotsteg hörs
   for (const key in doors) { const d = doors[key]; if (d.target === 0 && d.open > 0 && occupied(d)) d.target = 1; d.open += Math.sign(d.target - d.open) * Math.min(Math.abs(d.target - d.open), dt * (d.secret ? 0.6 : 1.4)); }
@@ -4493,9 +4657,9 @@ function update(dt) {
   const edt = slowBubble > 0 ? dt * 0.35 : dt; // tidsbubblan
   for (const e of ents) try { if (e.boss) updateBoss(e, edt); else updateEnemy(e, edt); } catch (err) { spriteError(err, { o: e }); if (e.renderFail > 30 && !e.boss) { e.dead = true; e.gibbed = true; } } // en trasig fiende får inte stoppa spelet
   updateProjectiles(edt); updateFuses(dt); updatePortals(dt); updateHazards(dt); updateProps(dt); updateGroundFires(dt); updateBossFx(dt); updateWorldEvents(dt); updateSpores(dt); updateIcicles(dt);
-  updatePet(dt); updateAllies(dt); updatePotions(dt); updateNpcTalk(dt); updateTorchFx(dt); updateHeat(dt); updateAbility(dt); questTick(); updateSmokes(dt); updateTomb(dt); updateTornados(dt); beamDust(dt); updateLamp(dt);
+  updatePet(dt); updateAllies(dt); updatePotions(dt); updateNpcTalk(dt); updateTorchFx(dt); updateHeat(dt); updateAbility(dt); questTick(); updateSmokes(dt); updateTomb(dt); updateTornados(dt); beamDust(dt); updateLamp(dt); updateMaze(dt); practiceTick(dt); sneakMusicTick(dt);
   if (secrets > (P.secLast || 0)) { run.wanderSecret = (run.wanderSecret || 0) + 1; } P.secLast = secrets; updateSurvival(dt); ghostTick(dt); tutTick(dt); feelTick(dt);
-  if (run.cmode === 'onehit') P.armor = 0;
+  if (cmode('onehit')) P.armor = 0;
   for (let i = decals.length - 1; i >= 0; i--) if (decals[i].life !== undefined && (decals[i].life -= dt) <= 0) decals.splice(i, 1);
   if (P.comboT > 0) { P.comboT -= dt; if (P.comboT <= 0 && P.combo >= 3) say(`KOMBO x${P.combo}`, 1.5); }
   if (P.slowT > 0) P.slowT -= dt;
@@ -4524,7 +4688,7 @@ function pollGamepad(dt) {
     P.a += rx * Math.abs(rx) * 3.2 * dt * settings.sens * (1 - WS.aim * 0.45); P.pitch = clamp(P.pitch, -20, 20);
     const fire = (g.buttons[7] && g.buttons[7].value > 0.4) || false; if (fire !== !!gp.fire) { mouseDown = fire; gp.fire = fire; }
     aimDown = (g.buttons[6] && g.buttons[6].value > 0.4) || (aimDown && !gp.active);
-    if (edge(gpb('jump'))) jump(); if (edge(gpb('use'))) useKey(); if (edge(gpb('swap')) || edge(15)) cycleWeapon(1); if (edge(gpb('lamp'))) toggleLamp(); if (edge(gpb('dash'))) dash(0, 0); if (edge(gpb('reload'))) reloadKey(); if (edge(gpb('potion'))) { if (P.potions && P.potions.length) drinkPotion(); else inspect(); } if (edge(gpb('ability'))) useAbility();
+    if (edge(gpb('jump'))) jump(); if (edge(gpb('use'))) useKey(); if (edge(gpb('swap')) || edge(15)) cycleWeapon(1); if (edge(gpb('lamp'))) toggleLamp(); if (edge(gpb('stone'))) throwStone(); if (edge(gpb('dash'))) dash(0, 0); if (edge(gpb('reload'))) reloadKey(); if (edge(gpb('potion'))) { if (P.potions && P.potions.length) drinkPotion(); else inspect(); } if (edge(gpb('ability'))) useAbility();
     if (edge(gpb('grenade'))) grenadeStart(); if (!b(gpb('grenade')) && gp.prev[gpb('grenade')]) grenadeThrow();
     if (edge(8)) { showMap = (showMap + 1) % 3; settings.map = showMap; saveSettings(); }
     gp.crouch = b(gpb('crouch')); gp.run = b(10) || Math.hypot(lx, ly) > 0.95;
@@ -4674,7 +4838,7 @@ function pickUp(it, bought) {
     const wk = WEAPONS[P.weapon].ammo; if (add[wk]) spawnText(it.x, it.y, `+${add[wk]} ${AMMO[wk].name}`, '#ffd24a');
   } else {
     const i = weaponIndex(it.type), w = WEAPONS[i];
-    if (run.cmode === 'pistol' && w.id !== 'pistol') { P.ammo.p9 = Math.min(AMMO.p9.max, P.ammo.p9 + 30); run.gold += 20; say(`BARA PISTOL: ${w.name} BLIR AMMO OCH 20 GULD`, 2.5); play('coin', 0.7); return true; }
+    if (cmode('pistol') && w.id !== 'pistol') { P.ammo.p9 = Math.min(AMMO.p9.max, P.ammo.p9 + 30); run.gold += 20; say(`BARA PISTOL: ${w.name} BLIR AMMO OCH 20 GULD`, 2.5); play('coin', 0.7); return true; }
     if (run.pact && w.id !== run.pact) { // pakten: andra vapen blir ammo och guld
       const k = pactAmmo(); P.ammo[k] = Math.min(AMMO[k].max, P.ammo[k] + ({ p9: 30, r556: 30, shells: 8, bolts: 8, flares: 5, fuel: 60, lgren: 4, none: 0, nails: 40, arrows: 6, mana: 0, knives: 6, balls: 5 }[k] || 0)); run.gold += 20;
       say(`EDEN: ${w.name} BLIR AMMO OCH 20 GULD`, 2.5); play('coin', 0.7); return true;
@@ -5494,6 +5658,7 @@ function enterPortal(p) {
   if (p.kind === 'gold') { enterGoldRoom(); return; }
   if (p.kind === 'floor' && p.biome) { run.biomeChoice = Object.assign({}, run.biomeChoice, { [run.depth + 1]: p.biome }); run.route = Object.assign({}, run.route, { [run.depth + 1]: BIOME_RISK[p.biome] || 1 }); play('route_choice', 0.7); logEvent('VÄG: ' + BIOME_NAME[p.biome]); }
   if (p.kind === 'floor') { if (floorQuest && floorQuest.kind === 'time' && levelTime <= floorQuest.limit) { run.gold += 50; say('TIDSUTMANINGEN KLARAD: +50 GULD', 3); } floorDone(); return; }
+  if (run.hunt) { bossHuntPick(); return; }
   if (run.bossrush) { bossRushNext(); return; }
   const next = run.depth + 1;
   openUI(() => CardUI.choice({
@@ -5538,6 +5703,7 @@ function goDeeper() {
 // ---------- Våningsslut, rundslut och själar ----------
 let stats = null;
 function floorDone() {
+  if (run.maze) { mazeDone(); return; }
   if (boss) { endRun(true); return; }
   const bonus = Math.round(300 + (kills === totalEnemies ? 200 : 0) + secrets * 100 + Math.max(0, 180 - levelTime) * 2);
   score += bonus;
@@ -5552,7 +5718,8 @@ function floorDone() {
   if (floorEvent) extra.push('HÄNDELSE: ' + EVENTS[floorEvent].name);
   if (run.floorCurse) { run.gold += 60; extra.push('FÖRBANNELSEN BRUTEN: +60 GULD'); run.floorCurse = false; }
   let open = 0, saw = 0; for (let i = 0; i < mw * mh; i++) { const c = map[(i / mw) | 0][i % mw]; if (!isWallChar(c)) { open++; if (seen[i]) saw++; } }
-  stats = { name: lvl.name, kills, totalEnemies, secrets, totalSecrets, items: itemsTaken, totalItems, time: levelTime, bonus,
+  if (!run.practice) { profile.floorRec = Object.assign({}, profile.floorRec); if (!profile.floorRec[run.depth] || levelTime < profile.floorRec[run.depth]) profile.floorRec[run.depth] = Math.round(levelTime); }
+  stats = { name: lvl.name, kills, totalEnemies, secrets, totalSecrets, items: itemsTaken, totalItems, time: levelTime, rec: (profile.floorRec || {})[run.depth], stealth: run.floorStealth || 0, bonus,
     extra, acc: lvlStat.shots ? Math.round(100 * lvlStat.hits / lvlStat.shots) : 0, taken: Math.round(lvlStat.taken), explored: Math.round(100 * saw / Math.max(1, open)), tip: TIPS[(Math.random() * TIPS.length) | 0] };
   run.graph = run.graph || []; run.graph.push({ hp: P.hp / maxHp(), gold: run.gold, dmg: Math.round((run.dmgDealt || 0) * 10) });
   ghostSave(); stat('floors');
@@ -5587,34 +5754,38 @@ function floorDraft(depth) {
 function endRun(win) {
   const r = run;
   if (r.practice) { r.souls = 0; r.win = win; saveProfile(); if (win) { state = 'runover'; P.deadT = 0; play('win', 1); if (document.pointerLockElement) document.exitPointerLock(); } return; } // övning: inget sparas
-  if (win && r.bossrush) stat('rushWins');
+  if (win && r.bossrush && !r.hunt) stat('rushWins');
   if (win && r.diff === 3) profile.ascMax = Math.max(profile.ascMax || 0, (r.asc || 0) + 1);
   if (win) profile.fastestWin = Math.min(profile.fastestWin || 1e9, Math.round(r.time));
   if (!win && r.cause) { profile.deathsBy = profile.deathsBy || {}; profile.deathsBy[r.cause] = (profile.deathsBy[r.cause] || 0) + 1; }
-  const souls = Math.round((r.kills * 0.6 + (r.depth - 1) * 6 + (win ? 60 : 0) + (r.bossKilled ? 20 : 0) + (r.guardians || 0) * 5 + (r.bosses || 0) * 15) * diff().souls * ({ onehit: 1.5, pistol: 1.3, nocards: 1.4, quick: 0.7 }[r.cmode] || 1));
+  const souls = Math.round((r.kills * 0.6 + (r.depth - 1) * 6 + (win ? 60 : 0) + (r.bossKilled ? 20 : 0) + (r.guardians || 0) * 5 + (r.bosses || 0) * 15) * diff().souls * (r.cmode || '').split('+').reduce((a, k) => a * (CMODE_SOULS[k] || 1), 1));
   if (r.survival) { const wv = r.survival.wave; profile.survivalBest = Math.max(profile.survivalBest || 0, wv); profile.survivalTop = (profile.survivalTop || []).concat({ wave: wv, d: new Date().toISOString().slice(0, 10) }).sort((a, b) => b.wave - a.wave).slice(0, 10); r.cause = r.cause || 'ÖVERLEVNAD'; }
-  if (win && r.bossrush) profile.rushBest = Math.min(profile.rushBest || 1e9, Math.round(r.time));
-  if (r.cmode) { profile.cmodeBest = Object.assign({}, profile.cmodeBest, { [r.cmode]: Math.max((profile.cmodeBest || {})[r.cmode] || 0, r.depth) }); if (win) profile.cmodeWins = Object.assign({}, profile.cmodeWins, { [r.cmode]: 1 }); }
+  if (r.stealthKills) profile.bestStealth = Math.max(profile.bestStealth || 0, r.stealthKills);
+  if (win && r.bossrush && !r.hunt) profile.rushBest = Math.min(profile.rushBest || 1e9, Math.round(r.time));
+  if (r.cmode) for (const k of new Set([r.cmode, ...r.cmode.split('+')])) { profile.cmodeBest = Object.assign({}, profile.cmodeBest, { [k]: Math.max((profile.cmodeBest || {})[k] || 0, r.depth) }); if (win) profile.cmodeWins = Object.assign({}, profile.cmodeWins, { [k]: 1 }); }
   recordCheck(r);
   if (r.bank) { const bs = Math.floor(r.bank / 10); profile.souls += bs; r.souls = (r.souls || 0) + bs; } // banken blir själar
   profile.kills = (profile.kills || 0) + r.kills; profile.time = (profile.time || 0) + r.time;
   profile.wkills = profile.wkills || {}; for (const [k, v] of Object.entries(r.wkills || {})) profile.wkills[k] = (profile.wkills[k] || 0) + v;
   if (win && r.diff === 3) profile.nightmareWin = true;
+  if (win && r.diff === 4) profile.storyWin = true;
+  profile.masteryMax = Math.max(profile.masteryMax || 0, ...WEAPONS.map(w => masteryLv(w.id) + 1));
   r.souls = souls; r.win = win;
   if (win) score += 5000 + r.gold * 5;
   profile.souls += souls; if (win) profile.wins++;
   profile.bestDepth = Math.max(profile.bestDepth, r.depth);
   profile.bestScore = Math.max(profile.bestScore, score);
   profile.history.unshift({ seed: seedText(r.seed), depth: r.depth, win, score, kills: r.kills, cards: r.owned.length, time: Math.round(r.time), souls, daily: r.daily, d: Date.now(),
-    biome: lvl && lvl.biome, cause: r.cause || '', diff: r.diff });
+    biome: lvl && lvl.biome, cause: r.cause || '', diff: r.diff, cls: r.cls, cmode: r.cmode || '', biomes: [...new Set(r.biomes || [])].slice(0, 9), stealth: r.stealthKills || 0 });
   if (r.daily) { profile.dailyTop = (profile.dailyTop || []).concat({ d: new Date().toISOString().slice(0, 10), score, depth: r.depth }).sort((a, b) => b.score - a.score).slice(0, 10); }
   checkAch();
   profile.history.length = Math.min(profile.history.length, 20);
-  saveProfile(); if (!r.survival) store.del('run');
+  saveProfile(); if (!r.survival && !r.maze && !r.hunt) store.del(runKey());
   if (window.Music) Music.sting(win ? 'win' : 'death');
   if (win) { state = 'runover'; P.deadT = 0; play('win', 1); if (document.pointerLockElement) document.exitPointerLock(); }
 }
-const TIPS = ['SPARKA MED V (ELLER HANDEN) NÄR DU STÅR NÄRA', 'TRYCK R IGEN I DET GRÖNA FÄLTET', 'KRUTFAT SMÄLLER – LOCKA DIT FIENDERNA', 'SKJUT NED SÖKANDE KLOT', 'Q BYTER TILL FÖRRA VAPNET',
+const TIPS = ['L TÄNDER FICKLAMPAN – MEN FIENDERNA SER LJUSET', 'G KASTAR EN STEN SOM LOCKAR BORT VAKTERNA', 'DUCKA I MÖRKRET FÖR ATT SMYGA', 'SLÅ BAKIFRÅN PÅ EN OVETANDE FIENDE', 'HOPPA FÖR ATT TA DIG UR KVICKSANDEN', 'SKJUT JUVELEN I FARAONENS PANNA', 'SCHAKALEN PARERAR FRAMIFRÅN – GÅ RUNT', 'DÖDA FICKTJUVEN SÅ FÅR DU TILLBAKA GULDET', 'BANKIREN GER RÄNTA PÅ VARJE VÅNING', 'KRÖNIKESIDOR GER SJÄLAR FÖRSTA GÅNGEN', 'ENTER I PAUSEN ÖPPNAR MENYN',
+  'SPARKA MED V (ELLER HANDEN) NÄR DU STÅR NÄRA', 'TRYCK R IGEN I DET GRÖNA FÄLTET', 'KRUTFAT SMÄLLER – LOCKA DIT FIENDERNA', 'SKJUT NED SÖKANDE KLOT', 'Q BYTER TILL FÖRRA VAPNET',
   'M VÄXLAR MELLAN LITEN OCH STOR KARTA', 'SHAMANEN HELAR – DÖDA DEN FÖRST', 'LÅT ORKKRIGAREN KROCKA I VÄGGEN', 'BLODSLEMMET DELAR SIG', 'GRAVRÖVAREN SYNS BARA NÄRA', 'EN VAPENPAKT GER UNIKA UPPGRADERINGAR',
   'PORTALEN SUGER MED SIG GULDET', 'KLARA VÅNINGEN UTAN SKADA FÖR BONUS', 'BRUNNAR HELAR EN GÅNG', 'ALTARET GER GULD MEN ETT FÖRBANNAT KORT', 'LÅDOR OCH KRUKOR GÖMMER SAKER', 'SJÄLAALTARET GER BESTÅENDE UPPGRADERINGAR',
   'VÄKTAREN VAKTAR VÅNINGENS PORTAL', 'MIMICS SER UT SOM KISTOR', 'ELITER KAN TAPPA ETT KORT', 'SKÖLDADE ELITER MÅSTE FÖRST FÖRLORA SKÖLDEN',
@@ -5656,18 +5827,19 @@ function frameStep(t) {
     if (photo && state === 'play') photoFilter(ctx);
     if (photo && state === 'play') { const t = 'FOTOLÄGE – K FÖR ATT FORTSÄTTA'; if (tmr % 2 < 1.2) txt(t, (W - textW(t)) / 2, VH + 12, '#e8d9b0'); }
     else { drawWeapon(); drawHUD(); }
-    if (state === 'dead' && P.deadT > 1.2) drawRunOver(false);
-    if (state === 'runover') drawRunOver(true);
+    if (deathMap && ((state === 'dead' && P.deadT > 1.2) || state === 'runover')) { ctx.fillStyle = '#0b0806f2'; ctx.fillRect(0, 0, W, VH); drawMap(false); const t = 'HÄR SLUTADE RUNDAN – M STÄNGER KARTAN'; txt(t, (W - textW(t)) / 2, VH - 10, '#ffe9a8'); }
+    else if (state === 'dead' && P.deadT > 1.2) drawRunOver(false);
+    else if (state === 'runover') drawRunOver(true);
     if (state === 'pause' && pauseMap) drawMap(false);
     else if (state === 'pause') overlay('PAUS', (isTouch()
     ? ['TRYCK FÖR ATT FORTSÄTTA', `FRÖ ${seedText(run.seed)}  VÅNING ${run.depth}`, `KORT ${run.owned.length}`, `SVÅRIGHET ${DIFF[settings.diff].name}`]
-    : ['KLICKA FÖR ATT FORTSÄTTA', `FRÖ ${seedText(run.seed)}  VÅNING ${run.depth}`, `KORT ${run.owned.length}  (C = VISA)`, `SVÅRIGHET ${DIFF[settings.diff].name}`, 'I = INSTÄLLNINGAR  G = GE UPP  M = KARTA', 'SPACE HOPP · CTRL DUCKA · Z RUSA · F GRANAT · V SPARK', 'X INSPEKTERA · B MARKÖR · K FOTO · F9 SKÄRMBILD']).concat(bonusLines(), pauseExtras()), '#202040');
+    : ['KLICKA FÖR ATT FORTSÄTTA', `FRÖ ${seedText(run.seed)}  VÅNING ${run.depth}`, `KORT ${run.owned.length}  (C = VISA)`, `SVÅRIGHET ${DIFF[settings.diff].name}`, 'ENTER = MENY  I = INSTÄLLNINGAR  G = GE UPP  M = KARTA', 'SPACE HOPP · CTRL DUCKA · Z RUSA · F GRANAT · V SPARK', 'X INSPEKTERA · B MARKÖR · K FOTO · F9 SKÄRMBILD']).concat(bonusLines(), pauseExtras()), '#202040');
     if (state === 'stats') drawStats();
   }
 }
 function pauseExtras() { // uppstigning, klass, uppdrag och händelselogg
   const out = [];
-  if (run.cls && CLASSES[run.cls]) out.push('KLASS: ' + CLASSES[run.cls].name + (run.asc ? `  · UPPSTIGNING ${run.asc}` : '') + (run.cmode ? '  · ' + CMODES[run.cmode].name : ''));
+  if (run.cls && CLASSES[run.cls]) out.push('KLASS: ' + CLASSES[run.cls].name + (run.asc ? `  · UPPSTIGNING ${run.asc}` : '') + (run.cmode ? '  · ' + cmodeNames(run.cmode) : ''));
   out.push(`SJÄLAR ${profile.souls} · DJUP ${run.depth} (REKORD ${profile.bestDepth})` + (run.pet ? ` · ${PETS[run.pet].name} NIVÅ ${petLv()}` : ''));
   if (run.mission) out.push('VARVETS UPPDRAG: ' + run.mission.text + ` (${Math.min(missionProgress(), run.mission.n)}/${run.mission.n})`);
   if (run.log && run.log.length) out.push('SENAST: ' + run.log.slice(-3).join(' · '));
@@ -5694,7 +5866,7 @@ function drawStats() {
   const s = stats;
   ctx.fillStyle = '#100a08e0'; ctx.fillRect(0, 0, W, VH);
   const head = `${s.name} KLARAD`; txt(head, (W - textW(head)) / 2, 14, '#ffd24a');
-  const rows = [['FIENDER', `${s.kills}/${s.totalEnemies}`], ['HEMLIGHETER', `${s.secrets}/${s.totalSecrets}`], ['UTFORSKAT', `${s.explored}%`], ['TRÄFFSÄKERHET', `${s.acc}%`], ['SKADA TAGEN', String(s.taken)], ['TID', fmtTime(s.time)], ['BONUS', `+${s.bonus}`], ['GULD', String(run.gold)]];
+  const rows = [['FIENDER', `${s.kills}/${s.totalEnemies}${s.stealth ? ` (${s.stealth} OSEDDA)` : ''}`], ['HEMLIGHETER', `${s.secrets}/${s.totalSecrets}`], ['UTFORSKAT', `${s.explored}%`], ['TRÄFFSÄKERHET', `${s.acc}%`], ['SKADA TAGEN', String(s.taken)], ['TID', fmtTime(s.time) + (s.rec ? (s.time < s.rec ? ' NYTT REKORD!' : ` (REKORD ${fmtTime(s.rec)})`) : '')], ['BONUS', `+${s.bonus}`], ['GULD', String(run.gold)]];
   rows.forEach(([k, v], i) => { const y = 30 + i * 11; txt(k, 60, y, '#c9a87a'); txt(v, 260 - textW(v), y, '#e8d9b0'); });
   if (s.extra) s.extra.forEach((e, i) => txt(e, (W - textW(e)) / 2, 120 + i * 9, '#9fe060'));
   // varvets väg: biomerna i ordning med den nuvarande markerad
@@ -5716,7 +5888,7 @@ function drawRunOver(win) {
   ctx.fillStyle = win ? '#0c1a0ce8' : '#1a0606e8'; ctx.fillRect(0, 0, W, VH);
   ctx.font = '16px "PressStart2P"'; const t1 = win ? 'SEGER!' : 'RUNDAN ÄR SLUT'; const w = ctx.measureText(plain(t1)).width;
   txt(t1, (W - w) / 2, 10, win ? '#9fe0a0' : '#ff5040', 2);
-  const rows = [['VÅNING', win ? (r.loop ? `VARV ${r.loop + 1} KLARAT` : 'BOSSEN BESEGRAD') : r.depth > FLOORS + 1 ? `${r.depth} (VARV ${cycleOf(r.depth) + 1})` : `${r.depth} AV ${FLOORS + 1}`], ['FIENDER', String(r.kills)], ['KORT', String(r.owned.length)], ['GULD', String(r.gold)], ['TID', fmtTime(r.time)], ['POÄNG', String(score)], ['SJÄLAR', `+${r.souls || 0}`], ['FRÖ', seedText(r.seed)]];
+  const rows = [['VÅNING', win ? (r.loop ? `VARV ${r.loop + 1} KLARAT` : 'BOSSEN BESEGRAD') : r.depth > FLOORS + 1 ? `${r.depth} (VARV ${cycleOf(r.depth) + 1})` : `${r.depth} AV ${FLOORS + 1}`], ['FIENDER', String(r.kills) + (r.stealthKills ? ` (${r.stealthKills} OSEDDA)` : '')], ['KORT', String(r.owned.length)], ['GULD', String(r.gold)], ['TID', fmtTime(r.time)], ['POÄNG', String(score)], ['SJÄLAR', `+${r.souls || 0}`], ['FRÖ', seedText(r.seed)]];
   const fav = Object.entries(r.wkills || {}).sort((a, b) => b[1] - a[1])[0];
   if (fav) rows.splice(2, 0, ['FAVORITVAPEN', `${WEAPONS[weaponIndex(fav[0])].short} (${fav[1]})`]);
   if (r.shots) rows.splice(3, 0, ['TRÄFFSÄKERHET', `${Math.round(100 * (r.hits || 0) / r.shots)}%`]);
@@ -5737,12 +5909,13 @@ function drawRunOver(win) {
   if (log.length && Math.floor(P.deadT / 4) % 2 === 1) { txt('TIDSLINJE:', 200, 90, '#c9a87a'); log.forEach((n, i) => txt(n.slice(0, 15), 200, 100 + i * 8, '#a0d0e8', 1, true, 0.9)); } // rundans tidslinje
   else if (names.length) { txt('KORT:', 200, 90, '#c9a87a'); names.forEach((n, i) => txt(n.slice(0, 14), 200, 100 + i * 8, '#b9a0e8', 1, true, 0.9)); }
   if (!win && r.cause) { const t = 'TIPS: ' + (DEATH_TIPS[r.cause] || 'VARJE RUNDA LÄR DIG NÅGOT'); txt(t, (W - textW(t)) / 2, 130, '#8a7550'); }
-  const keysTxt = isTouch() ? '' : 'ENTER = NY RUNDA · R = SAMMA FRÖ · C = KOPIERA FRÖ'; if (keysTxt) txt(keysTxt, (W - textW(keysTxt)) / 2, 138, '#8a7550');
+  const keysTxt = isTouch() ? '' : 'ENTER NY · R SAMMA FRÖ · C FRÖ · L LÄNK · M KARTA'; if (keysTxt) txt(keysTxt, (W - textW(keysTxt)) / 2, 138, '#8a7550');
   const f = isTouch() ? 'TRYCK FÖR MENYN' : 'KLICKA FÖR MENYN'; if (tmr % 1 < 0.7) txt(f, (W - textW(f)) / 2, 150, '#ffe9a8');
 }
 
 // ---------- Indata ----------
 function showTitle() {
+  deathMap = false;
   state = 'title'; map = null; musicSnd = false; playMusic();
   stopAmbient(); setMusic(false);
   if (breathSnd) { breathSnd.s.stop(); breathSnd = null; }
@@ -5755,7 +5928,7 @@ function ensureAudio() {
   else if (actx.state === 'suspended') actx.resume();
 }
 function startMode(mode) { // bekräfta innan en ny runda skriver över en pågående
-  if (mode !== 'continue' && store.get('run', null) && !CardUI.isOpen()) {
+  if (mode !== 'continue' && store.get(runKey(), null) && !CardUI.isOpen()) {
     CardUI.choice({ title: 'NY RUNDA?', subtitle: 'DU HAR EN PÅGÅENDE RUNDA. EN NY RUNDA SKRIVER ÖVER DEN.', cancel: 1, options: [{ label: 'STARTA NY', text: 'DEN GAMLA FÖRSVINNER' }, { label: 'AVBRYT', text: '' }] }, i => { if (i === 0) begin(mode); });
     return;
   }
@@ -5764,18 +5937,20 @@ function startMode(mode) { // bekräfta innan en ny runda skriver över en påg�
 function openPractice() {
   const biomes = BIOME_IDS.map(b => ({ label: BIOME_NAME[b] || b, text: 'ÖVA PÅ VÅNINGAR I DEN HÄR BIOMEN' })), bosses = BOSS_IDS.map(b => ({ label: BOSSES[b].name, text: 'MÖT BOSSEN DIREKT' }));
   CardUI.list('ÖVNING', 'INGA SJÄLAR ELLER PRESTATIONER. VÄLJ EN BIOM ELLER EN BOSS.', [{ label: 'BIOMER', head: true, color: '#ffd24a' }, ...biomes.map((r, i) => ({ ...r, onClick: () => { CardUI.close(); practice = { biome: BIOME_IDS[i] }; begin('practice'); } })),
-    { label: 'BOSSAR', head: true, color: '#ffd24a' }, ...bosses.map((r, i) => ({ ...r, onClick: () => { CardUI.close(); practice = { boss: BOSS_IDS[i] }; begin('practice'); } }))], () => refreshTitle());
+    { label: 'BOSSAR', head: true, color: '#ffd24a' }, ...bosses.map((r, i) => ({ ...r, onClick: () => { CardUI.close(); practice = { boss: BOSS_IDS[i] }; begin('practice'); } })),
+    { label: 'FIENDER (OÄNDLIG AMMO OCH HÄLSA)', head: true, color: '#ffd24a' }, ...Object.keys(profile.bestiary || {}).filter(t => ENEMY_DEFS[t]).map(t => ({ img: enemyIcon(t), label: ENEMY_DEFS[t].name, text: 'ÖVA MOT TRE I TAGET', onClick: () => { CardUI.close(); beginEnemyPractice(t); } }))], () => refreshTitle());
 }
 function begin(mode) { // mode: 'new' | 'daily' | 'continue' | 'bossrush' | 'practice'
   if (mode !== 'practice') practice = null;
   document.getElementById('title').hidden = true;
   canvas.focus(); ensureAudio();
   if (mode === 'continue' && loadRunSave()) { loadFloor(run.depth); lockPointer(); return; }
-  let seed = mode === 'daily' ? dailySeed() : mode === 'weekly' ? RNG.hash('krypta-vecka-' + weekNo()) : RNG.randomSeed();
+  let seed = mode === 'daily' ? dailySeed() : mode === 'weekly' ? RNG.hash('krypta-vecka-' + weekNo()) : mode === 'monthly' ? RNG.hash('krypta-månad-' + new Date().toISOString().slice(0, 7)) : RNG.randomSeed();
   const typed = (document.getElementById('seed').value || '').trim();
   if (mode === 'new' && typed) seed = /^[0-9a-z]{1,7}$/i.test(typed) ? parseInt(typed, 36) >>> 0 : RNG.hash(typed);
   if (params.has('seed')) seed = RNG.hash(params.get('seed'));
-  newRun(seed, mode === 'daily' || mode === 'weekly');
+  newRun(seed, mode === 'daily' || mode === 'weekly' || mode === 'monthly');
+  if (mode === 'monthly') { run.monthly = true; run.cmode = 'dark'; P.battery += 120; run.modifier = RNG(seed).fork('månaden').pick(DAILY_MODS); }
   if (mode === 'weekly') { const r = RNG(seed).fork('veckan'), m = r.shuffle(DAILY_MODS.slice()); run.modifier = m[0]; run.modifier2 = m[1]; run.weekly = true; } // veckans utmaning: två förbannelser
   if (mode === 'bossrush') { run.bossrush = true; run.rushN = 0; for (let i = 1; i <= 4; i++) { P.has[i] = true; P.mags[i] = WEAPONS[i].mag; } P.ammo = Object.assign(NOAMMO(), { p9: 120, r556: 90, shells: 30, bolts: 10, flares: 6 }); P.grenades = 3; }
   if (mode === 'practice' && run.practice && run.practice.boss) { for (let i = 1; i <= 4; i++) { P.has[i] = true; P.mags[i] = WEAPONS[i].mag; } P.ammo = Object.assign(NOAMMO(), { p9: 120, r556: 90, shells: 30 }); }
@@ -5784,12 +5959,32 @@ function begin(mode) { // mode: 'new' | 'daily' | 'continue' | 'bossrush' | 'pra
   loadFloor(startDepth);
   if (params.has('nocards')) { lockPointer(); return; }
   // startkort: välj ett av tre innan första våningen
-  if (run.modifier) say((run.weekly ? 'VECKANS UTMANING: ' + run.modifier.name + ' + ' + run.modifier2.name : 'DAGENS UTMANING: ' + run.modifier.name), 4);
+  if (run.modifier) say((run.weekly ? 'VECKANS UTMANING: ' + run.modifier.name + ' + ' + run.modifier2.name : run.monthly ? 'MÅNADENS UTMANING: MÖRKER + ' + run.modifier.name : 'DAGENS UTMANING: ' + run.modifier.name), 4);
   openUI(() => draftUI(drawCards(3 + meta('choice')), { title: 'RUNDAN BÖRJAR', subtitle: run.modifier ? 'DAGENS UTMANING: ' + run.modifier.name + ' – ' + run.modifier.text : 'VÄLJ ETT STARTKORT', skipLabel: 'INGET KORT' }, card => { gainCard(card); closeUI(); }));
 }
 function lockPointer() { if (!params.has('nolock') && !isTouch() && document.pointerLockElement !== canvas && canvas.requestPointerLock) { try { const r = canvas.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) { /* pekarlås valfritt */ } } }
 addEventListener('blur', () => pause());
 document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
+function applyReduceMotion() { // en knapp stänger av skak, gung, lutning och blixtar
+  const on = !!settings.reduceMotion; Object.assign(settings, { shake: on ? 0 : 1, bob: !on, tilt: !on, noFlash: on }); saveSettings();
+}
+function applyHudPreset() { // minimal, standard eller full HUD
+  const p = settings.hudPreset || '', full = p === 'full', min = p === 'min';
+  Object.assign(settings, { objective: !min, timer: full, enemyBars: !min, dmgNumbers: !min, stealthHud: !min, fps: full, map: min ? 0 : 1 }); showMap = settings.map; saveSettings();
+}
+function showTitles() { // titlar som låses upp och visas på startskärmen
+  CardUI.list('TITLAR', 'VÄLJ EN TITEL SOM VISAS PÅ STARTSKÄRMEN', TITLES.map(([id, name]) => { const open = titleOpen(id);
+    return { label: (profile.title || '') === id ? '★ ' + name : name, text: open ? (id ? 'UPPLÅST' : '') : 'LÅST', dim: !open, color: open && id ? '#ffd24a' : '', onClick: open ? () => { profile.title = id; saveProfile(); CardUI.close(); showTitles(); } : undefined }; }), () => refreshTitle());
+}
+function resetProfile(done) { // återställ profilen, med två bekräftelser
+  CardUI.choice({ title: 'ÅTERSTÄLL PROFILEN?', subtitle: 'ALLA SJÄLAR, KORT, KLASSER, PRESTATIONER OCH KRÖNIKESIDOR FÖRSVINNER.', cancel: 1, options: [{ label: 'JA, ÅTERSTÄLL', text: '' }, { label: 'AVBRYT', text: '' }] }, i => {
+    if (i !== 0) { done(); return; }
+    CardUI.choice({ title: 'ÄR DU HELT SÄKER?', subtitle: 'DET GÅR INTE ATT ÅNGRA. EXPORTERA PROFILEN FÖRST OM DU VILL SPARA DEN.', cancel: 1, options: [{ label: 'RADERA ALLT', text: '' }, { label: 'AVBRYT', text: '' }] }, j => {
+      if (j === 0) { for (const k of Object.keys(profile)) delete profile[k]; Object.assign(profile, { souls: 0, unlocked: [], runs: 0, wins: 0, bestDepth: 0, bestScore: 0, history: [] }); saveProfile(); for (let n = 0; n < 3; n++) store.del('run' + (n ? '.' + n : '')); document.getElementById('status').textContent = 'PROFILEN ÄR ÅTERSTÄLLD'; }
+      done();
+    });
+  });
+}
 function openSettingsUI() { const back = state; openUI(() => openSettings(() => closeUI(back === 'pause' ? 'pause' : 'play'))); }
 function abandonRun() { // ge upp rundan från pausen
   openUI(() => CardUI.choice({ title: 'GE UPP RUNDAN?', subtitle: 'RUNDAN AVSLUTAS SOM EN FÖRLUST. SJÄLARNA DU HAR SAMLAT FÅR DU BEHÅLLA.', cancel: 1,
@@ -5859,6 +6054,13 @@ function openSettings(onClose) {
     check('FÄRGAT LJUS', 'colorLight');
     check('STOR TEXT I HUD', 'bigHud');
     check('KONTURER RUNT FIENDER', 'outline');
+    def('stealthHud', true);
+    check('LÄS UPP MEDDELANDEN OCH KRÖNIKAN (TALSYNTES)', 'tts');
+    check('VISUELLA LJUDSIGNALER (PRICKAR MOT LJUD DU INTE SER)', 'soundCues');
+    check('MINSKA RÖRELSE (INGET SKAK, GUNG ELLER BLIXTAR)', 'reduceMotion', applyReduceMotion);
+    select('HUD', 'hudPreset', [['', 'STANDARD'], ['min', 'MINIMAL'], ['full', 'FULL']], applyHudPreset);
+    check('SMYGMÄTARE (ÖGA OCH ÖRA)', 'stealthHud');
+    check('VÄXLA SIKTE MED HÖGERKLICK (I STÄLLET FÖR HÅLL)', 'toggleAim');
     range('SIKTETS STORLEK', 'xsize', 0.6, 2, 0.1, v => Math.round(v * 100) + '%');
     select('HUD-TEMA', 'hudTheme', [['', 'KLASSISK'], ['blue', 'BLÅ'], ['green', 'GRÖN'], ['gold', 'GULD']]);
     select('VAPENFÄRG', 'skin', Object.entries(SKINS).map(([k, v]) => [k, skinOpen(k) ? v.name : v.name + ' (LÅST: ' + (ACH.find(a => a[0] === v.ach) || [, '?'])[1] + ')']), () => { if (!skinOpen(settings.skin)) { settings.skin = ''; saveSettings(); } });
@@ -5885,6 +6087,7 @@ function openSettings(onClose) {
     btn('BYT TANGENTER', () => { CardUI.close(); openKeybinds(() => openSettings(onClose)); });
     btn('EXPORTERA PROFIL', exportProfile);
     btn('IMPORTERA PROFIL', importProfile);
+    if (state === 'title') btn('ÅTERSTÄLL PROFILEN', () => { CardUI.close(); resetProfile(() => openSettings(onClose)); });
     btn('ÅTERSTÄLL ALLA INSTÄLLNINGAR', () => { for (const k of Object.keys(settings)) delete settings[k]; Object.assign(settings, { sens: 1, vol: 0.8, muted: false, diff: 1, fov: 74, gamma: 1, shake: 1, xstyle: 'kors', xcolor: '', bob: true, vibrate: true, btnScale: 1, map: 1 }); saveSettings(); applyFov(); applyVolume(); applyMixer(); applyDisplay(); applyTouchLayout(); CardUI.close(); openSettings(onClose); });
   }, onClose);
 }
@@ -5913,7 +6116,7 @@ function layoutEdit(onDone) {
     if (k === 'done') { layoutOn = false; ui.classList.remove('layout'); bar.remove(); ui.removeEventListener('pointerdown', down, true); ui.removeEventListener('pointermove', move, true); ui.removeEventListener('pointerup', up, true); applyTouchLayout(); onDone(); } };
 }
 // ---------- Version 6: byt knappar på handkontrollen ----------
-const GP_ACTS = [['jump', 'HOPPA', 0], ['crouch', 'DUCKA', 1], ['use', 'ANVÄND', 2], ['swap', 'BYT VAPEN', 3], ['dash', 'RUSA', 4], ['grenade', 'GRANAT', 5], ['reload', 'LADDA OM', 12], ['potion', 'DRYCK', 13], ['ability', 'FÖRMÅGA', 11], ['lamp', 'LAMPA', 14]];
+const GP_ACTS = [['jump', 'HOPPA', 0], ['crouch', 'DUCKA', 1], ['use', 'ANVÄND', 2], ['swap', 'BYT VAPEN', 3], ['dash', 'RUSA', 4], ['grenade', 'GRANAT', 5], ['reload', 'LADDA OM', 12], ['potion', 'DRYCK', 13], ['ability', 'FÖRMÅGA', 11], ['lamp', 'LAMPA', 14], ['stone', 'KASTA STEN', 10]];
 const gpb = act => { const m = settings.padMap || {}; return m[act] ?? GP_ACTS.find(a => a[0] === act)[2]; };
 function openPadMap(onClose) {
   CardUI.panel('HANDKONTROLLEN', 'KLICKA PÅ EN HANDLING OCH TRYCK SEDAN PÅ EN KNAPP PÅ HANDKONTROLLEN.', c => {
@@ -5934,6 +6137,11 @@ function applyTouchLayout() { const ui = document.getElementById('touch'); if (!
 function pause() { if (state === 'play') { state = 'pause'; mouseDown = false; aimDown = false; for (const k in keys) keys[k] = false; if (actx) actx.suspend(); } }
 function resume() { if (state === 'pause') { state = 'play'; if (actx) actx.resume(); lockPointer(); } }
 let pauseMap = false;
+let deathMap = false;
+function shareSeed() { // dela fröet som en länk
+  const url = location.origin + location.pathname + '?fro=' + seedText(run.seed);
+  try { navigator.clipboard.writeText(url); say('LÄNKEN ÄR KOPIERAD', 1.5); } catch (er) { say(url, 4); }
+}
 function replaySeed() { if (!run) return; const sd = seedText(run.seed); showTitle(); document.getElementById('seed').value = sd; begin('new'); }
 function leaveRunScreen() { if ((state === 'dead' && P.deadT > 1.2) || (state === 'runover' && P.deadT > 1)) showTitle(); }
 function showDeck() { const back = state; openUI(() => CardUI.deck(run.owned, () => closeUI(back === 'pause' ? 'pause' : 'play'), { stats: cardStats(), onFuse: fuseCard, mods: Object.assign({}, M) })); }
@@ -5968,7 +6176,8 @@ addEventListener('keydown', e0 => {
   if (state === 'ui') return;
   if (e.code === 'Escape' || e.code === 'KeyP') { if (state === 'play') pause(); else if (state === 'pause' && e.code === 'KeyP') resume(); return; }
   if (state === 'pause' && e.code === 'KeyI') { openSettingsUI(); return; }
-  if (state === 'stats' && e.code === 'KeyD' && settings.diff < 3) { settings.diff = (settings.diff + 1) % 3; run.diff = settings.diff; saveSettings(); say('SVÅRIGHET: ' + DIFF[settings.diff].name, 1.5); return; } // byt svårighet mellan våningarna
+  if (state === 'pause' && (e.code === 'Enter' || e.code === 'NumpadEnter')) { pauseMenu(); return; }
+  if (state === 'stats' && e.code === 'KeyD' && settings.diff < 3 && run.diff !== 4) { settings.diff = (settings.diff + 1) % 3; run.diff = settings.diff; saveSettings(); say('SVÅRIGHET: ' + DIFF[settings.diff].name, 1.5); return; } // byt svårighet mellan våningarna
   if (state === 'pause' && e.code === 'KeyG') { abandonRun(); return; }
   if (state === 'pause' && e.code === 'KeyL') { openUI(() => showChronicle(() => closeUI('pause'))); return; }
   keys[e.code] = true;
@@ -6005,6 +6214,8 @@ addEventListener('keydown', e0 => {
   } else if ((state === 'dead' || state === 'runover') && e.code === 'KeyR') { replaySeed(); }
   else if ((state === 'dead' || state === 'runover') && (e.code === 'Enter' || e.code === 'NumpadEnter') && P.deadT > 0.8) { showTitle(); document.getElementById('seed').value = ''; begin('new'); } // snabbstart
   else if ((state === 'dead' || state === 'runover') && e.code === 'KeyS') { screenshot(); say('BILDEN ÄR SPARAD', 1.5); }
+  else if ((state === 'dead' || state === 'runover') && e.code === 'KeyM') { deathMap = !deathMap; }
+  else if ((state === 'dead' || state === 'runover') && e.code === 'KeyL') { shareSeed(); }
   else if ((state === 'dead' || state === 'runover') && e.code === 'KeyC') { try { navigator.clipboard.writeText(seedText(run.seed)); say('FRÖET ÄR KOPIERAT', 1.5); } catch (er) { /* inget urklipp */ } }
   else if (state === 'pause' && e.code === 'KeyM') { pauseMap = !pauseMap; }
   else if (e.code === 'Enter' || e.code === 'Space') {
@@ -6039,9 +6250,9 @@ canvas.addEventListener('mousedown', e => {
   if (state === 'pause') return resume();
   if (state !== 'play') return;
   if (document.pointerLockElement !== canvas) lockPointer();
-  if (e.button === 2) aimDown = true; else mouseDown = true;
+  if (e.button === 2) aimDown = settings.toggleAim ? !aimDown : true; else mouseDown = true;
 });
-addEventListener('mouseup', e => { if (e.button === 2) aimDown = false; else mouseDown = false; });
+addEventListener('mouseup', e => { if (e.button === 2) { if (!settings.toggleAim) aimDown = false; } else mouseDown = false; });
 addEventListener('mousemove', e => {
   if (wheel && wheel.open && state === 'play') { wheel.vx = clamp(wheel.vx + e.movementX, -60, 60); wheel.vy = clamp(wheel.vy + e.movementY, -60, 60); return; } // vapenhjulet tar musen
   if (document.pointerLockElement === canvas && state === 'play') {
@@ -6115,7 +6326,7 @@ function setupTouch() {
         if (act === 'map') { const p0 = ptrs.get(e.pointerId); p0.mapHold = setTimeout(() => { p0.mapHeld = showMap; showMap = 2; }, 450); showMap = (showMap + 1) % 3; settings.map = showMap; saveSettings(); } // håll för hela kartan
         if (act === 'walk') { autoWalk = !autoWalk; b.classList.toggle('lit', autoWalk); say(autoWalk ? 'GÅR FRAMÅT – STYR MED TUMMEN' : 'STANNAR', 1); }
         if (act === 'deck') showDeck();
-        if (act === 'pause') pause();
+        if (act === 'pause') { pause(); if (state === 'pause') pauseMenu(); }
         if (act === 'jump') jump();
         if (act === 'crouch') touch.crouch = true;
         if (act === 'dash') dash(0, 0);
@@ -6189,7 +6400,7 @@ function setupSliders() {
 const ASC_TEXT = ['INGA EXTRA FÖRBANNELSER', '1: FIENDERNA HAR 10 % MER HP', '2: + BUTIKEN ÄR 20 % DYRARE', '3: + MINDRE HÄLSA FALLER', '4: + ELITERNA SLÅR 20 % HÅRDARE', '5: + BOSSARNA HAR 25 % MER HP'];
 function refreshTitle() {
   const diffBox = document.getElementById('diff');
-  if (!diffBox.children.length) DIFF.forEach((d, i) => { const b = document.createElement('button'); b.type = 'button'; b.dataset.d = i; b.textContent = d.name; b.onclick = () => { settings.diff = i; saveSettings(); refreshTitle(); }; diffBox.appendChild(b); });
+  if (!diffBox.children.length) [4, 0, 1, 2, 3].map(i => [DIFF[i], i]).forEach(([d, i]) => { const b = document.createElement('button'); b.type = 'button'; b.dataset.d = i; b.textContent = d.name; b.onclick = () => { settings.diff = i; saveSettings(); refreshTitle(); }; diffBox.appendChild(b); });
   diffBox.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.d === settings.diff)));
   const clsBox = document.getElementById('classes'); clsBox.textContent = '';
   for (const [id, c] of Object.entries(CLASSES)) { const b = document.createElement('button'); b.type = 'button'; const open = classOpen(id);
@@ -6201,13 +6412,18 @@ function refreshTitle() {
     for (const id of ['', ...PET_IDS]) { if (id && !petOpen(id)) continue; const b = document.createElement('button'); b.type = 'button'; b.textContent = id ? PETS[id].name : 'INGEN FÖLJESLAGARE'; b.title = id ? PETS[id].text : '';
       b.setAttribute('aria-pressed', String((settings.pet || '') === id)); b.onclick = () => { settings.pet = id; saveSettings(); refreshTitle(); document.getElementById('status').textContent = id ? `${PETS[id].name}: ${PETS[id].text}` : 'DU GÅR ENSAM'; }; petBox.appendChild(b); } }
   const cmBox = document.getElementById('cmodes'); if (cmBox) { cmBox.textContent = ''; cmBox.hidden = (profile.runs || 0) < 1;
-    for (const [id, c] of Object.entries(CMODES)) { const b = document.createElement('button'); b.type = 'button'; b.textContent = c.name; b.title = c.text; b.setAttribute('aria-pressed', String((settings.cmode || '') === id)); b.onclick = () => { settings.cmode = id; saveSettings(); refreshTitle(); document.getElementById('status').textContent = c.text; }; cmBox.appendChild(b); } }
+    for (const [id, c] of Object.entries(CMODES)) { const b = document.createElement('button'); b.type = 'button'; b.textContent = c.name; b.title = c.text; const on = (settings.cmode || '').split('+').filter(Boolean); b.setAttribute('aria-pressed', String(id ? on.includes(id) : !on.length));
+      b.onclick = () => { const cur = (settings.cmode || '').split('+').filter(x => x && CMODES[x]); settings.cmode = !id ? '' : (cur.includes(id) ? cur.filter(x => x !== id) : cur.concat(id)).join('+'); saveSettings(); refreshTitle(); document.getElementById('status').textContent = settings.cmode ? cmodeNames(settings.cmode) + (settings.cmode.includes('+') ? ' – KOMBINERAT: SJÄLARNA MULTIPLICERAS' : ' – ' + c.text) : c.text; }; cmBox.appendChild(b); } }
   { const cb = document.getElementById('chroniclebtn'); if (cb) cb.textContent = `KRÖNIKAN ${pagesFound().length}/${CHRONICLE.length}`; }
   const di = document.getElementById('dailyinfo'); if (di) { di.textContent = dailyInfo(); di.appendChild(document.createElement('br')); di.appendChild(document.createTextNode('DAGENS UPPDRAG: ' + dqText())); }
   const ascBox = document.getElementById('asc'); ascBox.hidden = settings.diff !== 3; ascBox.textContent = '';
   if (settings.diff === 3) { const max = profile.ascMax || 0; for (let i = 0; i <= Math.min(5, max); i++) { const b = document.createElement('button'); b.type = 'button'; b.textContent = i ? `UPPSTIGNING ${i}` : 'GRUND'; b.title = ASC_TEXT[i]; b.setAttribute('aria-pressed', String((settings.asc || 0) === i)); b.onclick = () => { settings.asc = i; saveSettings(); refreshTitle(); document.getElementById('status').textContent = ASC_TEXT[i]; }; ascBox.appendChild(b); } if (!max) ascBox.appendChild(Object.assign(document.createElement('span'), { className: 'label', textContent: 'VINN PÅ MARDRÖM FÖR UPPSTIGNING 1' })); }
-  const saved = store.get('run', null), cont = document.getElementById('continue');
+  const saved = store.get(runKey(), null), cont = document.getElementById('continue');
   cont.hidden = !saved; if (saved) cont.textContent = `FORTSÄTT (VÅNING ${saved.run.depth})`;
+  const slotBox = document.getElementById('slots'); if (slotBox) { slotBox.textContent = ''; slotBox.hidden = (profile.runs || 0) < 1; // tre sparplatser
+    for (let i = 0; i < 3; i++) { const sv = store.get('run' + (i ? '.' + i : ''), null), b = document.createElement('button'); b.type = 'button'; b.textContent = `PLATS ${i + 1}: ${sv ? 'VÅNING ' + sv.run.depth + (sv.run.cls && CLASSES[sv.run.cls] ? ' · ' + CLASSES[sv.run.cls].name : '') : 'TOM'}`;
+      b.setAttribute('aria-pressed', String((settings.slot || 0) === i)); b.onclick = () => { settings.slot = i; saveSettings(); refreshTitle(); document.getElementById('status').textContent = `SPARPLATS ${i + 1} VALD`; }; slotBox.appendChild(b); } }
+  const tl = document.getElementById('ptitle'); if (tl) { const t = TITLES.find(x => x[0] === profile.title && titleOpen(x[0])); tl.textContent = t && t[0] ? '« ' + t[1] + ' »' : ''; tl.hidden = !(t && t[0]); }
   const locked = window.Cards ? Cards.ALL.filter(c => c.unlock && !profile.unlocked.includes(c.id)).length : 0;
   document.getElementById('souls').textContent = `SJÄLAR: ${profile.souls}  ·  LÅSTA KORT: ${locked}`;
   const lr = (profile.history || [])[0];
@@ -6323,7 +6539,7 @@ function updateTornados(dt) {
     fire, useKey, startReload, switchWeapon, floorDone, nextFloor, projectiles: () => projectiles, secrets: () => secrets, keys, setMouse: (d, aim) => { mouseDown = d; aimDown = !!aim; }, pause, resume, hurtPlayer,
     light: () => light, lvl: () => lvl, boss: () => boss, gainCard, startLevel, props: () => props, guardian: () => guardianE, explode, alertEnemy, WEAPONS, mods: () => M, loadFloor, openShop, openChest, profile, showTitle, endRun, hurtEnemy,
     spawnEnemy: (type, x, y) => { const e = makeEnemy(type, x, y); ents.push(e); totalEnemies++; return e; }, portals: () => portals, particles: () => particles, hazards: () => hazards,
-    pet: () => pet, allies: () => allies, findPage, showChronicle, toggleLamp, throwStone, openGambler, openBanker, openWanderer, visibility, addPropAt, openCampfire, openQuestBoard, giveRune, useAbility, quests: () => quests, drinkPotion, swapPotion, givePotion, givePet, spawnAlly, spawnPortal, dropItem, openAlchemist, openPriest, openPetCage, biomeFor, useProp };
+    pet: () => pet, allies: () => allies, beginMaze, beginBossHunt, beginEnemyPractice, pauseMenu, settings, refreshTitle, checkAch, showStats, levelTime: () => levelTime, showTitles, cmode, shareSeed, soundCue, cues: () => cues, deathMap: () => deathMap, findPage, showChronicle, toggleLamp, throwStone, openGambler, openBanker, openWanderer, visibility, addPropAt, openCampfire, openQuestBoard, giveRune, useAbility, quests: () => quests, drinkPotion, swapPotion, givePotion, givePet, spawnAlly, spawnPortal, dropItem, openAlchemist, openPriest, openPetCage, biomeFor, useProp };
   if (params.has('autostart')) begin('new');
 })();
 document.getElementById('start').addEventListener('click', () => startMode('new'));
@@ -6344,6 +6560,17 @@ document.getElementById('weekly').addEventListener('click', () => startMode('wee
 document.getElementById('survival').addEventListener('click', () => { if (!document.getElementById('start').disabled) beginSurvival(); });
 document.getElementById('statsbtn').addEventListener('click', () => showStats());
 document.getElementById('chroniclebtn').addEventListener('click', () => showChronicle());
+document.getElementById('mazebtn').addEventListener('click', () => { if (!document.getElementById('start').disabled) beginMaze(); });
+document.getElementById('huntbtn').addEventListener('click', () => { if (!document.getElementById('start').disabled) beginBossHunt(); });
+document.getElementById('monthly').addEventListener('click', () => startMode('monthly'));
+document.getElementById('titlesbtn').addEventListener('click', () => showTitles());
+if (params.has('fro')) document.getElementById('seed').value = params.get('fro').slice(0, 16); // delad länk med frö
+addEventListener('keydown', e => { // siffertangenterna väljer klass på startskärmen
+  if (state !== 'title' || CardUI.isOpen() || document.activeElement?.tagName === 'INPUT' || !/^Digit[0-9]$/.test(e.code)) return;
+  const ids = Object.keys(CLASSES), id = ids[e.code === 'Digit0' ? 9 : +e.code.slice(5) - 1]; if (!id) return;
+  if (!classOpen(id)) { document.getElementById('status').textContent = `${CLASSES[id].name} ÄR LÅST (${CLASSES[id].cost} SJÄLAR)`; return; }
+  settings.cls = id; saveSettings(); refreshTitle(); document.getElementById('status').textContent = `${CLASSES[id].name}: ${CLASSES[id].text}`;
+});
 addEventListener('keydown', e => { if (state === 'title' && e.code === 'Enter' && !CardUI.isOpen() && document.activeElement?.tagName !== 'INPUT' && !document.getElementById('start').disabled) { e.preventDefault(); startMode('new'); } });
 document.getElementById('fullscreen').addEventListener('click', () => toggleFullscreen());
 })();

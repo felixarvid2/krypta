@@ -37,6 +37,11 @@
     <button class="d" id="b-deck6">KORTLEK: FILTER, FÖRMÅGOR OCH VÄRDEN</button>
     <button class="d" id="b-refine">LÄGERELDEN: FÖRÄDLA</button>
     <button class="d" id="b-codex6">KORTARKIV: SAKNADE KORT</button>
+    <button class="d" id="b-draft7">DRAFT: NYA KORT OCH GLANS</button>
+    <button class="d" id="b-shop7">BUTIK: GLANS PÅ SÄLLSYNTA</button>
+    <button class="d" id="b-deck7">KORTLEK: SÄLJ OCH SENAST VALDA</button>
+    <button class="d" id="b-codex7">KORTARKIV: SÖK OCH SET</button>
+    <button class="d" id="b-pact7">DRAFT: NYA PAKTER</button>
   </div>
   <div id="log">Tangenter 1-9, pilar, Enter och Esc fungerar i fönstren. Spelkänslig tangent-test: tryck på tangenter medan ett fönster är öppet och se om de loggas nedan.</div>
 </main>
@@ -146,6 +151,27 @@
   $('b-deck6').onclick = deck6;
   $('b-refine').onclick = refine6;
   $('b-codex6').onclick = codex6;
+  // version 7: glans på sällsynta och legendariska kort, försäljning, SENAST VALDA, sökning och set i kortarkivet
+  const draft7 = () => CardUI.draft(['smygskorna', 'kastdolkarna', 'skuggkappan', 'morkrets_furste'].map(Cards.byId), { title: 'VÄLJ ETT KORT', owned: state.owned.concat(['tystlaten']), seen: new Set(seen), mods: Cards.computeMods(state.owned.concat(['tystlaten'])) }, c => { if (c) { state.owned.push(c.id); log('valde ' + c.name); } stat(); });
+  const pact7 = () => CardUI.draft(['pakt_kniv', 'pakt_hammare', 'pakt_musköt'].map(Cards.byId), { title: 'SVÄR EN ED', owned: state.owned }, c => { if (c) { state.owned.push(c.id); log('svor ' + c.name); } stat(); });
+  function shop7() {
+    const items = ['guldsallet', 'gravplundraren', 'faraonens_mask', 'bankirens_sigill'].map(Cards.byId).map(c => ({ kind: 'card', card: c, price: Cards.price(c, state.depth, 0) }));
+    items.push({ kind: 'health', price: 30 });
+    CardUI.shop(items, state.gold + 400, item => ({ ok: true, gold: state.gold + 400 - item.price }), () => log('lämnade butiken'));
+  }
+  const deck7 = () => {
+    const own = state.owned.concat(['pakt_kniv', 'knivsolfjadern', 'guldsallet', 'gyllene_skarabeen', 'skuldbrevet', 'faraonens_mask']);
+    CardUI.deck(own, () => log('stängde kortleken'), {
+      stats, depth: state.depth, mods: Cards.computeMods(own),
+      onSell: id => { const p = Cards.sellPrice(id, state.depth); state.gold += p; const i = own.lastIndexOf(id); if (i >= 0) own.splice(i, 1); const k = state.owned.lastIndexOf(id); if (k >= 0) state.owned.splice(k, 1); stat(); log('sålde ' + id + ' för ' + p + ' guld'); return own.slice(); },
+    });
+  };
+  const codex7 = () => CardUI.codex(Cards.ALL.filter(c => !c.weapon), { seen: new Set(Cards.ALL.filter((c, i) => i % 4 !== 0).map(c => c.id)), owned: new Set(state.owned), unlocked: new Set(Cards.ALL.filter(c => !c.unlock || c.unlock < 25).map(c => c.id)) }, () => log('stängde arkivet'));
+  $('b-draft7').onclick = draft7;
+  $('b-shop7').onclick = shop7;
+  $('b-deck7').onclick = deck7;
+  $('b-codex7').onclick = codex7;
+  $('b-pact7').onclick = pact7;
   const auto = q.get('auto');
   if (auto === 'draft') draft(3); else if (auto === 'draft5') draft(5); else if (auto === 'shop') shop(); else if (auto === 'souls') souls(); else if (auto === 'deck') CardUI.deck(state.owned);
   else if (auto === 'legend') CardUI.draft(['tomhetsstenen', 'gravvaktaren', 'ouroboros', 'askkungen', 'vaktarbanan'].map(Cards.byId), { title: 'LEGENDARISKA TESTKORT' }, () => {})
@@ -159,9 +185,14 @@
   else if (auto === 'deck6') deck6();
   else if (auto === 'refine') refine6();
   else if (auto === 'codex6') codex6();
+  else if (auto === 'draft7') draft7();
+  else if (auto === 'pact7') pact7();
+  else if (auto === 'shop7') shop7();
+  else if (auto === 'deck7') deck7();
+  else if (auto === 'codex7') codex7();
   else if (auto === 'codex5') CardUI.codex(Cards.ALL.filter(c => !c.weapon), { seen: new Set(Cards.ALL.map(c => c.id)), owned: new Set(state.owned.concat(['slipstenen+'])), unlocked: new Set(Cards.ALL.map(c => c.id)), picks: { slipstenen: 7, glodkol: 1, lakebladet: 3 } }, () => log('stängde arkivet'));
   else if (auto === 'toast') { CardUI.toast(Cards.byId('forbannade_kronan')); CardUI.toast(Cards.byId('ouroboros')); }
-  window.__demo = { state, draw, seen, draftX, deck5, draft5x, alk, stats, draft6, deck6, refine6, codex6 };
+  window.__demo = { state, draw, seen, draftX, deck5, draft5x, alk, stats, draft6, deck6, refine6, codex6, draft7, pact7, shop7, deck7, codex7 };
 })();
 </script>
 </body>
