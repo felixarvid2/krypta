@@ -19,9 +19,17 @@ blixtstaven och långbågen ritas som siluetter här. Uppgraderingarna och de fe
 effektbilder ur assets/ashfall-ai/flux/vfx (svart bakgrund, läggs med "screen" på samma mörklila vinjett
 som rune-ai-bilderna); uppgraderingarna har vapnet som bricka i hörnet.
 
+Version 7: rune-ai-serien är slut (de sista relikerna ser moderna ut: rymdskepp, läskflaska, kamera),
+så de 20 nya korten tas ur assets/ashfall-ai/flux: medaljongerna i aspects och stats, de få föremålen i
+items som inte ser moderna ut (ringar, hängen, dolkar, kronan) och bossen vire (tabellen V7). Bilderna har
+svart bakgrund och läggs med "screen" på samma mörklila vinjett som rune-ai-bilderna. Pakterna för
+kastknivarna, stridshammaren och musköten ritas som siluetter här; uppgraderingarna är oanvända
+effektbilder ur assets/ashfall-ai/flux/vfx med vapnet som bricka i hörnet (tabellen V7_UPGRADES).
+
 Kör från repo-roten: python3 retrofps/tools/card-art/make.py .          (alla)
                      python3 retrofps/tools/card-art/make.py . v5       (bara version 5)
-                     python3 retrofps/tools/card-art/make.py . v6       (bara de nya korten)
+                     python3 retrofps/tools/card-art/make.py . v6       (bara version 6)
+                     python3 retrofps/tools/card-art/make.py . v7       (bara version 7)
 """
 import os
 import sys
@@ -33,6 +41,7 @@ ONLY = sys.argv[2] if len(sys.argv) > 2 else ''
 ONLY_V5 = ONLY == 'v5'
 FLUX = os.path.join(ROOT, 'assets/rune-ai/flux')
 VFX = os.path.join(ROOT, 'assets/ashfall-ai/flux/vfx')
+ASH = os.path.join(ROOT, 'assets/ashfall-ai/flux')
 RELICS = os.path.join(FLUX, 'relics')
 OUT = os.path.join(ROOT, 'retrofps/assets/cards')
 S = 96
@@ -112,6 +121,30 @@ V6_ACTIVES = {  # kort-id: [(effektbild, skala, förskjutning x, y, spegla)]
     'skoldbubblan': [('hex_shield_0', 0.95, 0, 0, False)],
     'valnadskallet': [('wisp_0', 0.8, -0.2, 0.02, False), ('wisp_0', 0.8, 0.2, 0.02, True)],
     'jordskalvet': [('crack_0', 0.9, 0, 0.04, False), ('shockwave_dust', 1.0, 0, 0.16, False)],
+}
+
+V7 = {  # kort-id: (bild i assets/ashfall-ai/flux, andel av bilden som motivet fyller)
+    # vanliga
+    'smygskorna': ('aspects/momentum', 0.92), 'tystlaten': ('aspects/phantom', 0.92), 'lyktbararen': ('aspects/trapper', 0.92),
+    'lyckostjarnan': ('stats/generic', 0.92), 'guldfrot': ('items/unique_seed_of_accord', 0.86), 'ovningssvardet': ('stats/attackSpeed', 0.92),
+    'sjalastenen': ('items/unique_heart_of_lumen', 0.9), 'guldsallet': ('items/unique_mother_of_spores', 0.86),
+    # ovanliga
+    'kastdolkarna': ('items/scalpel_blade_3', 0.9), 'lyktsmeden': ('aspects/cinder_core', 0.92), 'bankirens_sigill': ('items/conduit_ring_3', 0.84),
+    'gyllene_skarabeen': ('aspects/carapace', 0.92), 'vapenboken': ('stats/damage', 0.92), 'nattblinda_ogat': ('aspects/ancient_wrath', 0.92),
+    # sällsynta
+    'gravplundraren': ('aspects/unbroken', 0.92), 'skuggkappan': ('aspects/ambusher', 0.92), 'blodiga_kronikan': ('stats/cooldownReduction', 0.92),
+    'skuldbrevet': ('aspects/parasitic', 0.92),
+    # legendariska
+    'faraonens_mask': ('items/unique_crown_of_the_hive', 0.88), 'morkrets_furste': ('bosses/vire', 0),  # 0 = hela bilden
+}
+V7_PACTS = {'pakt_kniv': ('knives', 'pakt_kniv'), 'pakt_musköt': ('musket', 'pakt_muskot'), 'pakt_hammare': ('hammer', 'pakt_hammare')}  # kort-id: (vapen, filnamn)
+V7_UPGRADES = {  # kort-id: (vapen, effektbild i assets/ashfall-ai/flux/vfx, färgton eller None)
+    'knivsolfjadern': ('knives', 'slash_0', (235, 225, 255)), 'giftleggen': ('knives', 'toxic_splat_0', None),
+    'aterkastet': ('knives', 'slash_1', (200, 230, 255)), 'rygghugget': ('knives', 'rune_mark_0', None),
+    'jordbavaren': ('hammer', 'crack_1', (255, 200, 140)), 'dunslaget': ('hammer', 'hit_spark_1', (255, 236, 160)),
+    'krossaren': ('hammer', 'frost_burst_1', None), 'hammarkastet': ('hammer', 'arc_1', None),
+    'hagelladdningen': ('musket', 'explosion_3', None), 'kruthornet': ('musket', 'muzzle_flash', None),
+    'krutroken': ('musket', 'smoke_2', None), 'bajonetten': ('musket', 'ichor_burst', (225, 225, 235)),
 }
 
 # ---------- vapensiluetter (ritas på 400x400 och beskärs) ----------
@@ -231,7 +264,66 @@ def draw_bow():
     return im.rotate(36, resample=Image.BICUBIC, expand=True)
 
 
-GUNS = {'axe': draw_axe, 'flamer': draw_flamer, 'launcher': draw_launcher, 'nailgun': draw_nailgun, 'staff': draw_staff, 'bow': draw_bow}
+def draw_knives():
+    im = Image.new('RGBA', (420, 420))
+
+    def knife():
+        k = Image.new('RGBA', (120, 400))
+        d = ImageDraw.Draw(k)
+        poly(d, [(60, 10), (84, 70), (84, 250), (36, 250), (36, 70)], (176, 180, 192, 255))   # blad
+        d.line((60, 22, 60, 244), fill=(236, 238, 244, 255), width=6)                       # ås
+        rrect(d, (22, 248, 98, 266), 4, (150, 108, 52, 255))                                 # parerstång
+        rrect(d, (44, 264, 76, 362), 8, (70, 40, 26, 255))                                   # grepp
+        for y in (284, 306, 328):                                                          # lindning
+            d.line((46, y, 74, y + 8), fill=(40, 22, 14, 255), width=5)
+        d.ellipse((38, 356, 82, 396), fill=(150, 108, 52, 255), outline=INK, width=5)        # ring
+        d.ellipse((50, 368, 70, 386), fill=(0, 0, 0, 0))
+        return k
+    for ang in (34, 0, -34):                                                                # tre knivar i solfjäder
+        k = knife().rotate(ang, resample=Image.BICUBIC, expand=True, center=(60, 330))
+        im.alpha_composite(k, ((420 - k.width) // 2, (420 - k.height) // 2 - 10))
+    return im
+
+
+def draw_hammer():
+    im = Image.new('RGBA', (400, 400))
+    d = ImageDraw.Draw(im)
+    rrect(d, (184, 120, 216, 386), 10, (112, 72, 40, 255))                           # skaft
+    d.line((194, 140, 194, 374), fill=(156, 108, 64, 255), width=4)
+    for y in (300, 322, 344):                                                         # lindning
+        d.line((186, y, 214, y + 8), fill=(60, 30, 20, 255), width=6)
+    rrect(d, (178, 370, 222, 394), 6, (80, 80, 88, 255))                              # knopp
+    rrect(d, (86, 52, 314, 146), 12, (110, 112, 122, 255))                            # huvud
+    d.line((98, 66, 302, 66), fill=(200, 204, 214, 255), width=6)
+    rrect(d, (70, 62, 96, 136), 6, (90, 92, 102, 255))                                # slagytor
+    rrect(d, (304, 62, 330, 136), 6, (90, 92, 102, 255))
+    for x in (130, 270):                                                             # band med runor
+        d.line((x, 56, x, 142), fill=(150, 108, 52, 255), width=10)
+    poly(d, [(200, 76), (216, 100), (200, 124), (184, 100)], (255, 200, 90, 255), w=4)  # runsten
+    return im.rotate(-24, resample=Image.BICUBIC, expand=True)
+
+
+def draw_musket():
+    im = Image.new('RGBA', (420, 420))
+    d = ImageDraw.Draw(im)
+    poly(d, [(8, 212), (120, 190), (196, 196), (196, 222), (124, 226), (24, 262)], (124, 74, 38, 255))  # kolv
+    d.line((30, 214, 116, 198), fill=(170, 112, 62, 255), width=5)
+    rrect(d, (186, 192, 340, 216), 6, (110, 66, 34, 255))                                              # framstock
+    rrect(d, (190, 178, 414, 194), 4, (86, 88, 98, 255))                                               # pipa
+    d.line((196, 182, 410, 182), fill=(170, 172, 182, 255), width=3)
+    for x in (250, 310):                                                                              # pipband
+        d.line((x, 176, x, 216), fill=(176, 132, 64, 255), width=6)
+    rrect(d, (150, 176, 190, 198), 4, (150, 108, 52, 255))                                             # lås (mässing)
+    d.line((166, 178, 158, 158), fill=INK, width=8)                                                    # hane
+    d.line((166, 178, 158, 158), fill=(150, 150, 160, 255), width=4)
+    d.arc((140, 206, 180, 246), 20, 200, fill=INK, width=6)                                            # varbygel
+    poly(d, [(404, 178), (420, 172), (420, 180)], (210, 210, 220, 255), w=2)                           # sikte
+    im = im.crop(im.getbbox())
+    im = im.resize((im.width, int(im.height * 1.6)), Image.BICUBIC)                                     # grövre, syns bättre på kortet
+    return im.rotate(28, resample=Image.BICUBIC, expand=True)
+
+
+GUNS = {'knives': draw_knives, 'hammer': draw_hammer, 'musket': draw_musket, 'axe': draw_axe, 'flamer': draw_flamer, 'launcher': draw_launcher, 'nailgun': draw_nailgun, 'staff': draw_staff, 'bow': draw_bow}
 
 
 def shade(im):
@@ -378,6 +470,37 @@ def main_v6():
     return n
 
 
+def ash_card(src, fill):
+    im = Image.open(os.path.join(ASH, src + '.webp')).convert('RGB')
+    if not fill:  # målning med egen bakgrund: hela bilden
+        return im
+    bb = im.convert('L').point(lambda v: 255 if v > 22 else 0).getbbox() or (0, 0, im.width, im.height)
+    cx, cy = (bb[0] + bb[2]) / 2, (bb[1] + bb[3]) / 2
+    side = max(bb[2] - bb[0], bb[3] - bb[1]) / fill
+    box = Image.new('RGB', (int(side), int(side)), (0, 0, 0))
+    box.paste(im, (int(side / 2 - cx), int(side / 2 - cy)))
+    return screen(purple_bg(), box.resize((S * 4, S * 4), Image.LANCZOS), S * 2, S * 2)
+
+
+def main_v7():
+    srcs = [s for s, _ in V7.values()]
+    assert len(V7) == 20 and len(srcs) == len(set(srcs)), 'varje bild används bara en gång'
+    fx = [s for _, s, _ in V7_UPGRADES.values()]
+    old_fx = {s for _, s, _ in V6_UPGRADES.values()} | {n for ls in V6_ACTIVES.values() for n, *_ in ls}
+    assert len(fx) == len(set(fx)) == 12 and not old_fx & set(fx), 'varje effektbild används bara en gång'
+    n = 0
+    for cid, (src, fill) in V7.items():
+        save(ash_card(src, fill), cid)
+        n += 1
+    for cid, (w, fname) in V7_PACTS.items():
+        pact(fname, w)
+        n += 1
+    for cid, (w, src, tint) in V7_UPGRADES.items():
+        v6_upgrade(cid, w, src, tint)
+        n += 1
+    return n
+
+
 def main():
     assert len(CARDS) == len(set(CARDS)) == 50, len(CARDS)
     srcs = list(V5.values()) + [s for _, s in V5_UPGRADES.values()]
@@ -385,6 +508,9 @@ def main():
     assert not set(V5) & set(CARDS)
     if ONLY == 'v6':
         print(main_v6(), 'kortbilder ->', OUT)
+        return
+    if ONLY == 'v7':
+        print(main_v7(), 'kortbilder ->', OUT)
         return
     n = 0
     if not ONLY_V5:
@@ -402,6 +528,7 @@ def main():
         n += 1
     if not ONLY_V5:
         n += main_v6()
+        n += main_v7()
     print(n, 'kortbilder ->', OUT)
 
 

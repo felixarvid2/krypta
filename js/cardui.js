@@ -54,6 +54,8 @@ function tint(node, card) {
   if (card.active) node.classList.add('act');
   if (card.rarity === 'legendarisk') node.classList.add('legend');
 }
+// sällsynta och legendariska kort i kortval och butik får en svag glans över bilden (inte med prefers-reduced-motion)
+const shiny = card => card.rarity === 'sallsynt' || card.rarity === 'legendarisk';
 const ribbonCls = card => 'cu-ribbon' + (card.curse ? '' : card.pact ? ' pact' : card.active ? ' act' : card.weapon ? ' wpn' : card.fused ? ' fused' : ' wpn');
 // "AKTIV · 8 S" för kort med en aktiv förmåga
 const actTxt = card => 'AKTIV · ' + String(card.cd || 0).replace('.', ',') + ' S';
@@ -279,6 +281,7 @@ function draft(cards, opts, onPick) {
     c.setAttribute('aria-label', (i + 1) + ': ' + card.name + ', ' + (tagOf(card) ? tagOf(card) + ', ' : '') + r.label + '. ' + card.text.replace(/\n/g, ', ')
       + (isNew ? '. NY' : '') + (nHave ? '. DU HAR ' + nHave + (canFuse ? ', TVÅ KAN SMÄLTAS SAMMAN' : '') : '') + (syn ? '. SYNERGI: ' + syn : '') + (cmp ? '. FÖRE → EFTER: ' + cmp.text : ''));
     tint(c, card);
+    if (shiny(card)) c.classList.add('shine');
     const inner = el('div', 'cu-inner');
     const back = el('div', 'cu-face cu-back');
     const front = el('div', 'cu-face cu-front');
@@ -539,6 +542,7 @@ function shop(items, gold, onBuy, onClose, opts) {
       if (isCard) {
         const r = R()[item.card.rarity];
         tint(t, item.card);
+        if (shiny(item.card)) t.classList.add('shine');
         top.appendChild(art(item.card));
         name = item.label || item.card.name;
         nm.appendChild(el('div', 'cu-iname', name));
@@ -651,8 +655,9 @@ function sortCards(list, mode, get) {
   return list.sort((a, b) => byRar(a, b) || byName(a, b));
 }
 const SORTS = [['rar', 'RARITET'], ['name', 'NAMN'], ['new', 'SENAST'], ['type', 'TYP']];
-const DECK_FILTERS = [['alla', 'ALLA'], ['aktiva', 'AKTIVA'], ['curse', 'FÖRBANNADE'], ['set', 'SET']];
-const deckPass = (c, f) => (f === 'aktiva' ? !!c.active : f === 'curse' ? !!c.curse : f === 'set' ? !!c.set : true);
+const DECK_FILTERS = [['alla', 'ALLA'], ['senast', 'SENAST VALDA'], ['aktiva', 'AKTIVA'], ['curse', 'FÖRBANNADE'], ['set', 'SET']];
+const RECENT_N = 5; // SENAST VALDA: korten bland de fem sista i den ägda listan
+const deckPass = (c, f, recent) => (f === 'senast' ? !!(recent && recent.has(c.id)) : f === 'aktiva' ? !!c.active : f === 'curse' ? !!c.curse : f === 'set' ? !!c.set : true);
 // nedräkningen med activeCd (andel kortare, högst 90 %)
 const cdNow = (card, mods) => Math.round(card.cd * (1 - Math.min(0.9, Math.max(0, +(mods && mods.activeCd) || 0))) * 10) / 10;
 function setSection(ownedIds) {
@@ -714,8 +719,14 @@ function statsBox(st) {
 //                 exemplar (Cards.canFuse). Returnerar spelet en lista visas den; false = nekad;
 //                 annat (t.ex. undefined) = kortleken byter själv två id mot Cards.fuse(id). Får vara ett Promise. }
 //         mods: { nyckel: värde } – spelets nuvarande M: detaljrutan visar dina nuvarande tal för kortets effekter
-//               och rutan DINA VÄRDEN listar alla. }
-// Sortering: RARITET, NAMN, SENAST (senast tagna först) och TYP. Filter: ALLA, AKTIVA (förmågor), FÖRBANNADE och SET.
+//               och rutan DINA VÄRDEN listar alla.
+//         onSell: id => ny lista med ägda id | { owned: [id], msg } | false | undefined – knappen SÄLJ i detaljrutan
+//                 (med ett bekräftelsesteg). Bara kort som Cards.sellPrice ger mer än 0 för (inte förbannade kort,
+//                 pakter eller vapenuppgraderingar). false = nekad; undefined = kortleken tar själv bort ett exemplar.
+//                 Får vara ett Promise. Tangent X säljer det valda kortet.
+//         sellPrice: id => guld – priset som visas (annars Cards.sellPrice(kort, opts.depth)), depth: våning för Cards.sellPrice }
+// Sortering: RARITET, NAMN, SENAST (senast tagna först) och TYP.
+// Filter: ALLA, SENAST VALDA (de fem senast tagna), AKTIVA (förmågor), FÖRBANNADE och SET.
 // Gamla anrop deck(ids) och deck(ids, onClose) fungerar som förut.
 function deck(ownedIds, onClose, opts) {
   if (onClose && typeof onClose === 'object') { opts = onClose; onClose = null; }
@@ -724,14 +735,25 @@ function deck(ownedIds, onClose, opts) {
   const stats = opts.stats && typeof opts.stats === 'object' ? opts.stats : null;
   const onFuse = typeof opts.onFuse === 'function' && C.canFuse && C.fuse ? opts.onFuse : null;
   const mods = opts.mods && typeof opts.mods === 'object' ? opts.mods : null;
+  const onSell = typeof opts.onSell === 'function' ? opts.onSell : null;
+  // guld för kortet, eller 0 om det inte kan säljas (förbannat, pakt, vapenuppgradering)
+  function sellOf(card) {
+    const base = C.sellPrice ? C.sellPrice(card, +opts.depth || 0) : 0;
+    if (!base) return 0;
+    if (typeof opts.sellPrice !== 'function') return base;
+    let v = 0;
+    try { v = Math.round(+opts.sellPrice(card.id) || 0); } catch (err) { v = 0; }
+    return Math.max(0, v);
+  }
   let owned = (ownedIds || []).slice();
-  let entries = [], fusable = new Set(), act = null;
+  let entries = [], fusable = new Set(), act = null, recent = new Set();
   function recount() {
     const counts = new Map(), last = new Map();
     owned.forEach((id, i) => { if (C.byId(id)) { counts.set(id, (counts.get(id) || 0) + 1); last.set(id, i); } });
     entries = [...counts].map(([id, n]) => ({ card: C.byId(id), n, last: last.get(id) }));
     fusable = new Set(onFuse ? C.canFuse(owned) : []);
     act = C.activeOf ? C.activeOf(owned) : null;
+    recent = new Set(owned.slice(-RECENT_N));
   }
   recount();
   const node = el('div', 'cu-screen cu-deck');
@@ -778,13 +800,64 @@ function deck(ownedIds, onClose, opts) {
       fz.appendChild(b);
       detail.appendChild(fz);
     }
+    if (onSell) detail.appendChild(sellBox(e.card));
+  }
+  // SÄLJ-knappen och bekräftelsen: "SÄLJ X FÖR 30 GULD?" med JA och AVBRYT
+  function sellBox(card) {
+    const box = el('div', 'cu-sellbox');
+    const p = sellOf(card);
+    if (!p) {
+      box.classList.add('no');
+      box.appendChild(el('div', 'cu-dm', card.curse ? 'FÖRBANNADE KORT KAN INTE SÄLJAS' : card.pact || card.weapon ? 'PAKTER OCH UPPGRADERINGAR KAN INTE SÄLJAS' : 'KAN INTE SÄLJAS'));
+      return box;
+    }
+    const ask = () => {
+      box.textContent = ''; box.classList.add('ask');
+      box.appendChild(el('div', 'cu-dm', 'SÄLJ ' + card.name + ' FÖR ' + p + ' GULD?'));
+      const row = el('div', 'cu-sellrow');
+      const yes = el('button', 'cu-btn cu-sell', 'JA, SÄLJ'); yes.type = 'button';
+      yes.setAttribute('aria-label', 'JA, SÄLJ ' + card.name + ' FÖR ' + p + ' GULD');
+      const no = el('button', 'cu-btn ghost', 'AVBRYT'); no.type = 'button';
+      yes.addEventListener('click', ev => { ev.stopPropagation(); sellIt(card.id, p, yes); });
+      no.addEventListener('click', ev => { ev.stopPropagation(); const nb = sellBox(card); box.replaceWith(nb); const b2 = nb.querySelector('button'); if (b2) try { b2.focus({ preventScroll: true }); } catch (err) { /* ingen fokus */ } });
+      row.appendChild(yes); row.appendChild(no); box.appendChild(row);
+      try { yes.focus({ preventScroll: true }); } catch (err) { /* ingen fokus */ }
+    };
+    const b = el('button', 'cu-btn cu-sell', 'SÄLJ · ' + p + ' GULD' + (touchUI() ? '' : ' (X)')); b.type = 'button';
+    b.setAttribute('aria-label', 'SÄLJ ' + card.name + ' FÖR ' + p + ' GULD');
+    b.addEventListener('click', ev => { ev.stopPropagation(); ask(); });
+    box.appendChild(b);
+    box.ask = ask;
+    return box;
+  }
+  function sellIt(id, p, btn) {
+    if (busy || !onSell) return;
+    busy = true;
+    let res;
+    try { res = onSell(id); } catch (err) { res = false; }
+    Promise.resolve(res).then(r => {
+      busy = false;
+      if (!cur || cur.node !== node) return;
+      const card = C.byId(id);
+      if (r === false || (r && r.ok === false)) { sfx('deny'); setMsg((r && r.msg) || 'KAN INTE SÄLJAS', 'bad'); if (btn) { btn.classList.remove('shake'); void btn.offsetWidth; btn.classList.add('shake'); } return; }
+      const list = Array.isArray(r) ? r : r && Array.isArray(r.owned) ? r.owned : null;
+      if (list) owned = list.slice();
+      else { const i = owned.lastIndexOf(id); if (i >= 0) owned.splice(i, 1); }
+      recount(); subText(); build();
+      const nb = setSection(owned); box.replaceChild(nb, setBox); setBox = nb;
+      setMsg((r && r.msg) || ('SÅLT: ' + (card ? card.name : id) + ' · +' + p + ' GULD'), 'ok');
+      sfx('buy');
+      const t = tiles.find(x => x.dataset.id === id);
+      if (t) { try { t.focus({ preventScroll: true }); } catch (err) { /* ingen fokus */ } const e = entries.find(x => x.card.id === id); if (e) show(e, t); }
+      else { selId = null; detail.className = 'cu-detail empty'; detail.textContent = 'VÄLJ ETT KORT FÖR ATT SE DETALJER'; try { node.focus({ preventScroll: true }); } catch (err) { /* ingen fokus */ } }
+    });
   }
   function build() {
     grid.textContent = ''; tiles = [];
     if (deckSort === 'new') entries.sort((a, b) => b.last - a.last);
     else sortCards(entries, deckSort, e => e.card);
     let group = null;
-    const shown = entries.filter(e => deckPass(e.card, deckFilter));
+    const shown = entries.filter(e => deckPass(e.card, deckFilter, recent));
     if (!shown.length) grid.appendChild(el('div', 'cu-empty', 'INGA KORT HÄR.'));
     shown.forEach(e => {
       if (deckSort === 'type') {
@@ -858,7 +931,7 @@ function deck(ownedIds, onClose, opts) {
     build();
     box.appendChild(grid);
     box.appendChild(detail);
-    if (onFuse) box.appendChild(msg);
+    if (onFuse || onSell) box.appendChild(msg);
   }
   if (mods && C.modLines) { // alla dina nuvarande tal (spelets M)
     const lines = C.modLines(mods);
@@ -884,6 +957,7 @@ function deck(ownedIds, onClose, opts) {
     if (e.code === 'KeyS' && seg) { const i = SORTS.findIndex(x => x[0] === deckSort); deckSort = SORTS[(i + 1) % SORTS.length][0]; seg.set(deckSort); build(); return true; }
     if (e.code === 'KeyV' && fseg) { const i = DECK_FILTERS.findIndex(x => x[0] === deckFilter); deckFilter = DECK_FILTERS[(i + 1) % DECK_FILTERS.length][0]; fseg.set(deckFilter); refilter(); return true; }
     if (e.code === 'KeyF' && onFuse) { if (selId && fusable.has(selId)) fuseIt(selId, detail.querySelector('.cu-fuse')); return true; }
+    if (e.code === 'KeyX' && onSell) { const sb = detail.querySelector('.cu-sellbox'); if (sb && sb.ask && !sb.classList.contains('ask')) sb.ask(); return true; }
     if (gridMove(tiles, e, grid)) return true;
     return activate(e);
   });
@@ -893,7 +967,10 @@ function deck(ownedIds, onClose, opts) {
 // codex(allCards, { seen: Set, owned: Set, unlocked: Set, picks: { [id]: antal } }, onClose[, opts]): alla kort,
 // saknade (osedda) som silhuetter med "SAKNAS". Låsta kort säger "LÅS UPP FÖR X SJÄLAR".
 // picks (i info eller opts) visar "VALD X GÅNGER" i detaljrutan.
-let codexFilter = 'alla';
+// Sökrutan filtrerar på namn och text (bara sedda kort, utan hänsyn till prickar: "o" hittar "Ö"), och
+// rullistan visar ett set i taget. Tangent / (eller S) går till sökrutan, Esc i sökrutan tömmer den.
+let codexFilter = 'alla', codexSet = 'alla';
+const fold = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/\s+/g, ' ');
 function codex(allCards, info, onClose, opts) {
   if (typeof info === 'function') { opts = onClose; onClose = info; info = {}; }
   if (onClose && typeof onClose === 'object') { opts = onClose; onClose = null; }
@@ -914,6 +991,23 @@ function codex(allCards, info, onClose, opts) {
   const FILTERS = [['alla', 'ALLA']].concat(C.RARITY_ORDER.map(r => [r, R()[r].label]));
   const seg = segmented(FILTERS, codexFilter, v => { codexFilter = v; apply(); }, 'FILTER');
   const bar = el('div', 'cu-bar'); bar.appendChild(seg); box.appendChild(bar);
+  // sökruta och set
+  const sbar = el('div', 'cu-bar cu-sbar');
+  const search = document.createElement('input');
+  search.type = 'search'; search.className = 'cu-in cu-search'; search.placeholder = 'SÖK NAMN ELLER TEXT';
+  search.setAttribute('aria-label', 'SÖK I KORTARKIVET'); search.autocomplete = 'off'; search.spellcheck = false;
+  search.addEventListener('input', () => apply());
+  const sets = C.SETS || {};
+  if (codexSet !== 'alla' && !sets[codexSet]) codexSet = 'alla';
+  const setSel = document.createElement('select');
+  setSel.className = 'cu-in cu-setsel'; setSel.setAttribute('aria-label', 'VISA SET');
+  const opt = (v, t) => { const o = document.createElement('option'); o.value = v; o.textContent = t; setSel.appendChild(o); };
+  opt('alla', 'ALLA SET'); opt('inget', 'INGET SET');
+  Object.keys(sets).sort((a, b) => sets[a].name.localeCompare(sets[b].name, 'sv')).forEach(id => opt(id, 'SET: ' + sets[id].name));
+  setSel.value = codexSet;
+  setSel.addEventListener('change', () => { codexSet = setSel.value; apply(); });
+  sbar.appendChild(search); sbar.appendChild(setSel);
+  box.appendChild(sbar);
   const scroller = el('div', 'cu-scroll');
   const grid = el('div', 'cu-grid'); scroller.appendChild(grid); box.appendChild(scroller);
   const detail = el('div', 'cu-detail empty', 'VÄLJ ETT KORT FÖR ATT SE DETALJER');
@@ -959,16 +1053,22 @@ function codex(allCards, info, onClose, opts) {
     t.addEventListener('click', ev => { ev.stopPropagation(); show(); });
     t.addEventListener('focus', show);
     grid.appendChild(t);
-    return { card, node: t, seen: isSeen };
+    return { card, node: t, seen: isSeen, hay: isSeen ? fold(card.name + ' ' + card.text + (card.set && sets[card.set] ? ' ' + sets[card.set].name : '')) : '' };
   });
+  const none = el('div', 'cu-empty', 'INGA KORT MATCHAR.'); none.hidden = true; grid.appendChild(none);
   function apply() {
     let n = 0, s = 0;
+    const q = fold(search.value).trim(), words = q ? q.split(' ') : [];
     for (const t of tiles) {
-      const vis = codexFilter === 'alla' || t.card.rarity === codexFilter;
+      const c = t.card;
+      const vis = (codexFilter === 'alla' || c.rarity === codexFilter)
+        && (codexSet === 'alla' || (codexSet === 'inget' ? !c.set : c.set === codexSet))
+        && (!words.length || (t.seen && words.every(w => t.hay.includes(w)))); // osedda kort avslöjas inte av sökningen
       t.node.hidden = !vis;
       if (vis) { n++; if (t.seen) s++; }
     }
-    count.textContent = 'SEDDA ' + s + ' AV ' + n;
+    none.hidden = n > 0;
+    count.textContent = (words.length ? 'TRÄFFAR ' + n + ' · ' : '') + 'SEDDA ' + s + ' AV ' + n;
   }
   apply();
   const foot = el('div', 'cu-foot');
@@ -979,7 +1079,14 @@ function codex(allCards, info, onClose, opts) {
   btn.addEventListener('click', ev => { ev.stopPropagation(); finish(); });
   node.addEventListener('click', ev => { if (ev.target === node || ev.target === wrap) finish(); });
   open('codex', node, e => {
+    const inField = document.activeElement === search || document.activeElement === setSel;
+    if (inField) { // skriv fritt i sökrutan; Esc tömmer den först, piltangenter flyttar inte i rutnätet
+      if (e.code === 'Escape') { if (document.activeElement === search && search.value) { search.value = ''; apply(); } else finish(); return true; }
+      if (e.code === 'Enter' && document.activeElement === search) { const f = tiles.find(t => !t.node.hidden); if (f) f.node.focus(); return true; }
+      return false;
+    }
     if (e.code === 'Escape') { finish(); return true; }
+    if (e.code === 'Slash' || e.code === 'KeyS' || e.key === '/') { search.focus(); return true; }
     const d = digit(e);
     if (d && FILTERS[d - 1]) { codexFilter = FILTERS[d - 1][0]; seg.set(codexFilter); apply(); return true; }
     if (gridMove(tiles.filter(t => !t.node.hidden).map(t => t.node), e, grid)) return true;
