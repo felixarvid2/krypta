@@ -307,10 +307,10 @@ const ENEMY_DEFS = {
   'Ð': { name: 'DÖDSRIDDARE', sheet: 'deathknight', move: 'movement', hp: 22, speed: 1.1, melee: true, dmg: 15, range: 1.1, cd: 1.3, size: 1.15, growl: 'deathknight', score: 450, atkFps: 10, hitAt: 0.55, ai: 'knight', armor: 0.4, tip: 'SKÖLDEN SKYDDAR FRAMIFRÅN – ANFALL BAKIFRÅN' },
   'Ý': { name: 'BANSHEE', sheet: 'banshee', move: 'movement', hp: 6, speed: 1.6, melee: true, dmg: 7, range: 1.0, cd: 1.1, size: 1.0, growl: 'banshee', score: 230, atkFps: 10, hitAt: 0.5, ai: 'banshee', tip: 'SKRIKET SAKTAR NED OCH FÖRVIRRAR' },
   'Ã': { name: 'MUMIE', sheet: 'mummy', move: 'movement', hp: 12, speed: 0.85, melee: true, dmg: 11, range: 1.0, cd: 1.3, size: 1.05, growl: 'mummy', score: 240, atkFps: 10, hitAt: 0.55, ai: 'mummy', tip: 'BANDAGET DRAR DIG NÄRMARE' },
-  'Õ': { name: 'SKARABÉ', sheet: 'scarab', move: 'movement', hp: 1.6, speed: 2.6, melee: true, dmg: 4, range: 0.8, cd: 0.7, size: 0.55, growl: 'scarab', score: 40, atkFps: 14, hitAt: 0.5, ai: 'scarab', tip: 'KOMMER I SVÄRMAR – SPRÄNG DEM' },
+  'Õ': { name: 'SKARABÉ', sheet: 'scarab', move: 'movement', hp: 1.6, speed: 2.6, melee: true, dmg: 4, range: 0.8, cd: 0.7, size: 0.65, growl: 'scarab', score: 40, atkFps: 14, hitAt: 0.5, ai: 'scarab', tip: 'KOMMER I SVÄRMAR – SPRÄNG DEM' },
   'Ê': { name: 'SCHAKALKRIGARE', sheet: 'jackal', move: 'movement', hp: 11, speed: 1.7, melee: true, dmg: 12, range: 1.05, cd: 1.0, size: 1.1, growl: 'jackal', score: 280, atkFps: 12, hitAt: 0.5, ai: 'jackal', tip: 'PARERAR NÄR DU SIKTAR – VÄNTA UT DEN' },
   'Î': { name: 'FICKTJUV', sheet: 'thief', move: 'movement', hp: 5, speed: 2.9, melee: true, dmg: 2, range: 0.9, cd: 1.2, size: 1.0, growl: 'thief', score: 150, atkFps: 12, hitAt: 0.5, ai: 'thief', cowardly: true, tip: 'STJÄL GULD – DÖDA DEN FÖR ATT FÅ TILLBAKA DET' },
-  'Ô': { name: 'DUBBELGÅNGARE', sheet: 'doppelganger', move: 'movement', hp: 14, speed: 1.4, melee: false, dmg: 6, range: 9, cd: 1.6, size: 1.05, growl: 'doppel', score: 380, atkFps: 10, hitAt: 0.5, ai: 'doppel', kite: 4, tip: 'SKJUTER MED DITT VAPEN' },
+  'Ô': { name: 'DUBBELGÅNGARE', sheet: 'doppelganger', move: 'movement', hp: 14, speed: 1.4, melee: false, dmg: 6, range: 9, cd: 1.6, size: 1.3, growl: 'doppel', score: 380, atkFps: 10, hitAt: 0.5, ai: 'doppel', kite: 4, tip: 'SKJUTER MED DITT VAPEN' },
   'Ü': { name: 'IRRBLOSS', sheet: 'wisp', move: 'movement', hp: 3, speed: 2.2, melee: true, dmg: 0, range: 1.0, cd: 1, size: 0.8, growl: 'wisp', score: 120, atkFps: 12, hitAt: 0.5, ai: 'wisp', tip: 'SPRÄNGS I FROST – HÅLL AVSTÅND' },
   S: { name: 'SKELETT', sheet: 'skeleton1', move: 'movement', hp: 5, speed: 1.35, melee: true, dmg: 9, range: 0.95, cd: 0.9, size: 1.0, growl: 'growl', score: 100, atkFps: 14, hitAt: 0.55 },
   K: { name: 'ELDSKELETT', sheet: 'skeleton2', move: 'movemen', hp: 6, speed: 0.95, melee: false, dmg: 8, range: 8.5, cd: 1.8, size: 1.05, growl: 'hiss', score: 150, atkFps: 12, hitAt: 0.5 },
@@ -332,7 +332,7 @@ const BOSSES = {
   ogre: { title: 'SKOGENS SLAKTARE', name: 'OGERN', hp: 420, speed: 1.3, size: 2.6, dmg: 26, range: 3.0, arena: 'forest', phaseMsg: ['OGERN KALLAR PÅ SINA SÖNER', 'OGERN BLIR RASANDE!'] },
   frost: { title: 'VINTERNS HJÄRTA', name: 'ISDRAKEN', hp: 330, speed: 1.0, size: 2.4, dmg: 18, range: 2.2, arena: 'frost', phaseMsg: ['ISDRAKEN KALLAR PÅ STORMEN', 'ISDRAKEN BLIR KALLARE ÄN DÖDEN!'] },
   flame: { title: 'VULKANENS HJÄRTA', name: 'ELDKUNGEN', hp: 360, speed: 1.05, size: 3.0, dmg: 19, range: 2.3, arena: 'volcano', phaseMsg: ['ELDKUNGEN TÄNDER MARKEN', 'ELDKUNGEN RASAR – ALLT BRINNER!'] },
-  pharaoh: { title: 'SANDENS HERRE', name: 'FARAONEN', hp: 380, speed: 1.0, size: 3.0, dmg: 18, range: 2.2, arena: 'tomb', phaseMsg: ['FARAONEN VÄCKER SINA TJÄNARE', 'FARAONEN RASAR – SANDEN STIGER!'] },
+  pharaoh: { title: 'SANDENS HERRE', name: 'FARAONEN', hp: 380, speed: 1.0, size: 3.8, dmg: 18, range: 2.2, arena: 'tomb', phaseMsg: ['FARAONEN VÄCKER SINA TJÄNARE', 'FARAONEN RASAR – SANDEN STIGER!'] },
   ghost: { title: 'DEN SOM ALDRIG SOVER', name: 'VÅLNADEN', hp: 260, speed: 1.6, size: 2.3, dmg: 14, range: 1.4, arena: 'swamp', phaseMsg: ['VÅLNADEN VÄCKER DE DÖDA', 'VÅLNADENS SKRIK FYLLER LUFTEN!'] },
 };
 const BOSS_IDS = Object.keys(BOSSES);
@@ -1503,6 +1503,7 @@ function weaponFrame() { // bildruta och förskjutning: vapnet sticker rakt fram
   let idx = st.idle[0], dx = 0, dy = 0;
   if (WS.shot < f.dur.fire) idx = pick(st.fire, WS.shot / f.dur.fire);
   else if (st.draw && WS.draw > 0) idx = pick(st.draw, WS.draw * 0.999); // bågen spänns
+  else if (st.charge && WS.hcharge > 0) { idx = pick(st.charge, Math.min(1, WS.hcharge) * 0.999); if (WS.hcharge >= 0.7 && !settings.reduceMotion) dx += Math.sin(tmr * 40) * 1.2; } // hammaren lyfts och darrar
   const kt = WS.shot / 0.16; // rekyl: knyck nedåt och tillbaka
   if (kt < 1) dy += Math.sin(Math.min(1, kt) * Math.PI) * wp.kick * 7 * (1 - WS.aim * 0.5);
   if (WS.state === 'draw') dy += (1 - easeOut(WS.t / drawTime())) * f.h;
@@ -1688,7 +1689,7 @@ function drawHUD() {
   if (WS.nameT > 0 && state === 'play') { const w = WEAPONS[P.weapon], nm = w.name; txt(nm, (W - textW(nm)) / 2, VH - 24, '#ffd24a', 1, true, Math.min(1, WS.nameT * 2));
     const info = `SKADA ${Math.round(w.dmg * (w.pellets || 1) * 10)} · ${w.melee ? 'NÄRSTRID' : (1 / w.delay).toFixed(1) + ' SKOTT/S'}${wlvl(w.id) ? ' · NIVÅ ' + wlvl(w.id) : ''}`; txt(info, (W - textW(info)) / 2, VH - 14, '#c9a87a', 1, true, Math.min(1, WS.nameT * 2)); }
   if (WS.boost && state === 'play') txt('+15%', W / 2 + 12, HORIZON - 14, '#9fe060', 1, true, 0.8);
-  if (state === 'play') { drawBowAim(g); drawStaffCharge(g); drawAbilityHud(g); drawTutorial(g); drawHammerCharge(g); drawStealthHud(g); drawLampHud(g); drawCues(g); }
+  if (state === 'play') { drawBowAim(g); drawStaffCharge(g); drawAbilityHud(g); drawTutorial(g); drawHammerCharge(g); drawStealthHud(g); drawLampHud(g); drawCues(g); drawMazeTimer(g); }
   if (state === 'play') drawHudExtras(g);
   if (wheel && !wheel.open && performance.now() - wheel.t0 > 260) wheel.open = true;
   if (wheel && wheel.open && state === 'play') drawWheel(g);
@@ -1712,7 +1713,7 @@ function drawHUD() {
     st.forEach(([t, c], i) => txt(t, 4, VH - 12 - poff - i * 10, c, 1, true, 0.85));
   }
   if (hint && state === 'play') txt(hint, (W - textW(hint)) / 2, HORIZON + 26, '#ffd24a');
-  else if (WS.state === 'idle' && P.mags[P.weapon] === 0 && P.ammo[wp.ammo] > 0 && state === 'play') { const s = isTouch() ? 'LADDA OM!' : 'R = LADDA OM', w = textW(s); txt(s, (W - w) / 2, HORIZON + 14, '#ffb040'); }
+  else if (WS.state === 'idle' && !wp.melee && P.mags[P.weapon] === 0 && P.ammo[wp.ammo] > 0 && state === 'play') { const s = isTouch() ? 'LADDA OM!' : 'R = LADDA OM', w = textW(s); txt(s, (W - w) / 2, HORIZON + 14, '#ffb040'); }
   if (subs.length && state === 'play') { subs.forEach((s, i) => { s.t -= 1 / 60; const k = settings.bigSubs ? 2 : 1, w = textW(s.text) * k; if (settings.bigSubs) { g.fillStyle = 'rgba(0,0,0,0.6)'; g.fillRect((W - w) / 2 - 3, VH - 58 - i * 18, w + 6, 18); } txt(s.text, (W - w) / 2, settings.bigSubs ? VH - 56 - i * 18 : VH - 40 - i * 10, '#e8e8e8', k, true, Math.min(1, s.t * 2)); }); subs = subs.filter(s => s.t > 0); }
   if (settings.fps) { fpsN++; if (tmr - fpsT >= 1 || tmr < fpsT) { fpsShow = fpsN; fpsN = 0; fpsT = tmr; } txt(fpsShow + ' FPS', 4, 4, '#9fe060', 1, true, 0.8); }
   if (showMap === 2) drawMap(false); else if (showMap === 1 && state === 'play') drawMap(true);
@@ -3850,6 +3851,7 @@ function visibility() { // hur synlig du är: ljuset där du står, lampan, duck
   let v = clamp(lightAt(P.x, P.y) * 1.1, 0.12, 1);
   if (P.crouch > 0.5) v *= 0.55;
   if (P.ghostT > 0) v *= 0.2;
+  if ((lvl.biome === 'forest' || lvl.biome === 'swamp') && cellSky && cellSky[(P.y | 0) * mw + (P.x | 0)]) v *= 0.75; // snår och högt gräs skymmer dig utomhus
   return v;
 }
 function detectTick(e, dt, dist, los) { // fiender upptäcker dig gradvis; true = fienden har just upptäckt dig
@@ -3894,6 +3896,11 @@ function bellTick(e, dt) { // larmade fiender springer till larmklockan
   if (d < 1.4) { b.rung = true; play('alarm_bell', 0.9, 1, { x: b.x, y: b.y }); say('LARMKLOCKAN RINGER – HELA VÅNINGEN VAKNAR!', 2.5); P.shake = Math.max(P.shake, 0.4); for (const o of ents) if (!o.dead && !o.dormant) { o.sleep = false; alertEnemy(o, false); } stat('bellsRung'); return false; }
   const ox = e.x, oy = e.y; tryMove(e, (b.x - e.x) / d * dt * e.d.speed * 1.2, (b.y - e.y) / d * dt * e.d.speed * 1.2, 0.28); e.mvx = e.x - ox; e.mvy = e.y - oy; e.state = 'move'; e.t += dt;
   return true;
+}
+function cursedTreasure(it) { // gravkammarens guld kan vara förbannat: mumierna i närheten vaknar
+  let n = 0; for (const e of ents) if (!e.dead && e.type === 'Ã' && Math.hypot(e.x - it.x, e.y - it.y) < 10) { e.sleep = false; e.dormant = false; alertEnemy(e, true); n++; }
+  if (!n) { const s = freeSpotFar(3, 7); if (s) { const e = makeEnemy('Ã', s[0], s[1]); e.alert = true; ents.push(e); totalEnemies++; spawnPuff(s[0], s[1], 8); n = 1; } }
+  if (n) { say('FÖRBANNAD SKATT – MUMIERNA VAKNAR!', 2.5); play('mummy', 0.8, 0.9, { x: it.x, y: it.y }); P.shake = Math.max(P.shake, 0.6); }
 }
 function stealthKill(e) { // dödad utan att upptäcka dig
   run.stealthKills = (run.stealthKills || 0) + 1; run.floorStealth = (run.floorStealth || 0) + 1; stat('stealthKills');
@@ -4029,6 +4036,10 @@ function updateMaze(dt) {
   const left = run.maze.limit - levelTime;
   if (left < 30 && Math.floor(left) !== Math.floor(left + dt)) play('labyrinth_tick', 0.5, left < 10 ? 1.3 : 1);
   if (left <= 0) { run.cause = 'TIDEN TOG SLUT'; P.hp = 0; hurtPlayer(9999); }
+}
+function drawMazeTimer(g) { // labyrintens nedräkning
+  if (!run.maze) return; const left = Math.max(0, run.maze.limit - levelTime), t = 'TID ' + fmtTime(Math.ceil(left));
+  txt(t, (W - textW(t)) / 2, 4, left < 30 ? (tmr % 0.5 < 0.25 ? '#ff5040' : '#ffd24a') : '#e8d9b0', 1, true);
 }
 function mazeDone() { // utgången nådd i labyrinten
   const t = Math.round(levelTime); profile.mazeBest = Math.min(profile.mazeBest || 1e9, t); stat('mazesWon');
@@ -4794,10 +4805,12 @@ function dirTap(code) {
 function pickUp(it, bought) {
   let am = diff().ammo * (1 + mod('ammoMul')) * (dmod('scarce') ? 0.5 : 1);
   if (it.type === 'gold' || it.type === 'goldpile') {
-    const n = Math.round((it.type === 'goldpile' ? rnd(8, 14) + run.depth * 3 : rnd(2, 5) + run.depth) * (1 + mod('goldMul')) * (floorEvent === 'bloodmoon' ? 2 : floorEvent === 'goldrain' ? 1.5 : 1) * (1 + goldRisk()) * (dmod('scarce') || dmod('giants') ? 1.5 : 1));
+    const n = Math.round((it.type === 'goldpile' ? rnd(8, 14) + run.depth * 3 : rnd(2, 5) + run.depth) * (1 + mod('goldMul')) * (floorEvent === 'bloodmoon' ? 2 : floorEvent === 'goldrain' ? 1.5 : 1) * (1 + goldRisk()) * (dmod('scarce') || dmod('giants') ? 1.5 : 1) * (it.type === 'goldpile' ? 1 + mod('goldFind') : 1));
     spawnText(it.x, it.y, `+${n}`, '#ffd24a'); // guld som plockas upp syns som siffror
     const n2 = dmod('gold') ? n : dmod('swift') ? Math.round(n * 0.5) : 0; run.gold += n2;
-    run.gold += n; run.goldEarned = (run.goldEarned || 0) + n; play('coin', 0.5, rnd(0.95, 1.15)); if (it.type === 'goldpile') say(`+${n} GULD`, 1.2); return true;
+    run.gold += n; run.goldEarned = (run.goldEarned || 0) + n; play('coin', 0.5, rnd(0.95, 1.15)); if (it.type === 'goldpile') say(`+${n} GULD`, 1.2);
+    if (it.type === 'goldpile' && lvl.biome === 'tomb' && !boss && Math.random() < 0.2) cursedTreasure(it); // förbannad skatt
+    return true;
   }
   if (it.type === 'cardpick') { // kortval från elit, väktare och boss
     play('card', 0.8, 1.2);

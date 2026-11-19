@@ -59,3 +59,23 @@ node render-static.mjs side nailgun,staff,bow
 python3 pack.py xframes ../../ nailgun,staff,bow   # övriga poster i js/weapons.js lämnas orörda
 python3 pack.py pick ../../ nailgun,staff,bow      # bågens upplockningsbild får en ritad sträng
 ```
+
+Version 7: kastknivarna (`knives`), stridshammaren (`hammer`) och musköten (`musket`).
+Knivarna är tre KayKit `dagger_A` (CC0) i en solfjäder till höger om mitten: `fan` i `static-defs.json` gör `n` kopior av
+modellen, `spread` lägger dem ([dx,dy,dz,rx,ry,rz] i andelar av modellens längd och grader) och per bildruta kan
+`melee.fan` dölja (`hide`) eller flytta (`move`) en kopia. Skjutrutorna är kastet: armen tar sats, den mittersta kniven far
+iväg, den saknas och en ny dras upp underifrån; mynningen är den mittersta kniven (`nozzle: knife0`).
+Hammaren är KayKit `hammer_A` i närstridsläget: åtta rutor där den lyfts över huvudet och slås ned mitt i bilden, och ett
+extra läge `charge` (tre rutor, hammaren hålls högt). I `js/weapons.js` blir det `states: {idle:[0], fire:[1..8], charge:[9..11]}`
+och `dur: {fire, charge}`.
+Musköten är PSX-paketets `OneBarrelShotgun` med längre pipa, mynning och två mässingsband (`parts`); rekylen är sex tunga rutor
+och `pack.py` ritar en grå krutrök vid mynningen in i skjutrutorna (`SMOKE`, rutan växer uppåt så att röken får plats).
+
+```bash
+node render-static.mjs fp knives,hammer,musket
+node render-static.mjs side knives,hammer,musket
+python3 pack.py xframes ../../ knives,hammer,musket   # övriga poster i js/weapons.js lämnas orörda
+python3 pack.py pick ../../ knives,hammer,musket      # knivarnas upplockningsbild är tre knivar i en solfjäder
+```
+`render-static.mjs` hittar `assets/3d-models` även när `retrofps` är en symlänk (den provar också `$PWD/../../../assets`).
+

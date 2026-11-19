@@ -7,7 +7,8 @@
 //   version 6: "melee.extra": {"draw":[...]} fler lägen (bågen), "durs": {"draw":0.5} deras längd, pose.glow/pose.bow per bildruta,
 //   "tex": "./tex/..." en egen textur i tools/weapon-frames
 import {chromium} from 'playwright-core';import http from 'http';import fs from 'fs';import path from 'path';
-const A=new URL('../../../assets/3d-models/',import.meta.url).pathname; // modellerna ligger i repots assets/3d-models
+const A=[new URL('../../../assets/3d-models/',import.meta.url).pathname,path.resolve(process.env.PWD||'.','../../../assets/3d-models')+'/']
+  .find(p=>fs.existsSync(p))||new URL('../../../assets/3d-models/',import.meta.url).pathname; // modellerna ligger i assets/3d-models bredvid retrofps/ (node följer symlänkar, därför även $PWD)
 const srv=http.createServer((req,res)=>{let p=decodeURIComponent(req.url.split('?')[0]);let f=p.startsWith('/A/')?A+p.slice(3):path.join('.',p);if(fs.existsSync(f)&&fs.statSync(f).isFile()){res.setHeader('content-type',f.endsWith('.js')?'text/javascript':f.endsWith('.html')?'text/html':f.endsWith('.png')?'image/png':f.endsWith('.jpg')?'image/jpeg':'application/octet-stream');return res.end(fs.readFileSync(f));}res.statusCode=404;res.end();}).listen(8790);
 const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium',args:['--use-gl=swiftshader','--enable-unsafe-swiftshader','--no-sandbox']});
 const pg=await b.newPage({viewport:{width:960,height:498}});pg.on('pageerror',e=>console.log('err',e.message));pg.on('console',m=>{if(m.type()==='error')console.log('console',m.text())});

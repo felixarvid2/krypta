@@ -1024,5 +1024,426 @@
     ]
    }
   }
+ },
+ "knives": {
+  "model": "KayKit_FantasyWeaponsBits_1.0_FREE/KayKit_FantasyWeaponsBits_1.0_FREE/Assets/fbx/dagger_A.fbx",
+  "tex": "KayKit_FantasyWeaponsBits_1.0_FREE/KayKit_FantasyWeaponsBits_1.0_FREE/Textures/weapons_bits_texture.png",
+  "dur": 0.32,
+  "nozzle": "knife0",
+  "fan": {
+   "n": 3,
+   "spread": [
+    [
+     0,
+     0.05,
+     0,
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     -0.03,
+     -0.1,
+     -24,
+     0,
+     4
+    ],
+    [
+     0,
+     -0.04,
+     0.1,
+     22,
+     0,
+     4
+    ]
+   ]
+  },
+  "melee": {
+   "grip": 0.15,
+   "idle": {
+    "hand": [
+     1.75,
+     -0.55,
+     0.42
+    ],
+    "ang": [
+     -8,
+     0,
+     -14
+    ]
+   },
+   "fire": [
+    {
+     "hand": [
+      1.7,
+      -0.5,
+      0.46
+     ],
+     "ang": [
+      -4,
+      0,
+      14
+     ]
+    },
+    {
+     "hand": [
+      1.75,
+      -0.62,
+      0.4
+     ],
+     "ang": [
+      -10,
+      0,
+      -26
+     ],
+     "fan": {
+      "move": {
+       "0": [
+        2.6,
+        1.1,
+        -0.35,
+        0,
+        0,
+        -45
+       ]
+      }
+     }
+    },
+    {
+     "hand": [
+      1.85,
+      -0.78,
+      0.38
+     ],
+     "ang": [
+      -12,
+      0,
+      -34
+     ],
+     "fan": {
+      "hide": [
+       0
+      ]
+     }
+    },
+    {
+     "hand": [
+      1.8,
+      -0.68,
+      0.42
+     ],
+     "ang": [
+      -9,
+      0,
+      -18
+     ],
+     "fan": {
+      "move": {
+       "0": [
+        0,
+        -0.7,
+        0,
+        0,
+        0,
+        0
+       ]
+      }
+     }
+    }
+   ]
+  }
+ },
+ "hammer": {
+  "model": "KayKit_FantasyWeaponsBits_1.0_FREE/KayKit_FantasyWeaponsBits_1.0_FREE/Assets/fbx/hammer_A.fbx",
+  "tex": "KayKit_FantasyWeaponsBits_1.0_FREE/KayKit_FantasyWeaponsBits_1.0_FREE/Textures/weapons_bits_texture.png",
+  "dur": 0.75,
+  "durs": {
+   "charge": 0.45
+  },
+  "melee": {
+   "grip": 0.1,
+   "idle": {
+    "hand": [
+     1.7,
+     -0.98,
+     0.56
+    ],
+    "ang": [
+     -16,
+     55,
+     -10
+    ]
+   },
+   "fire": [
+    {
+     "hand": [
+      1.55,
+      -0.8,
+      0.48
+     ],
+     "ang": [
+      -10,
+      55,
+      2
+     ]
+    },
+    {
+     "hand": [
+      1.25,
+      -0.6,
+      0.36
+     ],
+     "ang": [
+      -6,
+      55,
+      8
+     ]
+    },
+    {
+     "hand": [
+      1.15,
+      -0.5,
+      0.26
+     ],
+     "ang": [
+      -3,
+      55,
+      10
+     ]
+    },
+    {
+     "hand": [
+      1.3,
+      -0.62,
+      0.14
+     ],
+     "ang": [
+      0,
+      55,
+      -22
+     ]
+    },
+    {
+     "hand": [
+      1.5,
+      -0.72,
+      0.04
+     ],
+     "ang": [
+      0,
+      55,
+      -52
+     ]
+    },
+    {
+     "hand": [
+      1.5,
+      -0.78,
+      0.04
+     ],
+     "ang": [
+      1,
+      55,
+      -56
+     ]
+    },
+    {
+     "hand": [
+      1.55,
+      -0.9,
+      0.3
+     ],
+     "ang": [
+      -6,
+      55,
+      -32
+     ]
+    },
+    {
+     "hand": [
+      1.65,
+      -0.98,
+      0.5
+     ],
+     "ang": [
+      -12,
+      55,
+      -14
+     ]
+    }
+   ],
+   "extra": {
+    "charge": [
+     {
+      "hand": [
+       1.45,
+       -0.75,
+       0.46
+      ],
+      "ang": [
+       -9,
+       55,
+       2
+      ]
+     },
+     {
+      "hand": [
+       1.25,
+       -0.58,
+       0.36
+      ],
+      "ang": [
+       -6,
+       55,
+       8
+      ]
+     },
+     {
+      "hand": [
+       1.15,
+       -0.5,
+       0.3
+      ],
+      "ang": [
+       -4,
+       55,
+       10
+      ]
+     }
+    ]
+   }
+  }
+ },
+ "musket": {
+  "model": "PSXShotgunPack[FIXED]/PSXShotgunPack[FIXED]/Files/oneBarrelShotGun/Fbx/OneBarrelShotgun.fbx",
+  "tex": "PSXShotgunPack[FIXED]/PSXShotgunPack[FIXED]/Files/oneBarrelShotGun/Textures/OneBarrelShotGunText.jpg",
+  "rot": [
+   0,
+   0,
+   0
+  ],
+  "hide": "shell",
+  "parts": [
+   {
+    "prim": "cyl",
+    "size": [
+     0.07,
+     0.07,
+     1
+    ],
+    "rot": [
+     0,
+     0,
+     -90
+    ],
+    "scale": 0.3,
+    "pos": [
+     0.6,
+     0.06,
+     0
+    ],
+    "color": "#3c3a38",
+    "seg": 10
+   },
+   {
+    "prim": "cyl",
+    "size": [
+     0.06,
+     0.06,
+     0.06
+    ],
+    "rot": [
+     0,
+     0,
+     -90
+    ],
+    "scale": 0.03,
+    "pos": [
+     0.75,
+     0.06,
+     0
+    ],
+    "color": "#2a2826",
+    "name": "muzzle",
+    "seg": 10
+   },
+   {
+    "prim": "cyl",
+    "size": [
+     1,
+     1,
+     0.5
+    ],
+    "rot": [
+     0,
+     0,
+     -90
+    ],
+    "scale": 0.026,
+    "pos": [
+     0.55,
+     0.06,
+     0
+    ],
+    "color": "#c9a24a",
+    "seg": 10
+   },
+   {
+    "prim": "cyl",
+    "size": [
+     1,
+     1,
+     0.5
+    ],
+    "rot": [
+     0,
+     0,
+     -90
+    ],
+    "scale": 0.026,
+    "pos": [
+     0.3,
+     0.055,
+     0
+    ],
+    "color": "#c9a24a",
+    "seg": 10
+   }
+  ],
+  "nozzle": "muzzle",
+  "cam": [
+   0.16,
+   0.15,
+   -0.13,
+   0.8,
+   0.29
+  ],
+  "dur": 0.9,
+  "pitch": 2.5,
+  "back": 0.12,
+  "fire": [
+   {
+    "kick": 1.0,
+    "dy": 0.006
+   },
+   {
+    "kick": 1.35,
+    "dy": 0.004
+   },
+   {
+    "kick": 1.15,
+    "dz": 0.003
+   },
+   {
+    "kick": 0.8
+   },
+   {
+    "kick": 0.45
+   },
+   {
+    "kick": 0.18
+   }
+  ]
  }
 }

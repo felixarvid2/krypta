@@ -6,6 +6,8 @@
 // närstridsläge `melee` där vapnet placeras fritt framför kameran (yxans sving).
 // Version 6: `split` delar ut en del av en modell efter texturfärgen (stavens kristall) som kan lysa (`glow`) per bildruta,
 // och `bow` bygger bågsträng och pil kring KayKits båge (spänd med `draw`).
+// Version 7: `fan` håller flera kopior av modellen (kastknivarna) i en solfjäder; per bildruta kan `melee.fan` dölja
+// eller flytta enskilda kopior (`hide`, `move`: [dx,dy,dz,rx,ry,rz] i andelar av modellens längd och grader).
 import * as THREE from 'three';
 import {FBXLoader} from 'three/addons/loaders/FBXLoader.js';
 import {OBJLoader} from 'three/addons/loaders/OBJLoader.js';
@@ -41,7 +43,7 @@ function prim(d){
   mesh.name=d.name||d.prim;mesh.frustumCulled=false;return mesh;
 }
 async function model(p){
-  const key=p.model+'|'+p.tex+'|'+JSON.stringify(p.parts||[])+'|'+JSON.stringify(p.split||null);if(cache[key])return cache[key];
+  const key=p.model+'|'+p.tex+'|'+JSON.stringify(p.parts||[])+'|'+JSON.stringify(p.split||null)+'|'+JSON.stringify(p.fan||null);if(cache[key])return cache[key];
   const obj=await loadObj(p.model,p.tex,p.hide);
   const body=new THREE.Group();body.add(obj);
   const parts=[];
@@ -53,8 +55,11 @@ async function model(p){
     body.add(holder);parts.push(holder);
   }
   let split=null;if(p.split)split=splitByTexel(obj,p.split);
+  let fan=null;if(p.fan){fan=[];const bx=new THREE.Box3().setFromObject(obj);const fl=bx.max.y-bx.min.y; // version 7: kopior i solfjäder
+    for(let i=0;i<p.fan.n;i++){const g=new THREE.Group();const c=obj.clone(true);c.traverse(o=>{if(o.isMesh)o.name='knife'+i});g.add(c);g.userData={c,fl};body.add(g);fan.push(g);}
+    obj.traverse(o=>{if(o.isMesh)o.visible=false});}
   const inner=new THREE.Group();inner.add(body);const pv=new THREE.Group();pv.add(inner);sc.add(pv);
-  return cache[key]={pv,obj,inner,body,parts,split};
+  return cache[key]={pv,obj,inner,body,parts,split,fan};
 }
 
 // split: trianglar vars texel (mitt i trianglens UV) uppfyller testet flyttas till ett eget mesh med namnet split.name
@@ -103,7 +108,7 @@ async function bowParts(obj,b,key){
 }
 window.renderFrame=async(p)=>{
   for(const k in cache)cache[k].pv.visible=false;
-  const {pv,obj,inner,body,parts,split}=await model(p);pv.visible=true;
+  const {pv,obj,inner,body,parts,split,fan}=await model(p);pv.visible=true;
   if(bowExtra[p.model]){obj.remove(bowExtra[p.model]);delete bowExtra[p.model];}
   setGlow(split,p.glow||(p.melee&&p.melee.glow));
   // delar som är modellerade i ett annat läge (t.ex. en uppfälld pipa) rättas med meshRot {namn:[x,y,z]}
@@ -122,7 +127,10 @@ window.renderFrame=async(p)=>{
   const len=box.max.x-box.min.x;
   if(p.melee){ // närstrid: vapnet (handtaget längs +Y, huvudet uppåt) hålls i en hand framför kameran som tittar längs +X, +Z = höger i bilden
     const m=p.melee;inner.position.set(0,0,0);pv.updateMatrixWorld(true);
-    const b0=new THREE.Box3().setFromObject(body);const L=b0.max.y-b0.min.y;
+    if(fan){const D=a=>a*Math.PI/180;fan.forEach((g,i)=>{const sp=p.fan.spread[i]||[0,0,0,0,0,0],mv=(m.fan&&m.fan.move&&m.fan.move[i])||[0,0,0,0,0,0],fl=g.userData.fl;
+      const vis=!(m.fan&&m.fan.hide||[]).includes(i);g.traverse(o=>{if(o.isMesh)o.visible=vis});g.userData.c.rotation.copy(obj.rotation);
+      g.position.set((sp[0]+mv[0])*fl,(sp[1]+mv[1])*fl,(sp[2]+mv[2])*fl);g.rotation.set(D(sp[3]+mv[3]),D(sp[4]+mv[4]),D(sp[5]+mv[5]),'XZY');});pv.updateMatrixWorld(true);}
+    const b0=new THREE.Box3().setFromObject(fan?obj:body);const L=b0.max.y-b0.min.y; // solfjädern: greppet räknas från originalmodellen så att ett kastat blad inte flyttar de andra
     inner.position.set(-(b0.min.x+b0.max.x)/2,-b0.min.y-(m.grip||0.08)*L,-(b0.min.z+b0.max.z)/2); // greppet i pivotpunkten
     inner.rotation.set(0,0,0);
     const [hx,hy,hz]=m.hand,[ax,ay,az]=m.ang;

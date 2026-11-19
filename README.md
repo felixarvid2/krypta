@@ -1026,6 +1026,241 @@ Version 6 lägger till 200 förbättringar:
 
 Siktstödet på mobil är också rättat. Två funktioner hette `aimAssist`, så första skottet saknade riktning när man spelade med pekskärm.
 
+## Version 7: 200 förbättringar
+
+Version 7 lägger till 200 förbättringar:
+- **Bilder:** ritas med `tools/props5/make.py` och `tools/weapon-frames`.
+- **Ljud och musik:** byggs med `tools/sounds/make5.sh`.
+- **Kort:** byggs med `tools/card-art/make.py` (`make.py . v7`).
+- **Bangeneratorn:** har fått biomen Gravkammaren, Faraonens tempelarena, labyrinter (`Gen.maze`), kvicksand, stenblock, solstrålar, larmklockor och nya NPC:er.
+
+
+**Nya vapen (1–15)**
+1. Kastknivarna (ô): snabba kast, kan plockas upp igen
+2. Knivar studsar från väggar och fastnar i fiender (plockas vid död)
+3. Stridshammaren (û): tung närstrid, laddat slag ger en stöt i marken
+4. Hammaren slår sönder sköldar och sten
+5. Musköten (ï): mycket kraftigt skott som genomborrar, lång omladdning, krutrök
+6. Musköten: rök ligger kvar och skymmer sikten en stund
+7. Pakter för de tre nya vapnen med fyra uppgraderingar vardera
+8. Nya ammotyper KNIVAR och KULOR
+9. Vapenvana: vapen går upp i nivå (1–5) av användning under rundan
+10. Vapenvanan syns i HUD och vid vapenbyte
+11. Tyst närstridsdödande bakifrån (smygdödande)
+12. Snabbt vapenbyte: Q byter till förra vapnet, och ett tomt vapen byts automatiskt
+13. Vapnen visar slitage-fri "inspektera" med statistik
+14. Nya vapen i butik, väktarbyte och elitbyte
+15. Träffreaktion: fiender ryggar tillbaka olika mycket per vapen
+
+**Nya fiender (16–35)**
+16. Mumie (Ã): långsam, kastar bandage som drar dig närmare
+17. Skarabéer (Õ): små, kommer i svärmar
+18. Schakalkrigare (Ê): parerar framifrån när den höjer klingan
+19. Ficktjuv (Î): stjäl guld och springer – döda den för att få tillbaka det
+20. Dubbelgångare (Ô): kopierar ditt vapen och skjuter med det
+21. Mumien vaknar ur sarkofager
+22. Skarabéer kryper ur sanden och sprids när de dör
+23. Ficktjuven gömmer sig och flyr mot utgången
+24. Dubbelgångaren byter vapen när du gör det
+25. Elitegenskap: taggig (skadar dig vid närstrid)
+26. Elitegenskap: undvikande (sidsteg när du siktar)
+27. Elitegenskap: jätte (större, långsammare, tål mer)
+28. Fiender som ser dig ropar på andra (larm)
+29. Fiender springer till larmklockor (ljud väcker hela våningen)
+30. Fiender söker där de senast hörde dig
+31. Fiender i mörker ser dig sämre
+32. Fiender kan överraskas (ovetande fiender tar mer skada)
+33. Fiender plockar upp fallna vapen (ficktjuven tar guld från marken)
+34. Bestiariet: nya fiender, svagheter och tips
+35. Fiendernas syn och hörsel visas som ikon (öga/öra) ovanför dem
+
+**Ny biom: Gravkammaren (36–50)**
+36. Biomen Gravkammaren: sandsten, hieroglyfer, sand, gyllene gravkammare
+37. Sandstensvägg, hieroglyfvägg, sandgolv, gyllene golv
+38. Sandstorm som väder (sämre sikt utomhus)
+39. Kvicksand: sjunker långsamt, hoppa för att ta dig loss
+40. Rullande stenblock-fälla som jagar dig genom korridoren
+41. Sarkofager som kan öppnas: skatt eller mumie
+42. Solljus från takhål: ljuskäglor med damm
+43. Rumstyper: gravkammare, pelarsal, skattkammare, sandfyllda gångar
+44. Pilfällor i hieroglyfväggar
+45. Hetta i solen (använder hettan från vulkanen), skugga svalkar
+46. Gravkammarens musik och ökenvind
+47. Väktarrum och bossarena (tempel med sandgrop)
+48. Guldmynt i högar (mer guld i biomen)
+49. Förbannad skatt: tar du den vaknar mumierna
+50. Gravkammarens namn och titelkort
+
+**Ny boss (51–60)**
+51. Den åttonde bossen: Faraonen, med egen arena
+52. Anfall: gyllene stråle som sveper
+53. Anfall: sandtornado som jagar dig
+54. Anfall: kallar mumier ur golvet
+55. Faser: förbannelse (omvända kontroller kort), raseri
+56. Specialanfall: sanden stiger (kvicksand i arenan) och skarabésvärm
+57. Bossens väggar och golv
+58. Bossens musik och röst
+59. Faraonen i bossrushen (åtta bossar) och som väktare
+60. Bossens svaga punkt: skjut juvelen i pannan för extra skada
+
+**Krönikan och berättelse (61–75)**
+61. Krönikesidor (þ) på våningarna
+62. 40 sidor berättar Kryptans historia
+63. Krönikan som meny med lästa och saknade sidor
+64. Sidorna sparas mellan rundor
+65. Sidor ger själar första gången
+66. Varje boss har sina sidor
+67. Hemlig slutsida när alla andra är hittade
+68. Fångar och präster berättar om krönikan
+69. Prestationer för krönikan
+70. Berättaren: korta texter vid nya biomer första gången
+71. Bossarnas namn och historia i bestiariet
+72. Titelskärmen visar hur mycket av krönikan som hittats
+73. Sidor kan läsas upp (talsyntes, om inställningen är på)
+74. Ljud när en sida hittas
+75. Krönikan i handboken
+
+**Smyg (76–90)**
+76. Ljudmätare i HUD: hur mycket väsen du för
+77. Ljusmätare: hur synlig du är (mörker döljer dig)
+78. Fiender upptäcker dig gradvis (en mätare fylls)
+79. Smygdödande: närstrid bakifrån på ovetande fiende dödar direkt
+80. Kasta sten (G): lockar fiender till ljudet
+81. Larmklockor (³) som fiender springer till
+82. Guld för dödande utan att bli upptäckt
+83. Smygbonus i våningsstatistiken
+84. Ducka i mörker gör dig nästan osynlig
+85. Släck ljus genom att skjuta ljusen – mörkare rum
+86. Sovande fiender snarkar (ljud och Z)
+87. Fiender ser dig sämre i hög gräs/skog
+88. Smygkort (kort)
+89. Prestationer för smyg
+90. Handboken förklarar smyg
+
+**Ficklampan och mörker (91–100)**
+91. Ficklampan (L): ljuskägla framför dig med batteri
+92. Batterier (¼) på våningarna
+93. Mörka våningar (händelse) blir mörkare – lampan behövs
+94. Ljuskänsliga fiender (banshee, vampyr) flyr ljuskäglan
+95. Lampan lockar fiender (de ser ljuset)
+96. Batterimätare i HUD
+97. Själaaltaret: ficklampa från start
+98. Mobil: lampknapp
+99. Handkontroll: lampa på knapp
+100. Lampan flimrar när batteriet tar slut
+
+**NPC:er och ekonomi (101–120)**
+101. Spelaren (ç): tärningsspel, högre/lägre och lyckohjul
+102. Spel kan ge guld, kort eller förbannelser
+103. Bankiren (ÿ): sätt in guld som blir själar när rundan slutar
+104. Banken ger ränta per våning
+105. Vandraren (ý): dyker upp på flera våningar med en uppdragskedja
+106. Vandrarens kedja: tre steg med växande belöning
+107. Pruta hos köpmannen (chans till rabatt, kan sura)
+108. Stjäla från köpmannen (han blir en elitfiende)
+109. Rea: ett slumpat erbjudande per butik
+110. Köpmannens lager växer med djupet
+111. Sälja kort till köpmannen
+112. Sälja drycker och runor
+113. Guldräknare: hur mycket du tjänat och spenderat
+114. Butiken minns vad du köpt (statistik)
+115. Dricks till fångar ger tips
+116. Spelaren fuskar ibland (syns om du har tur)
+117. NPC:er reagerar på din hälsa och dina kort
+118. Ljud för NPC:er
+119. Mobilvänliga NPC-menyer
+120. Prestationer för NPC:er
+
+**Kort (121–145)**
+121. Smygskorna: mindre ljud
+122. Tystlåten: långsammare upptäckt
+123. Lyktbäraren: längre batteri
+124. Lyckostjärnan: bättre odds hos spelaren
+125. Guldfröet: ränta på banken
+126. Övningssvärdet: snabbare vapenvana
+127. Själastenen: själar per krönikesida
+128. Guldsållet: mer guld från högar och sarkofager
+129. Kastdolkarna: smygskada och krit
+130. Lyktsmeden: större ljuskägla
+131. Bankirens sigill: ränta och guld
+132. Den gyllene skarabén: guld och tur
+133. Vapenmästarens bok: vapenvana och skada
+134. Det nattblinda ögat (förbannat): smygskada men mindre ljus
+135. Gravplundraren: guld, själar och fällskydd
+136. Skuggkappan: tyst, svårupptäckt, undvikande
+137. Den blodiga krönikan: själar och vapenvana
+138. Skuldbrevet (förbannat): ränta och odds mot hälsa
+139. Faraonens mask (legendarisk): guld, ränta och själar
+140. Mörkrets furste (legendarisk): det bästa smygkortet
+141. Två nya kortset: SKUGGORNAS och ÖKNENS
+142. Kortens ovanlighet visas med glans i kortvalet
+143. Kort kan säljas
+144. "Senast valda" i kortleken
+145. Kortsökning i kortarkivet
+
+**Lägen och meta (146–175)**
+146. Labyrintläget: en stor labyrint, hitta utgången innan tiden tar slut
+147. Mörkerläget (utmaning): bara ficklampan lyser
+148. Bossjakten: alla bossar i valfri ordning med topplista
+149. Dela frö: kopiera en länk med fröet
+150. Tre sparplatser för rundor
+151. Titlar som låses upp och visas på startskärmen
+152. Två nya klasser: Tjuven och Ökenvandraren
+153. Själaaltaret: tre nya uppgraderingar
+154. 20 nya prestationer
+155. Dagliga uppdrag: nya sorter
+156. Rekord per läge
+157. Rundans karta efter döden (var du dog)
+158. Statistik: smyg, lampa, spel, bank
+159. Historik: senaste tio rundorna med klass och biomer
+160. Startskärmen: krönikan och titel
+161. Snabbval av klass med siffertangenter på startskärmen
+162. Profilen kan återställas (med bekräftelse)
+163. Övningsläge: välj fiende att öva mot
+164. Övningsläge: oändlig ammo och hälsa
+165. Pausmeny: fortsätt, inställningar, karta, kort, krönika, ge upp
+166. Kortleken öppnas från pausen
+167. Tips på laddningsskärmen
+168. Svårighetsgrad: Berättelseläge (mycket lätt)
+169. Rundans sammanfattning visar smyg och lampa
+170. Våningsstatistik: tid jämfört med rekord
+171. Månadsutmaning
+172. Utmaningslägen kan kombineras
+173. Själaaltaret visar vad som är köpt
+174. Bestiariet visar var fienden finns (biomer)
+175. Prestationer visar datum
+
+**Känsla (176–190)**
+176. Ljusstrålar från takhål och fönster
+177. Ficklampans ljus i ljuskartan
+178. Dammkorn i ljuset
+179. Sandpartiklar och sandstorm
+180. Kameran faller vid döden
+181. Skadevinjetten färgas efter skadetyp
+182. Vapnet gungar mer när du springer
+183. Musköten och hammaren skakar mer
+184. Bossens hälsa i segment
+185. Fiender lyser till när de upptäcker dig
+186. Ljud: fotsteg på sand
+187. Ljud: fiender reagerar (huh) när de hör något
+188. Lugnare musik när du smyger
+189. Nya partiklar för knivar och hammare
+190. Skärmskak när stenblocket rullar
+
+**Tillgänglighet (191–200)**
+191. Uppläsning av meddelanden (talsyntes)
+192. Visuella ljudsignaler: pilar mot ljud du inte ser
+193. Berättelseläge (lätt)
+194. Minska rörelse (en knapp stänger av skak, gung och blixtar)
+195. HUD-förinställningar (minimal, standard, full)
+196. Större menyer på mobil
+197. Håll eller växla sikte
+198. Lampa och smyg på handkontroll
+199. Tydligare upptäcktsmätare (färgblindvänlig form)
+200. Version 7 i nyheter och handbok
+
+Kombinerade utmaningar multiplicerar själarna. Sparplatsen väljs på startskärmen, och `?fro=XXXX` i adressen fyller i ett delat frö.
+
 ## Assets som används
 
 | Vad | Källa |
@@ -1067,6 +1302,10 @@ Siktstödet på mobil är också rättat. Två funktioner hette `aimAssist`, så
 | Version 6: nekromant, dödsriddare, banshee, eldelemental, lavamask, Eldkungen, Vulkanens texturer, rekvisita, runor och ikoner | `tools/props4/make.py`. Nekromanten och dödsriddaren bygger på *Pixel Crawler* (Anokolisa), bansheen på Gothicvania (Ansimuz, CC0), Eldkungen på TinyRPG *Jumping Demon* (Legacy Collection, CC0), ytor från *Classic64* och Kenney (CC0); resten ritas i skriptet |
 | Version 6: 47 ljud och musiken för Vulkanen, Eldkungen, hemliga våningar och överlevnad | `tools/sounds/make4.sh`: Kenney-paket (CC0), 400 Sounds Pack, Horror SFX Free; musiken syntetiseras i skriptet |
 | Version 6: 45 nya kortbilder | `tools/card-art/make.py` ur `assets/rune-ai/flux` och `assets/ashfall-ai/flux/vfx` |
+| Version 7: kastknivar, stridshammare, musköt | knivarna och hammaren ur KayKit *Fantasy Weapons Bits* (`dagger_A`, `hammer_A`, CC0), musköten byggd på *PSX Shotgun Pack* `OneBarrelShotgun`, renderade med `tools/weapon-frames` (nytt `fan`-läge och `charge`-läge) |
+| Version 7: mumie, schakalkrigare, ficktjuv, skarabé, dubbelgångare, Faraonen, NPC:er, Gravkammarens texturer, rekvisita, föremål, partiklar och ikoner | `tools/props5/make.py`. Faraonen bygger på TinyRPG *Demon* och dubbelgångaren på Warped *cyberpunk-detective* (Legacy Collection, Ansimuz, CC0); mumien, schakalen, ficktjuven och NPC:erna på *Pixel Crawler 2.11* (Anokolisa); ytor från Kenney *retro-textures-fantasy* och *Classic64* (CC0); resten ritas i skriptet |
+| Version 7: 47 ljud och musiken för Gravkammaren, Faraonen, smyg och labyrinten | `tools/sounds/make5.sh`: Kenney *impact-sounds*, *rpg-audio*, *casino-audio* och *voiceover-pack* (CC0), 400 Sounds Pack (CC0); musiken och rösterna syntetiseras i skriptet |
+| Version 7: 35 nya kortbilder | `tools/card-art/make.py` ur `assets/ashfall-ai/flux` och effektbilder; pakternas vapen ritas i skriptet |
 | Typsnitt | Press Start 2P (OFL) |
 
 Se licensfilerna i respektive källpaket.
