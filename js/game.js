@@ -7026,6 +7026,7 @@ function queenReflect(b, dmg) { if (b.id === 'crystalqueen' && (b.reflectT || 0)
 // ---------- Version 8: kristaller, vrak, kartografen, talangaltaret och kunskapsböcker ----------
 let spikeCells = new Set();
 function setupV8(lrng) { // efter att våningen byggts
+  { const bi = boomIdx(); if (bi >= 0 && P.has[bi]) P.mags[bi] = 1; WS.boomOut = 0; try { WS.boomSnd && WS.boomSnd.s.stop(); } catch (e) { /* stoppad */ } WS.boomSnd = null; } // en bumerang i luften kommer inte med till nästa våning
   spikeCells = new Set(props.filter(o => o.ch === 'Ē').map(o => o.cy * mw + o.cx)); tideWas = false; ropeTo = null; ropeT = 0; P.grapple = null; P.swim = false; P.air = 12 + mod('airMax');
   for (const e of ents) if (e.d.ai === 'eel') { totalEnemies--; e.hidden = true; } // ålar räknas inte för portalen
   if (lvl.biome === 'crystal') for (let y = 0; y < mh; y++) for (let x = 0; x < mw; x++) if (map[y][x] === 'Ć' && (x * 7 + y * 13) % 9 === 0 && torches.length < 120) { // kristallådrorna lyser
