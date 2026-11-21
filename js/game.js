@@ -479,6 +479,10 @@ const ELITE_MODS = [
   { id: 'thorny', name: 'TAGGIG', tint: [180, 220, 120] },
   { id: 'evasive', name: 'UNDVIKANDE', tint: [200, 200, 255] },
   { id: 'giant', name: 'JÄTTE', tint: [230, 190, 150] },
+  { id: 'tempo', name: 'TIDSBUNDEN', tint: [200, 170, 255] },
+  { id: 'storm', name: 'ÅSKANDE', tint: [210, 230, 255] },
+  { id: 'prismatic', name: 'PRISMATISK', tint: [255, 160, 230] },
+  { id: 'gusty', name: 'STORMVIND', tint: [220, 245, 255] },
 ];
 const NEW_ENEMIES = ['U', 'X', 'Y', '!', '@', '^', '+', 'Å', 'Ä', 'Ö', 'É', 'Ü', 'Ñ', 'Æ', 'Þ', 'Ð', 'Ý', 'Ã', 'Õ', 'Ê', 'Î', 'Ô', 'Ë', 'Í', 'Ï', 'Ó', 'Ú', 'Û', 'Ā', 'Ă', 'ĳ', 'Ĵ', 'ĵ', 'Ķ', 'ķ', 'ĸ'];
 async function loadEnemySheet(k, d) {
@@ -2413,6 +2417,7 @@ function hurtEnemy(e, dmg, hx, hy, opt = {}) {
   dmg = crabShell(e, dmg, opt); if (e.boss) dmg = queenReflect(e, dmg, opt); if (e.d.crystal) dmg *= 1 + mod('crystalDmg'); if (P.swim || cellUnder() === '-') dmg *= 1 + mod('waterDmg');
   if (opt.melee && !opt.cleave) cleaveHit(e, dmg);
   if (e.d.stone && !opt.boom && !opt.melee) { dmg *= 0.5; if (Math.random() < 0.3) sparks(e.x, e.y, 0.6, 2); } // sten: kulor biter dåligt
+  if (hasMod(e, 'prismatic') && !opt.noProc && Math.random() < 0.2 && (e.prT || 0) < tmr) { e.prT = tmr + 0.8; prismBeam(e.x, e.y, Math.atan2(P.y - e.y, P.x - e.x) + rnd(-0.1, 0.1), 5 + run.depth, 1, 0, new Set(), 16, true); play('prism_bounce', 0.5, 0.9, { x: e.x, y: e.y }); } // prismatisk: skickar tillbaka en stråle
   if (hasMod(e, 'mirror') && !opt.noProc && !opt.boom) { const r = dmg * 0.15; if (r > 0.3) { hurtPlayer(r); if ((e.mirT || 0) < tmr) { e.mirT = tmr + 1; spawnText(e.x, e.y, 'SPEGLAR', '#c0e0ff'); } } }
   if (e.d.armor) { const before = dmg; dmg = Math.max(dmg * 0.25, dmg - e.d.armor); if (dmg < before * 0.6 && !opt.quiet) play('ricochet', 0.35, rnd(1.2, 1.5), { x: e.x, y: e.y }); }
   e.revealT = 2;
@@ -2469,7 +2474,7 @@ function comboKill(e) { // kombomätare: dödanden i följd inom 3 s
 }
 function killEnemy(e) {
   hitStop = Math.max(hitStop, e.boss ? 0.15 : e.elite ? 0.07 : 0.02);
-  e.dead = true; e.t = 0; e.state = 'dead'; if (e.d.ai !== 'eel') kills++; run.kills++; score += Math.round(e.d.score * (e.elite ? 3 : 1) * depthMul());
+  e.dead = true; e.t = 0; e.state = 'dead'; if (e.d.ai !== 'eel') kills++; run.kills++; if (e.tb) { e.tb.t = 0; e.tb = null; } score += Math.round(e.d.score * (e.elite ? 3 : 1) * depthMul());
   multiKill(); addDecal(e.x, e.y); comboKill(e); vib(e.boss ? 'boss' : 'kill');
   play('click', 0.3, 2.4); // tydligt dödsljud
   if (e.boss || e.guardian) for (let i = 0; i < 5; i++) if (fx.parts.scorch) decals.push({ x: e.x + rnd(-0.8, 0.8), y: e.y + rnd(-0.8, 0.8), img: fx.parts.scorch[0], size: rnd(0.14, 0.24) }); // bossen lämnar en krater
@@ -5095,6 +5100,7 @@ function eliteTick(e, dt) { // elitegenskaper som verkar över tid
   if (!e.elite) return;
   if (!settings.lowfx && Math.random() < dt * 5 && fx.parts.ember) particles.push({ x: e.x + rnd(-0.3, 0.3), y: e.y + rnd(-0.3, 0.3), z: rnd(0, 0.3), vx: 0, vy: 0, vz: 0.8, life: 0.7, maxLife: 0.7, frames: fx.parts.ember, img: fx.parts.ember[0], size: 0.06, add: true, tint: e.elite.tint, drift: true }); // glödande aura
   if (hasMod(e, 'frost') && Math.hypot(P.x - e.x, P.y - e.y) < 2.6) { P.slowT = Math.max(P.slowT, 0.3); if (Math.random() < dt * 3) particles.push({ x: P.x + rnd(-0.6, 0.6), y: P.y + rnd(-0.6, 0.6), z: rnd(0.2, 0.6), vx: 0, vy: 0, vz: -0.2, life: 0.6, maxLife: 0.6, img: fx.hit[1], size: 0.05, add: true, tint: [170, 230, 255], drift: true }); }
+  eliteV9Tick(e, dt);
   if (hasMod(e, 'flicker')) e.ghost = 0.35 + 0.35 * Math.sin(tmr * 4 + e.x);
   if (hasMod(e, 'stalker')) e.ghost = Math.hypot(P.x - e.x, P.y - e.y) < 2.5 || e.state === 'attack' ? 0 : 0.9; // osynlig tills den anfaller
   if (hasMod(e, 'caller') && !e.called && e.hp < e.maxHp * 0.3) { e.called = true; say('ELITEN KALLAR PÅ HJÄLP!', 1.5); play('roar', 0.7, 0.8, { x: e.x, y: e.y }); for (let i = 0; i < 2; i++) { const a = rnd(0, TAU), x = e.x + Math.cos(a) * 1.5, y = e.y + Math.sin(a) * 1.5; if (!solid(x, y)) { const o = makeEnemy(e.type, x, y); o.alert = true; o.minion = true; ents.push(o); totalEnemies++; spawnPuff(x, y, 5); } } }
@@ -7412,6 +7418,14 @@ const AI_V9 = {
     return false;
   },
 };
+function eliteV9Tick(e, dt) { // elitegenskaper från version 9
+  if (!e.elite || e.dead || !e.alert) return;
+  const dist = Math.hypot(P.x - e.x, P.y - e.y);
+  if (hasMod(e, 'tempo')) { if (!e.tb) { e.tb = { x: e.x, y: e.y, r: 2, t: Infinity }; timeBubbles.push(e.tb); } e.tb.x = e.x; e.tb.y = e.y; e.slow = 0; } // bubblan följer med men saktar inte in den själv
+  if (hasMod(e, 'storm')) { e.stT = (e.stT ?? rnd(3, 5)) - dt; if (e.stT <= 0 && dist < 12 && hasLOS(e.x, e.y, P.x, P.y)) { e.stT = rnd(5, 7); lightningAt(P.x, P.y, 1.1, 8 + run.depth * 2); } }
+  if (hasMod(e, 'gusty')) { e.guT = (e.guT ?? rnd(3, 5)) - dt; if (e.guT <= 0 && dist < 7) { e.guT = rnd(5, 7); e.gusting = 1; play('wind_gust', 0.5, 1.2, { x: e.x, y: e.y }); }
+    if (e.gusting > 0) { e.gusting -= dt; const k = 3.5 * Math.max(0, 1 - mod('windResist')) * dt; if (dist > 0.3) tryMove(P, (P.x - e.x) / dist * k, (P.y - e.y) / dist * k, 0.24); } }
+}
 function clockRewind(e) { // urverkssoldaten: den första döden räknas inte
   if (e.d.ai !== 'clocksoldier' || e.rewound || e.boss) return false;
   e.rewound = true; e.hp = 1; e.rewindT = 2.2; e.burn = 0; e.poison = 0; spawnText(e.x, e.y, 'LINDAS UPP…', '#e0c070'); play('clock_rewind', 0.7, 0.8, { x: e.x, y: e.y }); firstHint('rewind', 'URVERKSSOLDATEN LINDAS UPP IGEN – SLÅ TILL MEDAN DEN LIGGER.');
