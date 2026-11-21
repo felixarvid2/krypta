@@ -8288,7 +8288,9 @@ function feudTick(e, dt) { // en fiende som blivit träffad av en annan ger igen
   const t = e.feud; if (!t || t.dead || t.dying || (e.feudT || 0) < tmr || e.boss) { e.feud = null; return false; }
   const d = Math.hypot(t.x - e.x, t.y - e.y), a = Math.atan2(t.y - e.y, t.x - e.x); e.cd -= dt;
   if (e.d.melee) {
-    if (d > e.d.range + 0.4) { const sp = e.d.speed * diff().speed * dt * (e.slow > 0 ? 0.5 : 1); const ox = e.x, oy = e.y; tryMove(e, Math.cos(a) * sp, Math.sin(a) * sp, 0.28); e.mvx = e.x - ox; e.mvy = e.y - oy; e.state = 'move'; }
+    if (d > e.d.range + 0.4) { const sp = e.d.speed * diff().speed * dt * (e.slow > 0 ? 0.5 : 1), nx = e.x + Math.cos(a) * (sp + 0.3), ny = e.y + Math.sin(a) * (sp + 0.3);
+      if ((voidAt(nx, ny) || deepAt(nx, ny)) && !e.d.float) { e.feud = null; return false; } // går inte ut i tomrummet eller djupt vatten för ett bråk
+      const ox = e.x, oy = e.y; tryMove(e, Math.cos(a) * sp, Math.sin(a) * sp, 0.28); e.mvx = e.x - ox; e.mvy = e.y - oy; e.state = 'move'; }
     else if (e.cd <= 0) { e.cd = e.d.cd; e.state = 'attack'; e.t = 0; e.didHit = true; hurtEnemy(t, e.d.dmg * 0.8, t.x, t.y, { noProc: true, infight: true }); if (!t.dead && !t.boss) { t.feud = e; t.feudT = tmr + 6; } play('splat', 0.4, 0.8, { x: t.x, y: t.y }); }
   } else if (e.cd <= 0 && hasLOS(e.x, e.y, t.x, t.y)) { e.cd = e.d.cd * 1.2; e.state = 'attack'; e.t = 0; e.didHit = true; shootFireball(e, a, e.d.proj === 'orb' ? 3.4 : 5.2, e.d.dmg, false, e.d.proj); }
   if (e.state === 'attack' && e.t > 0.5) e.state = 'move';
@@ -8336,6 +8338,7 @@ function setupLoop() { style.v = Math.min(style.v, 30); style.floorPeak = 0; sty
 function loopTick(dt) {
   style.v = Math.max(0, style.v - dt * (1.5 + styleRank() * 1.4)); for (const f of style.feed) f.k -= dt; style.feed = style.feed.filter(f => f.k > 0);
   if (P.hp > maxHp()) P.hp = Math.max(maxHp(), P.hp - dt * 2); // överhälsan sjunker
+  for (const e of ents) if (!e.dead && !e.dying && !e.boss && !e.knock && !e.d.float && e.d.ai !== 'fly' && e.d.ai !== 'wisp' && !e.hidden && voidAt(e.x, e.y)) { spawnText(e.x, e.y, 'FÖLL!', '#c0e0ff'); play('void_fall', 0.5, 1.3, { x: e.x, y: e.y }); hurtEnemy(e, e.hp + 999, e.x, e.y, { noProc: true }); } // den som står i tomrummet faller
   for (const e of ents) if (canExec(e)) { if (Math.floor(tmr * 8) % 2) e.flash = Math.max(e.flash, 0.05); if (!settings.lowfx && Math.random() < dt * 12) particles.push({ x: e.x + rnd(-0.2, 0.2), y: e.y + rnd(-0.2, 0.2), z: e.d.size * 0.9, vx: 0, vy: 0, vz: 0.5, life: 0.4, maxLife: 0.4, img: fx.hit[1], size: 0.05, add: true, tint: [140, 230, 255] }); }
   for (const it of items) { if (it.taken || !it.drop || !LOOP_MAGNET.has(it.type)) continue; const dx = P.x - it.x, dy = P.y - it.y, d = Math.hypot(dx, dy); if (d < 2.4 && d > 0.2) { it.x += dx / d * Math.min(d, 7 * dt); it.y += dy / d * Math.min(d, 7 * dt); } } // föremål dras till dig
   slideTick(dt); clockTick(dt);
