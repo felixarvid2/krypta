@@ -1261,6 +1261,67 @@ Version 7 lägger till 200 förbättringar:
 
 Kombinerade utmaningar multiplicerar själarna. Sparplatsen väljs på startskärmen, och `?fro=XXXX` i adressen fyller i ett delat frö.
 
+## Version 8: Avgrunden
+
+Version 8 gör spelet större med två biomer, ett talangsystem, ett nytt läge och mycket nytt innehåll:
+- **Bilder:** ritas med `tools/props6/make.py` och `tools/weapon-frames`.
+- **Ljud och musik:** byggs med `tools/sounds/make6.sh`.
+- **Kort:** byggs med `tools/card-art/make.py` (`make.py . v8`).
+- **Bangeneratorn:** har fått biomerna Kristallgrottorna och Den sjunkna staden, två nya bossarenor och två nya väktare.
+
+**Erfarenhet och talanger**
+- Dödanden, kunskapsböcker (Ģ) och talangaltare (Ġ) ger erfarenhet. Varje ny nivå ger ett val av tre talanger.
+- Det finns 30 talanger i tre grenar: Krigaren, Skuggan och Mystikern. Några kräver en annan talang först, och många har flera rangar.
+- Talangskärmen (`CardUI.talents`):
+  - 1–3 väljer en talang, R slår om och T visar hela trädet.
+  - Pausmenyn visar dina talanger.
+
+**Två nya biomer**
+- **Kristallgrottorna:**
+  - Glödande kristaller och kristallådror ger färgat ljus, och kristallspikar skadar.
+  - Brytande kristaller (Ė) delar varje skott, även prismans strålar, i tre.
+- **Den sjunkna staden:**
+  - I djupt vatten (Đ) simmar du långsamt och kan inte hoppa.
+  - En luftmätare töms under vattnet, och luftbubblor (Ĝ) fyller på.
+  - Tidvattenrutor (Ĕ) blir djupa med jämna mellanrum.
+  - Vrakkistor kan innehålla skatter, eller vara en mimic.
+
+**Tre nya vapen** (med pakter och fyra uppgraderingar vardera)
+- **Harpunen:** drar fienden till dig. Träffar den en vägg drar den dig dit.
+- **Bumerangen:** flyger ut, träffar och kommer tillbaka.
+- **Prisman:** en kristallstråle som studsar mot väggar.
+
+**Åtta nya fiender**
+- Kristallgolem, som slår sönder marken.
+- Skärvirrbloss, som skjuter skärvor och hoppar undan.
+- Drunknad sjöman, med en båtshake som drar.
+- Ål, som bara finns i djupt vatten.
+- Siren, vars sång drar dig mot henne.
+- Jättekrabba, med ett skal som skyddar framifrån.
+- Skuggjägare, som bara syns i ljus.
+- Häxa, som förhäxar dig och teleporterar sig.
+
+**Två nya bossar**
+- **Kristalldrottningen:** skärvsalvor, studsande strålar och en spegelsköld som skickar tillbaka skotten.
+- **Leviatan:** dyker i bassängen och kommer upp någon annanstans, sprutar vatten, skickar vågor och kallar på ålar.
+
+**Avgrunden**
+- Ett nytt läge med oändlig nedstigning genom slumpade biomer.
+- Varje våning är svårare än den förra, och det kommer en boss var sjätte våning.
+- Djupaste våningen sparas som rekord.
+
+**Mer**
+- Kartografen säljer kartor och hemligheter.
+- Den nya klassen Dykaren.
+- 24 nya kort och två nya set: Djupets väg och Prismans väg.
+- 10 nya prestationer och nya dagliga uppdrag.
+- Statistik för Avgrunden och nivåer.
+
+**Rättelser**
+- Kastknivarna drog två knivar per kast.
+- Kvicksanden sänkte aldrig kameran.
+- Laddhinten visades för närstridsvapen.
+
 ## Assets som används
 
 | Vad | Källa |

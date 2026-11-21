@@ -1,5 +1,5 @@
 'use strict';
-// KRYPTA – kortgränssnitt: draft (välj 1 av n), butik, kortlek och toast.
+// KRYPTA – kortgränssnitt: draft (välj 1 av n), butik, kortlek, talangval och toast.
 // Ladda helst före game.js så att UI:ts tangentlyssnare (window, capture) körs först och
 // kan stoppa tangenter från att nå spelet medan ett fönster är öppet.
 (() => {
@@ -969,6 +969,7 @@ function deck(ownedIds, onClose, opts) {
 // picks (i info eller opts) visar "VALD X GÅNGER" i detaljrutan.
 // Sökrutan filtrerar på namn och text (bara sedda kort, utan hänsyn till prickar: "o" hittar "Ö"), och
 // rullistan visar ett set i taget. Tangent / (eller S) går till sökrutan, Esc i sökrutan tömmer den.
+// query (sökord) och set (set-id, 'alla' eller 'inget') i info eller opts ger sökrutan och rullistan ett startvärde.
 let codexFilter = 'alla', codexSet = 'alla';
 const fold = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/\s+/g, ' ');
 function codex(allCards, info, onClose, opts) {
@@ -997,8 +998,10 @@ function codex(allCards, info, onClose, opts) {
   search.type = 'search'; search.className = 'cu-in cu-search'; search.placeholder = 'SÖK NAMN ELLER TEXT';
   search.setAttribute('aria-label', 'SÖK I KORTARKIVET'); search.autocomplete = 'off'; search.spellcheck = false;
   search.addEventListener('input', () => apply());
+  if (typeof info.query === 'string') search.value = info.query; // version 8: sökning och set kan ges från början
   const sets = C.SETS || {};
-  if (codexSet !== 'alla' && !sets[codexSet]) codexSet = 'alla';
+  if (typeof info.set === 'string' && (info.set === 'alla' || info.set === 'inget' || sets[info.set])) codexSet = info.set;
+  if (codexSet !== 'alla' && codexSet !== 'inget' && !sets[codexSet]) codexSet = 'alla';
   const setSel = document.createElement('select');
   setSel.className = 'cu-in cu-setsel'; setSel.setAttribute('aria-label', 'VISA SET');
   const opt = (v, t) => { const o = document.createElement('option'); o.value = v; o.textContent = t; setSel.appendChild(o); };
@@ -1183,6 +1186,291 @@ function choice(opts, onPick) {
   if (cur) cur.timers.push(setTimeout(() => { try { btns[0].focus({ preventScroll: true }); } catch (e) { /* ingen fokus */ } }, 60));
 }
 
+// ---------- Talangval (version 8: nivå upp) ----------
+// talents(opts, onPick): välj en av talangerna i opts.options (normalt tre, fler med talentChoice).
+// opts: { title, subtitle, level,
+//         options: [{ id, name, text, branch: 'krigare'|'skugga'|'mystiker', icon, rank, maxRank, req }],
+//         owned: [{ id, rank }] (eller { id: rang }), tree: alla talanger [{ id, name, text, branch, req, maxRank, icon }],
+//         rerolls: antal omslag (valfritt), onReroll: () => nya options | { options, rerolls } | null }
+// rank i ett alternativ = rangen talangen får om man väljer den (utan rank: ägd rang + 1).
+// req: id, [id, ...] eller { id, rank } – talanger som måste ägas först.
+// icon: bild-URL (standard assets/gfx/talents/<id>.png); saknas bilden ritas grenens tecken i stället.
+// Tangenter: 1–n väljer, R slår om, T visar/döljer trädet, Esc stänger trädet (valet kan inte hoppas över).
+// onPick(alternativet) körs när ett val gjorts. CardUI.close() stänger utan val.
+const BRANCHES = {
+  krigare: { label: 'KRIGAREN', color: '#e0503a', map: ['........X', '.......XX', '......XX.', '.....XX..', 'X...XX...', '.X.XX....', '..XX.....', '.X.XX....', 'X...X....'] },
+  skugga: { label: 'SKUGGAN', color: '#b062e8', map: ['...XXXX..', '..XX.....', '.XX......', '.XX......', '.XX......', '.XX......', '..XX.....', '...XXXX..', '.........'] },
+  mystiker: { label: 'MYSTIKERN', color: '#4a9cf0', map: ['....X....', '....X....', '..X.X.X..', '...XXX...', 'XXXXXXXXX', '...XXX...', '..X.X.X..', '....X....', '....X....'] },
+};
+const BRANCH_ORDER = ['krigare', 'skugga', 'mystiker'];
+const branchOf = t => (t && BRANCHES[t.branch] ? t.branch : 'krigare');
+const TALENT_ARM = 300; // ms efter öppning då val ignoreras (spelaren kan ha en tangent nedtryckt när nivån kommer)
+function talentGlyph(branch) {
+  const b = BRANCHES[branch] || BRANCHES.krigare;
+  const h = b.map.length, w = b.map[0].length;
+  let rects = '';
+  b.map.forEach((line, y) => { for (let x = 0; x < w; x++) if (line[x] === 'X') rects += '<rect x="' + x + '" y="' + y + '" width="1" height="1"/>'; });
+  const box = el('div', 'cu-tglyph');
+  box.innerHTML = '<svg viewBox="-1 -1 ' + (w + 2) + ' ' + (h + 2) + '" aria-hidden="true">' + rects + '</svg>';
+  box.firstChild.setAttribute('fill', b.color);
+  return box;
+}
+function talentIcon(t, cls) {
+  const box = el('div', 'cu-tico' + (cls ? ' ' + cls : ''));
+  const src = typeof t.icon === 'string' && t.icon ? t.icon : 'assets/gfx/talents/' + t.id + '.png';
+  const url = /^(?:[a-z]+:|\/)/i.test(src) ? src : (api.base || '') + src;
+  const i = document.createElement('img');
+  i.alt = ''; i.draggable = false;
+  i.addEventListener('error', () => { i.remove(); box.classList.add('fb'); box.appendChild(talentGlyph(branchOf(t))); });
+  i.src = url;
+  box.appendChild(i);
+  return box;
+}
+function reqList(t) {
+  const r = t && t.req;
+  if (!r) return [];
+  return (Array.isArray(r) ? r : [r]).map(x => (typeof x === 'string' ? { id: x, rank: 1 } : x && x.id ? { id: x.id, rank: Math.max(1, +x.rank || 1) } : null)).filter(Boolean);
+}
+const rankTxt = (r, m) => 'RANG ' + r + '/' + m;
+function pips(r, m) {
+  const p = el('div', 'cu-tpips'); p.setAttribute('aria-hidden', 'true');
+  for (let i = 0; i < m; i++) p.appendChild(el('span', i < r ? 'on' : ''));
+  return p;
+}
+function talents(opts, onPick) {
+  opts = opts || {};
+  const tree = Array.isArray(opts.tree) ? opts.tree.filter(t => t && t.id) : [];
+  const byT = Object.create(null);
+  for (const t of tree) byT[t.id] = t;
+  const ownedRank = Object.create(null);
+  if (Array.isArray(opts.owned)) { for (const o of opts.owned) if (o && o.id) ownedRank[o.id] = Math.max(ownedRank[o.id] || 0, +o.rank || 1); } else if (opts.owned && typeof opts.owned === 'object') { for (const id in opts.owned) ownedRank[id] = +opts.owned[id] || 0; }
+  const rankOf = id => ownedRank[id] || 0;
+  const nameOf = id => (byT[id] && byT[id].name) || String(id).toUpperCase();
+  const maxOf = t => Math.max(1, +(t.maxRank || (byT[t.id] && byT[t.id].maxRank) || 1));
+  const full = o => Object.assign({}, byT[o.id] || {}, o); // alternativet med trädets uppgifter som reserv
+  let options = (opts.options || []).map(full);
+  let rerolls = Math.max(0, +opts.rerolls || 0);
+  const canReroll = () => rerolls > 0 && typeof opts.onReroll === 'function';
+  let done = false, treeOpen = false;
+  const t0 = Date.now();
+  const armed = () => Date.now() - t0 >= TALENT_ARM;
+
+  const node = el('div', 'cu-screen cu-talents');
+  const wrap = el('div', 'cu-wrap'); node.appendChild(wrap);
+  const title = opts.title || 'NY NIVÅ!';
+  node.setAttribute('aria-label', title + (opts.level != null ? ' NIVÅ ' + opts.level : ''));
+  const head = el('div', 'cu-thead');
+  if (opts.level != null) { const lv = el('div', 'cu-tlvl'); lv.appendChild(el('span', 'cu-tlvk', 'NIVÅ')); lv.appendChild(el('span', 'cu-tlvn', String(opts.level))); head.appendChild(lv); }
+  const ht = el('div', 'cu-thtxt');
+  ht.appendChild(el('h2', 'cu-title', title));
+  ht.appendChild(el('p', 'cu-sub', opts.subtitle || 'VÄLJ EN TALANG'));
+  head.appendChild(ht);
+  wrap.appendChild(head);
+  const row = el('div', 'cu-trow');
+  wrap.appendChild(row);
+  const msg = el('div', 'cu-msg'); msg.setAttribute('aria-live', 'polite');
+  const foot = el('div', 'cu-foot');
+  const treeBtn = el('button', 'cu-btn ghost cu-ttree-btn'); treeBtn.type = 'button';
+  treeBtn.setAttribute('aria-expanded', 'false');
+  treeBtn.addEventListener('click', ev => { ev.stopPropagation(); toggleTree(); });
+  let rrBtn = null;
+  if (typeof opts.onReroll === 'function' && opts.rerolls != null) {
+    rrBtn = el('button', 'cu-btn cu-treroll'); rrBtn.type = 'button';
+    rrBtn.addEventListener('click', ev => { ev.stopPropagation(); reroll(); });
+    foot.appendChild(rrBtn);
+  }
+  foot.appendChild(treeBtn);
+  wrap.appendChild(msg); wrap.appendChild(foot);
+  const hint = el('div', 'cu-hint');
+  wrap.appendChild(hint);
+  const setMsg = (t, cls) => { msg.textContent = t || ''; msg.className = 'cu-msg' + (cls ? ' ' + cls : ''); };
+  let cards = [];
+
+  function makeCard(o, i) {
+    const b = branchOf(o), B = BRANCHES[b], m = maxOf(o);
+    const r = Math.min(m, Math.max(1, +o.rank || rankOf(o.id) + 1));
+    const c = el('div', 'cu-tcard br-' + b);
+    c.style.setProperty('--tc', B.color);
+    c.style.setProperty('--tglow', hexA(B.color, 0.45));
+    c.style.setProperty('--d', (i * 0.09) + 's');
+    c.tabIndex = 0; c.setAttribute('role', 'button');
+    const reqs = reqList(o);
+    c.setAttribute('aria-label', (i + 1) + ': ' + (o.name || o.id) + ', ' + B.label + ', ' + rankTxt(r, m) + '. ' + String(o.text || '').replace(/\n/g, ', ')
+      + (reqs.length ? '. BYGGER PÅ ' + reqs.map(q => nameOf(q.id)).join(', ') : ''));
+    const top = el('div', 'cu-ttop');
+    top.appendChild(el('span', 'cu-tbr', B.label));
+    top.appendChild(el('span', 'cu-key', '[' + (i + 1) + ']'));
+    c.appendChild(top);
+    c.appendChild(talentIcon(o));
+    const body = el('div', 'cu-tbody');
+    body.appendChild(el('div', 'cu-tname', o.name || String(o.id).toUpperCase()));
+    const rk = el('div', 'cu-trank');
+    rk.appendChild(el('span', 'cu-trt', rankTxt(r, m)));
+    rk.appendChild(pips(r, m));
+    if (r > 1) rk.appendChild(el('span', 'cu-tnew up', 'UPPGRADERING'));
+    else rk.appendChild(el('span', 'cu-tnew', 'NY'));
+    body.appendChild(rk);
+    const fx = fxLines({ text: o.text || '' }); fx.classList.add('cu-ttext');
+    body.appendChild(fx);
+    if (reqs.length) body.appendChild(el('div', 'cu-treq', 'BYGGER PÅ ' + reqs.map(q => nameOf(q.id)).join(', ')));
+    c.appendChild(body);
+    c.addEventListener('click', ev => { ev.stopPropagation(); pick(cards.indexOf(c)); });
+    return c;
+  }
+  function build() {
+    row.textContent = '';
+    row.style.setProperty('--n', Math.max(1, options.length));
+    cards = options.map((o, i) => { const c = makeCard(o, i); row.appendChild(c); return c; });
+    if (!options.length) row.appendChild(el('div', 'cu-empty', 'INGA TALANGER ATT VÄLJA.'));
+    refresh();
+  }
+  function refresh() {
+    treeBtn.textContent = treeOpen ? (touchUI() ? 'DÖLJ TRÄDET' : 'DÖLJ TRÄDET (T)') : (touchUI() ? 'VISA TRÄDET' : 'VISA TRÄDET (T)');
+    treeBtn.setAttribute('aria-expanded', treeOpen ? 'true' : 'false');
+    if (rrBtn) {
+      rrBtn.textContent = (touchUI() ? 'SLÅ OM' : 'SLÅ OM (R)') + ' · ' + rerolls + ' KVAR';
+      rrBtn.classList.toggle('poor', !canReroll());
+      rrBtn.setAttribute('aria-disabled', canReroll() ? 'false' : 'true');
+    }
+    const n = Math.max(1, options.length);
+    hint.textContent = touchUI() ? 'TRYCK PÅ EN TALANG FÖR ATT VÄLJA' : 'KLICKA ELLER TRYCK 1-' + n + ' · PILTANGENTER OCH ENTER · T = TRÄDET' + (canReroll() ? ' · R = SLÅ OM' : '');
+  }
+  function pick(i) {
+    if (done || !options[i] || !cards[i]) return;
+    if (!armed()) return;
+    done = true; sfx('pick');
+    cards.forEach((c, k) => c.classList.add(k === i ? 'picked' : 'faded'));
+    const o = options[i];
+    const fin = () => { close(true); if (onPick) onPick(o); };
+    if (reduced()) fin(); else later(fin, 300);
+  }
+  function deny(n2, text) { sfx('deny'); setMsg(text, 'bad'); if (n2) { n2.classList.remove('shake'); void n2.offsetWidth; n2.classList.add('shake'); } }
+  function reroll() {
+    if (done) return;
+    if (!canReroll()) { deny(rrBtn, 'INGA OMSLAG KVAR'); return; }
+    let res = null;
+    try { res = opts.onReroll(); } catch (e) { res = null; }
+    const list = Array.isArray(res) ? res : res && Array.isArray(res.options) ? res.options : null;
+    if (!list || !list.length) { deny(rrBtn, 'INGA ANDRA TALANGER'); return; }
+    rerolls = res && typeof res.rerolls === 'number' ? Math.max(0, res.rerolls) : rerolls - 1;
+    options = list.map(full);
+    build();
+    setMsg('NYA TALANGER', 'ok');
+    sfx('flip');
+    try { cards[0].focus({ preventScroll: true }); } catch (e) { /* ingen fokus */ }
+  }
+
+  // ---- trädet: tre grenar med ägda, valbara och låsta talanger ----
+  const treeBox = el('div', 'cu-ttree'); treeBox.hidden = true;
+  treeBox.setAttribute('role', 'region'); treeBox.setAttribute('aria-label', 'TALANGTRÄDET');
+  node.appendChild(treeBox);
+  let treeTab = branchOf(options[0]);
+  function depthOf(t, seen) {
+    seen = seen || new Set();
+    if (seen.has(t.id)) return 0;
+    seen.add(t.id);
+    let d = 0;
+    for (const q of reqList(t)) if (byT[q.id]) d = Math.max(d, 1 + depthOf(byT[q.id], seen));
+    return d;
+  }
+  function buildTree() {
+    treeBox.textContent = '';
+    const inner = el('div', 'cu-ttin');
+    const th = el('div', 'cu-tthead');
+    th.appendChild(el('h3', 'cu-tth', 'TALANGTRÄDET'));
+    const pts = tree.reduce((s, t) => s + Math.min(rankOf(t.id), maxOf(t)), 0);
+    th.appendChild(el('div', 'cu-ttpts', pts + ' POÄNG' + (opts.level != null ? ' · NIVÅ ' + opts.level : '')));
+    const x = el('button', 'cu-btn ghost cu-ttclose', touchUI() ? 'STÄNG' : 'STÄNG (ESC)'); x.type = 'button';
+    x.addEventListener('click', ev => { ev.stopPropagation(); toggleTree(false); });
+    th.appendChild(x);
+    inner.appendChild(th);
+    const tabs = segmented(BRANCH_ORDER.map(b => [b, BRANCHES[b].label]), treeTab, v => { treeTab = v; cols.forEach(c => c.classList.toggle('on', c.dataset.b === v)); }, 'GREN');
+    tabs.classList.add('cu-ttabs');
+    inner.appendChild(tabs);
+    const grid = el('div', 'cu-tcols');
+    const offered = new Map(options.map((o, i) => [o.id, i]));
+    const cols = BRANCH_ORDER.map(b => {
+      const B = BRANCHES[b];
+      const col = el('div', 'cu-tcol' + (b === treeTab ? ' on' : ''));
+      col.dataset.b = b;
+      col.style.setProperty('--tc', B.color);
+      const list = tree.filter(t => branchOf(t) === b).map(t => ({ t, d: depthOf(t) })).sort((a, z) => a.d - z.d);
+      const bp = list.reduce((s, e) => s + Math.min(rankOf(e.t.id), maxOf(e.t)), 0);
+      const ch = el('div', 'cu-tch');
+      ch.appendChild(talentGlyph(b));
+      ch.appendChild(el('span', 'cu-tchn', B.label));
+      ch.appendChild(el('span', 'cu-tchp', bp + ' P'));
+      col.appendChild(ch);
+      for (const { t, d } of list) {
+        const m = maxOf(t), r = Math.min(rankOf(t.id), m);
+        const miss = reqList(t).filter(q => rankOf(q.id) < q.rank);
+        const st = r >= m ? 'max' : r > 0 ? 'own' : miss.length ? 'lock' : 'open';
+        const n = el('div', 'cu-tnode ' + st + (offered.has(t.id) ? ' offer' : ''));
+        n.style.setProperty('--depth', Math.min(3, d));
+        n.appendChild(talentIcon(t, 'sm'));
+        const nb = el('div', 'cu-tnb');
+        const nm = el('div', 'cu-tnn');
+        if (offered.has(t.id) && !touchUI()) nm.appendChild(el('span', 'cu-key', '[' + (offered.get(t.id) + 1) + '] '));
+        nm.appendChild(document.createTextNode(t.name || String(t.id).toUpperCase()));
+        nb.appendChild(nm);
+        const rr = el('div', 'cu-tnr');
+        rr.appendChild(el('span', '', st === 'lock' ? 'LÅST' : rankTxt(r, m)));
+        rr.appendChild(pips(r, m));
+        nb.appendChild(rr);
+        if (t.text) nb.appendChild(el('div', 'cu-tnt', String(t.text).replace(/\n/g, ' · ')));
+        const reqs = reqList(t);
+        if (reqs.length) nb.appendChild(el('div', 'cu-tnq' + (miss.length ? ' miss' : ''), 'KRÄVER ' + reqs.map(q => nameOf(q.id) + (q.rank > 1 ? ' ' + q.rank : '')).join(', ')));
+        n.appendChild(nb);
+        n.setAttribute('aria-label', (t.name || t.id) + ', ' + (st === 'lock' ? 'LÅST' : rankTxt(r, m)) + (offered.has(t.id) ? ', ERBJUDEN' : '') + (reqs.length ? ', KRÄVER ' + reqs.map(q => nameOf(q.id)).join(', ') : ''));
+        col.appendChild(n);
+      }
+      if (!list.length) col.appendChild(el('div', 'cu-empty', 'INGA TALANGER.'));
+      grid.appendChild(col);
+      return col;
+    });
+    inner.appendChild(grid);
+    const lg = el('div', 'cu-tlegend');
+    for (const [c, t] of [['own', 'ÄGD'], ['max', 'FULL RANG'], ['open', 'VALBAR'], ['lock', 'LÅST'], ['offer', 'ERBJUDS NU']]) { const s = el('span', 'cu-tlg ' + c); s.appendChild(el('i')); s.appendChild(document.createTextNode(t)); lg.appendChild(s); }
+    inner.appendChild(lg);
+    treeBox.appendChild(inner);
+    return x;
+  }
+  function toggleTree(on) {
+    if (done) return;
+    treeOpen = on == null ? !treeOpen : !!on;
+    if (treeOpen) {
+      treeTab = branchOf(options[0]);
+      const x = buildTree();
+      treeBox.hidden = false; wrap.classList.add('under');
+      wrap.setAttribute('aria-hidden', 'true');
+      sfx('flip');
+      try { x.focus({ preventScroll: true }); } catch (e) { /* ingen fokus */ }
+    } else {
+      treeBox.hidden = true; wrap.classList.remove('under');
+      wrap.removeAttribute('aria-hidden');
+      try { (cards[0] || treeBtn).focus({ preventScroll: true }); } catch (e) { /* ingen fokus */ }
+    }
+    refresh();
+  }
+
+  open('talents', node, e => {
+    if (done) return true;
+    const d = digit(e);
+    if (d) { if (treeOpen) toggleTree(false); pick(d - 1); return true; }
+    if (e.code === 'Escape') { if (treeOpen) toggleTree(false); return true; } // valet kan inte hoppas över
+    if (e.code === 'KeyT') { toggleTree(); return true; }
+    if (e.code === 'KeyR') { if (rrBtn) reroll(); return true; }
+    if (!treeOpen) {
+      if (e.code === 'ArrowLeft' || e.code === 'ArrowUp') { moveFocus(cards, -1); return true; }
+      if (e.code === 'ArrowRight' || e.code === 'ArrowDown') { moveFocus(cards, 1); return true; }
+    }
+    if ((e.code === 'Enter' || e.code === 'Space') && !armed()) return true;
+    return activate(e);
+  });
+  build();
+  later(() => { if (!treeOpen && cards[0]) try { cards[0].focus({ preventScroll: true }); } catch (e) { /* ingen fokus */ } }, 60);
+}
+
 // ---------- Panel och lista (inställningar, bestiarium, prestationer, profil) ----------
 // panel: body(container) fyller i innehållet; onClose körs när panelen stängs (Esc, knappen eller klick utanför)
 function panel(title, subtitle, body, onClose) {
@@ -1235,7 +1523,7 @@ function toast(card, label) {
   sfx('toast');
 }
 
-Object.assign(api, { draft, shop, deck, codex, refine, toast, choice, panel, list, el, close: () => close(), isOpen: () => !!cur });
+Object.assign(api, { draft, shop, deck, codex, refine, toast, choice, talents, TALENT_BRANCHES: BRANCHES, panel, list, el, close: () => close(), isOpen: () => !!cur });
 window.CardUI = api;
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ensureRoot); else if (document.body) ensureRoot();
 })();

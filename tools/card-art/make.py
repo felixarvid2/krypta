@@ -26,10 +26,18 @@ svart bakgrund och läggs med "screen" på samma mörklila vinjett som rune-ai-b
 kastknivarna, stridshammaren och musköten ritas som siluetter här; uppgraderingarna är oanvända
 effektbilder ur assets/ashfall-ai/flux/vfx med vapnet som bricka i hörnet (tabellen V7_UPGRADES).
 
+Version 8: 24 nya kort (kristall, hav, kunskap och avgrund) ur de sista oanvända bilderna i assets/ashfall-ai/flux
+(medaljongerna i aspects och stats, porträtten the_prism och archivist) och assets/ashfall-ai/meshy/icons
+(kristallerna, hänget, buren och några färdighetsikoner, som beskärs så att de rundade hörnen försvinner),
+tabellen V8. Föremålen med genomskinlig bakgrund läggs på samma mörklila vinjett. Pakterna för harpunen,
+bumerangen och prismat ritas som siluetter här; uppgraderingarna är oanvända effektbilder ur
+assets/ashfall-ai/flux/vfx med vapnet som bricka i hörnet (tabellen V8_UPGRADES).
+
 Kör från repo-roten: python3 retrofps/tools/card-art/make.py .          (alla)
                      python3 retrofps/tools/card-art/make.py . v5       (bara version 5)
                      python3 retrofps/tools/card-art/make.py . v6       (bara version 6)
                      python3 retrofps/tools/card-art/make.py . v7       (bara version 7)
+                     python3 retrofps/tools/card-art/make.py . v8       (bara version 8)
 """
 import os
 import sys
@@ -42,6 +50,7 @@ ONLY_V5 = ONLY == 'v5'
 FLUX = os.path.join(ROOT, 'assets/rune-ai/flux')
 VFX = os.path.join(ROOT, 'assets/ashfall-ai/flux/vfx')
 ASH = os.path.join(ROOT, 'assets/ashfall-ai/flux')
+MESHY = os.path.join(ROOT, 'assets/ashfall-ai/meshy/icons')
 RELICS = os.path.join(FLUX, 'relics')
 OUT = os.path.join(ROOT, 'retrofps/assets/cards')
 S = 96
@@ -145,6 +154,38 @@ V7_UPGRADES = {  # kort-id: (vapen, effektbild i assets/ashfall-ai/flux/vfx, fä
     'krossaren': ('hammer', 'frost_burst_1', None), 'hammarkastet': ('hammer', 'arc_1', None),
     'hagelladdningen': ('musket', 'explosion_3', None), 'kruthornet': ('musket', 'muzzle_flash', None),
     'krutroken': ('musket', 'smoke_2', None), 'bajonetten': ('musket', 'ichor_burst', (225, 225, 235)),
+}
+
+SKILL_CROP = (104, 104, 920, 920)  # färdighetsikonerna i meshy/icons har rundade hörn (ibland vita): bara mitten
+V8 = {  # kort-id: (sort, bild, andel av bilden som motivet fyller eller beskärning)
+    # ash = assets/ashfall-ai/flux (svart bakgrund, 0 = hela bilden), icon = meshy/icons med genomskinlig bakgrund,
+    # skill = meshy/icons färdighetsikon (beskärs)
+    # vanliga
+    'simfenan': ('skill', 'skill_spore_dart', SKILL_CROP), 'parlbandet': ('icon', 'signal_pendant', 0.78),
+    'lardomens_ljus': ('ash', 'stats/critDamage', 0.92), 'roda_skarvan': ('icon', 'crystal_ember', 0.66),
+    'tidvattenstenen': ('ash', 'aspects/echo', 0.92), 'skarvlinsen': ('icon', 'crystal_lumen', 0.8),
+    'farjkarlens_obol': ('ash', 'aspects/gravity_well', 0.92), 'ronnbarskransen': ('ash', 'aspects/plague', 0.92),
+    'larlingens_dryck': ('ash', 'stats/potionHealing', 0.92), 'sjoormen': ('skill', 'skill_parasite_link', SKILL_CROP),
+    # ovanliga
+    'visdomsstjarnan': ('ash', 'stats/critChance', 0.92), 'dykarklockan': ('icon', 'bio_focus', 0.78),
+    'kristallbrytaren': ('ash', 'aspects/hive', 0.92), 'krakens_vrede': ('skill', 'skill_wrath_of_lumen', SKILL_CROP),
+    'avgrundsfyren': ('ash', 'aspects/wrecking_ball', 0.92), 'ronnskolden': ('ash', 'aspects/aegis', 0.92),
+    'drunknarens_sang': ('ash', 'aspects/virulent', 0.92),
+    # sällsynta
+    'regnbagsslipan': ('icon', 'crystal_void', 0.8), 'leviatans_fjall': ('skill', 'skill_chitin_armor', SKILL_CROP),
+    'siarens_oga': ('ash', 'aspects/predator', 0.92), 'haxjagaren': ('skill', 'skill_phase_shift', SKILL_CROP),
+    'avgrundens_lofte': ('ash', 'aspects/leech', 0.92),
+    # legendariska
+    'glashjartat': ('ash', 'bosses/the_prism', 0), 'avgrundens_arkivarie': ('ash', 'bosses/archivist', 0),
+}
+V8_PACTS = {'pakt_harpun': 'harpoon', 'pakt_bumerang': 'boomerang', 'pakt_prisma': 'prism'}
+V8_UPGRADES = {  # kort-id: (vapen, effektbild i assets/ashfall-ai/flux/vfx, färgton eller None)
+    'ankarlinan': ('harpoon', 'arc_0', (200, 225, 255)), 'hullingen': ('harpoon', 'splat_0', (210, 30, 26)),
+    'kedjeharpunen': ('harpoon', 'arc_2', (255, 214, 150)), 'snabbvinschen': ('harpoon', 'dust_0', (170, 205, 225)),
+    'tvillingkastet': ('boomerang', 'flame_1', (215, 235, 255)), 'eggbumerangen': ('boomerang', 'flame_2', (232, 232, 242)),
+    'sokarkastet': ('boomerang', 'wisp_1', None), 'fangsten': ('boomerang', 'heat_ring_0', None),
+    'trestralen': ('prism', 'lumen_beam', None), 'spegelstralen': ('prism', 'lightning_1', (230, 200, 255)),
+    'fokuslinsen': ('prism', 'energy_glow_0', None), 'solstralen': ('prism', 'flame_0', None),
 }
 
 # ---------- vapensiluetter (ritas på 400x400 och beskärs) ----------
@@ -323,7 +364,65 @@ def draw_musket():
     return im.rotate(28, resample=Image.BICUBIC, expand=True)
 
 
-GUNS = {'knives': draw_knives, 'hammer': draw_hammer, 'musket': draw_musket, 'axe': draw_axe, 'flamer': draw_flamer, 'launcher': draw_launcher, 'nailgun': draw_nailgun, 'staff': draw_staff, 'bow': draw_bow}
+def draw_harpoon():
+    """Harpungevär: trästock, rör av järn, en hullingförsedd harpun och en lina i en ögla."""
+    im = Image.new('RGBA', (440, 440))
+    d = ImageDraw.Draw(im)
+    poly(d, [(6, 216), (100, 196), (150, 200), (150, 228), (104, 232), (18, 262)], (118, 72, 38, 255))   # kolv
+    d.line((26, 218, 98, 204), fill=(168, 112, 62, 255), width=5)
+    poly(d, [(118, 226), (146, 226), (136, 290), (108, 290)], (86, 54, 32, 255))                      # handtag
+    d.arc((112, 222, 160, 270), 10, 190, fill=INK, width=6)                                            # varbygel
+    rrect(d, (140, 194, 330, 226), 8, (78, 84, 92, 255))                                               # rör
+    d.line((150, 202, 322, 202), fill=(160, 168, 178, 255), width=4)
+    for x in (190, 280):                                                                              # band (mässing)
+        d.line((x, 190, x, 230), fill=(176, 132, 64, 255), width=7)
+    d.line((330, 210, 404, 210), fill=INK, width=12)                                                   # harpunen
+    d.line((330, 210, 404, 210), fill=(196, 200, 210, 255), width=6)
+    poly(d, [(400, 196), (438, 210), (400, 224)], (220, 222, 232, 255), w=4)                           # spets
+    for dy in (-1, 1):                                                                                # hullingar
+        poly(d, [(402, 210 + dy * 6), (384, 210 + dy * 24), (392, 210 + dy * 8)], (200, 202, 212, 255), w=3)
+    d.arc((40, 228, 170, 330), 200, 340, fill=(220, 200, 150, 255), width=5)                            # lina
+    d.ellipse((160, 236, 182, 258), fill=(150, 108, 52, 255), outline=INK, width=4)                     # ögla
+    im = im.crop(im.getbbox())
+    im = im.resize((im.width, int(im.height * 1.5)), Image.BICUBIC)
+    return im.rotate(24, resample=Image.BICUBIC, expand=True)
+
+
+def draw_boomerang():
+    """Bumerang: böjd träbit med målade ränder och en lindning i knäet."""
+    im = Image.new('RGBA', (420, 420))
+    d = ImageDraw.Draw(im)
+    outer = [(30, 330), (70, 200), (150, 90), (210, 60), (270, 90), (350, 200), (390, 330), (350, 340), (300, 230), (240, 150), (210, 136), (180, 150), (120, 230), (70, 340)]
+    poly(d, outer, (150, 92, 46, 255), w=8)
+    d.line([(52, 320), (92, 206), (160, 112), (210, 84)], fill=(200, 140, 80, 255), width=6, joint='curve')    # ljus kant
+    d.line([(210, 84), (262, 112), (330, 206), (368, 320)], fill=(200, 140, 80, 255), width=6, joint='curve')
+    for (x0, y0, x1, y1) in ((60, 280, 104, 296), (88, 222, 128, 246), (290, 246, 330, 222), (316, 296, 360, 280)):  # målade ränder
+        d.line((x0, y0, x1, y1), fill=(230, 210, 170, 255), width=8)
+    for k in range(4):                                                                               # lindning
+        d.line((186 + k * 12, 92, 180 + k * 12, 140), fill=(60, 32, 20, 255), width=5)
+    return im.rotate(-12, resample=Image.BICUBIC, expand=True)
+
+
+def draw_prism():
+    """Prisma: en glaskristall i en mässingsfattning på ett skaft, en vit stråle in och en regnbåge ut."""
+    im = Image.new('RGBA', (440, 440))
+    d = ImageDraw.Draw(im)
+    rrect(d, (196, 250, 230, 420), 10, (110, 70, 40, 255))                                    # skaft
+    d.line((206, 266, 206, 408), fill=(150, 104, 62, 255), width=4)
+    for y in (300, 330, 360):                                                                 # lindning
+        d.line((198, y, 228, y + 8), fill=(60, 34, 20, 255), width=5)
+    poly(d, [(150, 246), (276, 246), (256, 268), (170, 268)], (176, 132, 64, 255))              # fattning
+    d.line((30, 170, 176, 186), fill=(250, 250, 255, 255), width=10)                           # strålen in
+    cols = [(255, 70, 60), (255, 160, 40), (255, 236, 80), (90, 220, 90), (70, 150, 255), (170, 90, 255)]
+    for i, c in enumerate(cols):                                                              # regnbågen ut
+        d.polygon([(240, 176 + i * 4), (240, 180 + i * 4), (430, 120 + i * 26), (430, 106 + i * 26)], fill=c + (255,))
+    poly(d, [(213, 70), (290, 236), (136, 236)], (150, 220, 240, 255), w=8)                     # kristallen
+    poly(d, [(213, 96), (244, 222), (213, 222)], (215, 245, 255, 255), w=3)                     # ljus fasett
+    d.line((213, 74, 213, 232), fill=(90, 160, 200, 255), width=3)
+    return im
+
+
+GUNS = {'harpoon': draw_harpoon, 'boomerang': draw_boomerang, 'prism': draw_prism, 'knives': draw_knives, 'hammer': draw_hammer, 'musket': draw_musket, 'axe': draw_axe, 'flamer': draw_flamer, 'launcher': draw_launcher, 'nailgun': draw_nailgun, 'staff': draw_staff, 'bow': draw_bow}
 
 
 def shade(im):
@@ -501,6 +600,43 @@ def main_v7():
     return n
 
 
+def meshy_card(kind, src, arg):
+    im = Image.open(os.path.join(MESHY, src + '.webp'))
+    if kind == 'skill':  # färdighetsikon med egen bakgrund: mitten utan de rundade hörnen
+        return im.convert('RGB').crop(arg)
+    im = im.convert('RGBA')  # föremål med genomskinlig bakgrund: centreras på den mörklila vinjetten
+    bb = im.split()[3].point(lambda v: 255 if v > 16 else 0).getbbox() or (0, 0, im.width, im.height)
+    im = im.crop(bb)
+    k = S * 4 * arg / max(im.size)
+    im = im.resize((max(1, int(im.width * k)), max(1, int(im.height * k))), Image.LANCZOS)
+    big = purple_bg()
+    pos = ((S * 4 - im.width) // 2, (S * 4 - im.height) // 2)
+    add_glow(big, im, pos, (0, 0, 0), 12)
+    big.alpha_composite(im, pos)
+    return big
+
+
+def main_v8():
+    srcs = [k + ':' + s for k, s, _ in V8.values()]
+    assert len(V8) == 24 and len(srcs) == len(set(srcs)), 'varje bild används bara en gång'
+    old = {'ash:' + s for s, _ in V7.values()}
+    assert not old & set(srcs), old & set(srcs)
+    fx = [s for _, s, _ in V8_UPGRADES.values()]
+    old_fx = {s for _, s, _ in V6_UPGRADES.values()} | {n for ls in V6_ACTIVES.values() for n, *_ in ls} | {s for _, s, _ in V7_UPGRADES.values()}
+    assert len(fx) == len(set(fx)) == 12 and not old_fx & set(fx), 'varje effektbild används bara en gång'
+    n = 0
+    for cid, (kind, src, arg) in V8.items():
+        save(ash_card(src, arg) if kind == 'ash' else meshy_card(kind, src, arg), cid)
+        n += 1
+    for cid, w in V8_PACTS.items():
+        pact(cid, w)
+        n += 1
+    for cid, (w, src, tint) in V8_UPGRADES.items():
+        v6_upgrade(cid, w, src, tint)
+        n += 1
+    return n
+
+
 def main():
     assert len(CARDS) == len(set(CARDS)) == 50, len(CARDS)
     srcs = list(V5.values()) + [s for _, s in V5_UPGRADES.values()]
@@ -511,6 +647,9 @@ def main():
         return
     if ONLY == 'v7':
         print(main_v7(), 'kortbilder ->', OUT)
+        return
+    if ONLY == 'v8':
+        print(main_v8(), 'kortbilder ->', OUT)
         return
     n = 0
     if not ONLY_V5:
@@ -529,6 +668,7 @@ def main():
     if not ONLY_V5:
         n += main_v6()
         n += main_v7()
+        n += main_v8()
     print(n, 'kortbilder ->', OUT)
 
 
