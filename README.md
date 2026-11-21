@@ -1317,6 +1317,8 @@ Version 9 lägger till två biomer, tre vapen, sex fiender och två bossar, så 
 
 **Mer**
 - Klassen Spjutbäraren.
+- Skjutbanan i Lägret: provdockor som visar skada per sekund.
+- Fyra nya elitegenskaper: tidsbunden, åskande, prismatisk och stormvind.
 - Vapenmästaren i Lägret, där vapen med 100 dödanden kan väljas som startvapen.
 - Fjädrar ger dubbelhopp en våning.
 - 6 prestationer, 4 krönikesidor och nya kort.
@@ -1442,6 +1444,10 @@ Version 8 gör spelet större med två biomer, ett talangsystem, ett nytt läge 
 | Version 8: åtta fiender, Kristalldrottningen, Leviatan, kristall- och ruintexturer, vatten, props, partiklar, ikoner och 30 talangikoner | `tools/props6/make.py`. Sjömannen, häxan och kartografen bygger på *Pixel Crawler 2.11* (Anokolisa), sirenen på Gothicvania *Dancing Girl*, skuggjägaren på *WereWolf* och Kristalldrottningen på TinyRPG *Witch* (Legacy Collection, Ansimuz, CC0); ytor från Kenney *retro-textures-fantasy* och *Classic64* (CC0); golemen, ålen, krabban, Leviatan och resten ritas i skriptet |
 | Version 8: 45 ljud och musiken för Kristallgrottorna, Den sjunkna staden, två bossar och Avgrunden | `tools/sounds/make6.sh`: Kenney *impact-sounds*, *rpg-audio* och *voiceover-pack* (CC0), 400 Sounds Pack (CC0); musiken och rösterna syntetiseras i skriptet |
 | Version 8: 39 nya kortbilder | `tools/card-art/make.py . v8` ur `assets/ashfall-ai/flux` och `assets/ashfall-ai/meshy/icons`; pakternas vapen ritas i skriptet |
+| Version 9: sågbladskastare, vindbössa, spjut | sågbladskastaren och vindbössan byggda på *Guns&Explosives* (GreaseGun, Luger), spjutet ur KayKit *Fantasy Weapons Bits* (`spear_A`, CC0), renderade med `tools/weapon-frames` |
+| Version 9: sex fiender, Urmakaren, Stormfågeln, mässings-, kugg-, moln- och stormtexturer, props, partiklar och ikoner | `tools/props7/make.py`. Urverkssoldaten och stormkallaren bygger på *Pixel Crawler 2.11* (Anokolisa); ytor från Kenney *retro-textures-fantasy* och *Classic64* (CC0); tidsväktaren, kuggspindeln, harpyan, molnjätten, bossarna och resten ritas i skriptet |
+| Version 9: 38 ljud och musiken för Klocktornet, Molnborgen, Urmakaren och Stormfågeln | `tools/sounds/make7.sh`: Kenney *impact-sounds* och *rpg-audio* (CC0), 400 Sounds Pack; musiken syntetiseras i skriptet |
+| Version 9: 39 nya kortbilder | `tools/card-art/make.py . v9` ur `assets/ashfall-ai` och Kenney *particle-pack* (CC0); pakternas vapen ritas i skriptet |
 | Typsnitt | Press Start 2P (OFL) |
 
 Se licensfilerna i respektive källpaket.
