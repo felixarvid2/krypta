@@ -2041,6 +2041,7 @@ function fire() {
     * (fan ? 3 : 1) * (up('belt') ? 1 + Math.min(P.burst, 30) / 20 : 1);
   let base = wp.dmg * masteryMul() * (1 + mod('dmg')) * (WS.boost ? 1.15 : 1) * (dmod('glass') ? 1.5 : 1) * (1 + 0.12 * wlvl(wp.id)) * (P.jz > 0.05 ? 1 + mod('airDmg') : 1) * (P.rageT > 0 ? 1.5 : 1) * (1 + (run.mealFloor === run.depth ? P.mealDmg || 0 : 0));
   WS.inspect = 0; WS.idleT = 0;
+  if (P.hp < maxHp() * 0.35) base *= 1 + mod('lowHpDmg'); // låg hälsa: bärsärken och liknande gäller alla skott
   if (wp.flame) { flameTick(wp, base); return; } // eldkastaren
   if (wp.lob) { launcherShot(wp, base); return; } // granatkastaren
   if (wp.nail) { nailShot(wp, base, false); return; } // spikgeväret
@@ -2049,7 +2050,6 @@ function fire() {
   if (wp.prism) { prismFire(wp, base); return; } // prisman
   if (wp.sawlauncher) { sawFire(wp, base); return; } // sågbladskastaren
   if (firstShot) base *= 1 + mod('firstShot');
-  if (P.hp < maxHp() * 0.35) base *= 1 + mod('lowHpDmg');
   if (lastRound) base *= 3;
   if (slug) base *= 7;
   if (focus) base *= 4;
@@ -2294,7 +2294,7 @@ function switchWeapon(n) {
   WS.next = n; WS.state = 'holster'; WS.t = 0; WS.aim = 0; play('weapon', 0.25, 1.6);
 }
 // ---------- Version 5: yxan, eldkastaren och granatkastaren ----------
-const meleeMul = () => masteryMul() * (1 + mod('dmg') + mod('meleeDmg')) * (1 + 0.12 * wlvl('axe')) * (P.rageT > 0 ? 1.5 : 1) * (P.curseT > 0 ? 0.75 : 1);
+const meleeMul = () => masteryMul() * (P.hp < maxHp() * 0.35 ? 1 + mod('lowHpDmg') : 1) * (1 + mod('dmg') + mod('meleeDmg')) * (1 + 0.12 * wlvl('axe')) * (P.rageT > 0 ? 1.5 : 1) * (P.curseT > 0 ? 0.75 : 1);
 function axeSwing(charged) { // svep framåt; laddat slag slungar fiender
   const wp = WEAPONS[P.weapon];
   WS.shot = 0; WS.cd = effDelay(wp) * (charged ? 1.4 : 1); WS.charge = 0; WS.kick = 0.25;
@@ -2401,12 +2401,12 @@ function autoSwitch() {
 }
 // opt: { crit, noProc (ingen explosion/brand), source }
 function hurtEnemy(e, dmg, hx, hy, opt = {}) {
-  if (e.dead || e.dying || e.hidden || e.rewindT > 0) return false;
+  if (e.dead || e.dying || e.hidden) return false;
   if (Math.random() < mod('clockSlow')) e.slow = Math.max(e.slow || 0, 2);
   const wasUnaware = !e.alert && !e.dormant && !opt.noProc;
   if (e.eshield > 0) { const a = Math.min(e.eshield, dmg); e.eshield -= a; dmg -= a; e.flash = 0.08; if (e.eshield <= 0) { play('ricochet', 0.7, 0.6, { x: e.x, y: e.y }); say('SKÖLDEN BRAST', 1); } if (dmg <= 0) { alertEnemy(e, true); spawnNumber(e.x, e.y, a, false); return false; } }
   e.lastHurt = tmr;
-  dmg = crabShell(e, dmg, opt); if (e.boss) dmg = queenReflect(e, dmg); if (e.d.crystal) dmg *= 1 + mod('crystalDmg'); if (P.swim || cellUnder() === '-') dmg *= 1 + mod('waterDmg');
+  dmg = crabShell(e, dmg, opt); if (e.boss) dmg = queenReflect(e, dmg, opt); if (e.d.crystal) dmg *= 1 + mod('crystalDmg'); if (P.swim || cellUnder() === '-') dmg *= 1 + mod('waterDmg');
   if (opt.melee && !opt.cleave) cleaveHit(e, dmg);
   if (e.d.stone && !opt.boom && !opt.melee) { dmg *= 0.5; if (Math.random() < 0.3) sparks(e.x, e.y, 0.6, 2); } // sten: kulor biter dåligt
   if (hasMod(e, 'mirror') && !opt.noProc && !opt.boom) { const r = dmg * 0.15; if (r > 0.3) { hurtPlayer(r); if ((e.mirT || 0) < tmr) { e.mirT = tmr + 1; spawnText(e.x, e.y, 'SPEGLAR', '#c0e0ff'); } } }
@@ -2465,7 +2465,7 @@ function comboKill(e) { // kombomätare: dödanden i följd inom 3 s
 }
 function killEnemy(e) {
   hitStop = Math.max(hitStop, e.boss ? 0.15 : e.elite ? 0.07 : 0.02);
-  e.dead = true; e.t = 0; e.state = 'dead'; kills++; run.kills++; score += Math.round(e.d.score * (e.elite ? 3 : 1) * depthMul());
+  e.dead = true; e.t = 0; e.state = 'dead'; if (e.d.ai !== 'eel') kills++; run.kills++; score += Math.round(e.d.score * (e.elite ? 3 : 1) * depthMul());
   multiKill(); addDecal(e.x, e.y); comboKill(e); vib(e.boss ? 'boss' : 'kill');
   play('click', 0.3, 2.4); // tydligt dödsljud
   if (e.boss || e.guardian) for (let i = 0; i < 5; i++) if (fx.parts.scorch) decals.push({ x: e.x + rnd(-0.8, 0.8), y: e.y + rnd(-0.8, 0.8), img: fx.parts.scorch[0], size: rnd(0.14, 0.24) }); // bossen lämnar en krater
@@ -2983,6 +2983,7 @@ function openPetCage(pr) {
 const BIOME_RISK = { clock: 2, sky: 3, crystal: 2, sunken: 3, tomb: 2, volcano: 3, dungeon: 1, caves: 1, forest: 1, graveyard: 2, courtyard: 2, swamp: 3, frost: 3 };
 const riskText = b => ['', 'LUGN VÄG', 'FARLIG VÄG: +15 % GULD', 'SVÅR VÄG: +30 % GULD OCH FLER ELITER'][BIOME_RISK[b] || 1];
 function routePortals(p) { // en andra portal mot en annan biom
+  if (run && run.abyss) return; // Avgrunden slumpar sina biomer
   if (!run || run.bossrush || run.practice || isBossDepth(run.depth + 1) || params.get('biome')) return;
   const next = run.depth + 1, def = biomeFor(next), r = RNG(RNG.hash(run.seed + ':väg:' + next));
   const alt = r.pick(BIOME_IDS.filter(b => b !== def));
@@ -4172,7 +4173,7 @@ function sellCards(onDone) {
 }
 // ---------- Version 7: labyrintläget ----------
 function beginMaze() {
-  if (!Gen.maze) { document.getElementById('status').textContent = 'LABYRINTEN ÄR INTE KLAR ÄN'; return; }
+  if (!Gen.maze) { document.getElementById('status').textContent = 'LABYRINTEN ÄR INTE KLAR ÄN'; if (state !== 'title') showTitle(); return; }
   document.getElementById('title').hidden = true; canvas.focus(); ensureAudio(); practice = null;
   newRun(RNG.randomSeed(), false); run.maze = { limit: 300 }; run.cmode = ''; P.hp = maxHp();
   const biome = RNG(run.seed).pick(BIOME_IDS), L = Gen.maze(RNG.hash(run.seed + ':labyrint'), { biome });
@@ -6887,7 +6888,7 @@ function prismFire(wp, base) {
 }
 const PRISM_COLS = [[255, 120, 200], [140, 220, 255], [200, 160, 255], [255, 230, 140]];
 function prismBeam(x, y, a, dmg, bounces, depth, hitSet, range, enemy) { // stråle som studsar mot väggar och delas av brytande kristaller
-  let dx = Math.cos(a), dy = Math.sin(a), left = range, lastSpark = 0, cx = x + dx * 0.3, cy = y + dy * 0.3;
+  let dx = Math.cos(a), dy = Math.sin(a), left = range, lastSpark = 0, cx = x + dx * (depth ? 0.02 : 0.3), cy = y + dy * (depth ? 0.02 : 0.3);
   const col = PRISM_COLS[depth % PRISM_COLS.length], step = 0.08;
   while (left > 0) {
     const nx = cx + dx * step, ny = cy + dy * step; left -= step;
@@ -6895,7 +6896,8 @@ function prismBeam(x, y, a, dmg, bounces, depth, hitSet, range, enemy) { // str�
     if (ch === 'Ė' && depth < 2 + Math.round(mod('refract')) + (floorEvent === 'resonance' ? 1 : 0)) { // brytande kristall: tre nya strålar
       if (!enemy) firstHint('prism', 'BRYTANDE KRISTALLER DELAR SKOTT I TRE STRÅLAR.');
       play('prism_bounce', 0.5, 1.2, { x: nx, y: ny }); refractFx(nx, ny);
-      const ba = Math.atan2(dy, dx) + Math.PI; for (const off of [-0.5, 0, 0.5]) prismBeam(nx + Math.cos(ba) * 0.15, ny + Math.sin(ba) * 0.15, ba + Math.PI + off + rnd(-0.05, 0.05), dmg * 0.75, bounces, depth + 1, hitSet, left, enemy);
+      let ex = nx, ey = ny; for (let k = 0; k < 40 && map[ey | 0] && map[ey | 0][ex | 0] === 'Ė'; k++) { ex += dx * 0.06; ey += dy * 0.06; } // ut på andra sidan kristallen
+      if (!solid(ex, ey)) { const a0 = Math.atan2(dy, dx); for (const off of [-0.5, 0, 0.5]) prismBeam(ex, ey, a0 + off + rnd(-0.05, 0.05), dmg * 0.75, bounces, depth + 1, hitSet, left, enemy); }
       return;
     }
     if (solid(nx, ny)) {
@@ -6907,7 +6909,7 @@ function prismBeam(x, y, a, dmg, bounces, depth, hitSet, range, enemy) { // str�
     if (enemy) { if (Math.hypot(P.x - cx, P.y - cy) < 0.3 && !hitSet.has(P)) { hitSet.add(P); hurtPlayer(dmg, x, y, 'proj'); } }
     else for (const e of ents) {
       if (e.dead || e.dying || e.hidden || e.dormant || hitSet.has(e) || Math.hypot(e.x - cx, e.y - cy) > 0.3 * e.d.size * (e.boss ? 1.8 : 1)) continue;
-      hitSet.add(e); const k = hurtEnemy(e, dmg * (e.d.crystal ? 0.6 : 1) * (1 + mod('crystalDmg') * (e.d.crystal ? 1 : 0)), cx, cy, {}); hitMark = 0.1; hitKill = hitKill || k; lvlStat.hits++; run.hits = (run.hits || 0) + 1;
+      hitSet.add(e); const k = hurtEnemy(e, dmg * (e.d.crystal ? 0.6 : 1), cx, cy, {}); hitMark = 0.1; hitKill = hitKill || k; lvlStat.hits++; run.hits = (run.hits || 0) + 1;
       if (up('pr_burn')) { e.burn = Math.max(e.burn || 0, 2.5); e.burnAcc = Math.max(e.burnAcc || 0, 0.3); }
     }
     if (!settings.lowfx && range - left - lastSpark > 0.32) { lastSpark = range - left; particles.push({ x: cx, y: cy, z: 0.5, vx: 0, vy: 0, vz: 0, life: 0.09, maxLife: 0.09, img: fx.parts.prismbeam ? fx.parts.prismbeam[0] : fx.hit[1], size: 0.07, add: true, tint: col }); }
@@ -7083,14 +7085,15 @@ Object.assign(BOSS_SPECIAL, {
 });
 TAUNTS.crystalqueen = ['DITT LJUS ÄR MITT', 'SE DIG I SPEGELN', 'SPLITTRAS!'];
 TAUNTS.leviathan = ['DJUPET KALLAR', 'ANDAS IN – EN SISTA GÅNG', 'HAVET GLÖMMER ALDRIG'];
-function queenReflect(b, dmg) { if (b.id === 'crystalqueen' && (b.reflectT || 0) > tmr) { const r = dmg * 0.35; if (r > 0.3) { hurtPlayer(r, b.x, b.y, 'proj'); if ((b.refMsgT || 0) < tmr) { b.refMsgT = tmr + 1.5; spawnText(b.x, b.y, 'SPEGLAS', '#c0e0ff'); play('crystal_hit', 0.6, 1.4); } } return dmg * 0.15; } return dmg; }
+function queenReflect(b, dmg, opt = {}) { if (b.id === 'crystalqueen' && (b.reflectT || 0) > tmr) { const r = opt.noProc ? 0 : dmg * 0.35; if (r > 0.3) { hurtPlayer(r, b.x, b.y, 'proj'); if ((b.refMsgT || 0) < tmr) { b.refMsgT = tmr + 1.5; spawnText(b.x, b.y, 'SPEGLAS', '#c0e0ff'); play('crystal_hit', 0.6, 1.4); } } return dmg * 0.15; } return dmg; }
 
 // ---------- Version 8: kristaller, vrak, kartografen, talangaltaret och kunskapsböcker ----------
 let spikeCells = new Set();
 function setupV8(lrng) { // efter att våningen byggts
+  { const si = WEAPONS.findIndex(w => w.spear); if (si >= 0 && P.has[si]) P.mags[si] = 1; } // ett kastat spjut följer med till nästa våning
   { const bi = boomIdx(); if (bi >= 0 && P.has[bi]) P.mags[bi] = 1; WS.boomOut = 0; try { WS.boomSnd && WS.boomSnd.s.stop(); } catch (e) { /* stoppad */ } WS.boomSnd = null; } // en bumerang i luften kommer inte med till nästa våning
   spikeCells = new Set(props.filter(o => o.ch === 'Ē').map(o => o.cy * mw + o.cx)); tideWas = false; ropeTo = null; ropeT = 0; P.grapple = null; P.swim = false; P.air = 12 + mod('airMax');
-  for (const e of ents) if (e.d.ai === 'eel') { totalEnemies--; e.hidden = true; } // ålar räknas inte för portalen
+  for (const e of ents) if (e.d.ai === 'eel') { totalEnemies--; e.hidden = true; if (map[e.y | 0] && map[e.y | 0][e.x | 0] === '.') map[e.y | 0][e.x | 0] = 'Đ'; } // ålar räknas inte för portalen; deras ruta är vatten
   if (lvl.biome === 'crystal') lvl.ambient = Math.max(lvl.ambient || 0, 0.2); // kristallerna glimmar även i mörkret
   if (lvl.biome === 'crystal') for (let y = 0; y < mh; y++) for (let x = 0; x < mw; x++) if (map[y][x] === 'Ć' && (x * 7 + y * 13) % 9 === 0 && torches.length < 120) { // kristallådrorna lyser
     const ox = [[1, 0], [-1, 0], [0, 1], [0, -1]].find(([a, c]) => map[y + c] && map[y + c][x + a] && !solid(x + a + 0.5, y + c + 0.5)); if (ox) torches.push({ x: x + 0.5 + ox[0] * 0.6, y: y + 0.5 + ox[1] * 0.6, ph: (x + y) % 10, cells: [], hidden: true, str: 0.4, r: 3.5, col: (x + y) % 2 ? [170, 130, 255] : [120, 200, 255] }); }
@@ -7102,7 +7105,8 @@ function updateCrystal(dt) {
 function refractShot(pr) { // vanliga skott delas också av brytande kristaller
   if ((pr.refT || 0) > tmr) return; pr.refT = tmr + 0.1; const wp = WEAPONS[P.weapon], dmg = wp.dmg * (1 + mod('dmg')) * 0.6;
   refractFx(pr.x, pr.y); play('prism_bounce', 0.5, 1.1, { x: pr.x, y: pr.y });
-  for (const off of [-0.5, 0, 0.5]) prismBeam(pr.x - Math.cos(P.a) * 0.6, pr.y - Math.sin(P.a) * 0.6, P.a + off, dmg, 1, 1, new Set(), 14);
+  let ex = pr.x, ey = pr.y; for (let k = 0; k < 40 && map[ey | 0] && map[ey | 0][ex | 0] === 'Ė'; k++) { ex += Math.cos(P.a) * 0.06; ey += Math.sin(P.a) * 0.06; } // bortre sidan
+  if (!solid(ex, ey)) for (const off of [-0.5, 0, 0.5]) prismBeam(ex, ey, P.a + off, dmg, 1, 1, new Set(), 14);
 }
 Object.assign(USES, {
   wreck(pr) { // vrakkistan: skatt, eller en mimic
@@ -7172,7 +7176,7 @@ function beginHub() {
 function hubEnter(mode) { // portalerna i lägret
   clearInterval(hubWatch); run.hub = false;
   const go = () => { if (mode === 'abyssdaily') beginAbyss(true); else if (mode === 'abyss') beginAbyss(); else if (mode === 'maze') beginMaze(); else if (mode === 'hunt') beginBossHunt(); else begin(mode); };
-  if (mode !== 'continue' && store.get(runKey(), null)) { openUI(() => CardUI.choice({ title: 'NY RUNDA?', subtitle: 'DU HAR EN PÅGÅENDE RUNDA. EN NY RUNDA SKRIVER ÖVER DEN.', cancel: 1, options: [{ label: 'STARTA NY', text: 'DEN GAMLA FÖRSVINNER' }, { label: 'AVBRYT', text: '' }] }, i => { if (i === 0) go(); else { closeUI(); run.hub = true; beginHub(); } })); return; }
+  if (mode !== 'continue' && store.get(runKey(), null)) { openUI(() => CardUI.choice({ title: 'NY RUNDA?', subtitle: 'DU HAR EN PÅGÅENDE RUNDA. EN NY RUNDA SKRIVER ÖVER DEN.', cancel: 1, options: [{ label: 'STARTA NY', text: 'DEN GAMLA FÖRSVINNER' }, { label: 'AVBRYT', text: '' }] }, i => { closeUI(); if (i === 0) go(); else { run.hub = true; beginHub(); } })); return; }
   go();
 }
 Object.assign(USES, {
@@ -7194,7 +7198,7 @@ function showWeaponMaster() { // vapenmästaren: dödanden per vapen och val av 
         onClick: open ? () => { settings.startWeapon = w.id; saveSettings(); CardUI.close(); play('weapon', 0.7); showWeaponMaster(); } : undefined }; })], () => refreshTitle());
 }
 function giveStartWeapon() { // valt startvapen från vapenmästaren
-  const id = settings.startWeapon; if (!id || cmode('pistol') || run.practice || (profile.wkills || {})[id] < START_WEAPON_KILLS) return;
+  const id = settings.startWeapon; if (!id || cmode('pistol') || run.practice || ((profile.wkills || {})[id] || 0) < START_WEAPON_KILLS) return;
   const i = weaponIndex(id); if (i < 0) return; P.has[i] = true; P.mags[i] = effMag(i); const w = WEAPONS[i]; if (AMMO[w.ammo] && w.ammo !== 'none') P.ammo[w.ammo] = Math.min(AMMO[w.ammo].max, (P.ammo[w.ammo] || 0) + Math.round(AMMO[w.ammo].max * 0.3));
 }
 function hubHint(p, d) { if (d < 2.5 && p.kind === 'mode') { const m = HUB_MODES.find(x => x[0] === p.mode); hint = 'PORTAL → ' + (m ? m[1] : p.mode); return true; } return false; }
@@ -7202,11 +7206,11 @@ function hubHint(p, d) { if (d < 2.5 && p.kind === 'mode') { const m = HUB_MODES
 function sawFire(wp, base) {
   const n = up('sw_multi') ? 3 : 1;
   for (let i = 0; i < n; i++) { const a = P.a + (n > 1 ? (i - 1) * 0.14 : 0) + rnd(-1, 1) * wp.spread * (1 - WS.aim);
-    projectiles.push({ x: P.x + Math.cos(a) * 0.4, y: P.y + Math.sin(a) * 0.4, z: 0.42, vx: Math.cos(a) * 14, vy: Math.sin(a) * 14, dmg: base, friendly: true, kind: 'saw', life: 3.2, bounces: up('sw_bounce') ? 6 : 3, hitT: new Map(), back: false }); }
+    projectiles.push({ x: P.x + Math.cos(a) * 0.4, y: P.y + Math.sin(a) * 0.4, z: 0.42, vx: Math.cos(a) * 14, vy: Math.sin(a) * 14, dmg: base, friendly: true, kind: 'saw', life: 3.2, bounces: up('sw_bounce') ? 6 : 3, hitT: new Map(), back: false, refund: i === 0 }); }
   noise(5 * (1 - mod('noiseReduce')));
 }
 function updateSaw(p, dt) {
-  if (p.back) { const d = Math.hypot(P.x - p.x, P.y - p.y) || 1; p.vx += ((P.x - p.x) / d * 15 - p.vx) * Math.min(1, dt * 6); p.vy += ((P.y - p.y) / d * 15 - p.vy) * Math.min(1, dt * 6); if (d < 0.7) { p.dead = true; P.ammo.gears = Math.min(AMMO.gears.max, (P.ammo.gears || 0) + 1); play('gear_pickup', 0.4, 1.3); return; } }
+  if (p.back) { const d = Math.hypot(P.x - p.x, P.y - p.y) || 1; p.vx += ((P.x - p.x) / d * 15 - p.vx) * Math.min(1, dt * 6); p.vy += ((P.y - p.y) / d * 15 - p.vy) * Math.min(1, dt * 6); if (d < 0.7) { p.dead = true; if (p.refund) { P.ammo.gears = Math.min(AMMO.gears.max, (P.ammo.gears || 0) + 1); play('gear_pickup', 0.4, 1.3); } return; } }
   if (solid(p.x, p.y)) {
     const ox = p.x - p.vx * dt, oy = p.y - p.vy * dt;
     if (p.bounces > 0 && !p.back) { p.bounces--; if (solid(p.x, oy)) p.vx = -p.vx; if (solid(ox, p.y)) p.vy = -p.vy; p.x = ox; p.y = oy; play('saw_bounce', 0.4, rnd(0.9, 1.2), { x: p.x, y: p.y }); sparks(p.x, p.y, 0.4, 3); return; }
@@ -7234,7 +7238,7 @@ function windBlast(wp) { // vindbössan: en kon av luft som knuffar fiender och 
     if (!e.boss && !e.dead) { const f = (1 - d / range * 0.5) * 11 / Math.max(0.6, e.d.size); e.knock = { vx: dx / (d || 1) * f, vy: dy / (d || 1) * f, t: 0.4 }; e.stun = Math.max(e.stun || 0, 0.4); }
   }
   for (const p of projectiles) if (!p.friendly && !p.dead) { const dx = p.x - P.x, dy = p.y - P.y, d = Math.hypot(dx, dy); let off = Math.atan2(dy, dx) - P.a; off = Math.atan2(Math.sin(off), Math.cos(off));
-    if (d < range && Math.abs(off) < cone) { p.vx = Math.cos(P.a) * Math.hypot(p.vx, p.vy) * 1.2; p.vy = Math.sin(P.a) * Math.hypot(p.vx, p.vy) * 1.2; p.friendly = true; p.dmg = (p.dmg || 5) * 1.5; p.src = P; } } // skotten blåses tillbaka
+    if (d < range && Math.abs(off) < cone) { const sp = Math.hypot(p.vx, p.vy) * 1.2; p.vx = Math.cos(P.a) * sp; p.vy = Math.sin(P.a) * sp; p.friendly = true; p.dmg = (p.dmg || 5) * 1.5; p.src = P; } } // skotten blåses tillbaka
   if (up('wg_cyclone')) { const x = P.x + Math.cos(P.a) * 4, y = P.y + Math.sin(P.a) * 4; if (!solid(x, y)) cyclones.push({ x, y, t: 2.5 }); }
   for (let i = 0; i < 16; i++) { const a = P.a + rnd(-cone, cone), sp = rnd(6, 11); particles.push({ x: P.x + Math.cos(a) * 0.5, y: P.y + Math.sin(a) * 0.5, z: rnd(0.3, 0.7), vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, vz: 0, life: 0.45, maxLife: 0.45, img: fx.parts.wind ? fx.parts.wind[i % fx.parts.wind.length] : fx.hit[1], size: 0.08, add: true, tint: [220, 240, 255] }); }
   if (hits) { hitMark = 0.1; play('wind_push', 0.6); }
@@ -7265,7 +7269,7 @@ function spearThrust(wp) {
 }
 function spearThrow(wp) {
   const si = spearIdx(); if (P.mags[si] <= 0) { if (up('sp_recall')) { const sp = items.find(it => it.type === 'spearpick' && !it.taken); if (sp) { sp.taken = true; projectiles.push({ x: sp.x, y: sp.y, z: 0.5, vx: 0, vy: 0, dmg: wp.dmg * meleeMul(), friendly: true, kind: 'spear', life: 3, recall: true, hitSet: new Set() }); play('spear_throw', 0.6, 1.3); } } return; }
-  P.mags[si] = 0; WS.shot = 0; WS.throwT = 0.35; play('spear_throw', 0.8); noise(2);
+  P.mags[si] = 0; WS.shot = 0; WS.spearT = 0.35; play('spear_throw', 0.8); noise(2);
   projectiles.push({ x: P.x + Math.cos(P.a) * 0.4, y: P.y + Math.sin(P.a) * 0.4, z: 0.5, vx: Math.cos(P.a) * 20, vy: Math.sin(P.a) * 20, dmg: wp.dmg * meleeMul() * 1.6, friendly: true, kind: 'spear', life: 1.4, hitSet: new Set() });
 }
 function updateSpear(p, dt) {
@@ -7287,7 +7291,7 @@ function weaponV9Tick(wp, dt) { // spjutets kast på högerklick
   if (wp.spear && aimDown && !WS.spAim) { WS.spAim = true; spearThrow(wp); }
   if (!aimDown) WS.spAim = false;
   if (wp.spear) WS.aim = 0; // spjutet siktar inte
-  WS.throwT = Math.max(0, (WS.throwT || 0) - dt);
+  WS.spearT = Math.max(0, (WS.spearT || 0) - dt);
 }
 
 // ---------- Version 9: tidsbubblor, tomrum, vind, sågspår och åska ----------
@@ -7438,6 +7442,7 @@ TAUNTS.thunderbird = ['FALL!', 'STORMEN ÄR MIN', 'UPP HIT KOMMER INGEN'];
 function updateEsaw(p, dt) { // urmakarens klingor studsar mot väggarna
   if (solid(p.x, p.y)) { const ox = p.x - p.vx * dt, oy = p.y - p.vy * dt; if (p.bounces > 0) { p.bounces--; if (solid(p.x, oy)) p.vx = -p.vx; if (solid(ox, p.y)) p.vy = -p.vy; p.x = ox; p.y = oy; play('saw_bounce', 0.3, 1.1, { x: p.x, y: p.y }); return; } p.dead = true; return; }
   if (p.life <= 0) { p.dead = true; return; }
+  if (p.friendly) { for (const e of ents) if (!e.dead && !e.hidden && Math.hypot(e.x - p.x, e.y - p.y) < 0.35 * e.d.size * (e.boss ? 1.8 : 1)) { hurtEnemy(e, p.dmg, p.x, p.y, {}); p.dead = true; play('saw_hit', 0.6); return; } return; } // tillbakablåsta klingor
   if (Math.hypot(P.x - p.x, P.y - p.y) < 0.4 && !(P.jz > 0.22)) { p.dead = true; run.cause = 'SÅGKLINGAN'; hurtPlayer(p.dmg, p.x, p.y, 'proj'); }
 }
 Object.assign(USES, {
