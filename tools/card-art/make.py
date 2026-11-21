@@ -39,12 +39,18 @@ föremål med partiklar ur Kenneys particle-pack (tabellen V9_DRAWN). Pakterna f
 spjutet ritas som siluetter; uppgraderingarna är oanvända effektbilder ur vfx eller partiklar med vapnet som bricka
 i hörnet (tabellen V9_UPGRADES). near_dupes() jämför de nya bilderna med alla befintliga kortbilder.
 
+Version 11: 24 nya kort (svamp, sporer, speglar, illusioner och glas) – sporfärdighetsikonerna i meshy/icons, bossen
+gamma_bloom och två dekaler ur assets/ashfall-ai/flux/decals (tabellen V11_SRC); resten ritas här med oanvända partiklar
+(tabellen V11_DRAWN). Pakterna för sporkastaren, spegelskölden och piskan ritas som siluetter; uppgraderingarna är
+oanvända effektbilder ur vfx (spormolnen, läkningen ...) eller partiklar med vapnet som bricka i hörnet (V11_UPGRADES).
+
 Kör från repo-roten: python3 retrofps/tools/card-art/make.py .          (alla)
                      python3 retrofps/tools/card-art/make.py . v5       (bara version 5)
                      python3 retrofps/tools/card-art/make.py . v6       (bara version 6)
                      python3 retrofps/tools/card-art/make.py . v7       (bara version 7)
                      python3 retrofps/tools/card-art/make.py . v8       (bara version 8)
                      python3 retrofps/tools/card-art/make.py . v9       (bara version 9)
+                     python3 retrofps/tools/card-art/make.py . v11      (bara version 11)
 """
 import os
 import sys
@@ -1074,6 +1080,390 @@ def main_v9():
     return n
 
 
+# ---------- version 11: Svampriket och Spegelpalatset ----------
+# Färdighetsikonerna i meshy/icons med svampar och sporer (sporsvampen som exploderar, kokongen av sporer, rankorna ur
+# marken, gestalten som löses upp i rök), bossen gamma_bloom (en svampblomma full av glödande sporer) och två
+# dekaler i assets/ashfall-ai/flux/decals (glasskärvor och glödande mycel, genomskinlig bakgrund) – tabellen V11_SRC.
+# Resten ritas här (svampar, speglar, glas, portaler, masker, piskor ...) med oanvända partiklar ur Kenneys
+# particle-pack på samma mörklila vinjett (tabellen V11_DRAWN). Pakternas vapen ritas som siluetter;
+# uppgraderingarna är oanvända effektbilder ur vfx (spormolnen m.m.) eller partiklar med vapnet som bricka i hörnet.
+DECALS = os.path.join(ASH, 'decals')
+TIGHT_CROP = (150, 150, 874, 874)  # rankorna har en vit ram med stora rundade hörn
+V11_SRC = {  # kort-id: (sort, bild, andel/beskärning) – som V8, plus 'decal' = flux/decals med genomskinlig bakgrund
+    'flugsvampen': ('skill', 'skill_spore_burst', SKILL_CROP), 'sporkokongen': ('skill', 'skill_spore_cocoon', SKILL_CROP),
+    'mycelgreppet': ('skill', 'skill_grasping_tendrils', TIGHT_CROP), 'maskbrytaren': ('skill', 'skill_smoke_cloak', SKILL_CROP),
+    'urmycelet': ('ash', 'bosses/gamma_bloom', 0),
+    'glassplittret': ('decal', 'crystal_shards', 0.86), 'mycelmattan': ('decal', 'lumen_growth', 0.84),
+}
+# kort-id: (ritfunktion, storlek, förskjutning y, [(partikel, storlek, dx, dy, färg, vridning)])
+V11_DRAWN = {
+    'svamphatten': ('mushroom', 0.84, 0, [('magic_04', 0.9, 0, -0.1, (140, 255, 170), 0)]),
+    'studssvampen': ('bounce', 0.86, 0.02, [('circle_05', 0.8, 0, 0.16, (220, 120, 255), 0)]),
+    'resestenen': ('runestone', 0.82, 0.02, [('circle_02', 0.9, 0, -0.04, (110, 200, 255), 0)]),
+    'polerduken': ('handmirror', 0.84, 0, [('flare_01', 1.0, -0.12, -0.16, (230, 240, 255), 0)]),
+    'klarsynsdroppen': ('dropper', 0.86, 0, [('star_03', 0.9, 0.1, 0.18, (170, 230, 255), 0)]),
+    'svampkorgen': ('basket', 0.86, 0.04, [('star_05', 0.9, 0, -0.16, (255, 210, 140), 0)]),
+    'myceltraden': ('fibrewhip', 0.84, 0, [('smoke_03', 0.9, 0.12, 0.12, (200, 230, 190), 0)]),
+    'andningsduken': ('facecloth', 0.84, 0, [('smoke_06', 0.95, 0, 0.1, (150, 230, 120), 0)]),
+    'irrblosset': ('lantern', 0.84, 0.02, [('fire_01', 0.7, 0, -0.04, (120, 255, 200), 0)]),
+    'fjaderskivlingen': ('springshroom', 0.86, 0, [('smoke_02', 0.8, 0, 0.26, (120, 90, 170), 0)]),
+    'skarvpansaret': ('shardarmor', 0.84, 0, [('star_07', 0.95, 0.16, -0.18, (220, 240, 255), 0)]),
+    'portvaktarens_ring': ('portalring', 0.8, 0.02, [('circle_04', 0.95, 0, 0, (120, 160, 255), 0)]),
+    'hyfkedjan': ('hyphachain', 0.86, 0, [('spark_03', 0.9, 0, 0, (170, 255, 160), 0)]),
+    'kalejdoskopet': ('kaleidoscope', 0.86, 0, [('magic_05', 0.95, 0.2, -0.2, (255, 170, 240), 0)]),
+    'tvillingporten': ('twinportal', 0.88, 0.02, [('circle_01', 0.95, 0, 0, (200, 170, 255), 0)]),
+    'glaskroppen': ('glassbust', 0.84, 0.02, [('scorch_02', 0.9, 0, -0.04, (255, 90, 90), 0)]),
+    'tusenspegeln': ('bigmirror', 0.88, 0, [('star_01', 1.0, 0, -0.06, (255, 230, 170), 0), ('trace_06', 0.9, -0.3, 0, (220, 230, 255), 0)]),
+}
+V11_PACTS = {'pakt_sporkastare': 'sporelauncher', 'pakt_spegelskold': 'mirrorshield', 'pakt_piska': 'whip'}
+V11_UPGRADES = {  # kort-id: (vapen, 'vfx:<bild>' eller 'part:<partikel>', färgton eller None, vridning) – som V9
+    'sporstormen': ('sporelauncher', 'vfx:spore_cloud_2', None, 0), 'lakesporerna': ('sporelauncher', 'vfx:heal_1', None, 0),
+    'smittobararen': ('sporelauncher', 'vfx:spore_cloud_1', None, 0), 'snabbsadden': ('sporelauncher', 'vfx:spores_0', None, 0),
+    'speglingen': ('mirrorshield', 'part:magic_03', (210, 230, 255), 0), 'skoldslaget': ('mirrorshield', 'vfx:dust_2', (230, 215, 190), 0),
+    'skyddsringen': ('mirrorshield', 'vfx:magic_circle_green', (200, 225, 255), 0), 'pareringen': ('mirrorshield', 'part:star_06', (255, 220, 130), 0),
+    'langsnarten': ('whip', 'vfx:smoke_1', (235, 200, 150), 0), 'eldsnarten': ('whip', 'vfx:flame_3', None, 0),
+    'niosvansen': ('whip', 'vfx:scorch_1', None, 0), 'oxdraget': ('whip', 'vfx:smoke_3', (200, 220, 160), 0),
+}
+
+SILVER, DSILVER, GLASS, CAP = (196, 204, 220, 255), (120, 128, 146, 255), (170, 220, 240, 140), (176, 84, 60, 255)
+
+
+def mushroom(d, cx, top, w, h, stem_w, stem_h, cap, stem=(230, 220, 196, 255), spots=None, gills=True):
+    """Svamp: hatt (halv ellips med fransad kant), skivor under och en fot. top = hattens topp."""
+    base = top + h
+    rrect(d, (cx - stem_w / 2, base - 6, cx + stem_w / 2, base + stem_h), stem_w / 3, stem)
+    d.line((cx - stem_w * 0.2, base + 6, cx - stem_w * 0.2, base + stem_h - 8), fill=lighter(stem, 1.08), width=4)
+    if gills:
+        d.ellipse((cx - w / 2 + 10, base - 18, cx + w / 2 - 10, base + 18), fill=(150, 120, 100, 255), outline=INK, width=5)
+        for k in range(1, 12):
+            x = cx - w / 2 + 14 + k * (w - 28) / 12
+            d.line((cx, base + 10, x, base - 6), fill=(110, 84, 70, 255), width=2)
+    d.chord((cx - w / 2, top, cx + w / 2, base + h), 180, 360, fill=cap, outline=INK, width=6)
+    d.arc((cx - w / 2 + 18, top + 14, cx + w / 2 - 18, base + h - 10), 200, 250, fill=lighter(cap, 1.4), width=7)
+    for sx, sy, r in spots or []:
+        d.ellipse((cx + sx * w / 2 - r, top + sy * h - r, cx + sx * w / 2 + r, top + sy * h + r), fill=(250, 244, 230, 255), outline=INK, width=3)
+
+
+def mirror_face(d, box, deep=0):
+    """Spegelglas: blågrå yta med två ljusa reflexstreck och (deep) speglingar i speglingen."""
+    x0, y0, x1, y1 = box
+    d.ellipse(box, fill=(150, 176, 200, 255), outline=INK, width=5)
+    for k in range(deep):
+        t = (k + 1) * 0.09
+        b = (x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, x1 - (x1 - x0) * t, y1 - (y1 - y0) * t)
+        d.ellipse(b, fill=(120 + k * 14, 146 + k * 16, 176 + k * 14, 255), outline=(220, 186, 96, 255), width=4)
+    w = x1 - x0
+    d.line((x0 + w * 0.22, y0 + w * 0.52, x0 + w * 0.5, y0 + w * 0.24), fill=(240, 248, 255, 255), width=max(4, int(w * 0.05)))
+    d.line((x0 + w * 0.34, y0 + w * 0.62, x0 + w * 0.58, y0 + w * 0.38), fill=(240, 248, 255, 255), width=max(3, int(w * 0.025)))
+
+
+def swirl(d, cx, cy, r, col, turns=2.6, w=8):
+    pts = [(cx + r * t / (turns * 2 * np.pi) * np.cos(t), cy + r * t / (turns * 2 * np.pi) * np.sin(t)) for t in np.linspace(0.3, turns * 2 * np.pi, 90)]
+    d.line(pts, fill=INK, width=w + 6, joint='curve')
+    d.line(pts, fill=col, width=w, joint='curve')
+
+
+def art11(kind):
+    im = Image.new('RGBA', (400, 400))
+    d = ImageDraw.Draw(im)
+    if kind == 'mushroom':
+        mushroom(d, 280, 170, 150, 70, 34, 120, (120, 76, 150, 255), gills=False, spots=[(-0.5, 0.5, 8), (0.3, 0.35, 7)])
+        mushroom(d, 170, 60, 280, 130, 64, 190, (196, 120, 60, 255), spots=[(-0.55, 0.55, 14), (-0.1, 0.25, 12), (0.4, 0.45, 16), (0.7, 0.8, 9)])
+        for x, y in ((110, 330), (250, 360), (320, 320)):
+            d.ellipse((x - 7, y - 7, x + 7, y + 7), fill=(170, 255, 190, 255))
+    elif kind == 'bounce':
+        mushroom(d, 200, 150, 360, 110, 70, 120, (190, 90, 220, 255), spots=[(-0.6, 0.6, 12), (0, 0.3, 14), (0.55, 0.55, 12)])
+        for k, y in enumerate((150, 112, 74)):                                                          # fjädrande linjer under hatten
+            d.arc((90 - k * 20, y - 40, 310 + k * 20, y + 30), 205, 335, fill=(240, 220, 255, 255), width=5 - k)
+        poly(d, [(200, 0), (240, 50), (218, 50), (218, 86), (182, 86), (182, 50), (160, 50)], (255, 236, 160, 255))  # uppåtpil
+    elif kind == 'runestone':
+        poly(d, [(110, 390), (96, 150), (130, 60), (200, 24), (272, 60), (306, 160), (290, 390)], (110, 116, 124, 255), w=8)
+        d.line([(120, 150), (136, 70), (200, 36)], fill=(160, 166, 176, 255), width=6)
+        swirl(d, 200, 200, 90, (110, 210, 255, 255), 2.4, 9)
+        for x, y in ((150, 320), (200, 340), (250, 320)):                                              # runor
+            d.line((x, y - 22, x, y + 22), fill=(110, 210, 255, 255), width=6)
+            d.line((x, y - 4, x + 14, y - 20), fill=(110, 210, 255, 255), width=5)
+    elif kind == 'handmirror':
+        d.line((206, 236, 330, 380), fill=INK, width=36)                                                 # skaft
+        d.line((206, 236, 330, 380), fill=(200, 160, 70, 255), width=22)
+        d.ellipse((308, 354, 350, 396), fill=(200, 160, 70, 255), outline=INK, width=5)
+        d.ellipse((40, 20, 290, 270), fill=(206, 166, 76, 255), outline=INK, width=8)                   # ram
+        for k in range(16):
+            a = k * np.pi / 8
+            d.ellipse((165 + 118 * np.cos(a) - 8, 145 + 118 * np.sin(a) - 8, 165 + 118 * np.cos(a) + 8, 145 + 118 * np.sin(a) + 8), fill=(240, 210, 120, 255), outline=INK, width=2)
+        mirror_face(d, (66, 46, 264, 244))
+        cloth = [(6, 300), (40, 262), (90, 270), (140, 248), (196, 262), (226, 300), (200, 330), (214, 372), (170, 396), (120, 380), (70, 396), (30, 370), (40, 334)]
+        poly(d, cloth, (226, 214, 186, 255))                                                              # duken
+        for pts in ([(40, 290), (90, 300), (150, 280), (200, 300)], [(50, 340), (100, 330), (150, 350), (190, 340)], [(110, 300), (120, 380)]):
+            d.line(pts, fill=(180, 160, 130, 255), width=6, joint='curve')
+        for x in range(50, 200, 22):                                                                      # fransar
+            d.line((x, 384 + (x % 3) * 3, x - 4, 398), fill=(196, 180, 150, 255), width=3)
+    elif kind == 'dropper':
+        rrect(d, (170, 20, 230, 110), 24, (40, 40, 46, 255))                                            # gummiblåsa
+        d.line((184, 36, 184, 96), fill=(90, 90, 100, 255), width=5)
+        rrect(d, (164, 100, 236, 126), 6, (200, 160, 70, 255))                                          # hylsa
+        poly(d, [(176, 124), (224, 124), (220, 270), (206, 320), (194, 320), (180, 270)], GLASS)        # glasrör
+        d.polygon([(184, 200), (216, 200), (214, 268), (204, 310), (196, 310), (186, 268)], fill=(120, 220, 255, 255))
+        d.line((186, 136, 186, 262), fill=(240, 250, 255, 255), width=4)
+        poly(d, [(200, 330), (232, 372), (200, 398), (168, 372)], (120, 220, 255, 255))                 # droppen
+        d.ellipse((184, 356, 216, 384), fill=(240, 250, 255, 255), outline=INK, width=3)                # ett öga i droppen
+        d.ellipse((194, 364, 206, 376), fill=(30, 60, 90, 255))
+    elif kind == 'basket':
+        for x, cap, h in ((130, (196, 120, 60, 255), 140), (230, (190, 70, 50, 255), 120), (180, (150, 110, 170, 255), 170), (290, (210, 150, 80, 255), 150)):
+            mushroom(d, x, 240 - h, 110, 50, 26, h - 40, cap, gills=False, spots=[(-0.4, 0.5, 6)])
+        poly(d, [(40, 210), (360, 210), (330, 390), (70, 390)], (164, 112, 56, 255), w=8)                # korgen
+        for y in range(236, 390, 26):
+            d.line((52 + (y - 210) * 0.17, y, 348 - (y - 210) * 0.17, y), fill=(110, 70, 34, 255), width=6)
+        for x in range(80, 330, 36):
+            d.line((x, 214, x + (200 - x) * 0.12, 386), fill=(196, 146, 80, 255), width=6)
+        d.arc((60, 70, 340, 380), 190, 350, fill=INK, width=22)                                         # handtag
+        d.arc((60, 70, 340, 380), 192, 348, fill=(176, 122, 62, 255), width=12)
+    elif kind == 'fibrewhip':
+        fib = (226, 230, 214, 255)
+        coil = [(190 + (40 + 112 * u) * np.cos(u * 3.2 * 2 * np.pi), 210 + (40 + 112 * u) * 0.72 * np.sin(u * 3.2 * 2 * np.pi)) for u in np.linspace(0, 1, 220)]
+        d.line(coil, fill=INK, width=22, joint='curve')                                                 # hoprullad tråd
+        d.line(coil, fill=fib, width=12, joint='curve')
+        for k in range(0, len(coil) - 1, 6):                                                           # fibrer
+            x, y = coil[k]
+            d.line((x - 5, y - 7, x + 6, y + 6), fill=(160, 196, 140, 255), width=2)
+        rrect(d, (300, 220, 340, 380), 10, (96, 62, 34, 255))                                           # handtag
+        for y in (250, 280, 310, 340):
+            d.line((302, y, 338, y + 10), fill=(60, 34, 20, 255), width=5)
+        d.line([(320, 224), (330, 180), (334, 120)], fill=INK, width=20, joint='curve')
+        d.line([(320, 224), (330, 180), (334, 120)], fill=fib, width=10, joint='curve')
+    elif kind == 'facecloth':
+        d.ellipse((60, 0, 340, 330), fill=(28, 22, 34, 255), outline=INK, width=6)                       # huvudets skugga
+        for x in (150, 250):                                                                           # glödande ögon
+            d.ellipse((x - 22, 120, x + 22, 146), fill=(150, 230, 120, 255), outline=INK, width=3)
+        d.rectangle((60, 320, 340, 400), fill=(28, 22, 34, 255))
+        poly(d, [(40, 170), (360, 170), (340, 300), (260, 370), (140, 370), (60, 300)], (120, 150, 96, 255), w=8)  # duken
+        for y in (200, 240, 280):                                                                      # veck
+            d.arc((70, y - 40, 330, y + 40), 20, 160, fill=(150, 180, 120, 255), width=6)
+        for y in (180, 230):                                                                           # band
+            d.line((40, y, 4, y - 30), fill=INK, width=16)
+            d.line((40, y, 4, y - 30), fill=(90, 70, 50, 255), width=8)
+            d.line((360, y, 396, y - 30), fill=INK, width=16)
+            d.line((360, y, 396, y - 30), fill=(90, 70, 50, 255), width=8)
+        for x, y in ((150, 300), (200, 320), (250, 300), (175, 260), (225, 260)):                       # sydda örter
+            d.ellipse((x - 10, y - 10, x + 10, y + 10), fill=(200, 230, 120, 255), outline=INK, width=3)
+    elif kind == 'lantern':
+        d.arc((150, 0, 250, 90), 180, 360, fill=INK, width=16)                                         # bygel
+        d.arc((150, 0, 250, 90), 180, 360, fill=DSILVER, width=8)
+        rrect(d, (130, 44, 270, 80), 8, (70, 72, 82, 255))
+        poly(d, [(140, 80), (260, 80), (280, 320), (120, 320)], (70, 140, 130, 120))                    # glaset
+        for x0, x1 in ((140, 120), (200, 200), (260, 280)):
+            d.line((x0, 80, x1, 320), fill=(70, 72, 82, 255), width=10)
+        rrect(d, (104, 316, 296, 356), 8, (70, 72, 82, 255))
+        poly(d, [(200, 130), (236, 210), (226, 280), (200, 296), (174, 280), (164, 210)], (140, 255, 210, 255), w=4)  # irrblosset
+        d.ellipse((186, 220, 214, 270), fill=(236, 255, 246, 255))
+        d.ellipse((182, 200, 194, 214), fill=INK)
+        d.ellipse((206, 200, 218, 214), fill=INK)
+    elif kind == 'springshroom':
+        coil = [(200 + 60 * np.sin(t), 380 - t * 5.4 + 18 * np.cos(t)) for t in np.linspace(0, 6 * 2 * np.pi, 160)]
+        d.line(coil, fill=INK, width=16, joint='curve')
+        d.line(coil, fill=SILVER, width=8, joint='curve')
+        mushroom(d, 200, 40, 300, 110, 44, 30, (110, 80, 190, 255), spots=[(-0.5, 0.5, 13), (0.1, 0.3, 11), (0.6, 0.7, 10)])
+    elif kind == 'shardarmor':
+        poly(d, [(80, 60), (160, 40), (200, 70), (240, 40), (320, 60), (350, 150), (320, 330), (200, 390), (80, 330), (50, 150)], (130, 150, 176, 255), w=8)
+        shards = [[(90, 80), (160, 60), (190, 140), (110, 170)], [(240, 60), (310, 80), (290, 170), (210, 140)],
+                  [(80, 190), (190, 160), (180, 270), (100, 300)], [(210, 160), (330, 190), (300, 300), (220, 270)],
+                  [(120, 320), (190, 290), (280, 300), (200, 370)]]
+        for k, sh in enumerate(shards):                                                                # spegelskärvor
+            poly(d, sh, (170 + k * 10, 196 + k * 8, 226, 255), w=4)
+            d.line((sh[0][0] + 12, sh[0][1] + 16, sh[1][0] - 14, sh[1][1] + 20), fill=(245, 250, 255, 255), width=4)
+        rrect(d, (182, 50, 218, 380), 6, (200, 160, 70, 255), w=4)                                     # mittskena
+    elif kind == 'portalring':
+        d.ellipse((60, 140, 340, 380), fill=(0, 0, 0, 0), outline=INK, width=60)                       # ringen
+        d.ellipse((66, 146, 334, 374), outline=SILVER, width=44)
+        d.arc((76, 156, 324, 364), 200, 300, fill=(240, 244, 255, 255), width=8)
+        poly(d, [(200, 10), (290, 70), (270, 170), (130, 170), (110, 70)], (60, 40, 120, 255), w=8)    # stenen
+        swirl(d, 200, 92, 66, (150, 190, 255, 255), 2.2, 6)
+        for x in (110, 290):
+            d.ellipse((x - 16, 150, x + 16, 182), fill=(200, 160, 70, 255), outline=INK, width=4)
+    elif kind == 'hyphachain':
+        for k in range(5):
+            cx, cy = 70 + k * 64, 100 + k * 56
+            box = (cx - 60, cy - 36, cx + 60, cy + 36) if k % 2 == 0 else (cx - 36, cy - 60, cx + 36, cy + 60)
+            d.ellipse(box, outline=INK, width=26)
+            d.ellipse(box, outline=(170, 200, 150, 255), width=14)
+            for a in np.linspace(0, 2 * np.pi, 14, endpoint=False):                                     # trådiga fibrer
+                rx, ry = (box[2] - box[0]) / 2, (box[3] - box[1]) / 2
+                d.line((cx + rx * np.cos(a), cy + ry * np.sin(a), cx + (rx + 12) * np.cos(a + 0.2), cy + (ry + 12) * np.sin(a + 0.2)), fill=(220, 240, 200, 255), width=3)
+    elif kind == 'kaleidoscope':
+        tube = [(20, 300), (250, 120), (290, 170), (60, 350)]
+        poly(d, tube, (150, 60, 90, 255), w=8)
+        for t in (0.25, 0.6):                                                                          # mässingsband
+            a, b = (20 + 230 * t, 300 - 180 * t), (60 + 230 * t, 350 - 180 * t)
+            d.line((a, b), fill=INK, width=18)
+            d.line((a, b), fill=(200, 160, 70, 255), width=10)
+        d.ellipse((220, 60, 380, 220), fill=(40, 30, 60, 255), outline=(200, 160, 70, 255), width=12)  # gluggen
+        d.ellipse((220, 60, 380, 220), outline=INK, width=4)
+        cols = [(255, 90, 90), (255, 200, 80), (110, 230, 120), (90, 170, 255), (200, 110, 255), (255, 140, 200)]
+        for k in range(12):                                                                            # stjärnmönster av färgat glas
+            a0, a1 = k * np.pi / 6, (k + 1) * np.pi / 6
+            d.polygon([(300, 140), (300 + 64 * np.cos(a0), 140 + 64 * np.sin(a0)), (300 + 40 * np.cos((a0 + a1) / 2), 140 + 40 * np.sin((a0 + a1) / 2)), (300 + 64 * np.cos(a1), 140 + 64 * np.sin(a1))], fill=cols[k % 6] + (255,), outline=INK)
+        d.ellipse((288, 128, 312, 152), fill=(250, 250, 255, 255))
+    elif kind == 'twinportal':
+        for cx, col in ((110, (110, 180, 255, 255)), (290, (255, 150, 80, 255))):
+            rrect(d, (cx - 86, 60, cx + 86, 396), 80, (110, 112, 120, 255), w=8)                        # valv av sten
+            rrect(d, (cx - 60, 86, cx + 60, 396), 60, (20, 16, 30, 255), w=4)
+            swirl(d, cx, 230, 56, col, 2.3, 6)
+            for y in (110, 200, 290):
+                d.line((cx - 86, y, cx - 62, y + 6), fill=INK, width=4)
+                d.line((cx + 86, y, cx + 62, y + 6), fill=INK, width=4)
+        d.arc((110, 20, 290, 200), 200, 340, fill=(240, 230, 255, 255), width=6)                         # bågen mellan dem
+        poly(d, [(282, 52), (300, 70), (276, 74)], (240, 230, 255, 255), w=3)
+    elif kind == 'glassbust':
+        facets = [  # en byst av glas i facetter: huvud, hals och axlar
+            ([(200, 30), (262, 70), (240, 120), (200, 100)], 0), ([(200, 30), (138, 70), (160, 120), (200, 100)], 1),
+            ([(138, 70), (126, 150), (160, 200), (160, 120)], 2), ([(262, 70), (274, 150), (240, 200), (240, 120)], 3),
+            ([(160, 120), (200, 100), (240, 120), (240, 200), (200, 236), (160, 200)], 1),
+            ([(176, 230), (224, 230), (230, 272), (170, 272)], 2),
+            ([(170, 272), (230, 272), (240, 396), (160, 396)], 0), ([(170, 272), (160, 396), (40, 396), (60, 310)], 3),
+            ([(230, 272), (240, 396), (360, 396), (340, 310)], 2),
+        ]
+        cols = [(214, 246, 255, 235), (176, 226, 248, 235), (140, 200, 236, 235), (236, 252, 255, 240)]
+        for pts, c in facets:
+            poly(d, pts, cols[c], w=5)
+        for pts in ([(200, 40), (186, 96), (212, 150), (192, 222)], [(186, 96), (150, 110)], [(212, 150), (250, 168)],
+                    [(200, 280), (176, 330), (200, 370), (190, 396)], [(176, 330), (100, 340)], [(200, 370), (290, 350)]):  # röda sprickor
+            d.line(pts, fill=(255, 80, 70, 255), width=5)
+        d.line((150, 76, 182, 52), fill=(255, 255, 255, 255), width=6)
+        d.line((250, 300, 320, 330), fill=(255, 255, 255, 255), width=5)
+    elif kind == 'bigmirror':
+        poly(d, [(200, 0), (240, 30), (330, 40), (350, 120), (350, 330), (310, 396), (90, 396), (50, 330), (50, 120), (70, 40), (160, 30)], (206, 166, 76, 255), w=8)  # ram
+        for x, y in ((200, 18), (64, 130), (336, 130), (64, 320), (336, 320), (200, 384)):
+            d.ellipse((x - 12, y - 12, x + 12, y + 12), fill=(150, 40, 60, 255), outline=INK, width=3)
+        mirror_face(d, (84, 60, 316, 370), deep=4)
+    return im
+
+
+def draw_sporelauncher():
+    """Sporkastaren: kolv, en glasbehållare full av gröna sporer och en vid pipa som slutar i en svamphatt."""
+    im = Image.new('RGBA', (440, 440))
+    d = ImageDraw.Draw(im)
+    poly(d, [(6, 214), (110, 196), (150, 200), (150, 232), (104, 236), (16, 264)], (118, 72, 38, 255))    # kolv
+    d.line((26, 216, 104, 202), fill=(168, 112, 62, 255), width=5)
+    poly(d, [(170, 230), (200, 230), (190, 296), (160, 296)], (86, 54, 32, 255))                       # handtag
+    rrect(d, (140, 196, 330, 236), 10, (96, 104, 90, 255))                                            # kropp
+    d.line((150, 206, 322, 206), fill=(150, 160, 140, 255), width=5)
+    d.ellipse((176, 104, 276, 204), fill=(90, 200, 80, 200), outline=INK, width=6)                     # sporbehållaren
+    for x, y, r in ((206, 140, 12), (236, 166, 9), (220, 180, 7), (246, 132, 8), (198, 172, 6)):
+        d.ellipse((x - r, y - r, x + r, y + r), fill=(200, 255, 140, 255))
+    d.arc((186, 114, 266, 194), 200, 260, fill=(240, 255, 240, 255), width=5)
+    rrect(d, (214, 92, 238, 108), 4, (70, 70, 78, 255))                                               # lock
+    rrect(d, (326, 202, 380, 230), 6, (80, 86, 74, 255))                                              # pipa
+    d.chord((360, 160, 436, 272), 270, 450, fill=(170, 90, 60, 255), outline=INK, width=6)             # svamphatt i mynningen
+    for x, y in ((404, 186), (420, 226), (398, 248)):
+        d.ellipse((x - 6, y - 6, x + 6, y + 6), fill=(250, 244, 230, 255))
+    im = im.crop(im.getbbox())
+    return im.rotate(18, resample=Image.BICUBIC, expand=True)
+
+
+def draw_mirrorshield():
+    """Spegelskölden: rund sköld med blankpolerad spegelyta, mässingskant med nitar och en reflex."""
+    im = Image.new('RGBA', (400, 400))
+    d = ImageDraw.Draw(im)
+    d.ellipse((20, 20, 380, 380), fill=(196, 150, 64, 255), outline=INK, width=8)
+    for k in range(12):
+        a = k * np.pi / 6
+        d.ellipse((200 + 164 * np.cos(a) - 9, 200 + 164 * np.sin(a) - 9, 200 + 164 * np.cos(a) + 9, 200 + 164 * np.sin(a) + 9), fill=(240, 210, 120, 255), outline=INK, width=3)
+    d.ellipse((52, 52, 348, 348), fill=(160, 186, 212, 255), outline=INK, width=6)
+    d.ellipse((90, 90, 310, 310), outline=(130, 156, 186, 255), width=6)
+    d.line((96, 210, 210, 96), fill=(245, 250, 255, 255), width=18)                                  # reflexer
+    d.line((130, 250, 250, 130), fill=(245, 250, 255, 255), width=8)
+    d.ellipse((176, 176, 224, 224), fill=(196, 150, 64, 255), outline=INK, width=5)                    # buckla
+    return im.rotate(-10, resample=Image.BICUBIC, expand=True)
+
+
+def draw_whip():
+    """Piskan: lindat läderhandtag och en tjock snärt som slingrar sig i luften och smalnar av mot en tofs."""
+    im = Image.new('RGBA', (440, 440))
+    d = ImageDraw.Draw(im)
+    lash = [(266 + (150 - 104 * u) * np.cos(np.pi * (0.75 + 2.1 * u)), 196 + (150 - 104 * u) * np.sin(np.pi * (0.75 + 2.1 * u)))
+            for u in np.linspace(0, 1, 140)]                                                         # snärten slingrar sig i en spiral
+    widths = [int(30 - 22 * k / len(lash)) for k in range(len(lash))]
+    for k in range(len(lash) - 1):                                                                    # kontur först
+        d.line((lash[k], lash[k + 1]), fill=INK, width=widths[k] + 10)
+    for k in range(len(lash) - 1):
+        d.line((lash[k], lash[k + 1]), fill=(168, 104, 54, 255), width=widths[k])
+    for k in range(4, len(lash) - 1, 7):                                                              # flätning
+        x, y = lash[k]
+        d.line((x - widths[k] * 0.3, y - widths[k] * 0.3, x + widths[k] * 0.3, y + widths[k] * 0.3), fill=(110, 64, 30, 255), width=3)
+    ex, ey = lash[-1]
+    for dx, dy in ((-22, -30), (6, -38), (26, -20)):                                                   # tofs
+        d.line((ex, ey, ex + dx, ey + dy), fill=INK, width=10)
+        d.line((ex, ey, ex + dx, ey + dy), fill=(230, 200, 150, 255), width=5)
+    hd = [(24, 424), (136, 318)]
+    d.line(hd, fill=INK, width=52)                                                                     # handtag
+    d.line(hd, fill=(92, 56, 30, 255), width=38)
+    for u in np.linspace(0.12, 0.88, 7):                                                               # lindning
+        x, y = 24 + 112 * u, 424 - 106 * u
+        d.line((x - 14, y - 16, x + 16, y + 14), fill=(50, 28, 16, 255), width=6)
+    d.ellipse((4, 404, 48, 448), fill=(196, 150, 64, 255), outline=INK, width=6)                        # knopp
+    return im.crop(im.getbbox())
+
+
+GUNS.update({'sporelauncher': draw_sporelauncher, 'mirrorshield': draw_mirrorshield, 'whip': draw_whip})
+
+
+def decal_card(src, fill):
+    """Dekal med genomskinlig bakgrund (flux/decals), centrerad på den mörklila vinjetten."""
+    im = Image.open(os.path.join(DECALS, src + '.webp')).convert('RGBA')
+    bb = im.split()[3].point(lambda v: 255 if v > 16 else 0).getbbox() or (0, 0, im.width, im.height)
+    im = im.crop(bb)
+    k = S * 4 * fill / max(im.size)
+    im = im.resize((max(1, int(im.width * k)), max(1, int(im.height * k))), Image.LANCZOS)
+    big = purple_bg()
+    pos = ((S * 4 - im.width) // 2, (S * 4 - im.height) // 2)
+    add_glow(big, im, pos, (0, 0, 0), 12)
+    big.alpha_composite(im, pos)
+    return big
+
+
+def drawn_card11(cid, kind, size, dy, parts):
+    big = purple_bg()
+    for name, sc, px, py, tint, rot in parts:
+        big = screen(big, particle(name, int(S * 4 * sc), tint, rot), S * 2 + px * S * 4, S * 2 + py * S * 4)
+    g = art11(kind)
+    g = shade(g.crop(g.getbbox()))
+    k = S * 4 * size / max(g.size)
+    g = g.resize((max(1, int(g.width * k)), max(1, int(g.height * k))), Image.LANCZOS)
+    pos = ((S * 4 - g.width) // 2, int((S * 4 - g.height) / 2 + dy * S * 4))
+    add_glow(big, g, pos, (0, 0, 0), 12)
+    big.alpha_composite(g, pos)
+    save(big, cid)
+
+
+def main_v11():
+    old = {'ash:' + s for s, _ in V7.values()} | {k + ':' + s for k, s, _ in V8.values()} | {k + ':' + s for k, s, _ in V9_ASH.values()}
+    srcs = [k + ':' + s for k, s, _ in V11_SRC.values()]
+    assert len(srcs) == len(set(srcs)) and not old & set(srcs), 'varje bild används bara en gång'
+    assert len(V11_SRC) + len(V11_DRAWN) == 24 and not set(V11_SRC) & set(V11_DRAWN)
+    old_parts = {p[0] for _, _, _, ps in V9_DRAWN.values() for p in ps} | {s[5:] for _, s, _, _ in V9_UPGRADES.values() if s.startswith('part:')}
+    parts = [p[0] for _, _, _, ps in V11_DRAWN.values() for p in ps] + [s[5:] for _, s, _, _ in V11_UPGRADES.values() if s.startswith('part:')]
+    assert len(parts) == len(set(parts)) and not old_parts & set(parts), 'varje partikelbild används bara en gång'
+    fx = [s[4:] for _, s, _, _ in V11_UPGRADES.values() if s.startswith('vfx:')]
+    old_fx = ({s for _, s, _ in V6_UPGRADES.values()} | {n for ls in V6_ACTIVES.values() for n, *_ in ls} | {s for _, s, _ in V7_UPGRADES.values()}
+              | {s for _, s, _ in V8_UPGRADES.values()} | {s[4:] for _, s, _, _ in V9_UPGRADES.values() if s.startswith('vfx:')})
+    assert len(V11_UPGRADES) == 12 and len(fx) == len(set(fx)) and not old_fx & set(fx), 'varje effektbild används bara en gång'
+    n = 0
+    for cid, (kind, src, arg) in V11_SRC.items():
+        save(ash_card(src, arg) if kind == 'ash' else decal_card(src, arg) if kind == 'decal' else meshy_card(kind, src, arg), cid)
+        n += 1
+    for cid, (kind, size, dy, ps) in V11_DRAWN.items():
+        drawn_card11(cid, kind, size, dy, ps)
+        n += 1
+    for cid, w in V11_PACTS.items():
+        pact(cid, w)
+        n += 1
+    for cid, (w, src, tint, rot) in V11_UPGRADES.items():
+        v9_upgrade(cid, w, src, tint, rot)
+        n += 1
+    near_dupes(list(V11_SRC) + list(V11_DRAWN) + list(V11_PACTS) + list(V11_UPGRADES))
+    return n
+
+
 def main():
     assert len(CARDS) == len(set(CARDS)) == 50, len(CARDS)
     srcs = list(V5.values()) + [s for _, s in V5_UPGRADES.values()]
@@ -1090,6 +1480,9 @@ def main():
         return
     if ONLY == 'v9':
         print(main_v9(), 'kortbilder ->', OUT)
+        return
+    if ONLY == 'v11':
+        print(main_v11(), 'kortbilder ->', OUT)
         return
     n = 0
     if not ONLY_V5:
@@ -1110,6 +1503,7 @@ def main():
         n += main_v7()
         n += main_v8()
         n += main_v9()
+        n += main_v11()
     print(n, 'kortbilder ->', OUT)
 
 

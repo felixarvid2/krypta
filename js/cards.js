@@ -138,6 +138,15 @@ const MOD_KEYS = {
   clockSlow: 'Chans (0-1) att träffade fiender saktas in en stund',
   skyGold: 'Andel mer guld i Molnborgen',
   rewindHeal: 'HP du läker när du dödar en urverkssoldat (platt)',
+  // version 11: Svampriket och Spegelpalatset – sporer, studsplattor, teleporter, spegelväggar, illusioner, glas och piskan
+  sporeResist: 'Andel mindre effekt av sporer och förvirring (sporpölar, sporlingar)',
+  bounceHeight: 'Andel högre studs från studsplattor (svamphattar)',
+  teleportShield: 'Sekunder osårbarhet efter en teleport (platt)',
+  reflectDmg: 'Andel extra skada på skott som studsat mot spegelväggar eller skölden',
+  illusionSight: 'Chans (0-1) att direkt se igenom illusioner (illusionistens falska kopior)',
+  mirrorShards: 'Chans (0-1) att dödade fiender splittras i skärvor som skadar fiender runt omkring',
+  fungusHeal: 'HP du läker när du dödar en svampfiende (platt)',
+  whipReach: 'Extra räckvidd i rutor för piskan och närstrid (platt)',
 };
 const KEYS = Object.keys(MOD_KEYS);
 
@@ -532,6 +541,51 @@ const DEFS = [
   // legendariska
   ['urmakarens_hjarta', 'URMAKARENS HJÄRTA', 'legendarisk', { gearFind: 0.3, clockSlow: 0.12, rewindHeal: 6, timeResist: 0.3 }, 1, '+30 % FLER KUGGHJUL\n+12 % CHANS ATT SAKTA\nIN TRÄFFADE FIENDER\n+6 HP PER URVERKSSOLDAT\nTIDSBUBBLOR 30 % SVAGARE', { unlock: 50 }],
   ['stormfagelns_fjader', 'STORMFÅGELNS FJÄDER', 'legendarisk', { windResist: 0.4, lightningResist: 0.4, pushDmg: 0.3, skyGold: 0.2 }, 1, '40 % MINDRE KNUFF FRÅN VIND\n-40 % SKADA FRÅN BLIXTAR\n+30 % SKADA NÄR FIENDER\nKNUFFAS IN I VÄGGAR\n+20 % GULD I MOLNBORGEN', { unlock: 50 }],
+  // ---- version 11: pakter och uppgraderingar för sporkastaren, spegelskölden och piskan ----
+  ['pakt_sporkastare', 'SVAMPODLARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR SPORER\n4 UNIKA UPPGRADERINGAR\nBARA SPORKASTARE RESTEN AV RUNDAN', { pact: 'sporelauncher', bad: 1 }],
+  ['pakt_spegelskold', 'SPEGELVÄKTARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nSKÖLDEN BEHÖVER INGEN AMMO\n4 UNIKA UPPGRADERINGAR\nBARA SPEGELSKÖLD RESTEN AV RUNDAN', { pact: 'mirrorshield', bad: 1 }],
+  ['pakt_piska', 'TÄMJARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nPISKAN BEHÖVER INGEN AMMO\n4 UNIKA UPPGRADERINGAR\nBARA PISKA RESTEN AV RUNDAN', { pact: 'whip', bad: 1 }],
+  ['sporstormen', 'SPORSTORMEN', 'sallsynt', {}, 1, 'STÖRRE SPORMOLN', { weapon: 'sporelauncher', wup: 'sl_cloud' }],
+  ['lakesporerna', 'LÄKESPORERNA', 'ovanlig', {}, 1, 'DINA SPORMOLN\nLÄKER DIG', { weapon: 'sporelauncher', wup: 'sl_heal' }],
+  ['smittobararen', 'SMITTOBÄRAREN', 'legendarisk', {}, 1, 'MOLNET SMITTAR VIDARE\nNÄR EN FIENDE DÖR', { weapon: 'sporelauncher', wup: 'sl_chain' }],
+  ['snabbsadden', 'SNABBSÅDDEN', 'ovanlig', {}, 1, 'SNABBARE OMLADDNING', { weapon: 'sporelauncher', wup: 'sl_fast' }],
+  ['speglingen', 'SPEGLINGEN', 'legendarisk', {}, 1, 'STUDSADE SKOTT GÖR\nDUBBEL SKADA', { weapon: 'mirrorshield', wup: 'ms_reflect' }],
+  ['skoldslaget', 'SKÖLDSLAGET', 'ovanlig', {}, 1, 'SLAGET KNUFFAR OCH\nBEDÖVAR FIENDEN', { weapon: 'mirrorshield', wup: 'ms_bash' }],
+  ['skyddsringen', 'SKYDDSRINGEN', 'sallsynt', {}, 1, 'SKÖLDEN SKYDDAR\nRUNT OMKRING DIG', { weapon: 'mirrorshield', wup: 'ms_aura' }],
+  ['pareringen', 'PARERINGEN', 'sallsynt', {}, 1, 'PERFEKT PARERING\nLADDAR NÄSTA SLAG', { weapon: 'mirrorshield', wup: 'ms_parry' }],
+  ['langsnarten', 'LÅNGSNÄRTEN', 'ovanlig', {}, 1, 'LÄNGRE RÄCKVIDD', { weapon: 'whip', wup: 'wh_reach' }],
+  ['eldsnarten', 'ELDSNÄRTEN', 'sallsynt', {}, 1, 'PISKAN BRINNER OCH\nTÄNDER ELD PÅ FIENDER', { weapon: 'whip', wup: 'wh_fire' }],
+  ['niosvansen', 'NIOSVANSEN', 'legendarisk', {}, 1, 'SLAGET TRÄFFAR\nTRE FIENDER', { weapon: 'whip', wup: 'wh_multi' }],
+  ['oxdraget', 'OXDRAGET', 'ovanlig', {}, 1, 'DRAR ÄVEN STÖRRE\nFIENDER TILL DIG', { weapon: 'whip', wup: 'wh_pull' }],
+  // ---- version 11: svamp, sporer, speglar, illusioner och glas (Svampriket och Spegelpalatset) ----
+  // vanliga
+  ['svamphatten', 'SVAMPHATTEN', 'vanlig', { sporeResist: 0.2 }, 3, '20 % MINDRE EFFEKT\nAV SPORER'],
+  ['studssvampen', 'STUDSSVAMPEN', 'vanlig', { bounceHeight: 0.2 }, 3, '+20 % HÖGRE STUDS'],
+  ['resestenen', 'RESESTENEN', 'vanlig', { teleportShield: 1 }, 3, '1 S OSÅRBAR EFTER\nEN TELEPORT'],
+  ['polerduken', 'POLERDUKEN', 'vanlig', { reflectDmg: 0.2 }, 3, '+20 % SKADA PÅ\nSTUDSADE SKOTT'],
+  ['klarsynsdroppen', 'KLARSYNSDROPPEN', 'vanlig', { illusionSight: 0.15 }, 3, '15 % CHANS ATT SE IGENOM\nILLUSIONER DIREKT'],
+  ['glassplittret', 'GLASSPLITTRET', 'vanlig', { mirrorShards: 0.06 }, 3, '6 % CHANS ATT FIENDER\nSPLITTRAS I SKÄRVOR'],
+  ['svampkorgen', 'SVAMPKORGEN', 'vanlig', { fungusHeal: 2 }, 3, '+2 HP NÄR DU DÖDAR\nEN SVAMPFIENDE'],
+  ['myceltraden', 'MYCELTRÅDEN', 'vanlig', { whipReach: 1 }, 2, '+1 RUTA RÄCKVIDD FÖR\nPISKA OCH NÄRSTRID'],
+  ['andningsduken', 'ANDNINGSDUKEN', 'vanlig', { sporeResist: 0.15, fungusHeal: 1 }, 3, '15 % MINDRE EFFEKT\nAV SPORER\n+1 HP PER SVAMPFIENDE', { unlock: 10 }],
+  ['irrblosset', 'IRRBLOSSET', 'vanlig', { illusionSight: 0.1, teleportShield: 1 }, 3, '10 % CHANS ATT SE IGENOM\nILLUSIONER\n1 S OSÅRBAR EFTER TELEPORT', { unlock: 10 }],
+  // ovanliga
+  ['mycelmattan', 'MYCELMATTAN', 'ovanlig', { fungusHeal: 3, sporeResist: 0.2 }, 2, '+3 HP PER SVAMPFIENDE\n20 % MINDRE EFFEKT\nAV SPORER', { unlock: 15 }],
+  ['fjaderskivlingen', 'FJÄDERSKIVLINGEN', 'ovanlig', { bounceHeight: 0.3, fallSafe: 0.15 }, 2, '+30 % HÖGRE STUDS\n15 % MINDRE FALLSKADA'],
+  ['skarvpansaret', 'SKÄRVPANSARET', 'ovanlig', { reflectDmg: 0.25, mirrorShards: 0.05 }, 2, '+25 % SKADA PÅ\nSTUDSADE SKOTT\n5 % CHANS ATT FIENDER\nSPLITTRAS I SKÄRVOR'],
+  ['portvaktarens_ring', 'PORTVAKTARENS RING', 'ovanlig', { teleportShield: 2, dodge: 0.03 }, 2, '2 S OSÅRBAR EFTER\nEN TELEPORT\n+3 % CHANS ATT UNDVIKA', { unlock: 15 }],
+  ['hyfkedjan', 'HYFKEDJAN', 'ovanlig', { whipReach: 1, meleeDmg: 0.1 }, 2, '+1 RUTA RÄCKVIDD FÖR\nPISKA OCH NÄRSTRID\n+10 % NÄRSTRIDSSKADA'],
+  ['maskbrytaren', 'MASKBRYTAREN', 'ovanlig', { illusionSight: 0.25, backstab: 0.15 }, 2, '25 % CHANS ATT SE IGENOM\nILLUSIONER DIREKT\n+15 % SKADA MOT\nOVETANDE FIENDER', { unlock: 20 }],
+  ['flugsvampen', 'FLUGSVAMPEN', 'ovanlig', { fungusHeal: 4, bounceHeight: 0.25, sporeResist: -0.3 }, 1, '+4 HP PER SVAMPFIENDE\n+25 % HÖGRE STUDS\nSPORER 30 % STARKARE', { curse: true, bad: 1 }],
+  // sällsynta
+  ['sporkokongen', 'SPORKOKONGEN', 'sallsynt', { sporeResist: 0.4, regen: 0.3 }, 1, '40 % MINDRE EFFEKT\nAV SPORER\n+0,3 HP PER SEKUND', { unlock: 25 }],
+  ['kalejdoskopet', 'KALEJDOSKOPET', 'sallsynt', { mirrorShards: 0.12, reflectDmg: 0.2 }, 1, '12 % CHANS ATT FIENDER\nSPLITTRAS I SKÄRVOR\n+20 % SKADA PÅ\nSTUDSADE SKOTT', { unlock: 30 }],
+  ['tvillingporten', 'TVILLINGPORTEN', 'sallsynt', { teleportShield: 3, illusionSight: 0.2 }, 1, '3 S OSÅRBAR EFTER\nEN TELEPORT\n20 % CHANS ATT SE IGENOM\nILLUSIONER', { unlock: 25 }],
+  ['mycelgreppet', 'MYCELGREPPET', 'sallsynt', { whipReach: 2, meleeDmg: 0.15, fungusHeal: 2 }, 1, '+2 RUTOR RÄCKVIDD FÖR\nPISKA OCH NÄRSTRID\n+15 % NÄRSTRIDSSKADA\n+2 HP PER SVAMPFIENDE', { unlock: 30 }],
+  ['glaskroppen', 'GLASKROPPEN', 'sallsynt', { mirrorShards: 0.15, reflectDmg: 0.3, healMul: -0.25 }, 1, '15 % CHANS ATT FIENDER\nSPLITTRAS I SKÄRVOR\n+30 % SKADA PÅ\nSTUDSADE SKOTT\n-25 % HELNING', { curse: true, bad: 1 }],
+  // legendariska
+  ['urmycelet', 'URMYCELET', 'legendarisk', { sporeResist: 0.4, fungusHeal: 4, bounceHeight: 0.3, poisonChance: 0.1 }, 1, '40 % MINDRE EFFEKT\nAV SPORER\n+4 HP PER SVAMPFIENDE\n+30 % HÖGRE STUDS\n10 % CHANS ATT FÖRGIFTA', { unlock: 50 }],
+  ['tusenspegeln', 'TUSENSPEGELN', 'legendarisk', { reflectDmg: 0.4, mirrorShards: 0.1, illusionSight: 0.3, teleportShield: 2 }, 1, '+40 % SKADA PÅ\nSTUDSADE SKOTT\n10 % CHANS TILL SKÄRVOR\n30 % SE IGENOM ILLUSIONER\n2 S OSÅRBAR EFTER TELEPORT', { unlock: 50 }],
 ];
 
 // ---------- Set och synergier ----------
@@ -556,6 +610,9 @@ const SETS = {
   // version 9: URVERKETS VÄG (Klocktornet: kugghjul, urverk och tid) och STORMENS VÄG (Molnborgen: åska och vind)
   urverket: { name: 'URVERKETS VÄG',  text: '+20 % FLER KUGGHJUL\n+5 % CHANS ATT SAKTA IN TRÄFFADE FIENDER\n+3 HP PER URVERKSSOLDAT', mods: { gearFind: 0.2, clockSlow: 0.05, rewindHeal: 3 } },
   stormen: { name: 'STORMENS VÄG',    text: '-25 % SKADA FRÅN BLIXTAR\n20 % MINDRE KNUFF FRÅN VIND\n+20 % SKADA NÄR FIENDER KNUFFAS IN I VÄGGAR', mods: { lightningResist: 0.25, windResist: 0.2, pushDmg: 0.2 } },
+  // version 11: MYCELIETS VÄG (Svampriket: svampar och sporer) och SPEGELNS VÄG (Spegelpalatset: speglar, illusioner och glas)
+  myceliet: { name: 'MYCELIETS VÄG',  text: '25 % MINDRE EFFEKT AV SPORER\n+2 HP PER DÖDAD SVAMPFIENDE\n+20 % HÖGRE STUDS', mods: { sporeResist: 0.25, fungusHeal: 2, bounceHeight: 0.2 } },
+  spegeln: { name: 'SPEGELNS VÄG',    text: '+25 % SKADA PÅ STUDSADE SKOTT\n8 % CHANS ATT FIENDER SPLITTRAS I SKÄRVOR\n20 % CHANS ATT SE IGENOM ILLUSIONER', mods: { reflectDmg: 0.25, mirrorShards: 0.08, illusionSight: 0.2 } },
 };
 // Synergitaggar: kort med samma tagg spelar bra ihop (t.ex. eld + explosion, krit + kritskada).
 const SYN = { eld: 'ELD', krit: 'KRIT', gift: 'GIFT', frost: 'FROST', blixt: 'BLIXT', skold: 'SKÖLD', guld: 'GULD', liv: 'LIV', rusning: 'RUSNING', skugga: 'SKUGGA', granat: 'GRANAT',
@@ -563,7 +620,8 @@ const SYN = { eld: 'ELD', krit: 'KRIT', gift: 'GIFT', frost: 'FROST', blixt: 'BL
   runa: 'RUNOR', mana: 'MANA', jakt: 'JAKT', mat: 'MÅLTID', formaga: 'FÖRMÅGA', hemlig: 'HEMLIGHET',
   ljus: 'LAMPAN', spel: 'SPEL OCH BANK', vana: 'VAPENVANA', sjal: 'SJÄLAR',
   hav: 'HAVET', kristall: 'KRISTALL', kunskap: 'KUNSKAP', avgrund: 'AVGRUNDEN', hax: 'HÄXOR',
-  urverk: 'URVERK', tid: 'TIDEN', vind: 'VINDEN', storm: 'STORMEN', hojd: 'HÖJDEN' };
+  urverk: 'URVERK', tid: 'TIDEN', vind: 'VINDEN', storm: 'STORMEN', hojd: 'HÖJDEN',
+  svamp: 'SVAMPAR', spor: 'SPORER', spegel: 'SPEGLAR', illusion: 'ILLUSIONER', glas: 'GLAS' };
 // set och syn för alla kort samlas här: id: [set eller '', syn-taggar...]
 const TAGS = {
   // eld och explosioner
@@ -632,6 +690,15 @@ const TAGS = {
   vaggsmallen: ['', 'vind'], tryckvagen: ['', 'vind'], virvelstenen: ['', 'vind', 'storm'], klattrarrepet: ['', 'hojd', 'vind'],
   fjaderfallet: ['', 'hojd'], svalvingarna: ['', 'hojd'], molnmyntet: ['', 'hojd', 'guld'], guldmolnet: ['', 'hojd', 'guld'],
   himlastegen: ['', 'hojd', 'guld'], stormens_skuld: ['', 'storm', 'guld'],
+  // version 11: MYCELIETS VÄG (Svampriket) och SPEGELNS VÄG (Spegelpalatset); svampar, sporer, speglar, illusioner och glas
+  svamphatten: ['myceliet', 'svamp', 'spor'], svampkorgen: ['myceliet', 'svamp', 'liv'], mycelmattan: ['myceliet', 'svamp', 'spor'],
+  mycelgreppet: ['myceliet', 'svamp', 'narstrid'], urmycelet: ['myceliet', 'svamp', 'spor', 'gift'],
+  polerduken: ['spegeln', 'spegel'], klarsynsdroppen: ['spegeln', 'illusion'], skarvpansaret: ['spegeln', 'spegel', 'glas'],
+  maskbrytaren: ['spegeln', 'illusion', 'skugga'], kalejdoskopet: ['spegeln', 'glas', 'spegel'], tusenspegeln: ['spegeln', 'spegel', 'illusion', 'glas'],
+  studssvampen: ['', 'svamp'], andningsduken: ['', 'spor', 'svamp'], fjaderskivlingen: ['', 'svamp', 'hojd'], flugsvampen: ['', 'svamp', 'spor'],
+  sporkokongen: ['', 'spor', 'liv'], myceltraden: ['', 'svamp', 'narstrid'], hyfkedjan: ['', 'svamp', 'narstrid'],
+  resestenen: ['', 'spegel'], portvaktarens_ring: ['', 'spegel'], irrblosset: ['', 'illusion', 'spegel'], tvillingporten: ['', 'spegel', 'illusion'],
+  glassplittret: ['', 'glas'], glaskroppen: ['', 'glas', 'spegel'],
 };
 
 const ALL = DEFS.map(([id, name, rarity, mods, max, text, extra]) => {
@@ -750,6 +817,9 @@ const FMT = {
   timeResist: ['p', 'SKYDD MOT TIDSBUBBLOR'], windResist: ['p', 'SKYDD MOT VIND'], fallSafe: ['p', 'SKYDD MOT FALL'],
   lightningResist: ['p', 'SKYDD MOT BLIXTAR'], pushDmg: ['p', 'SKADA VID KNUFF IN I VÄGG'], gearFind: ['p', 'FLER KUGGHJUL'],
   clockSlow: ['p', 'CHANS ATT SAKTA IN TRÄFFADE'], skyGold: ['p', 'GULD I MOLNBORGEN'], rewindHeal: ['n', 'HP PER URVERKSSOLDAT'],
+  sporeResist: ['p', 'SKYDD MOT SPORER'], bounceHeight: ['p', 'HÖGRE STUDS'], teleportShield: ['n', 'S OSÅRBAR EFTER TELEPORT'],
+  reflectDmg: ['p', 'SKADA PÅ STUDSADE SKOTT'], illusionSight: ['p', 'CHANS ATT SE IGENOM ILLUSIONER'], mirrorShards: ['p', 'CHANS TILL SKÄRVOR'],
+  fungusHeal: ['n', 'HP PER SVAMPFIENDE'], whipReach: ['n', 'RUTOR RÄCKVIDD FÖR PISKA'],
 };
 const INVERT = { damageTaken: true };
 const num = v => String(Math.round(v * 100) / 100).replace('.', ',');
@@ -895,7 +965,7 @@ function preview(card, mods, ownedIds) {
 // ---------- Dragning ----------
 // Vikten skiftar mot sällsyntare med djup (våning, 0..) och luck (summan av luck-modden, 0.1 per kort).
 const CURSE_WEIGHT = 0.8; // förbannade kort dyker upp ibland
-const PACT_WEIGHT = 0.6, UPGRADE_WEIGHT = 8; // tjugotre pakter (vikten sänkt så att alla pakter tillsammans syns lika ofta som de fjorton förut); uppgraderingarna väger lite mer sedan korthögen växt: en pakt i ungefär var fjärde dragning; efter pakten kommer uppgraderingarna tätt
+const PACT_WEIGHT = 0.53, UPGRADE_WEIGHT = 9; // tjugosex pakter (vikten sänkt så att alla pakter tillsammans syns lika ofta som de fjorton förut); uppgraderingarna väger lite mer sedan korthögen växt (version 11: 8 -> 9): en pakt i ungefär var fjärde dragning; efter pakten kommer uppgraderingarna tätt
 function rarityWeight(rarity, depth, luck) {
   const t = Math.max(0, (depth || 0) * 0.25 + (luck || 0) * 2.5); // 0 = början av rundan
   const base = RARITY[rarity].weight;
@@ -955,7 +1025,7 @@ const canSell = card => sellPrice(card, 0) > 0;
 const WEAPON_NAME = { pistol: 'PISTOL', shotgun: 'HAGELGEVÄR', rifle: 'GEVÄR', smg: 'KPIST', dbshotgun: 'DUBBELBÖSSA', crossbow: 'ARMBORST', flaregun: 'SIGNALPISTOL', sniper: 'PRICKSKYTTE',
   axe: 'YXA', flamer: 'ELDKASTARE', launcher: 'GRANATKASTARE', nailgun: 'SPIKGEVÄR', staff: 'BLIXTSTAV', bow: 'LÅNGBÅGE',
   knives: 'KASTKNIVAR', hammer: 'STRIDSHAMMARE', musket: 'MUSKÖT', harpoon: 'HARPUN', boomerang: 'BUMERANG', prism: 'PRISMA',
-  sawlauncher: 'SÅGBLAD', windgun: 'VINDBÖSSA', spear: 'SPJUT' };
+  sawlauncher: 'SÅGBLAD', windgun: 'VINDBÖSSA', spear: 'SPJUT', sporelauncher: 'SPORKASTARE', mirrorshield: 'SPEGELSKÖLD', whip: 'PISKA' };
 // etikett ovanför kortets namn: förbannelse, pakt, aktiv förmåga ('AKTIV · 8 S'), vilket vapen uppgraderingen hör till eller sammansmält
 const activeTag = card => 'AKTIV · ' + num(card.cd || 0) + ' S';
 function tag(card) {
