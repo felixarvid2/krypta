@@ -163,6 +163,13 @@ const ACH = [
   ['boomerang50', 'ÅTERVÄNDAREN', 'DÖDA 50 FIENDER MED BUMERANGEN', p => ((p.wkills || {}).boomerang || 0) >= 50, p => [(p.wkills || {}).boomerang || 0, 50]],
   ['prism100', 'LJUSBRYTAREN', 'DÖDA 100 FIENDER MED PRISMAN', p => ((p.wkills || {}).prism || 0) >= 100, p => [(p.wkills || {}).prism || 0, 100]],
   ['wrecks', 'VRAKPLUNDRAREN', 'ÖPPNA 10 VRAKKISTOR', p => (p.wrecks || 0) >= 10, p => [p.wrecks || 0, 10]],
+  // version 9
+  ['clockmaker', 'TIDENS BRYTARE', 'BESEGRA URMAKAREN', p => !!(p.bossWins || {}).clockmaker],
+  ['thunderbird', 'STORMJÄGAREN', 'BESEGRA STORMFÅGELN', p => !!(p.bossWins || {}).thunderbird],
+  ['void20', 'AVGRUNDSKASTAREN', 'KNUFFA 20 FIENDER I TOMRUMMET', p => (p.voidKills || 0) >= 20, p => [p.voidKills || 0, 20]],
+  ['spear50', 'SPJUTKASTAREN', 'DÖDA 50 FIENDER MED SPJUTET', p => ((p.wkills || {}).spear || 0) >= 50, p => [(p.wkills || {}).spear || 0, 50]],
+  ['saw100', 'SÅGVERKET', 'DÖDA 100 FIENDER MED SÅGBLADSKASTAREN', p => ((p.wkills || {}).sawlauncher || 0) >= 100, p => [(p.wkills || {}).sawlauncher || 0, 100]],
+  ['allbosses12', 'ALLA TOLV', 'BESEGRA ALLA TOLV BOSSAR', p => BOSS_IDS.every(id => (p.bossWins || {})[id]), p => [BOSS_IDS.filter(id => (p.bossWins || {})[id]).length, BOSS_IDS.length]],
 ];
 function checkAch() {
   profile.ach = profile.ach || [];
@@ -177,7 +184,12 @@ function checkAch() {
   dqCheck();
 }
 function showNews() {
-  CardUI.list('NYHETER', 'VERSION 8: AVGRUNDEN', [
+  CardUI.list('NYHETER', 'VERSION 9: KLOCKTORNET OCH MOLNBORGEN', [
+    { label: 'VERSION 9 – KLOCKTORNET OCH MOLNBORGEN', head: true, color: '#ffe0a0' },
+    { label: 'TVÅ NYA BIOMER', text: 'KLOCKTORNET MED SÅGSPÅR, TIDSBUBBLOR OCH URVERK. MOLNBORGEN MED FLYTANDE ÖAR, TOMRUM, VINDBYAR OCH ÅSKA.' },
+    { label: 'TRE NYA VAPEN', text: 'SÅGBLADSKASTAREN (STUDSANDE KLINGOR), VINDBÖSSAN (KNUFFA FIENDER IN I VÄGGAR – ELLER UT I TOMRUMMET) OCH SPJUTET (STÖT, OCH KAST MED HÖGERKLICK).' },
+    { label: 'SEX NYA FIENDER', text: 'URVERKSSOLDAT SOM LINDAS UPP IGEN, KUGGSPINDLAR, TIDSVÄKTARE, HARPYOR, STORMKALLARE OCH MOLNJÄTTAR.' },
+    { label: 'TVÅ NYA BOSSAR', text: 'URMAKAREN SOM VRIDER TILLBAKA TIDEN OCH STORMFÅGELN SOM DYKER OCH KALLAR PÅ ÅSKAN. NU FINNS TOLV BOSSAR.' },
     { label: 'VERSION 8 – AVGRUNDEN', head: true, color: '#c0a0ff' },
     { label: 'TALANGER', text: 'DÖDANDEN GER ERFARENHET. VARJE NY NIVÅ GER ETT VAL AV TRE TALANGER UR TRE GRENAR: KRIGAREN, SKUGGAN OCH MYSTIKERN. 30 TALANGER, NÅGRA KRÄVER ANDRA.' },
     { label: 'TVÅ NYA BIOMER', text: 'KRISTALLGROTTORNA MED GLÖDANDE KRISTALLER, SPIKAR OCH BRYTANDE KRISTALLER SOM DELAR SKOTT. DEN SJUNKNA STADEN MED DJUPT VATTEN, LUFT OCH TIDVATTEN.' },
@@ -228,6 +240,10 @@ function showManual() {
     { label: 'VÄRLDEN', head: true, color: '#ffd24a' }, { label: 'LAVA', text: 'BRÄNNER – HOPPA ÖVER.' }, { label: 'VATTEN OCH NÄT', text: 'SAKTAR NED. NÄT BRINNER.' }, { label: 'IS', text: 'HALT.' },
     { label: 'NYCKLAR', text: 'ÖPPNAR LÅSTA DÖRRAR OCH KISTOR.' }, { label: 'SPAKAR', text: 'ÖPPNAR JÄRNGALLER NÅGONSTANS PÅ VÅNINGEN.' }, { label: 'SPRUCKNA VÄGGAR', text: 'SPRÄNG DEM MED GRANATER ELLER KRUTFAT.' },
     { label: 'SMEDJAN', text: 'GER VAPNET +12 % SKADA PER NIVÅ OCH FÄSTER RUNOR.' },
+    { label: 'VERSION 9', head: true, color: '#ffe0a0' }, { label: 'TOMRUMMET', text: 'I MOLNBORGEN KAN DU FALLA MELLAN ÖARNA. DU HAMNAR PÅ SENASTE SÄKRA PLATS MED SKADA. FIENDER SOM KNUFFAS UT DÖR.' },
+    { label: 'TIDSBUBBLOR', text: 'ALLT I EN TIDSBUBBLA RÖR SIG LÅNGSAMT – DU, FIENDERNA OCH SKOTTEN.' },
+    { label: 'ÅSKA', text: 'GLÖDANDE MARK BETYDER ATT BLIXTEN SNART SLÅR NED. BLIXTSTÄNGER DRAR TILL SIG DEN.' },
+    { label: 'SPJUTET', text: 'VÄNSTERKLICK STÖTER, HÖGERKLICK KASTAR. GÅ ÖVER SPJUTET FÖR ATT PLOCKA UPP DET.' },
     { label: 'VERSION 8', head: true, color: '#c0a0ff' }, { label: 'TALANGER', text: 'DÖDA FÖR ERFARENHET. NY NIVÅ: VÄLJ EN AV TRE TALANGER (1–3, R SLÅR OM, T VISAR TRÄDET). TALANGALTARE (Ġ) OCH KUNSKAPSBÖCKER GER MER.' },
     { label: 'VATTEN', text: 'I DJUPT VATTEN SIMMAR DU LÅNGSAMT OCH KAN INTE HOPPA. LUFTMÄTAREN TÖMS – LUFTBUBBLOR FYLLER PÅ. TIDVATTNET GÖR GRUNT VATTEN DJUPT EMELLANÅT.' },
     { label: 'KRISTALLER', text: 'SKJUT PÅ EN BRYTANDE KRISTALL SÅ DELAS SKOTTET I TRE STRÅLAR. KRISTALLSPIKAR SKADAR – HOPPA ÖVER.' },
@@ -3691,7 +3707,7 @@ function showStats() {
   CardUI.list('STATISTIK', 'DITT KRYPTA I SIFFROR', rows, () => refreshTitle());
 }
 // ---------- Version 6: svagheter i bestiariet ----------
-const WEAK = { 'Ë': 'HAMMARE OCH SPRÄNGMEDEL', 'Í': 'SNABBA VAPEN – DEN HOPPAR', 'Ï': 'HÅLL AVSTÅND FRÅN HAKEN', 'Ó': 'GÅ UR VATTNET', 'Ú': 'EN TRÄFF BRYTER SÅNGEN', 'Û': 'BAKIFRÅN ELLER SPRÄNGMEDEL', 'Ā': 'LAMPAN AVSLÖJAR DEN', 'Ă': 'SKJUT INNAN HON TELEPORTERAR', S: 'HAGEL KROSSAR BEN', K: 'HÅLL AVSTÅND OCH SIDLEDES', V: 'BACKA OCH SKJUT', I: 'SPIKAR OCH HAGEL', L: 'ELD', N: 'DÖDA FÖRST', O: 'DÖDA FÖRST', R: 'LYKTAN AVSLÖJAR DEN', W: 'LÅT DEN KROCKA', U: 'ELD BRÄNNER NÄTEN', X: 'HAGEL', Y: 'TRÄFFA I SPRÅNGET', '!': 'SKJUT PÅ AVSTÅND', '@': 'ANFALL BAKIFRÅN', '^': 'ELD', '+': 'EXPLOSIONER', Q: 'SKJUT KISTOR SOM RÖR SIG',
+const WEAK = { 'ĳ': 'SLÅ IGEN MEDAN DEN LINDAS UPP', 'Ĵ': 'SÅGBLAD OCH SPRÄNGMEDEL', 'ĵ': 'RÖR DIG UR BUBBLORNA', 'Ķ': 'SIDSTEG NÄR DEN DYKER', 'ķ': 'FLYTTA DIG FRÅN GLÖDEN', 'ĸ': 'VINDBÖSSAN – KNUFFA DEN I TOMRUMMET', 'Ë': 'HAMMARE OCH SPRÄNGMEDEL', 'Í': 'SNABBA VAPEN – DEN HOPPAR', 'Ï': 'HÅLL AVSTÅND FRÅN HAKEN', 'Ó': 'GÅ UR VATTNET', 'Ú': 'EN TRÄFF BRYTER SÅNGEN', 'Û': 'BAKIFRÅN ELLER SPRÄNGMEDEL', 'Ā': 'LAMPAN AVSLÖJAR DEN', 'Ă': 'SKJUT INNAN HON TELEPORTERAR', S: 'HAGEL KROSSAR BEN', K: 'HÅLL AVSTÅND OCH SIDLEDES', V: 'BACKA OCH SKJUT', I: 'SPIKAR OCH HAGEL', L: 'ELD', N: 'DÖDA FÖRST', O: 'DÖDA FÖRST', R: 'LYKTAN AVSLÖJAR DEN', W: 'LÅT DEN KROCKA', U: 'ELD BRÄNNER NÄTEN', X: 'HAGEL', Y: 'TRÄFFA I SPRÅNGET', '!': 'SKJUT PÅ AVSTÅND', '@': 'ANFALL BAKIFRÅN', '^': 'ELD', '+': 'EXPLOSIONER', Q: 'SKJUT KISTOR SOM RÖR SIG',
   'Å': 'BRÄNN LIKEN', 'Ä': 'DÖDA FÖRST', 'Ö': 'EXPLOSIONER OCH YXA', 'É': 'SAMLA DEM I EN DÖRR', 'Ü': 'HÅLL AVSTÅND', 'Ñ': 'DÖDA FÖRST – HAN VÄCKER DE DÖDA', 'Æ': 'IS OCH BLIXT', 'Þ': 'FLYTTA DIG NÄR MARKEN GLÖDER', 'Ð': 'ANFALL BAKIFRÅN', 'Ý': 'BÅGE PÅ AVSTÅND' };
 // ---------- Version 6: fotoläget har filter ----------
 const PHOTO_FILTERS = ['', 'svartvit', 'sepia', 'nattseende'];
@@ -3936,9 +3952,14 @@ const CHRONICLE = [
   { t: 'DET SOM SOVER I DJUPET', b: 'LEVIATAN VAR STADENS VÄKTARE. NÄR VATTNET KOM SVALDE DEN STADEN FÖR ATT SKYDDA DEN. DEN HAR INTE SLÄPPT TAGET SEDAN DESS.' },
   { t: 'ANDAS', b: 'LEVIATAN DYKER OCH VÄNTAR. DEN KAN VÄNTA LÄNGRE ÄN DU KAN HÅLLA ANDAN. LETA EFTER BUBBLORNA.' },
   { t: 'AVGRUNDEN', b: 'UNDER ALLT FINNS ETT HÅL UTAN BOTTEN. KARTOGRAFEN HAR RITAT HUNDRA VÅNINGAR AV DET OCH HAR ÄNNU INTE NÅTT FRAM.' },
+  // version 9: klocktornet och molnborgen
+  { t: 'URMAKARENS VERKSTAD', b: 'MUNKARNA BAD URMAKAREN BYGGA EN KLOCKA SOM KUNDE MÄTA EVIGHETEN. HAN BYGGDE TORNET OCH STÄNGDE IN SIG I DET.' },
+  { t: 'TIDENS SKULD', b: 'VARJE SEKUND URMAKAREN VRIDER TILLBAKA MÅSTE BETALAS. HAN HAR LÅNAT I TUSEN ÅR. NÅGON MÅSTE BETALA.' },
+  { t: 'ÖVER MOLNEN', b: 'HÖGST UPP I KLOCKTORNET FINNS EN DÖRR SOM ÖPPNAR SIG MOT HIMLEN. BORGEN DÄRUTE SVÄVAR, FÖR STORMEN BÄR DEN.' },
+  { t: 'STORMFÅGELNS ÄGG', b: 'STORMFÅGELN VAKTAR ETT ÄGG AV ÅSKA. NÄR DET KLÄCKS SKA HIMLEN SPRICKA. HÅLL DIG BORTA FRÅN BLIXTSTÄNGERNA NÄR DET MULLRAR.' },
 ];
 const CHRONICLE_END = { t: 'SLUTET OCH BÖRJAN', b: 'NÄR ALLA SIDOR ÄR FUNNA ÄR KRÖNIKAN HEL IGEN. MUNKARNAS BÖN KAN TAS TILLBAKA. KRYPTAN SOVER – TILLS NÅGON GRÄVER FÖR DJUPT IGEN.' };
-const BOSS_PAGES = { demon: [8, 9, 10], beast: [11, 12], nightmare: [13, 14], ogre: [15, 16], frost: [17, 18], ghost: [19, 20], flame: [21, 22], pharaoh: [23, 24, 25], crystalqueen: [41, 42], leviathan: [45, 46] };
+const BOSS_PAGES = { demon: [8, 9, 10], beast: [11, 12], nightmare: [13, 14], ogre: [15, 16], frost: [17, 18], ghost: [19, 20], flame: [21, 22], pharaoh: [23, 24, 25], crystalqueen: [41, 42], leviathan: [45, 46], clockmaker: [48, 49], thunderbird: [50, 51] };
 const pagesFound = () => profile.pages || [];
 function findPage(prefer) { // ger en sida som inte hittats än, helst en som hör till våningens boss
   const have = new Set(pagesFound()); let pool = (prefer || []).filter(i => !have.has(i));
