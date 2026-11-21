@@ -410,6 +410,11 @@ const PROP_DEFS = {
   'ç': { img: 'npc_gambler', src: 'npc_gambler', n: 4, anim: 4, size: 0.95, block: true, use: 'gamble', fb: 'prisoner', npc: true },
   'ÿ': { img: 'npc_banker', src: 'npc_banker', n: 4, anim: 4, size: 0.95, block: true, use: 'bank', fb: 'prisoner', npc: true },
   'ý': { img: 'npc_wanderer', src: 'npc_wanderer', n: 4, anim: 4, size: 0.95, block: true, use: 'wander', fb: 'prisoner', npc: true },
+  'Ĥ': { img: 'altar', n: 2, size: 0.75, block: true, light: 0.7, use: 'hubAltar' },
+  'Ħ': { img: 'npc_priest', src: 'npc_priest', n: 4, anim: 4, size: 0.95, block: true, use: 'hubArchive', fb: 'prisoner', npc: true },
+  'Ĩ': { img: 'npc_alchemist', src: 'npc_alchemist', n: 4, anim: 5, size: 0.95, block: true, use: 'hubTrainer', fb: 'prisoner', npc: true },
+  'Ī': { img: 'bookshelf', size: 1.0, block: true, use: 'hubChronicle' },
+  'Ĭ': { img: 'npc_wanderer', src: 'npc_wanderer', n: 4, anim: 4, size: 0.95, block: true, use: 'hubUnlocks', fb: 'prisoner', npc: true },
   'Ė': { img: 'prismcrystal', n: 2, size: 0.95, block: true, fb: 'crystal' },
   'Ę': { img: 'glowcrystal', n: 2, anim: 2, size: 0.8, block: true, light: 0.9, fb: 'crystal' },
   'Ě': { img: 'wreckchest', n: 2, size: 0.7, block: true, use: 'wreck', fb: 'coffin' },
@@ -1122,8 +1127,8 @@ const BIOME_FX = {
   graveyard: { grade: [0.8, 0.9, 1.16], fogK: 0.07, amb: [['amb_wind', 0.32, 0.9]], weather: 'groundfog' },
   forest: { grade: [0.86, 1.08, 0.84], fogK: 0.09, amb: [['amb_wind', 0.18, 1.1], ['amb_frogs', 0.22, 1]], weather: 'leaves' },
   courtyard: { grade: [1.0, 0.95, 1.02], fogK: 0.075, amb: [['amb_rain', 0.32, 1], ['drone', 0.12, 1.2]], weather: 'rain' },
-  crystal: { grade: [0.95, 0.92, 1.18], fogK: 0.1, amb: [['drone', 0.22, 1.3], ['amb_drip', 0.2, 1.3]], weather: 'drips' },
-  sunken: { grade: [0.82, 1.0, 1.12], fogK: 0.11, amb: [['water_deep', 0.25, 1], ['amb_drip', 0.3, 0.8]], weather: 'drips' },
+  crystal: { grade: [0.95, 0.92, 1.18], fogK: 0.1, amb: [['drone', 0.22, 1.3], ['amb_drip', 0.2, 1.3]], weather: 'sparkle' },
+  sunken: { grade: [0.82, 1.0, 1.12], fogK: 0.11, amb: [['water_deep', 0.25, 1], ['amb_drip', 0.3, 0.8]], weather: 'bubbles' },
   tomb: { grade: [1.14, 1.02, 0.8], fogK: 0.075, amb: [['sandstorm', 0.22, 1], ['amb_wind', 0.15, 0.8]], weather: 'sandstorm' },
   volcano: { grade: [1.16, 0.9, 0.78], fogK: 0.08, amb: [['volcano_rumble', 0.3, 1], ['lava_bubble', 0.22, 1]], weather: 'ash' },
   frost: { grade: [0.9, 0.98, 1.14], fogK: 0.09, amb: [['wind_cold', 0.3, 1], ['amb_wind', 0.15, 0.7]], weather: 'snow' },
@@ -1206,7 +1211,9 @@ function updateWeather(dt) {
   if (w === 'leaves' && Math.random() < dt * 3) { const [x, y] = near(); if (ok(x, y)) add({ x, y, z: rnd(0.2, 0.8), vx: rnd(-0.2, 0.2), vy: rnd(-0.2, 0.2), vz: rnd(-0.1, 0.1), life: 3, size: 0.06, add: true, sway: rnd(0, 6), fade: true }, 'firefly'); }
   if (w === 'groundfog' && Math.random() < dt * 4) { const [x, y] = near(8); if (ok(x, y)) add({ x, y, z: 0, vx: rnd(-0.25, 0.25), vy: rnd(-0.25, 0.25), vz: 0, life: 5, size: rnd(0.25, 0.4), add: true, fade: true }, 'fog'); }
   if (w === 'groundfog' && Math.random() < dt * 0.4) { const [x, y] = near(9); if (ok(x, y)) add({ x, y, z: rnd(0.3, 0.7), vx: rnd(-0.5, 0.5), vy: rnd(-0.5, 0.5), vz: rnd(-0.05, 0.05), life: 4, size: 0.22, add: true, fade: true, sway: rnd(0, 6) }, 'wisp'); }
-  if (w === 'drips' && Math.random() < dt * 5) { const [x, y] = near(5); if (ok(x, y)) add({ x, y, z: 0.98, vx: 0, vy: 0, vz: -3, life: 0.32, size: 0.06, add: true }, 'drop'); }
+  if (w === 'sparkle' && Math.random() < dt * 9) { const [x, y] = near(6); if (ok(x, y)) add({ x, y, z: rnd(0.2, 1), vx: rnd(-0.1, 0.1), vy: rnd(-0.1, 0.1), vz: rnd(-0.05, 0.08), life: rnd(1, 2), size: 0.035, add: true, fade: true, tint: Math.random() < 0.5 ? [190, 150, 255] : [140, 220, 255] }, 'dust_mote'); } // kristallglitter
+  if (w === 'bubbles' && Math.random() < dt * 4) { const [x, y] = near(6); if (ok(x, y)) add({ x, y, z: 0.02, vx: rnd(-0.05, 0.05), vy: rnd(-0.05, 0.05), vz: rnd(0.25, 0.45), life: 2.4, size: 0.04, fade: true, tint: [190, 230, 255] }, 'bubble'); } // bubblor i den sjunkna staden
+  if ((w === 'drips' || w === 'bubbles') && Math.random() < dt * 5) { const [x, y] = near(5); if (ok(x, y)) add({ x, y, z: 0.98, vx: 0, vy: 0, vz: -3, life: 0.32, size: 0.06, add: true }, 'drop'); }
   if (w === 'drips' && Math.random() < dt * 0.15) { const [x, y] = near(6); if (ok(x, y)) { const a = rnd(0, TAU); add({ x, y, z: rnd(0.6, 0.9), vx: Math.cos(a) * 3, vy: Math.sin(a) * 3, vz: 0, life: 2.2, size: 0.14, flap: true }, 'bat'); } }
   if (w === 'rain') for (let i = 0; i < 3; i++) if (Math.random() < dt * 30) { const [x, y] = near(6); if (ok(x, y) && cellSky[(y | 0) * mw + (x | 0)]) add({ x, y, z: 1.2, vx: 0.4, vy: 0.2, vz: -9, life: 0.13, size: 0.16, add: true }, 'rain'); }
   if (w === 'sandstorm') { for (let i = 0; i < 2; i++) if (Math.random() < dt * 18) { const [x, y] = near(6); if (ok(x, y) && cellSky[(y | 0) * mw + (x | 0)]) add({ x, y, z: rnd(0.1, 1), vx: 2.2 + rnd(0, 1), vy: rnd(-0.4, 0.4), vz: rnd(-0.1, 0.1), life: 1.2, size: 0.03, tint: [220, 190, 130] }, 'sand'); } } // sandstorm
@@ -1695,7 +1702,7 @@ function drawHUD() {
     txt(hb.d.name, (W - textW(hb.d.name)) / 2, y + 7, '#ffd24a');
   }
   if (levelBanner > 0 && state === 'play') {
-    const a = Math.min(1, levelBanner, (3 - levelBanner) * 3), sub = (cycleOf(run.depth) ? `VARV ${cycleOf(run.depth) + 1} · ` : '') + `VÅNING ${run.depth} · ${BIOME_NAME[lvl.biome] || ''}`;
+    const a = Math.min(1, levelBanner, (3 - levelBanner) * 3), sub = lvl.hub ? 'MELLAN RUNDORNA' : run.abyss ? `AVGRUND ${run.depth} · ${BIOME_NAME[lvl.biome] || ''}` : (cycleOf(run.depth) ? `VARV ${cycleOf(run.depth) + 1} · ` : '') + `VÅNING ${run.depth} · ${BIOME_NAME[lvl.biome] || ''}`;
     ctx.font = '16px "PressStart2P"'; const w = ctx.measureText(plain(lvl.name)).width;
     if (w < W - 8) txt(lvl.name, (W - w) / 2, 46, '#e8d9b0', 2, true, a); else txt(lvl.name, (W - textW(lvl.name)) / 2, 50, '#e8d9b0', 1, true, a);
     txt(sub, (W - textW(sub)) / 2, 66, '#c9a87a', 1, true, a);
@@ -5743,6 +5750,7 @@ function updatePortals(dt) {
     const d = Math.hypot(P.x - p.x, P.y - p.y);
     if (d > 1.1) p.armed = true; // man måste gå ur och in igen för att använda den på nytt
     if (p.armed && d < 0.55 && p.t > 0.6) { p.armed = false; enterPortal(p); return; }
+    if (hubHint(p, d)) continue;
     if (d < 2.5 && p.kind === 'floor' && !run.bossrush) { const b = p.biome || biomeFor(run.depth + 1); hint = `PORTAL → ${isBossDepth(run.depth + 1) ? 'BOSSEN' : (BIOME_NAME[b] || 'NÄSTA VÅNING') + (p.biome ? ' · ' + riskText(b) : '')}`; } // vart portalen leder
     if (Math.random() < dt * 6) particles.push({ x: p.x + rnd(-0.3, 0.3), y: p.y + rnd(-0.3, 0.3), z: rnd(0.1, 1), vx: 0, vy: 0, vz: rnd(0.3, 0.8), life: 0.6, maxLife: 0.6, frames: fx.hit, img: fx.hit[0], size: 0.15, add: true, tint: [200, 150, 255] });
   }
@@ -5750,6 +5758,7 @@ function updatePortals(dt) {
 }
 function enterPortal(p) {
   play('whoosh', 0.8, 0.5);
+  if (p.kind === 'mode') { hubEnter(p.mode); return; }
   let got = 0; // guld i närheten följer med genom portalen
   for (const it of items) if (!it.taken && (it.type === 'gold' || it.type === 'goldpile') && Math.hypot(it.x - P.x, it.y - P.y) < 8) { const g0 = run.gold; pickUp(it); it.taken = true; got += run.gold - g0; }
   if (got) say(`+${got} GULD FÖLJDE MED`, 2);
@@ -7036,7 +7045,6 @@ function abyssLevel(depth) { // Avgrunden: oändlig nedstigning
   let L;
   if (bossFloor) { const id = r.pick(BOSS_IDS); L = Gen.boss(RNG.hash(run.seed + ':avgrundboss:' + n), { arena: BOSSES[id].arena, boss: id }); L.bossId = id; }
   else L = Gen.floor(RNG.hash(run.seed + ':avgrund:' + n), Math.min(5, 1 + Math.floor(n / 2)), { shop: n % 5 === 2, weapon: n % 3 === 1 ? r.pick(Object.keys(WEAPON_CHAR)).toString() : null, biome: r.pick(BIOME_IDS), guardian: n % 4 === 3 ? r.pick(BOSS_IDS) : undefined });
-  L.name = (L.name || '') + ` · AVGRUND ${n}`;
   return L;
 }
 function abyssScale() { // fienderna blir starkare för varje våning
@@ -7055,6 +7063,44 @@ function abyssNext() { // efter en bossvåning i Avgrunden
   P.hp = Math.min(maxHp(), P.hp + maxHp() * 0.4);
   openUI(() => draftUI(drawCards(3, { luck: 1 }), { title: `AVGRUND ${run.depth} KLARAD`, subtitle: 'VÄLJ ETT KORT OCH FORTSÄTT NEDÅT', skipLabel: 'INGET KORT' }, card => { if (card) gainCard(card); closeUI(); loadFloor(run.depth + 1); lockPointer(); }));
 }
+// ---------- Version 8: Lägret – ett nav att gå runt i mellan rundorna ----------
+const HUB_MODES = [['new', 'NY RUNDA'], ['daily', 'DAGENS RUNDA'], ['abyss', 'AVGRUNDEN'], ['maze', 'LABYRINTEN'], ['hunt', 'BOSSJAKTEN'], ['continue', 'FORTSÄTT RUNDAN']];
+let hubWatch = 0;
+function hubLevel() {
+  const Wd = 27, Hd = 19, m = [];
+  for (let y = 0; y < Hd; y++) { const r = []; for (let x = 0; x < Wd; x++) r.push(x === 0 || y === 0 || x === Wd - 1 || y === Hd - 1 ? '1' : '.'); m.push(r); }
+  for (let x = 1; x < Wd - 1; x++) m[1][x] = x % 4 === 1 ? '5' : '1'; // vägg med fanor bakom portalerna
+  for (const [x, y] of [[7, 7], [19, 7], [7, 12], [19, 12]]) m[y][x] = '4'; // pelare
+  for (const [x, y] of [[2, 3], [24, 3], [2, 16], [24, 16], [10, 15], [16, 15]]) m[y][x] = 'c'; // ljus
+  m[10][3] = 'Ĥ'; m[10][8] = 'Ħ'; m[10][13] = 'Ĭ'; m[10][18] = 'Ĩ'; m[10][23] = 'Ī'; // figurerna
+  const won = BOSS_IDS.filter(id => (profile.bossWins || {})[id]); won.forEach((id, i) => { const x = 3 + i * 3; if (x < Wd - 2) m[Hd - 2][x] = 'u'; }); // en staty per besegrad boss
+  m[15][13] = 'P';
+  return { map: m.map(r => r.join('')), name: 'LÄGRET', biome: 'dungeon', floor: 'floor_stone_pattern', ceil: 'floor_wood_planks', fog: [26, 18, 12], ambient: 0.9, rooms: [], hub: true };
+}
+function beginHub() {
+  document.getElementById('title').hidden = true; canvas.focus(); ensureAudio();
+  practice = { hub: true }; newRun(RNG.randomSeed(), false); run.hub = true; run.cmode = ''; practice = null; P.hp = maxHp();
+  startLevel(hubLevel()); levelBanner = 2.5; run.depth = 0;
+  const modes = HUB_MODES.filter(([id]) => id !== 'continue' || store.get(runKey(), null));
+  modes.forEach(([id], i) => { const x = 13.5 + (i - (modes.length - 1) / 2) * 3.6; spawnPortal(x, 3.2, 'mode'); const p = portals[portals.length - 1]; p.mode = id; p.armed = true; });
+  msgs.length = 0; say('LÄGRET – GÅ IN I EN PORTAL FÖR ATT BÖRJA', 3); lockPointer();
+  clearInterval(hubWatch); hubWatch = setInterval(() => { if (!run || !run.hub) { clearInterval(hubWatch); return; } if (state === 'ui' && !CardUI.isOpen()) { closeUI('play'); document.getElementById('title').hidden = true; } }, 200);
+}
+function hubEnter(mode) { // portalerna i lägret
+  clearInterval(hubWatch); run.hub = false;
+  const go = () => { if (mode === 'abyss') beginAbyss(); else if (mode === 'maze') beginMaze(); else if (mode === 'hunt') beginBossHunt(); else begin(mode); };
+  if (mode !== 'continue' && store.get(runKey(), null)) { openUI(() => CardUI.choice({ title: 'NY RUNDA?', subtitle: 'DU HAR EN PÅGÅENDE RUNDA. EN NY RUNDA SKRIVER ÖVER DEN.', cancel: 1, options: [{ label: 'STARTA NY', text: 'DEN GAMLA FÖRSVINNER' }, { label: 'AVBRYT', text: '' }] }, i => { if (i === 0) go(); else { closeUI(); run.hub = true; beginHub(); } })); return; }
+  go();
+}
+Object.assign(USES, {
+  hubAltar() { ensureAudio(); openUI(() => openAltar()); },
+  hubArchive() { openUI(() => CardUI.choice({ title: 'ARKIVARIEN', subtitle: '"ALLT SOM HAR HÄNT HÄR NERE STÅR I MINA BÖCKER."', cancel: 5, options: [{ label: 'KORTARKIVET', text: '' }, { label: 'BESTIARIET', text: '' }, { label: 'PRESTATIONER', text: '' }, { label: 'STATISTIK', text: '' }, { label: 'TITLAR', text: '' }, { label: 'GÅ', text: '' }] }, i => {
+    if (i === 0) showCodex(); else if (i === 1) showBestiary(); else if (i === 2) showAchievements(); else if (i === 3) showStats(); else if (i === 4) showTitles(); })); },
+  hubUnlocks() { ensureAudio(); openUI(() => openUnlocks()); },
+  hubTrainer() { openUI(() => openPractice()); },
+  hubChronicle() { openUI(() => showChronicle()); },
+});
+function hubHint(p, d) { if (d < 2.5 && p.kind === 'mode') { const m = HUB_MODES.find(x => x[0] === p.mode); hint = 'PORTAL → ' + (m ? m[1] : p.mode); return true; } return false; }
 (async () => {
   const st = document.getElementById('status');
   try {
@@ -7076,7 +7122,7 @@ function abyssNext() { // efter en bossvåning i Avgrunden
     fire, useKey, startReload, switchWeapon, floorDone, nextFloor, projectiles: () => projectiles, secrets: () => secrets, keys, setMouse: (d, aim) => { mouseDown = d; aimDown = !!aim; }, pause, resume, hurtPlayer,
     light: () => light, lvl: () => lvl, boss: () => boss, gainCard, startLevel, props: () => props, guardian: () => guardianE, explode, alertEnemy, WEAPONS, mods: () => M, loadFloor, openShop, openChest, profile, showTitle, endRun, hurtEnemy,
     spawnEnemy: (type, x, y) => { const e = makeEnemy(type, x, y); ents.push(e); totalEnemies++; return e; }, portals: () => portals, particles: () => particles, hazards: () => hazards,
-    pet: () => pet, allies: () => allies, beginMaze, beginBossHunt, beginEnemyPractice, beginAbyss, solid, hasLOS, freeSpot, mapRef: () => map, enterPortal, killAllCheat: () => { for (const e of ents) if (!e.dead && !e.boss) hurtEnemy(e, 99999, e.x, e.y, { noProc: true }); if (boss && !boss.dead) hurtEnemy(boss, 99999, boss.x, boss.y, { noProc: true }); }, talentPick, gainXp, TALENTS, talent, deepAt, tideHigh, pauseMenu, settings, refreshTitle, checkAch, showStats, levelTime: () => levelTime, showTitles, cmode, shareSeed, soundCue, cues: () => cues, deathMap: () => deathMap, findPage, showChronicle, toggleLamp, throwStone, openGambler, openBanker, openWanderer, visibility, addPropAt, openCampfire, openQuestBoard, giveRune, useAbility, quests: () => quests, drinkPotion, swapPotion, givePotion, givePet, spawnAlly, spawnPortal, dropItem, openAlchemist, openPriest, openPetCage, biomeFor, useProp };
+    pet: () => pet, allies: () => allies, beginMaze, beginBossHunt, beginEnemyPractice, beginAbyss, beginHub, solid, hasLOS, freeSpot, mapRef: () => map, enterPortal, killAllCheat: () => { for (const e of ents) if (!e.dead && !e.boss) hurtEnemy(e, 99999, e.x, e.y, { noProc: true }); if (boss && !boss.dead) hurtEnemy(boss, 99999, boss.x, boss.y, { noProc: true }); }, talentPick, gainXp, TALENTS, talent, deepAt, tideHigh, pauseMenu, settings, refreshTitle, checkAch, showStats, levelTime: () => levelTime, showTitles, cmode, shareSeed, soundCue, cues: () => cues, deathMap: () => deathMap, findPage, showChronicle, toggleLamp, throwStone, openGambler, openBanker, openWanderer, visibility, addPropAt, openCampfire, openQuestBoard, giveRune, useAbility, quests: () => quests, drinkPotion, swapPotion, givePotion, givePet, spawnAlly, spawnPortal, dropItem, openAlchemist, openPriest, openPetCage, biomeFor, useProp };
   if (params.has('autostart')) begin('new');
 })();
 document.getElementById('start').addEventListener('click', () => startMode('new'));
@@ -7101,6 +7147,7 @@ document.getElementById('mazebtn').addEventListener('click', () => { if (!docume
 document.getElementById('huntbtn').addEventListener('click', () => { if (!document.getElementById('start').disabled) beginBossHunt(); });
 document.getElementById('monthly').addEventListener('click', () => startMode('monthly'));
 document.getElementById('titlesbtn').addEventListener('click', () => showTitles());
+document.getElementById('hubbtn').addEventListener('click', () => { if (!document.getElementById('start').disabled) beginHub(); });
 document.getElementById('abyssbtn').addEventListener('click', () => { if (!document.getElementById('start').disabled) beginAbyss(); });
 if (params.has('fro')) document.getElementById('seed').value = params.get('fro').slice(0, 16); // delad länk med frö
 addEventListener('keydown', e => { // siffertangenterna väljer klass på startskärmen
