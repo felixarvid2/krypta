@@ -172,6 +172,7 @@ const ACH = [
   ['finale', 'KRÖNIKANS SLUT', 'BESEGRA DEN FÖRSTE MUNKEN', p => (p.finaleWon || 0) >= 1],
   ['campaign3', 'BERÄTTELSENS MITT', 'KLARA TRE KAPITEL I KAMPANJEN', p => (p.campaign || 0) >= 3, p => [p.campaign || 0, 3]],
   ['campaign6', 'HJÄLTEN', 'KLARA HELA KAMPANJEN', p => (p.campaign || 0) >= 6, p => [p.campaign || 0, 6]],
+  ['custom', 'BANBYGGAREN', 'KLARA EN EGEN BANA', p => (p.customWins || 0) >= 1],
   ['legend1', 'LEGENDEN', 'HITTA ETT LEGENDARISKT VAPEN', p => (p.legendsFound || []).length >= 1],
   ['legend6', 'SAMLAREN AV LEGENDER', 'HITTA ALLA SEX LEGENDARISKA VAPEN', p => (p.legendsFound || []).length >= 6, p => [(p.legendsFound || []).length, 6]],
   ['allbosses12', 'ALLA TOLV', 'BESEGRA ALLA TOLV BOSSAR', p => BOSS_IDS.every(id => (p.bossWins || {})[id]), p => [BOSS_IDS.filter(id => (p.bossWins || {})[id]).length, BOSS_IDS.length]],
@@ -5935,6 +5936,7 @@ function goDeeper() {
 // ---------- Våningsslut, rundslut och själar ----------
 let stats = null;
 function floorDone() {
+  if (run.custom) { customDone(); return; }
   if (run.maze) { mazeDone(); return; }
   if (boss) { endRun(true); return; }
   const bonus = Math.round(300 + (kills === totalEnemies ? 200 : 0) + secrets * 100 + Math.max(0, 180 - levelTime) * 2);
@@ -7688,6 +7690,77 @@ function petV10(p, dt, lv) { // de nya följeslagarnas förmågor; true = hanter
 }
 Object.assign(PROJ_DRAW_V8, { chain: o => drawSprite(fx.parts.chain ? fx.parts.chain[0] : fx.hit[1], o.x, o.y, 0.08, o.z - 0.04, Math.floor(tmr * 12) % 2 === 0, null, 0, 0.6, false, [170, 170, 180]) });
 const wShort = wp => legendOf(wp.id) ? LEGENDS[legendOf(wp.id)].short : wp.short;
+// ---------- Version 10: Banbyggaren – rita, provspela och dela egna banor ----------
+const ED_W = 32, ED_H = 24;
+const ED_PALETTE = [
+  ['MARK', [['1', 'VÄGG', '#7a6a58'], ['.', 'GOLV', '#2a221a'], ['D', 'DÖRR', '#a07040'], ['P', 'START', '#40d060'], ['x', 'UTGÅNG', '#40a0ff']]],
+  ['FIENDER', [['S', 'SKELETT', '#e0e0d0'], ['K', 'EXPLODERANDE', '#ff9040'], ['V', 'VAMPYR', '#d04060'], ['W', 'ORKKRIGARE', '#80a040'], ['Ã', 'MUMIE', '#e0d0a0'], ['Ë', 'GOLEM', '#a080ff'], ['Ō', 'FÅNGVAKTARE', '#c0a080'], ['ő', 'PADDJÄTTE', '#80c060'], ['E', 'ELIT', '#ffd24a']]],
+  ['SAKER', [['h', 'HÄLSA', '#ff6060'], ['a', 'AMMO', '#d0c060'], ['A', 'RUSTNING', '#80a0ff'], ['$', 'GULD', '#ffd24a'], ['C', 'KISTA', '#c08040'], ['}', 'NYCKEL', '#ffe080'], ['c', 'LJUS', '#ffb040'], ['e', 'KRUTFAT', '#d04030']]],
+  ['FAROR', [['_', 'LAVA', '#ff5020'], ['-', 'VATTEN', '#3060c0'], ['z', 'SPIKAR', '#a0a0a0'], ['Đ', 'DJUPT VATTEN', '#203080']]],
+];
+let ed = null; // { grid, sel, biome }
+function edEmpty() { const g = []; for (let y = 0; y < ED_H; y++) { const r = []; for (let x = 0; x < ED_W; x++) r.push(x === 0 || y === 0 || x === ED_W - 1 || y === ED_H - 1 ? '1' : '.'); g.push(r); } g[ED_H - 3][3] = 'P'; g[2][ED_W - 4] = 'x'; return g; }
+function edEncode(e) { // kompakt kod: biom + rader där upprepningar skrivs som \x01antal\x02tecken
+  const rows = e.grid.map(r => r.join('').replace(/(.)\1{2,}/g, (m, c) => '\x01' + m.length + '\x02' + c));
+  return btoa(unescape(encodeURIComponent(e.biome + '|' + rows.join('\n')))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function edDecode(code) {
+  try { const s = decodeURIComponent(escape(atob(code.replace(/-/g, '+').replace(/_/g, '/')))), i = s.indexOf('|'), biome = s.slice(0, i);
+    const grid = s.slice(i + 1).split('\n').map(row => row.replace(/\x01(\d+)\x02(.)/g, (m, n, c) => c.repeat(+n)).split(''));
+    if (grid.length !== ED_H || grid.some(r => r.length !== ED_W)) return null; return { grid, biome: BIOME_IDS.includes(biome) ? biome : 'dungeon' };
+  } catch (e) { return null; }
+}
+function edCheck(g) { // en spelbar bana: en start, en utgång, och utgången går att nå
+  const find = ch => { const out = []; g.forEach((r, y) => r.forEach((c, x) => { if (c === ch) out.push([x, y]); })); return out; };
+  const ps = find('P'), xs = find('x'); if (ps.length !== 1) return 'BANAN BEHÖVER EXAKT EN START'; if (xs.length !== 1) return 'BANAN BEHÖVER EXAKT EN UTGÅNG';
+  const seen = new Set([ps[0].join()]), q = [ps[0]]; while (q.length) { const [x, y] = q.shift(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy, k = nx + ',' + ny; if (seen.has(k) || !g[ny] || g[ny][nx] === undefined || g[ny][nx] === '1') continue; seen.add(k); q.push([nx, ny]); } }
+  return seen.has(xs[0].join()) ? '' : 'UTGÅNGEN GÅR INTE ATT NÅ FRÅN STARTEN';
+}
+function openEditor(code) {
+  const saved = code ? edDecode(code) : store.get('editor', null);
+  ed = { grid: saved && saved.grid ? saved.grid : edEmpty(), biome: saved && saved.biome || 'dungeon', sel: '1' };
+  let box = document.getElementById('editor'); if (box) box.remove();
+  box = document.createElement('div'); box.id = 'editor'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-label', 'Banbyggaren');
+  box.style.cssText = 'position:fixed;inset:0;z-index:60;background:#0b0806f2;display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px;overflow:auto;font-family:"PressStart2P",monospace;color:#e8d9b0;font-size:10px';
+  const title = document.createElement('div'); title.textContent = 'BANBYGGAREN – RITA MED MUSEN ELLER FINGRET'; title.style.cssText = 'color:#ffd24a;font-size:12px'; box.appendChild(title);
+  const cv = document.createElement('canvas'); cv.width = ED_W * 16; cv.height = ED_H * 16; cv.style.cssText = 'width:min(96vw,768px,calc((100vh - 270px) * 1.333));flex:none;image-rendering:pixelated;border:2px solid #c9a87a;touch-action:none;cursor:crosshair'; box.appendChild(cv);
+  const pal = document.createElement('div'); pal.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;justify-content:center;max-width:900px'; box.appendChild(pal);
+  const colOf = {}; for (const [, items] of ED_PALETTE) for (const [ch, , col] of items) colOf[ch] = col;
+  const btns = [];
+  for (const [grp, items] of ED_PALETTE) { const l = document.createElement('span'); l.textContent = grp + ':'; l.style.cssText = 'align-self:center;color:#8a7550;margin-left:6px'; pal.appendChild(l);
+    for (const [ch, name, col] of items) { const b = document.createElement('button'); b.type = 'button'; b.textContent = name; b.style.cssText = `font:inherit;font-size:9px;padding:6px 8px;background:#1a130d;color:${col};border:2px solid #4a3a28;cursor:pointer`; b.onclick = () => { ed.sel = ch; btns.forEach(x => x.style.borderColor = '#4a3a28'); b.style.borderColor = '#ffd24a'; }; if (ch === ed.sel) b.style.borderColor = '#ffd24a'; btns.push(b); pal.appendChild(b); } }
+  const bar = document.createElement('div'); bar.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center'; box.appendChild(bar);
+  const sel = document.createElement('select'); sel.setAttribute('aria-label', 'Biom'); sel.style.cssText = 'font:inherit;font-size:9px;padding:6px;background:#1a130d;color:#e8d9b0;border:2px solid #4a3a28';
+  for (const b of BIOME_IDS) { const o = document.createElement('option'); o.value = b; o.textContent = BIOME_NAME[b] || b; if (b === ed.biome) o.selected = true; sel.appendChild(o); }
+  sel.onchange = () => { ed.biome = sel.value; save(); }; bar.appendChild(sel);
+  const msg = document.createElement('div'); msg.style.cssText = 'color:#ff9070;min-height:12px'; box.appendChild(msg);
+  const save = () => { try { store.set('editor', { grid: ed.grid, biome: ed.biome }); } catch (e) { /* fullt */ } };
+  const btn = (t, f, hi) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.style.cssText = `font:inherit;font-size:10px;padding:8px 12px;background:${hi ? '#6a2a18' : '#1a130d'};color:#ffe9a8;border:2px solid #c9a87a;cursor:pointer`; b.onclick = f; bar.appendChild(b); return b; };
+  btn('PROVSPELA', () => { const err = edCheck(ed.grid); if (err) { msg.textContent = err; play('click', 0.6, 0.7); return; } save(); box.remove(); playCustom(ed); }, true);
+  btn('DELA LÄNK', () => { const err = edCheck(ed.grid); if (err) { msg.textContent = err; return; } const url = location.origin + location.pathname + '?bana=' + edEncode(ed); try { navigator.clipboard.writeText(url); msg.style.color = '#9fe060'; msg.textContent = 'LÄNKEN ÄR KOPIERAD'; } catch (e) { msg.textContent = url; } });
+  btn('RENSA', () => { ed.grid = edEmpty(); draw(); save(); });
+  btn('STÄNG', () => { save(); box.remove(); ed = null; refreshTitle(); });
+  const draw = () => { const g = cv.getContext('2d');
+    for (let y = 0; y < ED_H; y++) for (let x = 0; x < ED_W; x++) { const c = ed.grid[y][x]; g.fillStyle = c === '.' ? '#2a221a' : colOf[c] || '#555'; g.fillRect(x * 16, y * 16, 16, 16); if (c !== '.' && c !== '1') { g.fillStyle = '#000a'; g.font = '10px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(c, x * 16 + 8, y * 16 + 9); } g.strokeStyle = '#00000040'; g.strokeRect(x * 16 + 0.5, y * 16 + 0.5, 15, 15); } };
+  let painting = false;
+  const paint = ev => { const r = cv.getBoundingClientRect(), x = Math.floor((ev.clientX - r.left) / r.width * ED_W), y = Math.floor((ev.clientY - r.top) / r.height * ED_H);
+    if (x <= 0 || y <= 0 || x >= ED_W - 1 || y >= ED_H - 1) return; // kanten är alltid vägg
+    if (ed.sel === 'P' || ed.sel === 'x') ed.grid.forEach(row => row.forEach((c, i) => { if (c === ed.sel) row[i] = '.'; }));
+    ed.grid[y][x] = ed.sel; draw(); msg.textContent = ''; };
+  cv.addEventListener('pointerdown', ev => { painting = true; cv.setPointerCapture(ev.pointerId); paint(ev); });
+  cv.addEventListener('pointermove', ev => { if (painting) paint(ev); });
+  cv.addEventListener('pointerup', () => { painting = false; save(); });
+  document.body.appendChild(box); draw();
+}
+function playCustom(e) { // provspela den egna banan med en riktig banas utseende för biomen
+  document.getElementById('title').hidden = true; canvas.focus(); ensureAudio(); practice = { custom: true };
+  newRun(RNG.randomSeed(), false); practice = null; run.custom = true; run.cmode = ''; P.hp = maxHp();
+  for (let i = 1; i <= 4; i++) { P.has[i] = true; P.mags[i] = effMag(i); } P.ammo = Object.assign(NOAMMO(), { p9: 150, r556: 90, shells: 30, bolts: 20 });
+  const L0 = Gen.floor(RNG.hash('bana:' + e.biome), 1, { biome: e.biome }), outdoor = L0.sky && L0.sky.some(r => r.includes('1'));
+  const L = { ...L0, map: e.grid.map(r => r.join('')), name: 'EGEN BANA', floorMask: null, roomMask: null, rooms: [], sky: outdoor ? e.grid.map(r => r.map(() => '1').join('')) : null, boulders: [], beams: [], saws: [], winds: [], tide: null, custom: true, ambient: Math.max(L0.ambient || 0, 0.55) }; // utan facklor behövs mer grundljus
+  run.depth = 1; startLevel(L); lockPointer(); say('EGEN BANA – NÅ UTGÅNGEN', 3);
+}
+function customDone() { say('BANAN ÄR KLARAD!', 3); play('win', 0.8); stat('customWins'); setTimeout(() => { state = 'title'; showTitle(); openEditor(); }, 1500); }
 (async () => {
   const st = document.getElementById('status');
   try {
@@ -7709,7 +7782,7 @@ const wShort = wp => legendOf(wp.id) ? LEGENDS[legendOf(wp.id)].short : wp.short
     fire, useKey, startReload, switchWeapon, floorDone, nextFloor, projectiles: () => projectiles, secrets: () => secrets, keys, setMouse: (d, aim) => { mouseDown = d; aimDown = !!aim; }, pause, resume, hurtPlayer,
     light: () => light, lvl: () => lvl, boss: () => boss, gainCard, startLevel, props: () => props, guardian: () => guardianE, explode, alertEnemy, WEAPONS, mods: () => M, loadFloor, openShop, openChest, profile, showTitle, endRun, hurtEnemy,
     spawnEnemy: (type, x, y) => { const e = makeEnemy(type, x, y); ents.push(e); totalEnemies++; return e; }, portals: () => portals, particles: () => particles, hazards: () => hazards,
-    pet: () => pet, allies: () => allies, beginMaze, beginBossHunt, beginEnemyPractice, beginAbyss, beginHub, giveLegend, LEGENDS, beginCampaign, beginFinale, lightningAt, bubbles: () => timeBubbles, sawsRef: () => saws, voidAt, solid, hasLOS, freeSpot, mapRef: () => map, enterPortal, killAllCheat: () => { for (const e of ents) if (!e.dead && !e.boss) hurtEnemy(e, 99999, e.x, e.y, { noProc: true }); if (boss && !boss.dead) hurtEnemy(boss, 99999, boss.x, boss.y, { noProc: true }); }, talentPick, gainXp, TALENTS, talent, deepAt, tideHigh, pauseMenu, settings, refreshTitle, checkAch, showStats, levelTime: () => levelTime, showTitles, cmode, shareSeed, soundCue, cues: () => cues, deathMap: () => deathMap, findPage, showChronicle, toggleLamp, throwStone, openGambler, openBanker, openWanderer, visibility, addPropAt, openCampfire, openQuestBoard, giveRune, useAbility, quests: () => quests, drinkPotion, swapPotion, givePotion, givePet, spawnAlly, spawnPortal, dropItem, openAlchemist, openPriest, openPetCage, biomeFor, useProp };
+    pet: () => pet, allies: () => allies, beginMaze, beginBossHunt, beginEnemyPractice, beginAbyss, beginHub, openEditor, edEncode, edDecode, playCustom, giveLegend, LEGENDS, beginCampaign, beginFinale, lightningAt, bubbles: () => timeBubbles, sawsRef: () => saws, voidAt, solid, hasLOS, freeSpot, mapRef: () => map, enterPortal, killAllCheat: () => { for (const e of ents) if (!e.dead && !e.boss) hurtEnemy(e, 99999, e.x, e.y, { noProc: true }); if (boss && !boss.dead) hurtEnemy(boss, 99999, boss.x, boss.y, { noProc: true }); }, talentPick, gainXp, TALENTS, talent, deepAt, tideHigh, pauseMenu, settings, refreshTitle, checkAch, showStats, levelTime: () => levelTime, showTitles, cmode, shareSeed, soundCue, cues: () => cues, deathMap: () => deathMap, findPage, showChronicle, toggleLamp, throwStone, openGambler, openBanker, openWanderer, visibility, addPropAt, openCampfire, openQuestBoard, giveRune, useAbility, quests: () => quests, drinkPotion, swapPotion, givePotion, givePet, spawnAlly, spawnPortal, dropItem, openAlchemist, openPriest, openPetCage, biomeFor, useProp };
   if (params.has('autostart')) begin('new');
 })();
 document.getElementById('start').addEventListener('click', () => startMode('new'));
@@ -7742,6 +7815,8 @@ document.getElementById('hubbtn').addEventListener('click', () => { if (!documen
 document.getElementById('abyssbtn').addEventListener('click', () => { if (!document.getElementById('start').disabled) beginAbyss(); });
 document.getElementById('abyssdaily').addEventListener('click', () => { if (!document.getElementById('start').disabled) beginAbyss(true); });
 if (params.has('fro')) document.getElementById('seed').value = params.get('fro').slice(0, 16); // delad länk med frö
+document.getElementById('editorbtn').addEventListener('click', () => { if (!document.getElementById('start').disabled) openEditor(); });
+if (params.has('bana')) { const t = setInterval(() => { if (!document.getElementById('start').disabled) { clearInterval(t); openEditor(params.get('bana')); } }, 300); } // delad bana
 addEventListener('keydown', e => { // siffertangenterna väljer klass på startskärmen
   if (state !== 'title' || CardUI.isOpen() || document.activeElement?.tagName === 'INPUT' || !/^Digit[0-9]$/.test(e.code)) return;
   const ids = Object.keys(CLASSES), id = ids[e.code === 'Digit0' ? 9 : +e.code.slice(5) - 1]; if (!id) return;

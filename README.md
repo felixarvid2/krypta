@@ -1290,6 +1290,12 @@ Version 10 fyller de tidiga biomerna, som man ser oftast, med nytt liv:
 - Eldflugan, stengolemen och ugglan är nya, och själaaltarets FLOCKEN har sex nivåer.
 - Alla sex följeslagare har nu egna bilder, även korpen, lyktan och vargvalpen som tidigare lånade andra fienders bilder.
 
+**Banbyggaren**
+- Rita egna banor på ett rutnät av 32 × 24 rutor (FLER LÄGEN → BANBYGGAREN). Det går med mus eller finger.
+- Det finns väggar, dörrar, start och utgång, nio fiender, föremål och faror, och man väljer vilken biom banan ska se ut som.
+- PROVSPELA kontrollerar först att utgången går att nå. När man når utgången kommer man tillbaka till byggaren.
+- DELA LÄNK kopierar en länk med banan inbakad (`?bana=…`), så att andra kan spela den.
+
 **Mer**
 - Startskärmen är städad: de vanligaste valen syns direkt, resten ligger under FLER LÄGEN och SAMLINGAR.
 - Egen musik i Lägret och en fanfar när ett kampanjkapitel börjar.
