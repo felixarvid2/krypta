@@ -2425,7 +2425,7 @@ function killEnemy(e) {
   else if (e.burn > 0 && !e.boss) { e.gibbed = true; for (let i = 0; i < 6; i++) particles.push({ x: e.x + rnd(-0.2, 0.2), y: e.y + rnd(-0.2, 0.2), z: rnd(0.1, 0.7), vx: rnd(-0.3, 0.3), vy: rnd(-0.3, 0.3), vz: 0.4, life: 1.5, maxLife: 1.5, img: fx.parts.ash ? fx.parts.ash[i % 2] : fx.hit[0], size: 0.07, drift: true }); if (fx.parts.scorch) decals.push({ x: e.x, y: e.y, img: fx.parts.scorch[0], size: 0.08 }); } // brända blir aska
   if (e.leader) leaderDied(e);
   if (lvl && lvl.biome) { const wb = (profile.wkillsBiome = profile.wkillsBiome || {}), bb = (wb[lvl.biome] = wb[lvl.biome] || {}), wid = WEAPONS[P.weapon].id; bb[wid] = (bb[wid] || 0) + 1; }
-  abilityKill(); masteryKill(); gainXp(Math.max(3, (e.d.score || 100) / 12) * (e.elite ? 2.5 : 1) * (e.boss ? 6 : e.guardian ? 3 : 1));
+  abilityKill(); masteryKill(); gainXp(e.boss && !e.guardian ? 150 : e.guardian ? 70 : clamp((e.d.score || 100) / 12, 3, 40) * (e.elite ? 2.5 : 1) * (e.minion ? 0.3 : 1)); // erfarenhet: vanliga fiender efter svårighet, väktare och bossar fast
   if (e.elite) run.wanderElite = (run.wanderElite || 0) + 1; if (e.guardian) run.wanderGuard = (run.wanderGuard || 0) + 1;
   if (quests) for (const q of quests) { if (q.kind === 'wkills' && !q.done && WEAPONS[P.weapon].id === q.weapon) q.have++; if (q.kind === 'elite' && e.elite) q.eliteKilled = true; }
   if ('YÉÅ'.includes(e.type) && Math.random() < 0.15) dropItem('meat', e.x, e.y);
@@ -6701,7 +6701,7 @@ function gainXp(n, x, y) {
 }
 let xpFlash = 0, lvlBanner = 0;
 function levelUpFx() {
-  play('levelup', 0.8); if (window.Music) Music.sting('levelup'); lvlBanner = 2.2; stat('levelUps'); firstHint('level', 'VARJE NIVÅ GER EN TALANG. 1–3 VÄLJER, T VISAR TRÄDET.');
+  play('levelup', 0.8); if (window.Music) Music.sting('levelup'); lvlBanner = 2.2; stat('levelUps'); firstHint('level', isTouch() ? 'VARJE NIVÅ GER EN TALANG – TRYCK PÅ DEN DU VILL HA.' : 'VARJE NIVÅ GER EN TALANG. 1–3 VÄLJER, T VISAR TRÄDET.');
   if (mod('levelHeal')) heal(mod('levelHeal'), true);
   for (let i = 0; i < 18; i++) { const a = i / 18 * TAU; particles.push({ x: P.x + Math.cos(a) * 0.5, y: P.y + Math.sin(a) * 0.5, z: 0.1, vx: Math.cos(a) * 0.6, vy: Math.sin(a) * 0.6, vz: 1.3, life: 0.9, maxLife: 0.9, img: fx.hit[1], size: 0.08, add: true, tint: [190, 140, 255] }); }
   logEvent('NIVÅ ' + run.lvl);
