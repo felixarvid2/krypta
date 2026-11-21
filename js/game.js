@@ -700,7 +700,7 @@ const WEAPONS = [
   { id: 'harpoon', name: 'HARPUNEN', short: 'HARPUN', ammo: 'harpoons', mag: 1, dmg: 20, pellets: 1, spread: 0.004, delay: 0.3, auto: false, sound: ['harpoon_fire', 0.9, 1], flash: 0, kick: 1.4, reload: 1.3, falloff: [20, 30, 1], recoil: [0.012], harpoon: true, silent: true },
   { id: 'boomerang', name: 'BUMERANGEN', short: 'BUMERANG', ammo: 'none', mag: 1, dmg: 9, pellets: 1, spread: 0, delay: 0.25, auto: false, sound: ['boomerang_throw', 0.8, 1], flash: 0, kick: 0.5, reload: 0, falloff: [8, 10, 1], recoil: [0], boomerang: true, silent: true },
   { id: 'sawlauncher', name: 'SÅGBLADSKASTAREN', short: 'SÅGBLAD', ammo: 'gears', mag: 6, dmg: 8, pellets: 1, spread: 0.01, delay: 0.38, auto: false, sound: ['saw_fire', 0.8, 1], flash: 0.3, kick: 0.9, reload: 1.4, falloff: [30, 40, 1], recoil: [0.008, -0.006], sawlauncher: true },
-  { id: 'windgun', name: 'VINDBÖSSAN', short: 'VINDBÖSSA', ammo: 'none', mag: 1, dmg: 3, pellets: 1, spread: 0, delay: 0.85, auto: false, sound: ['wind_fire', 0.9, 1], flash: 0, kick: 1.2, reload: 0, falloff: [8, 10, 1], recoil: [0], windgun: true },
+  { id: 'windgun', name: 'VINDBÖSSAN', short: 'BÄLGEN', ammo: 'none', mag: 1, dmg: 3, pellets: 1, spread: 0, delay: 0.85, auto: false, sound: ['wind_fire', 0.9, 1], flash: 0, kick: 1.2, reload: 0, falloff: [8, 10, 1], recoil: [0], windgun: true },
   { id: 'spear', name: 'SPJUTET', short: 'SPJUT', ammo: 'none', mag: 1, dmg: 13, pellets: 1, spread: 0, delay: 0.45, auto: false, sound: ['spear_thrust', 0.7, 1], flash: 0, kick: 0.6, reload: 0, falloff: [3, 4, 1], recoil: [0], spear: true, silent: true },
   { id: 'prism', name: 'PRISMAN', short: 'PRISMA', ammo: 'crystals', mag: 14, dmg: 5.5, pellets: 1, spread: 0.006, delay: 0.16, auto: true, sound: ['prism_fire', 0.7, 1], flash: 0.6, kick: 0.4, reload: 1.5, falloff: [30, 40, 1], recoil: [0.004, -0.003], prism: true },
 ];
@@ -7576,9 +7576,9 @@ function campaignWon() { // kapitlet klart
 }
 // ---------- Version 10: legendariska vapen ----------
 const LEGENDS = {
-  dragonshotgun: { base: 'shotgun', name: 'DRAKBÖSSAN', short: 'DRAKBÖSSA', text: 'SKOTTEN SÄTTER FYR PÅ FIENDERNA', snd: 'legend_fire_dragon', col: [255, 140, 60] },
-  frostrifle: { base: 'rifle', name: 'FROSTGEVÄRET', short: 'FROSTGEVÄR', text: 'TRÄFFAR KAN FRYSA FIENDEN', snd: 'legend_fire_frost', col: [150, 220, 255] },
-  soulpistol: { base: 'pistol', name: 'SJÄLAPISTOLEN', short: 'SJÄLAPISTOL', text: 'VARJE TRÄFF LÄKER DIG LITE', snd: 'legend_fire_soul', col: [150, 255, 180] },
+  dragonshotgun: { base: 'shotgun', name: 'DRAKBÖSSAN', short: 'DRAKELD', text: 'SKOTTEN SÄTTER FYR PÅ FIENDERNA', snd: 'legend_fire_dragon', col: [255, 140, 60] },
+  frostrifle: { base: 'rifle', name: 'FROSTGEVÄRET', short: 'ISGEVÄR', text: 'TRÄFFAR KAN FRYSA FIENDEN', snd: 'legend_fire_frost', col: [150, 220, 255] },
+  soulpistol: { base: 'pistol', name: 'SJÄLAPISTOLEN', short: 'SJÄLEN', text: 'VARJE TRÄFF LÄKER DIG LITE', snd: 'legend_fire_soul', col: [150, 255, 180] },
   stormstaff: { base: 'staff', name: 'ÅSKSTAVEN', short: 'ÅSKSTAV', text: 'BLIXTAR SLÅR NED DÄR DU TRÄFFAR', snd: 'legend_fire_storm', col: [200, 220, 255] },
   bloodaxe: { base: 'axe', name: 'BLODYXAN', short: 'BLODYXA', text: 'LIVSSTÖLD, OCH RASERI NÄR DU DÖDAR', snd: 'legend_hit_blood', col: [220, 40, 50] },
   moonbow: { base: 'bow', name: 'MÅNBÅGEN', short: 'MÅNBÅGE', text: 'MÄRKTA FIENDER TAR 40 % MER SKADA', snd: 'legend_fire_moon', col: [190, 210, 255] },
