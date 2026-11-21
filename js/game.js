@@ -867,16 +867,20 @@ const EVENTS = {
   quake: { name: 'JORDBÄVNING', text: 'STENAR FALLER FRÅN TAKET' },
   dark: { name: 'MÖRK VÅNING', text: 'BARA FACKLORNA LYSER' },
   goldrain: { name: 'GULDREGN', text: 'MER GULD, SNABBARE FIENDER' },
+  wisdom: { name: 'VISDOMENS NATT', text: '+50 % ERFARENHET' },
+  resonance: { name: 'RESONANS', text: 'KRISTALLERNA SJUNGER – SKOTTEN DELAS FLER GÅNGER', biome: 'crystal' },
+  stormtide: { name: 'STORMFLOD', text: 'TIDVATTNET KOMMER DUBBELT SÅ OFTA', biome: 'sunken' },
 };
 function pickFloorEvent(rng) {
   floorEvent = ''; floorQuest = null;
   if (boss || !run || run.depth < 2 || rng.next() > 0.28) return;
-  const ids = Object.keys(EVENTS).filter(k => !EVENTS[k].outdoor || lvl.sky);
+  const ids = Object.keys(EVENTS).filter(k => (!EVENTS[k].outdoor || lvl.sky) && (!EVENTS[k].biome || EVENTS[k].biome === lvl.biome));
   floorEvent = ids[(rng.next() * ids.length) | 0];
   if (floorEvent === 'dark') for (let i = 0; i < 2; i++) { const s = randomFreeCell(rng); if (s) items.push({ type: 'battery', x: s[0], y: s[1], taken: false }); } // mörka våningar: lampolja
   if (floorEvent === 'bloodmoon') for (const e of ents) if (!e.boss) { e.hp = e.maxHp = e.maxHp * 1.3; e.d = { ...e.d, dmg: e.d.dmg * 1.25 }; }
   if (floorEvent === 'goldrain') for (const e of ents) if (!e.boss) e.d = { ...e.d, speed: e.d.speed * 1.15 };
   if (floorEvent === 'mist') { for (let i = 0; i < 4; i++) { const s = randomFreeCell(rng); if (s) items.push({ type: 'goldpile', x: s[0], y: s[1], taken: false }); } const s = randomFreeCell(rng); if (s) chests.push({ x: s[0], y: s[1], open: false, t: 0 }); }
+  if (floorEvent === 'stormtide' && lvl.tide) lvl.tide = { ...lvl.tide, period: lvl.tide.period / 2 };
   logEvent(EVENTS[floorEvent].name); stat('events');
 }
 function randomFreeCell(rng) { for (let i = 0; i < 60; i++) { const x = (rng.next() * mw) | 0, y = (rng.next() * mh) | 0; if (map[y][x] === '.' && Math.hypot(x + 0.5 - P.x, y + 0.5 - P.y) > 6) return [x + 0.5, y + 0.5]; } return null; }
@@ -6023,7 +6027,9 @@ function drawRunOver(win) {
     for (const [key, col, max] of [['hp', '#ff6050', 1], ['gold', '#ffd24a', mg], ...(r.graph.some(p => p.dmg) ? [['dmg', '#80c0ff', md]] : [])]) { ctx.strokeStyle = col; ctx.beginPath(); r.graph.forEach((p, i) => { const x = gx + 4 + i / (n - 1) * (gw - 8), y = gy + gh - 4 - p[key] / max * (gh - 16); if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y); }); ctx.stroke(); }
   }
   const names = r.owned.slice(-6).map(id => (Cards.byId(id) || {}).name).filter(Boolean), log = (r.log || []).slice(-6);
-  if (log.length && Math.floor(P.deadT / 4) % 2 === 1) { txt('TIDSLINJE:', 200, 90, '#c9a87a'); log.forEach((n, i) => txt(n.slice(0, 15), 200, 100 + i * 8, '#a0d0e8', 1, true, 0.9)); } // rundans tidslinje
+  const tal = Object.entries(r.talents || {}).map(([id, k]) => (TALENTS[id] ? TALENTS[id].name : id) + (k > 1 ? ' ' + k : ''));
+  if (tal.length && Math.floor(P.deadT / 4) % 3 === 2) { txt(`NIVÅ ${r.lvl || 1}:`, 200, 90, '#c9a87a'); tal.slice(-6).forEach((n, i) => txt(n.slice(0, 15), 200, 100 + i * 8, '#c0a0ff', 1, true, 0.9)); } // talangerna
+  else if (log.length && Math.floor(P.deadT / 4) % 2 === 1) { txt('TIDSLINJE:', 200, 90, '#c9a87a'); log.forEach((n, i) => txt(n.slice(0, 15), 200, 100 + i * 8, '#a0d0e8', 1, true, 0.9)); } // rundans tidslinje
   else if (names.length) { txt('KORT:', 200, 90, '#c9a87a'); names.forEach((n, i) => txt(n.slice(0, 14), 200, 100 + i * 8, '#b9a0e8', 1, true, 0.9)); }
   if (!win && r.cause) { const t = 'TIPS: ' + (DEATH_TIPS[r.cause] || 'VARJE RUNDA LÄR DIG NÅGOT'); txt(t, (W - textW(t)) / 2, 130, '#8a7550'); }
   const keysTxt = isTouch() ? '' : 'ENTER NY · R SAMMA FRÖ · C FRÖ · L LÄNK · M KARTA'; if (keysTxt) txt(keysTxt, (W - textW(keysTxt)) / 2, 138, '#8a7550');
@@ -6682,7 +6688,7 @@ const xpNeed = l => 45 + l * 35;
 function talentMods(M) { if (!run || !run.talents) return; for (const [id, r] of Object.entries(run.talents)) { const t = TALENTS[id]; if (t && t.mods && r) for (const [k, v] of Object.entries(t.mods(r))) M[k] = (M[k] || 0) + v; } }
 function gainXp(n, x, y) {
   if (!run || run.practice) return;
-  run.xp = (run.xp || 0) + n * (1 + mod('xpMul')); run.lvl = run.lvl || 1; xpFlash = 0.4;
+  run.xp = (run.xp || 0) + n * (1 + mod('xpMul')) * (floorEvent === 'wisdom' ? 1.5 : floorEvent === 'resonance' ? 1.25 : 1); run.lvl = run.lvl || 1; xpFlash = 0.4;
   while (run.xp >= xpNeed(run.lvl)) { run.xp -= xpNeed(run.lvl); run.lvl++; run.talentQ = (run.talentQ || 0) + 1; levelUpFx(); }
 }
 let xpFlash = 0, lvlBanner = 0;
@@ -6818,7 +6824,7 @@ function prismBeam(x, y, a, dmg, bounces, depth, hitSet, range, enemy) { // str�
   while (left > 0) {
     const nx = cx + dx * step, ny = cy + dy * step; left -= step;
     const ch = map[ny | 0] && map[ny | 0][nx | 0];
-    if (ch === 'Ė' && depth < 2 + Math.round(mod('refract'))) { // brytande kristall: tre nya strålar
+    if (ch === 'Ė' && depth < 2 + Math.round(mod('refract')) + (floorEvent === 'resonance' ? 1 : 0)) { // brytande kristall: tre nya strålar
       if (!enemy) firstHint('prism', 'BRYTANDE KRISTALLER DELAR SKOTT I TRE STRÅLAR.');
       play('prism_bounce', 0.5, 1.2, { x: nx, y: ny }); refractFx(nx, ny);
       const ba = Math.atan2(dy, dx) + Math.PI; for (const off of [-0.5, 0, 0.5]) prismBeam(nx + Math.cos(ba) * 0.15, ny + Math.sin(ba) * 0.15, ba + Math.PI + off + rnd(-0.05, 0.05), dmg * 0.75, bounces, depth + 1, hitSet, left, enemy);
