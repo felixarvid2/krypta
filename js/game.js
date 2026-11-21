@@ -363,12 +363,12 @@ const ENEMY_DEFS = {
   'Û': { name: 'JÄTTEKRABBA', sheet: 'crab', move: 'movement', hp: 10, speed: 1.6, melee: true, dmg: 8, range: 0.95, cd: 1.0, size: 0.9, growl: 'crab', score: 180, atkFps: 12, hitAt: 0.5, ai: 'crab', tip: 'SKALET SKYDDAR FRAMIFRÅN – SLÅ, SPRÄNG ELLER GÅ RUNT' },
   'Ā': { name: 'SKUGGJÄGARE', sheet: 'stalker', move: 'movement', hp: 8, speed: 2.5, melee: true, dmg: 14, range: 1.0, cd: 0.9, size: 1.1, growl: 'stalker', score: 300, atkFps: 14, hitAt: 0.5, ai: 'stalker', tip: 'SYNS BARA I LJUS – TÄND LAMPAN' },
   'Ă': { name: 'HÄXA', sheet: 'witch', move: 'movement', hp: 9, speed: 1.1, melee: false, dmg: 5, range: 9, cd: 99, size: 1.05, growl: 'witch', score: 280, atkFps: 10, hitAt: 0.5, ai: 'witch', kite: 5, tip: 'FÖRHÄXAR DIG OCH TELEPORTERAR SIG NÄR HON TRÄFFAS' },
-  'Ō': { name: 'FÅNGVAKTARE', sheet: 'jailer', move: 'movement', hp: 11, speed: 1.15, melee: true, dmg: 12, range: 1.0, cd: 1.1, size: 1.1, growl: 'jailer', score: 240, atkFps: 11, hitAt: 0.55, ai: 'jailer', tip: 'KEDJAN BINDER DIG – HÅLL DIG BAKOM HÖRN' },
-  'ō': { name: 'GRÄVARE', sheet: 'burrower', move: 'movement', hp: 8, speed: 2.6, melee: true, dmg: 11, range: 1.2, cd: 99, size: 1.0, growl: 'burrower', score: 220, atkFps: 12, hitAt: 0.5, ai: 'burrower', tip: 'JORDHÖGEN SOM RÖR SIG – HOPPA NÄR DEN KOMMER UPP' },
+  'Ō': { name: 'FÅNGVAKTARE', sheet: 'jailer', move: 'movement', hp: 11, speed: 1.15, melee: true, dmg: 12, range: 1.0, cd: 1.1, size: 1.05, growl: 'jailer', score: 240, atkFps: 11, hitAt: 0.55, ai: 'jailer', tip: 'KEDJAN BINDER DIG – HÅLL DIG BAKOM HÖRN' },
+  'ō': { name: 'GRÄVARE', sheet: 'burrower', move: 'movement', hp: 8, speed: 2.6, melee: true, dmg: 11, range: 1.2, cd: 99, size: 1.15, growl: 'burrower', score: 220, atkFps: 12, hitAt: 0.5, ai: 'burrower', tip: 'JORDHÖGEN SOM RÖR SIG – HOPPA NÄR DEN KOMMER UPP' },
   'Ŏ': { name: 'LIKGRÄVARE', sheet: 'gravedigger', move: 'movement', hp: 10, speed: 1.0, melee: true, dmg: 10, range: 1.0, cd: 1.2, size: 1.05, growl: 'gravedigger', score: 260, atkFps: 10, hitAt: 0.55, ai: 'gravedigger', tip: 'VÄCKER DE DÖDA – DÖDA HONOM FÖRST' },
-  'ŏ': { name: 'ROTVÄTTE', sheet: 'rootling', move: 'movement', hp: 6, speed: 1.3, melee: false, dmg: 6, range: 9, cd: 99, size: 0.75, growl: 'rootling', score: 150, atkFps: 10, hitAt: 0.5, ai: 'rootling', kite: 4, tip: 'RÖTTERNA KOMMER DÄR DU STÅR – RÖR DIG' },
+  'ŏ': { name: 'ROTVÄTTE', sheet: 'rootling', move: 'movement', hp: 6, speed: 1.3, melee: false, dmg: 6, range: 9, cd: 99, size: 0.9, growl: 'rootling', score: 150, atkFps: 10, hitAt: 0.5, ai: 'rootling', kite: 4, tip: 'RÖTTERNA KOMMER DÄR DU STÅR – RÖR DIG' },
   'Ő': { name: 'ARMBORSTSKYTT', sheet: 'crossbowman', move: 'movement', hp: 8, speed: 1.2, melee: false, dmg: 9, range: 14, cd: 99, size: 1.05, growl: 'crossbow_enemy', score: 230, atkFps: 10, hitAt: 0.5, ai: 'crossbowman', kite: 6, tip: 'SKJUTER LÅNGT – GÅ NÄRA' },
-  'ő': { name: 'PADDJÄTTE', sheet: 'toad', move: 'movement', hp: 22, speed: 0.9, melee: true, dmg: 15, range: 1.3, cd: 1.4, size: 1.25, growl: 'toad', score: 380, atkFps: 10, hitAt: 0.55, ai: 'toad', tip: 'HOPPAR OCH SLÅR I MARKEN – HOPPA NÄR DEN LANDAR' },
+  'ő': { name: 'PADDJÄTTE', sheet: 'toad', move: 'movement', hp: 22, speed: 0.9, melee: true, dmg: 15, range: 1.3, cd: 1.4, size: 1.35, growl: 'toad', score: 380, atkFps: 10, hitAt: 0.55, ai: 'toad', tip: 'HOPPAR OCH SLÅR I MARKEN – HOPPA NÄR DEN LANDAR' },
   'ĳ': { name: 'URVERKSSOLDAT', sheet: 'clocksoldier', move: 'movement', hp: 10, speed: 1.15, melee: true, dmg: 11, range: 1.0, cd: 1.1, size: 1.05, growl: 'clocksoldier', score: 260, atkFps: 11, hitAt: 0.55, ai: 'clocksoldier', tip: 'LINDAS UPP IGEN EN GÅNG – SLÅ TILL MEDAN DEN LIGGER' },
   'Ĵ': { name: 'KUGGSPINDEL', sheet: 'gearspider', move: 'movement', hp: 2.5, speed: 2.5, melee: true, dmg: 5, range: 0.8, cd: 0.7, size: 0.6, growl: 'gearspider', score: 60, atkFps: 14, hitAt: 0.5, ai: 'gearspider', tip: 'KOMMER I GRUPP – SÅGBLAD OCH SPRÄNGMEDEL' },
   'ĵ': { name: 'TIDSVÄKTARE', sheet: 'timekeeper', move: 'movement', hp: 9, speed: 1.0, melee: false, dmg: 0, range: 9, cd: 99, size: 0.95, growl: 'timekeeper', score: 280, atkFps: 9, hitAt: 0.5, ai: 'timekeeper', kite: 5, tip: 'LÄGGER TIDSBUBBLOR DÄR DU STÅR – RÖR DIG' },
@@ -2841,7 +2841,7 @@ function drawPet(o, plX, plY) {
   const f = petFrames(o.id), set = (o.st === 'attack' && f.attack) || ((o.st === 'move') && f.move) || f.idle;
   const n = o.st === 'attack' ? Math.min(set.length - 1, Math.floor(o.t * 10)) : Math.floor(tmr * (o.st === 'move' ? 10 : 6) + o.x) % set.length;
   const flip = (o.mvx || o.mvy) ? o.mvx * plX + o.mvy * plY < 0 : false;
-  const size = o.id === 'pup' ? 0.48 : o.id === 'minigolem' ? 0.5 : o.id === 'firefly' ? 0.24 : 0.3;
+  const size = fx.pets && fx.pets[o.id] ? { pup: 0.48, minigolem: 0.55, firefly: 0.45 }[o.id] || 0.5 : o.id === 'pup' ? 0.48 : o.id === 'minigolem' ? 0.5 : o.id === 'firefly' ? 0.24 : 0.3; // nya 32 px-bilder är större
   drawSprite(set[n], o.x, o.y, size, o.z, flip, o.id === 'lantern' ? 2 : null, 0, 0.55, !!f.add, o.rest > 0 ? [150, 150, 170] : f.tint || null);
 }
 // allierade: befriade fångar, nekromantikerns uppväckta döda
@@ -7734,6 +7734,9 @@ document.getElementById('mazebtn').addEventListener('click', () => { if (!docume
 document.getElementById('huntbtn').addEventListener('click', () => { if (!document.getElementById('start').disabled) beginBossHunt(); });
 document.getElementById('monthly').addEventListener('click', () => startMode('monthly'));
 document.getElementById('titlesbtn').addEventListener('click', () => showTitles());
+for (const [b, box] of [['moremodesbtn', 'moremodes'], ['collbtn', 'collections']]) document.getElementById(b).addEventListener('click', () => { // fällbara rader på startskärmen
+  const el = document.getElementById(box), open = el.hidden; el.hidden = !open; const btn = document.getElementById(b); btn.setAttribute('aria-expanded', String(open)); btn.textContent = btn.textContent.replace(/[+−]$/, open ? '−' : '+'); settings['open_' + box] = open; saveSettings(); });
+for (const box of ['moremodes', 'collections']) if (settings['open_' + box]) { document.getElementById(box).hidden = false; const b = document.getElementById(box === 'moremodes' ? 'moremodesbtn' : 'collbtn'); b.setAttribute('aria-expanded', 'true'); b.textContent = b.textContent.replace(/\+$/, '−'); }
 document.getElementById('campaignbtn').addEventListener('click', () => { if (!document.getElementById('start').disabled) showCampaign(); });
 document.getElementById('hubbtn').addEventListener('click', () => { if (!document.getElementById('start').disabled) beginHub(); });
 document.getElementById('abyssbtn').addEventListener('click', () => { if (!document.getElementById('start').disabled) beginAbyss(); });

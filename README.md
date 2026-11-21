@@ -1261,6 +1261,40 @@ Version 7 lägger till 200 förbättringar:
 
 Kombinerade utmaningar multiplicerar själarna. Sparplatsen väljs på startskärmen, och `?fro=XXXX` i adressen fyller i ett delat frö.
 
+## Version 10: Nya invånare
+
+Version 10 fyller de tidiga biomerna, som man ser oftast, med nytt liv:
+- **Bilder:** ritas med `tools/props8/make.py`.
+- **Ljud och musik:** byggs med `tools/sounds/make8.sh`.
+- **Bangeneratorn:** har fått nya fiender i de gamla biomerna och legendaltaret.
+
+**Sex nya fiender i de gamla biomerna**
+- **Fångvaktaren (kryptan):** kastar en kedja som binder dig.
+- **Grävaren (grottorna):** gräver under marken och bryter upp under dig.
+- **Likgrävaren (kyrkogården):** väcker döda kroppar till skelett.
+- **Rotvättet (skogen):** låter rötter skjuta upp där du står.
+- **Armborstskytten (borggården):** skjuter långt och söker skydd.
+- **Paddjätten (träsket):** drar dig med tungan och hoppar.
+
+**Legendariska vapen**
+- Sex varianter av befintliga vapen, med egna bilder och ljud:
+  - **Drakbössan:** sätter fyr.
+  - **Frostgeväret:** fryser.
+  - **Själapistolen:** läker.
+  - **Åskstaven:** blixtar.
+  - **Blodyxan:** livsstöld och raseri.
+  - **Månbågen:** märker fienden så att den tar mer skada.
+- Hittas sällan hos eliter och väktare, eller köps vid legendaltaret (Œ) för guld eller själar.
+
+**Följeslagare**
+- Eldflugan, stengolemen och ugglan är nya, och själaaltarets FLOCKEN har sex nivåer.
+- Alla sex följeslagare har nu egna bilder, även korpen, lyktan och vargvalpen som tidigare lånade andra fienders bilder.
+
+**Mer**
+- Startskärmen är städad: de vanligaste valen syns direkt, resten ligger under FLER LÄGEN och SAMLINGAR.
+- Egen musik i Lägret och en fanfar när ett kampanjkapitel börjar.
+- Två prestationer för legendariska vapen.
+
 ## Version 9: Klocktornet och Molnborgen
 
 Version 9 lägger till två biomer, tre vapen, sex fiender och två bossar, så att det finns tolv bossar totalt:
@@ -1448,6 +1482,8 @@ Version 8 gör spelet större med två biomer, ett talangsystem, ett nytt läge 
 | Version 9: sex fiender, Urmakaren, Stormfågeln, mässings-, kugg-, moln- och stormtexturer, props, partiklar och ikoner | `tools/props7/make.py`. Urverkssoldaten och stormkallaren bygger på *Pixel Crawler 2.11* (Anokolisa); ytor från Kenney *retro-textures-fantasy* och *Classic64* (CC0); tidsväktaren, kuggspindeln, harpyan, molnjätten, bossarna och resten ritas i skriptet |
 | Version 9: 38 ljud och musiken för Klocktornet, Molnborgen, Urmakaren och Stormfågeln | `tools/sounds/make7.sh`: Kenney *impact-sounds* och *rpg-audio* (CC0), 400 Sounds Pack; musiken syntetiseras i skriptet |
 | Version 9: 39 nya kortbilder | `tools/card-art/make.py . v9` ur `assets/ashfall-ai` och Kenney *particle-pack* (CC0); pakternas vapen ritas i skriptet |
+| Version 10: sex fiender, sex följeslagare, legendaltaret, legendariska vapen, partiklar och ikoner | `tools/props8/make.py`. Fångvaktaren, likgrävaren och armborstskytten bygger på *Pixel Crawler 2.11* (Anokolisa); de legendariska vapnen är omfärgningar av spelets egna vapenbilder; resten ritas i skriptet |
+| Version 10: 27 ljud, Lägrets musik och kapitelfanfaren | `tools/sounds/make8.sh`: 400 Sounds Pack och Kenney *impact-sounds* och *rpg-audio* (CC0); musiken syntetiseras i skriptet |
 | Typsnitt | Press Start 2P (OFL) |
 
 Se licensfilerna i respektive källpaket.

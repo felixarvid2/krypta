@@ -143,6 +143,10 @@
     <button id="hubbtn" class="ghost" type="button">LÄGRET</button>
     <button id="campaignbtn" class="ghost" type="button">KAMPANJEN</button>
     <button id="daily" disabled>DAGENS RUNDA</button>
+    <button id="continue" hidden>FORTSÄTT</button>
+    <button id="moremodesbtn" class="ghost" type="button" aria-expanded="false">FLER LÄGEN +</button>
+  </div>
+  <div class="row" id="moremodes" hidden>
     <button id="bossrush" class="ghost" type="button">BOSSRUSH</button>
     <button id="weekly" class="ghost" type="button">VECKANS UTMANING</button>
     <button id="survival" class="ghost" type="button">ÖVERLEVNAD</button>
@@ -151,7 +155,6 @@
     <button id="abyssdaily" class="ghost" type="button">DAGENS AVGRUND</button>
     <button id="huntbtn" class="ghost" type="button">BOSSJAKTEN</button>
     <button id="monthly" class="ghost" type="button">MÅNADENS UTMANING</button>
-    <button id="continue" hidden>FORTSÄTT</button>
   </div>
   <div class="row">
     <label class="label" for="seed">FRÖ</label><input id="seed" maxlength="16" placeholder="SLUMPAT" autocomplete="off">
@@ -161,16 +164,19 @@
   </div>
   <div class="row">
     <button id="settingsbtn" class="ghost" type="button">INSTÄLLNINGAR</button>
+    <button id="manualbtn" class="ghost" type="button">HANDBOK</button>
+    <button id="newsbtn" class="ghost" type="button">NYHETER</button>
+    <button id="collbtn" class="ghost" type="button" aria-expanded="false">SAMLINGAR +</button>
+  </div>
+  <div class="row" id="collections" hidden>
     <button id="profilebtn" class="ghost" type="button">PROFIL</button>
     <button id="bestiary" class="ghost" type="button">BESTIARIUM</button>
     <button id="achbtn" class="ghost" type="button">PRESTATIONER</button>
     <button id="codexbtn" class="ghost" type="button">KORTARKIV</button>
     <button id="practicebtn" class="ghost" type="button">ÖVNING</button>
-    <button id="manualbtn" class="ghost" type="button">HANDBOK</button>
     <button id="statsbtn" class="ghost" type="button">STATISTIK</button>
     <button id="chroniclebtn" class="ghost" type="button">KRÖNIKAN</button>
     <button id="titlesbtn" class="ghost" type="button">TITLAR</button>
-    <button id="newsbtn" class="ghost" type="button">NYHETER</button>
   </div>
   <div class="row sliders">
     <label class="label" for="sens">KÄNSLIGHET <output id="sensv"></output></label><input id="sens" type="range" min="0.2" max="3" step="0.1">
