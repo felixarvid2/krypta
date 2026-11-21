@@ -1297,6 +1297,19 @@ Version 9 lägger till två biomer, tre vapen, sex fiender och två bossar, så 
 - **Urmakaren:** sågklingor, tidsbubblor och urverkssoldater. Han kan vrida tillbaka tiden och få tillbaka hälsa.
 - **Stormfågeln:** dyker, kallar ned åskstormar, skickar harpyor och blåser dig mot kanten.
 
+**Kampanjen**
+- Sex kapitel i fast ordning:
+  1. Kryptan
+  2. De dödas marker
+  3. Is och eld
+  4. Sanden
+  5. Djupet
+  6. Himlen
+- Varje kapitel har en kort berättelse, två våningar i bestämda biomer och en bestämd boss.
+- Senare kapitel börjar med fler vapen, mer guld och fler talangval.
+- Kapitlen nås med knappen KAMPANJEN eller från en portal i Lägret.
+- När hela kampanjen är klar öppnas Krönikans slut.
+
 **Krönikans slut**
 - När alla krönikesidor är hittade öppnas en portal i Lägret till den hemliga slutbossen, Den förste munken.
 - Han strider i tre faser med krafter från Faraonen, Kristalldrottningen och Stormfågeln, och kan dessutom vrida tillbaka tiden som Urmakaren.

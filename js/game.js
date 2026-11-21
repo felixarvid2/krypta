@@ -170,6 +170,8 @@ const ACH = [
   ['spear50', 'SPJUTKASTAREN', 'DÖDA 50 FIENDER MED SPJUTET', p => ((p.wkills || {}).spear || 0) >= 50, p => [(p.wkills || {}).spear || 0, 50]],
   ['saw100', 'SÅGVERKET', 'DÖDA 100 FIENDER MED SÅGBLADSKASTAREN', p => ((p.wkills || {}).sawlauncher || 0) >= 100, p => [(p.wkills || {}).sawlauncher || 0, 100]],
   ['finale', 'KRÖNIKANS SLUT', 'BESEGRA DEN FÖRSTE MUNKEN', p => (p.finaleWon || 0) >= 1],
+  ['campaign3', 'BERÄTTELSENS MITT', 'KLARA TRE KAPITEL I KAMPANJEN', p => (p.campaign || 0) >= 3, p => [p.campaign || 0, 3]],
+  ['campaign6', 'HJÄLTEN', 'KLARA HELA KAMPANJEN', p => (p.campaign || 0) >= 6, p => [p.campaign || 0, 6]],
   ['allbosses12', 'ALLA TOLV', 'BESEGRA ALLA TOLV BOSSAR', p => BOSS_IDS.every(id => (p.bossWins || {})[id]), p => [BOSS_IDS.filter(id => (p.bossWins || {})[id]).length, BOSS_IDS.length]],
 ];
 function checkAch() {
@@ -802,6 +804,7 @@ const biomeFor = depth => run && run.practice && run.practice.biome ? run.practi
 const guardianFor = depth => { const own = bossFor((cycleOf(depth) + 1) * (FLOORS + 1)); return RNG(run.seed).fork('väktare' + depth).pick(BOSS_IDS.filter(b => b !== own)); };
 function loadFloor(depth) {
   run.depth = depth;
+  if (run.campaign) { startLevel(campaignLevel(depth)); P.armor = Math.min(200, P.armor + mod('armorPerFloor')); if (mod('floorHeal')) heal(mod('floorHeal'), true); saveRun(); return; }
   if (run.abyss) { const L = abyssLevel(depth); startLevel(L); abyssScale(); P.armor = Math.min(200, P.armor + mod('armorPerFloor')); if (mod('floorHeal')) heal(mod('floorHeal'), true); saveRun(); return; }
   const c = cycleOf(depth), pos = cyclePos(depth);
   const level = !isBossDepth(depth)
@@ -5855,6 +5858,7 @@ function enterPortal(p) {
   if (p.kind === 'floor' && p.biome) { run.biomeChoice = Object.assign({}, run.biomeChoice, { [run.depth + 1]: p.biome }); run.route = Object.assign({}, run.route, { [run.depth + 1]: BIOME_RISK[p.biome] || 1 }); play('route_choice', 0.7); logEvent('VÄG: ' + BIOME_NAME[p.biome]); }
   if (p.kind === 'floor') { if (floorQuest && floorQuest.kind === 'time' && levelTime <= floorQuest.limit) { run.gold += 50; say('TIDSUTMANINGEN KLARAD: +50 GULD', 3); } floorDone(); return; }
   if (run.finale) { finaleWon(); return; }
+  if (run.campaign) { campaignWon(); return; }
   if (run.abyss) { abyssNext(); return; }
   if (run.hunt) { bossHuntPick(); return; }
   if (run.bossrush) { bossRushNext(); return; }
@@ -7162,7 +7166,7 @@ function abyssNext() { // efter en bossvåning i Avgrunden
   openUI(() => draftUI(drawCards(3, { luck: 1 }), { title: `AVGRUND ${run.depth} KLARAD`, subtitle: 'VÄLJ ETT KORT OCH FORTSÄTT NEDÅT', skipLabel: 'INGET KORT' }, card => { if (card) gainCard(card); closeUI(); loadFloor(run.depth + 1); lockPointer(); }));
 }
 // ---------- Version 8: Lägret – ett nav att gå runt i mellan rundorna ----------
-const HUB_MODES = [['finale', 'KRÖNIKANS SLUT'], ['new', 'NY RUNDA'], ['daily', 'DAGENS RUNDA'], ['abyss', 'AVGRUNDEN'], ['abyssdaily', 'DAGENS AVGRUND'], ['maze', 'LABYRINTEN'], ['hunt', 'BOSSJAKTEN'], ['continue', 'FORTSÄTT RUNDAN']];
+const HUB_MODES = [['finale', 'KRÖNIKANS SLUT'], ['campaign', 'KAMPANJEN'], ['new', 'NY RUNDA'], ['daily', 'DAGENS RUNDA'], ['abyss', 'AVGRUNDEN'], ['abyssdaily', 'DAGENS AVGRUND'], ['maze', 'LABYRINTEN'], ['hunt', 'BOSSJAKTEN'], ['continue', 'FORTSÄTT RUNDAN']];
 let hubWatch = 0;
 function hubLevel() {
   const Wd = 27, Hd = 19, m = [];
@@ -7185,6 +7189,7 @@ function beginHub() {
   clearInterval(hubWatch); hubWatch = setInterval(() => { if (!run || !run.hub) { clearInterval(hubWatch); return; } if (state === 'ui' && !CardUI.isOpen()) { closeUI('play'); document.getElementById('title').hidden = true; } }, 200);
 }
 function hubEnter(mode) { // portalerna i lägret
+  if (mode === 'campaign') { openUI(() => showCampaign()); return; } // kapitelvalet öppnas i lägret
   clearInterval(hubWatch); run.hub = false;
   const go = () => { if (mode === 'finale') beginFinale(); else if (mode === 'abyssdaily') beginAbyss(true); else if (mode === 'abyss') beginAbyss(); else if (mode === 'maze') beginMaze(); else if (mode === 'hunt') beginBossHunt(); else begin(mode); };
   if (mode !== 'continue' && store.get(runKey(), null)) { openUI(() => CardUI.choice({ title: 'NY RUNDA?', subtitle: 'DU HAR EN PÅGÅENDE RUNDA. EN NY RUNDA SKRIVER ÖVER DEN.', cancel: 1, options: [{ label: 'STARTA NY', text: 'DEN GAMLA FÖRSVINNER' }, { label: 'AVBRYT', text: '' }] }, i => { closeUI(); if (i === 0) go(); else { run.hub = true; beginHub(); } })); return; }
@@ -7493,6 +7498,43 @@ Object.assign(PROJ_DRAW_V8, {
   esaw: o => { const f = fx.props.sawblade; drawSprite(f ? f[Math.floor(tmr * 18) % f.length] : fx.hit[1], o.x, o.y, 0.22, o.z - 0.08, false, null, 0, 0.6, false, [255, 200, 150]); },
   spear: o => drawSprite(spr.pick_spear || spr.pick_harpoon || fx.hit[1], o.x, o.y, 0.08, o.z - 0.03, Math.cos(Math.atan2(o.vy, o.vx) - view.a) < 0, null, 0, 0.6),
 });
+// ---------- Version 9: Kampanjen – sex kapitel i fast ordning ----------
+const CAMPAIGN = [
+  { name: 'KAPITEL 1: KRYPTAN', biomes: ['dungeon', 'caves'], boss: 'demon', text: 'MUNKARNA GRÄVDE FÖR DJUPT. DU KLIVER NER I DERAS GÅNGAR FÖR ATT TA REDA PÅ VARFÖR.' },
+  { name: 'KAPITEL 2: DE DÖDAS MARKER', biomes: ['graveyard', 'forest'], boss: 'ghost', text: 'UNDER BORGEN LIGGER EN KYRKOGÅRD SOM INTE VILL SOVA. VÅLNADEN VAKTAR VÄGEN VIDARE.' },
+  { name: 'KAPITEL 3: IS OCH ELD', biomes: ['frost', 'volcano'], boss: 'flame', text: 'BERGET ANDAS KYLA OCH ELD. ELDKUNGEN HÅLLER DÖRREN MOT DJUPET STÄNGD.' },
+  { name: 'KAPITEL 4: SANDEN', biomes: ['tomb', 'swamp'], boss: 'pharaoh', text: 'FARAONENS GRAV ÄR ÄLDRE ÄN KRYPTAN. HAN VAR DEN FÖRSTA SOM HÖRDE BÖNEN.' },
+  { name: 'KAPITEL 5: DJUPET', biomes: ['crystal', 'sunken'], boss: 'leviathan', text: 'UNDER KRISTALLERNA LIGGER EN SJUNKEN STAD. NÅGOT STORT RÖR SIG I VATTNET.' },
+  { name: 'KAPITEL 6: HIMLEN', biomes: ['clock', 'sky'], boss: 'thunderbird', text: 'KLOCKTORNET LEDER UPP TILL MOLNEN. DÄR UPPE VÄNTAR STORMEN – OCH SLUTET.' },
+];
+const campDone = () => (profile.campaign || 0); // antal klarade kapitel
+function showCampaign() {
+  CardUI.list('KAMPANJEN', `${campDone()} AV ${CAMPAIGN.length} KAPITEL KLARADE · VARJE KAPITEL: TVÅ VÅNINGAR OCH EN BOSS`, CAMPAIGN.map((c, i) => {
+    const open = i <= campDone(), done = i < campDone();
+    return { label: (done ? '★ ' : open ? '▶ ' : '☆ ') + c.name, text: open ? c.text + ` (${c.biomes.map(b => BIOME_NAME[b]).join(' → ')} → ${BOSSES[c.boss] ? BOSSES[c.boss].name : ''})` : 'LÅST – KLARA FÖRRA KAPITLET', dim: !open, color: done ? '#ffd24a' : '',
+      onClick: open ? () => { CardUI.close(); beginCampaign(i); } : undefined };
+  }), () => refreshTitle());
+}
+function beginCampaign(ch) {
+  document.getElementById('title').hidden = true; canvas.focus(); ensureAudio(); practice = null; clearInterval(hubWatch);
+  newRun(RNG.randomSeed(), false); run.campaign = { ch }; run.cmode = ''; P.hp = maxHp();
+  const give = Math.min(WEAPONS.length - 1, 2 + ch * 3); for (let i = 1; i <= give; i++) { P.has[i] = true; P.mags[i] = effMag(i); } // senare kapitel börjar med fler vapen
+  for (const k in AMMO) if (k !== 'none' && k !== 'mana') P.ammo[k] = Math.round(AMMO[k].max * (0.2 + ch * 0.06));
+  run.gold += ch * 60; run.lvl = 1 + ch * 2; run.talentQ = ch * 2; // och med talanger att välja
+  loadFloor(1); lockPointer();
+  openUI(() => CardUI.list(CAMPAIGN[ch].name, '', [{ label: CAMPAIGN[ch].text, text: 'TRYCK FÖR ATT BÖRJA' }], () => { closeUI(); openUI(() => draftUI(drawCards(3 + meta('choice')), { title: CAMPAIGN[ch].name, subtitle: 'VÄLJ ETT STARTKORT', skipLabel: 'INGET KORT' }, card => { gainCard(card); closeUI(); })); }));
+}
+function campaignLevel(depth) {
+  const c = CAMPAIGN[run.campaign.ch];
+  if (depth > c.biomes.length) { const L = Gen.boss(RNG.hash(run.seed + ':kampanj:boss'), { arena: BOSSES[c.boss].arena, boss: c.boss }); L.bossId = c.boss; return L; }
+  return Gen.floor(RNG.hash(run.seed + ':kampanj:' + depth), Math.min(5, 1 + run.campaign.ch + depth - 1), { shop: depth === 2, biome: c.biomes[depth - 1], weapon: null });
+}
+function campaignWon() { // kapitlet klart
+  const ch = run.campaign.ch; profile.campaign = Math.max(campDone(), ch + 1); profile.souls += 40 + ch * 15; saveProfile(); play('win', 0.8);
+  if (profile.campaign >= CAMPAIGN.length) { profile.finaleOpen = true; saveProfile(); }
+  say(ch + 1 >= CAMPAIGN.length ? 'KAMPANJEN ÄR KLAR – KRÖNIKANS SLUT ÄR ÖPPET I LÄGRET!' : `${CAMPAIGN[ch].name} KLART! +${40 + ch * 15} SJÄLAR – NÄSTA KAPITEL ÄR ÖPPET`, 4);
+  setTimeout(() => endRun(true), 1800);
+}
 (async () => {
   const st = document.getElementById('status');
   try {
@@ -7514,7 +7556,7 @@ Object.assign(PROJ_DRAW_V8, {
     fire, useKey, startReload, switchWeapon, floorDone, nextFloor, projectiles: () => projectiles, secrets: () => secrets, keys, setMouse: (d, aim) => { mouseDown = d; aimDown = !!aim; }, pause, resume, hurtPlayer,
     light: () => light, lvl: () => lvl, boss: () => boss, gainCard, startLevel, props: () => props, guardian: () => guardianE, explode, alertEnemy, WEAPONS, mods: () => M, loadFloor, openShop, openChest, profile, showTitle, endRun, hurtEnemy,
     spawnEnemy: (type, x, y) => { const e = makeEnemy(type, x, y); ents.push(e); totalEnemies++; return e; }, portals: () => portals, particles: () => particles, hazards: () => hazards,
-    pet: () => pet, allies: () => allies, beginMaze, beginBossHunt, beginEnemyPractice, beginAbyss, beginHub, lightningAt, bubbles: () => timeBubbles, sawsRef: () => saws, voidAt, solid, hasLOS, freeSpot, mapRef: () => map, enterPortal, killAllCheat: () => { for (const e of ents) if (!e.dead && !e.boss) hurtEnemy(e, 99999, e.x, e.y, { noProc: true }); if (boss && !boss.dead) hurtEnemy(boss, 99999, boss.x, boss.y, { noProc: true }); }, talentPick, gainXp, TALENTS, talent, deepAt, tideHigh, pauseMenu, settings, refreshTitle, checkAch, showStats, levelTime: () => levelTime, showTitles, cmode, shareSeed, soundCue, cues: () => cues, deathMap: () => deathMap, findPage, showChronicle, toggleLamp, throwStone, openGambler, openBanker, openWanderer, visibility, addPropAt, openCampfire, openQuestBoard, giveRune, useAbility, quests: () => quests, drinkPotion, swapPotion, givePotion, givePet, spawnAlly, spawnPortal, dropItem, openAlchemist, openPriest, openPetCage, biomeFor, useProp };
+    pet: () => pet, allies: () => allies, beginMaze, beginBossHunt, beginEnemyPractice, beginAbyss, beginHub, beginCampaign, beginFinale, lightningAt, bubbles: () => timeBubbles, sawsRef: () => saws, voidAt, solid, hasLOS, freeSpot, mapRef: () => map, enterPortal, killAllCheat: () => { for (const e of ents) if (!e.dead && !e.boss) hurtEnemy(e, 99999, e.x, e.y, { noProc: true }); if (boss && !boss.dead) hurtEnemy(boss, 99999, boss.x, boss.y, { noProc: true }); }, talentPick, gainXp, TALENTS, talent, deepAt, tideHigh, pauseMenu, settings, refreshTitle, checkAch, showStats, levelTime: () => levelTime, showTitles, cmode, shareSeed, soundCue, cues: () => cues, deathMap: () => deathMap, findPage, showChronicle, toggleLamp, throwStone, openGambler, openBanker, openWanderer, visibility, addPropAt, openCampfire, openQuestBoard, giveRune, useAbility, quests: () => quests, drinkPotion, swapPotion, givePotion, givePet, spawnAlly, spawnPortal, dropItem, openAlchemist, openPriest, openPetCage, biomeFor, useProp };
   if (params.has('autostart')) begin('new');
 })();
 document.getElementById('start').addEventListener('click', () => startMode('new'));
@@ -7539,6 +7581,7 @@ document.getElementById('mazebtn').addEventListener('click', () => { if (!docume
 document.getElementById('huntbtn').addEventListener('click', () => { if (!document.getElementById('start').disabled) beginBossHunt(); });
 document.getElementById('monthly').addEventListener('click', () => startMode('monthly'));
 document.getElementById('titlesbtn').addEventListener('click', () => showTitles());
+document.getElementById('campaignbtn').addEventListener('click', () => { if (!document.getElementById('start').disabled) showCampaign(); });
 document.getElementById('hubbtn').addEventListener('click', () => { if (!document.getElementById('start').disabled) beginHub(); });
 document.getElementById('abyssbtn').addEventListener('click', () => { if (!document.getElementById('start').disabled) beginAbyss(); });
 document.getElementById('abyssdaily').addEventListener('click', () => { if (!document.getElementById('start').disabled) beginAbyss(true); });
