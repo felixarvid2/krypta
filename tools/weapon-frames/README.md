@@ -102,3 +102,23 @@ node render-static.mjs side harpoon,prism,boomerang
 python3 pack.py xframes ../../ harpoon,prism,boomerang   # övriga poster i js/weapons.js lämnas orörda
 python3 pack.py pick ../../ harpoon,prism,boomerang      # upplockningsbilderna pick_harpoon/_prism/_boomerang
 ```
+
+Version 9: sågbladskastaren (`sawlauncher`), vindbössan (`windgun`) och spjutet (`spear`).
+Sågbladskastaren är Guns&Explosives `GreaseGun` (mässingstonad) med en liggande sågklinga ovanpå (två åttakantiga
+`cyl` vridna 22,5° mot varandra ger tänderna, `name: saw`), en mässingskåpa och en skena. Skjutrutorna döljer klingan och
+`pack.py` ritar klingan som snurrar iväg mot `AIM` (`SAWFLY`); läget `reload` (`extra`) sänker ned en ny klinga ovanifrån:
+`states: {idle:[0], fire:[1..5], reload:[6..9]}`, `dur: {fire, reload}`.
+Vindbössan är Guns&Explosives `Luger` (mässingstonad) med ett mässingsrör, en utsvängd tratt (`cyl` med olika radier,
+`open`) och en blåsbälg av lädersektioner (`name: bellows`) som trycks ihop i skjutrutorna (`partPose scale`); `pack.py` ritar
+luftstöten vid trattmynningen (`GUST`): `states: {idle:[0], fire:[1..5]}`.
+Spjutet är KayKit `spear_A` (CC0) i bumerangens hand (`model: none`, närstrid). `fire` är en stöt framåt, `throw`
+(`melee.extra`) är kastet (armen tar sats, spjutet släpps och döljs) och `empty` är den tomma handen när spjutet ligger
+på marken: `states: {idle:[0], fire:[1..4], throw:[5..8], empty:[9]}`, `dur: {fire, throw, empty}`. `pack.py` tar nu
+även läget `throw` (före `empty`).
+
+```bash
+node render-static.mjs fp sawlauncher,windgun,spear
+node render-static.mjs side sawlauncher,windgun,spear
+python3 pack.py xframes ../../ sawlauncher,windgun,spear   # övriga poster i js/weapons.js lämnas orörda
+python3 pack.py pick ../../ sawlauncher,windgun,spear      # pick_sawlauncher/_windgun/_spear
+```

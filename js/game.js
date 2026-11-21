@@ -362,11 +362,11 @@ const ENEMY_DEFS = {
   'Ā': { name: 'SKUGGJÄGARE', sheet: 'stalker', move: 'movement', hp: 8, speed: 2.5, melee: true, dmg: 14, range: 1.0, cd: 0.9, size: 1.1, growl: 'stalker', score: 300, atkFps: 14, hitAt: 0.5, ai: 'stalker', tip: 'SYNS BARA I LJUS – TÄND LAMPAN' },
   'Ă': { name: 'HÄXA', sheet: 'witch', move: 'movement', hp: 9, speed: 1.1, melee: false, dmg: 5, range: 9, cd: 99, size: 1.05, growl: 'witch', score: 280, atkFps: 10, hitAt: 0.5, ai: 'witch', kite: 5, tip: 'FÖRHÄXAR DIG OCH TELEPORTERAR SIG NÄR HON TRÄFFAS' },
   'ĳ': { name: 'URVERKSSOLDAT', sheet: 'clocksoldier', move: 'movement', hp: 10, speed: 1.15, melee: true, dmg: 11, range: 1.0, cd: 1.1, size: 1.05, growl: 'clocksoldier', score: 260, atkFps: 11, hitAt: 0.55, ai: 'clocksoldier', tip: 'LINDAS UPP IGEN EN GÅNG – SLÅ TILL MEDAN DEN LIGGER' },
-  'Ĵ': { name: 'KUGGSPINDEL', sheet: 'gearspider', move: 'movement', hp: 2.5, speed: 2.5, melee: true, dmg: 5, range: 0.8, cd: 0.7, size: 0.65, growl: 'gearspider', score: 60, atkFps: 14, hitAt: 0.5, ai: 'gearspider', tip: 'KOMMER I GRUPP – SÅGBLAD OCH SPRÄNGMEDEL' },
-  'ĵ': { name: 'TIDSVÄKTARE', sheet: 'timekeeper', move: 'movement', hp: 9, speed: 1.0, melee: false, dmg: 0, range: 9, cd: 99, size: 1.05, growl: 'timekeeper', score: 280, atkFps: 9, hitAt: 0.5, ai: 'timekeeper', kite: 5, tip: 'LÄGGER TIDSBUBBLOR DÄR DU STÅR – RÖR DIG' },
-  'Ķ': { name: 'HARPYA', sheet: 'harpy', move: 'movement', hp: 6, speed: 2.0, melee: true, dmg: 10, range: 1.0, cd: 99, size: 1.0, growl: 'harpy', score: 210, atkFps: 12, hitAt: 0.5, ai: 'harpy', float: true, tip: 'DYKER NED – SIDSTEG NÄR DEN KOMMER' },
+  'Ĵ': { name: 'KUGGSPINDEL', sheet: 'gearspider', move: 'movement', hp: 2.5, speed: 2.5, melee: true, dmg: 5, range: 0.8, cd: 0.7, size: 0.6, growl: 'gearspider', score: 60, atkFps: 14, hitAt: 0.5, ai: 'gearspider', tip: 'KOMMER I GRUPP – SÅGBLAD OCH SPRÄNGMEDEL' },
+  'ĵ': { name: 'TIDSVÄKTARE', sheet: 'timekeeper', move: 'movement', hp: 9, speed: 1.0, melee: false, dmg: 0, range: 9, cd: 99, size: 0.95, growl: 'timekeeper', score: 280, atkFps: 9, hitAt: 0.5, ai: 'timekeeper', kite: 5, tip: 'LÄGGER TIDSBUBBLOR DÄR DU STÅR – RÖR DIG' },
+  'Ķ': { name: 'HARPYA', sheet: 'harpy', move: 'movement', hp: 6, speed: 2.0, melee: true, dmg: 10, range: 1.0, cd: 99, size: 0.95, growl: 'harpy', score: 210, atkFps: 12, hitAt: 0.5, ai: 'harpy', float: true, tip: 'DYKER NED – SIDSTEG NÄR DEN KOMMER' },
   'ķ': { name: 'STORMKALLARE', sheet: 'stormcaller', move: 'movement', hp: 8, speed: 1.0, melee: false, dmg: 9, range: 10, cd: 99, size: 1.05, growl: 'stormcaller', score: 290, atkFps: 10, hitAt: 0.5, ai: 'stormcaller', kite: 6, tip: 'BLIXTEN SLÅR NED DÄR MARKEN GLÖDER' },
-  'ĸ': { name: 'MOLNJÄTTE', sheet: 'cloudgiant', move: 'movement', hp: 36, speed: 0.7, melee: true, dmg: 18, range: 1.4, cd: 1.6, size: 1.4, growl: 'cloudgiant', score: 500, atkFps: 9, hitAt: 0.6, ai: 'cloudgiant', tip: 'BLÅSER DIG MOT KANTEN – HÅLL DIG FRÅN TOMRUMMET' },
+  'ĸ': { name: 'MOLNJÄTTE', sheet: 'cloudgiant', move: 'movement', hp: 36, speed: 0.7, melee: true, dmg: 18, range: 1.4, cd: 1.6, size: 1.25, growl: 'cloudgiant', score: 500, atkFps: 9, hitAt: 0.6, ai: 'cloudgiant', tip: 'BLÅSER DIG MOT KANTEN – HÅLL DIG FRÅN TOMRUMMET' },
   'Ü': { name: 'IRRBLOSS', sheet: 'wisp', move: 'movement', hp: 3, speed: 2.2, melee: true, dmg: 0, range: 1.0, cd: 1, size: 0.8, growl: 'wisp', score: 120, atkFps: 12, hitAt: 0.5, ai: 'wisp', tip: 'SPRÄNGS I FROST – HÅLL AVSTÅND' },
   S: { name: 'SKELETT', sheet: 'skeleton1', move: 'movement', hp: 5, speed: 1.35, melee: true, dmg: 9, range: 0.95, cd: 0.9, size: 1.0, growl: 'growl', score: 100, atkFps: 14, hitAt: 0.55 },
   K: { name: 'ELDSKELETT', sheet: 'skeleton2', move: 'movemen', hp: 6, speed: 0.95, melee: false, dmg: 8, range: 8.5, cd: 1.8, size: 1.05, growl: 'hiss', score: 150, atkFps: 12, hitAt: 0.5 },
@@ -389,8 +389,8 @@ const BOSSES = {
   frost: { title: 'VINTERNS HJÄRTA', name: 'ISDRAKEN', hp: 330, speed: 1.0, size: 2.4, dmg: 18, range: 2.2, arena: 'frost', phaseMsg: ['ISDRAKEN KALLAR PÅ STORMEN', 'ISDRAKEN BLIR KALLARE ÄN DÖDEN!'] },
   flame: { title: 'VULKANENS HJÄRTA', name: 'ELDKUNGEN', hp: 360, speed: 1.05, size: 3.0, dmg: 19, range: 2.3, arena: 'volcano', phaseMsg: ['ELDKUNGEN TÄNDER MARKEN', 'ELDKUNGEN RASAR – ALLT BRINNER!'] },
   monk: { secret: true, title: 'KRÖNIKANS SLUT', name: 'DEN FÖRSTE MUNKEN', hp: 760, speed: 1.1, size: 3.8, dmg: 18, range: 2.2, arena: 'hall', phaseMsg: ['MUNKEN BÄR KRISTALLENS ANSIKTE', 'MUNKEN KALLAR PÅ STORMEN – DET SISTA KAPITLET!'] },
-  clockmaker: { title: 'TIDENS HERRE', name: 'URMAKAREN', hp: 440, speed: 0.9, size: 3.8, dmg: 16, range: 2.0, arena: 'clock', phaseMsg: ['URMAKAREN DRAR UPP URVERKET', 'URMAKAREN RASAR – TIDEN SPRICKER!'] },
-  thunderbird: { title: 'STORMENS VINGAR', name: 'STORMFÅGELN', hp: 460, speed: 1.6, size: 4.0, dmg: 20, range: 2.4, arena: 'sky', phaseMsg: ['STORMFÅGELN KALLAR PÅ ÅSKAN', 'STORMFÅGELN RASAR – HIMLEN BRINNER!'] },
+  clockmaker: { title: 'TIDENS HERRE', name: 'URMAKAREN', hp: 440, speed: 0.9, size: 4.0, dmg: 16, range: 2.0, arena: 'clock', phaseMsg: ['URMAKAREN DRAR UPP URVERKET', 'URMAKAREN RASAR – TIDEN SPRICKER!'] },
+  thunderbird: { title: 'STORMENS VINGAR', name: 'STORMFÅGELN', hp: 460, speed: 1.6, size: 4.4, dmg: 20, range: 2.4, arena: 'sky', phaseMsg: ['STORMFÅGELN KALLAR PÅ ÅSKAN', 'STORMFÅGELN RASAR – HIMLEN BRINNER!'] },
   crystalqueen: { title: 'SPEGLARNAS HÄRSKARINNA', name: 'KRISTALLDROTTNINGEN', hp: 420, speed: 1.1, size: 4.2, dmg: 16, range: 2.0, arena: 'crystal', phaseMsg: ['DROTTNINGEN SPLITTRAS – SKÄRVORNA VAKNAR', 'DROTTNINGEN BRINNER AV LJUS!'] },
   leviathan: { title: 'DJUPETS FASA', name: 'LEVIATAN', hp: 480, speed: 0.6, size: 4.2, dmg: 20, range: 2.6, arena: 'sunken', phaseMsg: ['LEVIATAN KALLAR PÅ DJUPET', 'LEVIATAN RASAR – HAVET STIGER!'] },
   pharaoh: { title: 'SANDENS HERRE', name: 'FARAONEN', hp: 380, speed: 1.0, size: 3.8, dmg: 18, range: 2.2, arena: 'tomb', phaseMsg: ['FARAONEN VÄCKER SINA TJÄNARE', 'FARAONEN RASAR – SANDEN STIGER!'] },
@@ -490,6 +490,7 @@ const NEW_ENEMIES = ['U', 'X', 'Y', '!', '@', '^', '+', 'Å', 'Ä', 'Ö', 'É', 
 async function loadEnemySheet(k, d) {
   const sets = {};
   for (const [st, file] of [['idle', 'idle'], ['move', d.move], ['attack', 'attack'], ['pain', 'take_damage'], ['death', 'death']]) { const img = await load(`${A}gfx/enemies-${d.sheet}_${file}.png`); sets[st] = strip(img, Math.max(1, Math.round(img.width / (d.fw || img.height)))); } // kvadratiska rutor
+  if (d.ai === 'clocksoldier') { try { const img = await load(`${A}gfx/enemies-${d.sheet}_rewind.png`); sets.rewind = strip(img, Math.max(1, Math.round(img.width / (d.fw || img.height)))); } catch (e) { /* valfri */ } }
   enemyFrames[k] = sets;
 }
 const BOSS_FW = { flame: 0 }; // bossrutornas bredd när de inte är kvadratiska
@@ -599,7 +600,7 @@ async function loadAll(setStatus) {
   for (const k of ['potion_heal', 'potion_rage', 'potion_ghost', 'potion_speed', 'potion_ice', 'potion_unknown']) { try { const im = await load(`${A}gfx/${k}.png`); spr[k] = pixels(im); hudImg[k] = im; } catch (e) { /* valfri */ } }
   try { fx.crateBits = strip(await load(A + 'gfx/prop_crate_broken.png'), 4); } catch (e) { fx.crateBits = null; }
   fx.parts = {}; // biompartiklar (tools/props/make.py); saknas en används träffgnistan
-  for (const [n, k] of [['gear', 2], ['spark2', 2], ['feather', 2], ['wind', 3], ['lightning', 2], ['cloud', 2], ['bubble', 2], ['shard', 2], ['splash_big', 4], ['prismbeam', 1], ['note', 2], ['ink', 2], ['harpoonrope', 1], ['knife', 1], ['bandage', 2], ['sand', 2], ['smoke2', 4], ['beam', 1], ['dust_mote', 1], ['nail', 1], ['arrow', 1], ['lightning', 4], ['ashfall', 2], ['lavadrop', 2], ['heat', 1], ['snow', 2], ['footprint', 1], ['breath', 2], ['icicle', 1], ['flame', 4], ['blood_trail', 2], ['eye', 1], ['leaf', 4], ['firefly', 2], ['drop', 1], ['rain', 1], ['fog', 1], ['bat', 4], ['ember', 2], ['dust', 1], ['wisp', 4], ['shell', 1], ['blood_pool', 3],
+  for (const [n, k] of [['gear', 2], ['spark2', 2], ['feather', 2], ['wind', 3], ['lightning2', 2], ['cloud', 2], ['bubble', 2], ['shard', 2], ['splash_big', 4], ['prismbeam', 1], ['note', 2], ['ink', 2], ['harpoonrope', 1], ['knife', 1], ['bandage', 2], ['sand', 2], ['smoke2', 4], ['beam', 1], ['dust_mote', 1], ['nail', 1], ['arrow', 1], ['lightning', 4], ['ashfall', 2], ['lavadrop', 2], ['heat', 1], ['snow', 2], ['footprint', 1], ['breath', 2], ['icicle', 1], ['flame', 4], ['blood_trail', 2], ['eye', 1], ['leaf', 4], ['firefly', 2], ['drop', 1], ['rain', 1], ['fog', 1], ['bat', 4], ['ember', 2], ['dust', 1], ['wisp', 4], ['shell', 1], ['blood_pool', 3],
     ['gib', 4], ['spore', 2], ['webshot', 1], ['scorch', 1], ['hole', 2], ['ash', 2], ['smoke', 4], ['ice', 3], ['gas', 2], ['skull', 2], ['log', 2], ['rock', 1], ['shadow', 1], ['zzz', 1], ['star', 1], ['meteor', 2]]) {
     try { fx.parts[n] = strip(await load(`${A}gfx/part_${n}.png`), k); } catch (e) { /* valfri */ }
   }
@@ -1583,6 +1584,7 @@ function project(wx, wy, z) {
 function enemyFrame(e) {
   const set = enemyFrames[e.type];
   let key = 'move', n = 0;
+  if (e.rewindT > 0 && set.rewind) return set.rewind[Math.min(set.rewind.length - 1, Math.floor((1 - e.rewindT / 2.2) * set.rewind.length))]; // urverkssoldaten lindas upp
   if (e.dead) { key = 'death'; n = Math.min(set.death.length - 1, Math.floor(e.t * 12)); }
   else if (e.state === 'pain') { key = 'pain'; n = Math.min(set.pain.length - 1, Math.floor(e.t * 14)); }
   else if (e.state === 'attack') { key = 'attack'; n = Math.min(set.attack.length - 1, Math.floor(e.t * e.d.atkFps)); }
@@ -1632,7 +1634,8 @@ function weaponFrame() { // bildruta och förskjutning: vapnet sticker rakt fram
   let idx = st.idle[0], dx = 0, dy = 0;
   if (WS.shot < f.dur.fire) idx = pick(st.fire, WS.shot / f.dur.fire);
   else if (st.draw && WS.draw > 0) idx = pick(st.draw, WS.draw * 0.999); // bågen spänns
-  else if (st.empty && wp.boomerang && P.mags[P.weapon] <= 0) idx = st.empty[0]; // bumerangen är i luften
+  else if (st.throw && wp.spear && (WS.spearT || 0) > 0) idx = pick(st.throw, clamp(1 - WS.spearT / 0.35, 0, 0.999)); // spjutet kastas
+  else if (st.empty && (wp.boomerang || wp.spear) && P.mags[P.weapon] <= 0) idx = st.empty[0]; // bumerangen i luften, spjutet på marken
   else if (st.reload && WS.state === 'reload' && !wp.shellReload) idx = pick(st.reload, clamp(WS.t / (wp.reload * reloadMul()), 0, 0.999)); // egna omladdningsrutor
   else if (st.charge && WS.hcharge > 0) { idx = pick(st.charge, Math.min(1, WS.hcharge) * 0.999); if (WS.hcharge >= 0.7 && !settings.reduceMotion) dx += Math.sin(tmr * 40) * 1.2; } // hammaren lyfts och darrar
   const kt = WS.shot / 0.16; // rekyl: knyck nedåt och tillbaka
@@ -1820,7 +1823,7 @@ function drawHUD() {
   if (WS.nameT > 0 && state === 'play') { const w = WEAPONS[P.weapon], nm = w.name; txt(nm, (W - textW(nm)) / 2, VH - 24, '#ffd24a', 1, true, Math.min(1, WS.nameT * 2));
     const info = `SKADA ${Math.round(w.dmg * (w.pellets || 1) * 10)} · ${w.melee ? 'NÄRSTRID' : (1 / w.delay).toFixed(1) + ' SKOTT/S'}${wlvl(w.id) ? ' · NIVÅ ' + wlvl(w.id) : ''}`; txt(info, (W - textW(info)) / 2, VH - 14, '#c9a87a', 1, true, Math.min(1, WS.nameT * 2)); }
   if (WS.boost && state === 'play') txt('+15%', W / 2 + 12, HORIZON - 14, '#9fe060', 1, true, 0.8);
-  if (state === 'play') { drawBowAim(g); drawStaffCharge(g); drawAbilityHud(g); drawTutorial(g); drawHammerCharge(g); drawStealthHud(g); drawLampHud(g); drawCues(g); drawMazeTimer(g); drawXpHud(g); drawAirHud(g); drawTimeHud(g); }
+  if (state === 'play') { drawBowAim(g); drawStaffCharge(g); drawAbilityHud(g); drawTutorial(g); drawHammerCharge(g); drawStealthHud(g); drawLampHud(g); drawCues(g); drawMazeTimer(g); drawXpHud(g); drawAirHud(g); drawTimeHud(g); drawDpsHud(g); }
   if (state === 'play') drawHudExtras(g);
   if (wheel && !wheel.open && performance.now() - wheel.t0 > 260) wheel.open = true;
   if (wheel && wheel.open && state === 'play') drawWheel(g);
@@ -2413,6 +2416,7 @@ function autoSwitch() {
 // opt: { crit, noProc (ingen explosion/brand), source }
 function hurtEnemy(e, dmg, hx, hy, opt = {}) {
   if (e.dead || e.dying || e.hidden) return false;
+  if (e.dummy) { dpsLog.push({ t: tmr, d: dmg }); e.flash = 0.1; spawnNumber ? spawnNumber(e.x, e.y, dmg, opt.crit) : 0; return false; } // provdockan tar ingen skada men räknar
   if (Math.random() < mod('clockSlow')) e.slow = Math.max(e.slow || 0, 2);
   const wasUnaware = !e.alert && !e.dormant && !opt.noProc;
   if (e.eshield > 0) { const a = Math.min(e.eshield, dmg); e.eshield -= a; dmg -= a; e.flash = 0.08; if (e.eshield <= 0) { play('ricochet', 0.7, 0.6, { x: e.x, y: e.y }); say('SKÖLDEN BRAST', 1); } if (dmg <= 0) { alertEnemy(e, true); spawnNumber(e.x, e.y, a, false); return false; } }
@@ -5187,6 +5191,7 @@ function wakeMimic(e) {
 function updateEnemy(e, dt) {
   e.t += dt; e.flash = Math.max(0, e.flash - dt); e.spotT = Math.max(0, (e.spotT || 0) - dt);
   if (e.dead) return;
+  if (e.dummy) { e.state = e.flash > 0 ? 'pain' : 'idle'; e.alert = false; e.burn = 0; e.poison = 0; e.knock = null; e.x = e.hx; e.y = e.hy; return; } // skjutbanans provdocka
   if (e.dormant) { e.state = 'idle'; if (e.hp < e.maxHp || Math.hypot(P.x - e.x, P.y - e.y) < (e.type === 'Ö' ? 3 : 1.15)) wakeMimic(e); return; } // mimicen väntar som en kista, gargoylen som en staty
   if (e.frozen > 0) { statusTick(e, dt); e.state = 'pain'; e.t = 0; return; }
   statusTick(e, dt); if (e.dead) return;
@@ -7175,6 +7180,7 @@ function hubLevel() {
   for (const [x, y] of [[7, 7], [19, 7], [7, 12], [19, 12]]) m[y][x] = '4'; // pelare
   for (const [x, y] of [[2, 3], [24, 3], [2, 16], [24, 16], [10, 15], [16, 15]]) m[y][x] = 'c'; // ljus
   m[10][3] = 'Ĥ'; m[10][8] = 'Ħ'; m[10][13] = 'Ĭ'; m[10][18] = 'Ĩ'; m[10][23] = 'Ī'; m[13][4] = 'Ů'; // figurerna
+  for (const [x, y] of [[21, 14], [23, 15], [22, 16]]) m[y][x] = '.'; // skjutbanan
   const won = BOSS_IDS.filter(id => (profile.bossWins || {})[id]); won.forEach((id, i) => { const x = 3 + i * 3; if (x < Wd - 2) m[Hd - 2][x] = 'u'; }); // en staty per besegrad boss
   m[15][13] = 'P';
   return { map: m.map(r => r.join('')), name: 'LÄGRET', biome: 'dungeon', floor: 'floor_stone_pattern', ceil: 'floor_wood_planks', fog: [26, 18, 12], ambient: 0.9, rooms: [], hub: true };
@@ -7185,7 +7191,9 @@ function beginHub() {
   startLevel(hubLevel()); levelBanner = 2.5; run.depth = 0;
   const modes = HUB_MODES.filter(([id]) => (id !== 'continue' || store.get(runKey(), null)) && (id !== 'finale' || pagesFound().length >= CHRONICLE.length || profile.finaleOpen));
   modes.forEach(([id], i) => { const x = 13.5 + (i - (modes.length - 1) / 2) * 3.6; spawnPortal(x, 3.2, 'mode'); const p = portals[portals.length - 1]; p.mode = id; p.armed = true; });
-  msgs.length = 0; say('LÄGRET – GÅ IN I EN PORTAL FÖR ATT BÖRJA', 3); lockPointer();
+  for (const [x, y] of [[21.5, 14.5], [23.5, 15.5], [22.5, 16.5]]) { const e = makeEnemy('S', x, y); e.dummy = true; e.hx = x; e.hy = y; e.hp = e.maxHp = 1e9; e.d = { ...e.d, name: 'PROVDOCKA', speed: 0 }; ents.push(e); } // skjutbanan
+  dpsLog = []; for (let i = 1; i < WEAPONS.length; i++) if (P.has[i] || (profile.wkills || {})[WEAPONS[i].id]) { P.has[i] = true; P.mags[i] = effMag(i); } for (const k in AMMO) if (k !== 'none' && k !== 'mana') P.ammo[k] = AMMO[k].max; // prova vapnen du har använt
+  msgs.length = 0; say('LÄGRET – GÅ IN I EN PORTAL FÖR ATT BÖRJA. SKJUTBANAN FINNS TILL HÖGER.', 3); lockPointer();
   clearInterval(hubWatch); hubWatch = setInterval(() => { if (!run || !run.hub) { clearInterval(hubWatch); return; } if (state === 'ui' && !CardUI.isOpen()) { closeUI('play'); document.getElementById('title').hidden = true; } }, 200);
 }
 function hubEnter(mode) { // portalerna i lägret
@@ -7234,6 +7242,12 @@ function beginFinale() {
   say('DEN SISTA SIDAN. DEN FÖRSTA MUNKEN VÄNTAR.', 4);
 }
 function finaleWon() { profile.finaleWon = (profile.finaleWon || 0) + 1; profile.souls += 150; saveProfile(); say('KRÖNIKAN ÄR SLUT. +150 SJÄLAR', 4); setTimeout(() => endRun(true), 1500); }
+let dpsLog = [];
+function drawDpsHud(g) { // skjutbanans mätare
+  if (!run || !run.hub || !dpsLog.length) return; dpsLog = dpsLog.filter(x => tmr - x.t < 5); if (!dpsLog.length) return;
+  const sum = dpsLog.reduce((a, x) => a + x.d, 0), span = Math.max(1, Math.min(5, tmr - dpsLog[0].t)), t = `SKADA PER SEKUND: ${Math.round(sum / span)} · ${WEAPONS[P.weapon].name}`;
+  txt(t, (W - textW(t)) / 2, 30, '#ffd24a', 1, true);
+}
 function hubHint(p, d) { if (d < 2.5 && p.kind === 'mode') { const m = HUB_MODES.find(x => x[0] === p.mode); hint = 'PORTAL → ' + (m ? m[1] : p.mode); return true; } return false; }
 // ---------- Version 9: sågbladskastaren, vindbössan och spjutet ----------
 function sawFire(wp, base) {
@@ -7365,7 +7379,7 @@ function updateV9(dt) {
   for (const s of strikes) { s.t -= dt;
     if (s.t > 0) { if (!settings.lowfx && Math.random() < dt * 25) particles.push({ x: s.x + rnd(-0.5, 0.5), y: s.y + rnd(-0.5, 0.5), z: 0.02, vx: 0, vy: 0, vz: 0.6, life: 0.25, maxLife: 0.25, img: fx.hit[1], size: 0.06, add: true, tint: [200, 220, 255] }); continue; }
     s.done = true; flashes.push({ x: s.x, y: s.y, t: 0.15, r: 6, col: [200, 220, 255] }); play('thunder_strike', 0.9, rnd(0.9, 1.1), { x: s.x, y: s.y }); P.shake = Math.max(P.shake, 1.2 * clamp(1 - Math.hypot(P.x - s.x, P.y - s.y) / 10, 0, 1));
-    for (let i = 0; i < 10; i++) particles.push({ x: s.x, y: s.y, z: i * 0.15, vx: rnd(-0.3, 0.3), vy: rnd(-0.3, 0.3), vz: 0, life: 0.2, maxLife: 0.2, img: fx.parts.lightning ? fx.parts.lightning[i % fx.parts.lightning.length] : fx.hit[1], size: 0.12, add: true, tint: [220, 230, 255] });
+    for (let i = 0; i < 10; i++) particles.push({ x: s.x, y: s.y, z: i * 0.15, vx: rnd(-0.3, 0.3), vy: rnd(-0.3, 0.3), vz: 0, life: 0.2, maxLife: 0.2, img: (fx.parts.lightning2 || fx.parts.lightning || fx.hit)[i % (fx.parts.lightning2 || fx.parts.lightning || fx.hit).length], size: 0.12, add: true, tint: [220, 230, 255] });
     if (s.friendly) { for (const e of ents) if (!e.dead && Math.hypot(e.x - s.x, e.y - s.y) < 1.6) hurtEnemy(e, s.dmg, e.x, e.y, { boom: true }); }
     else if (Math.hypot(P.x - s.x, P.y - s.y) < 1.1) { run.cause = 'BLIXTEN'; hurtPlayer(s.dmg * Math.max(0, 1 - mod('lightningResist')), s.x, s.y, 'proj'); } }
   strikes = strikes.filter(s => !s.done);

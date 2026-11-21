@@ -8,6 +8,9 @@
 # Version 8: harpungevär (harpoon, extra läget reload, repet till harpunen ritas in i skjutrutorna), bumerang (boomerang,
 #   en hand av enkla former, extra läget empty = tom hand) och prisma (prism, ljusblixten vid kristallen ritas in).
 #   Källor: Guns&Explosives Shotgun och Suomi_KP, KayKit spear_A (CC0), övrigt enkla former i static.html.
+# Version 9: sågbladskastaren (sawlauncher, extra läget reload, klingan som flyger iväg ritas in i skjutrutorna), vindbössan
+#   (windgun, luftstöten vid trumpeten ritas in) och spjutet (spear, närstrid med handen; extra lägena throw = kast och
+#   empty = tom hand). Källor: Guns&Explosives GreaseGun och Luger, KayKit spear_A (CC0), övrigt enkla former.
 import json, re, sys
 import numpy as np
 from PIL import Image
@@ -18,16 +21,19 @@ VW,VH=320,166
 TARGET={'pistol':(84,178,24),'shotgun':(112,196,40),'rifle':(112,184,42),'smg':(98,178,32),
         'dbshotgun':(110,194,40),'crossbow':(66,166,14),'flaregun':(80,180,22),'sniper':(118,186,46),
         'flamer':(104,226,34),'launcher':(100,188,30),'nailgun':(96,210,22),'musket':(128,196,40),
-        'harpoon':(124,198,40),'prism':(118,196,40)}  # höjd i px, mittpunkt x, hur mycket som skärs av nedtill
-HARD={'axe','flamer','launcher','nailgun','staff','bow','knives','hammer','musket','harpoon','boomerang','prism'}   # version 5 och 6: hel eller ingen täckning per pixel
+        'harpoon':(124,198,40),'prism':(118,196,40),'sawlauncher':(118,198,34),'windgun':(118,206,26)}  # höjd i px, mittpunkt x, hur mycket som skärs av nedtill
+HARD={'axe','flamer','launcher','nailgun','staff','bow','knives','hammer','musket','harpoon','boomerang','prism','sawlauncher','windgun','spear'}   # version 5 och 6: hel eller ingen täckning per pixel
 MUZZLE_IDLE={'bow'}
 PICK={'nailgun':(48,'w'),'staff':(48,'w',-90),'bow':(46,'w',90,'string'),'axe':(44,'w',90),'flamer':(54,'w'),'launcher':(46,'w'),
-      'knives':(24,'h',0,'fan'),'hammer':(44,'w',90),'musket':(60,'w'),'harpoon':(58,'w'),'boomerang':(22,'w'),'prism':(54,'w')}  # upplockningsbildens storlek (höjd eller bredd i px)
+      'knives':(24,'h',0,'fan'),'hammer':(44,'w',90),'musket':(60,'w'),'harpoon':(58,'w'),'boomerang':(22,'w'),'prism':(54,'w'),
+      'sawlauncher':(50,'w'),'windgun':(46,'w'),'spear':(60,'w',-90)}  # upplockningsbildens storlek (höjd eller bredd i px)
 
 
 SMOKE={'musket':[(0,5),(1,10),(2,14),(3,17),(4,18),(5,17)]}   # version 7: rökpuff vid mynningen per skjutruta (steg, radie i px)
 ROPE={'harpoon':[0.45,1.0,1.0,0.9,None]}          # version 8: repet från mynningen mot siktet (andel av sträckan, None = inget)
 FLASH={'prism':[(0,14),(1,10),(2,6),None]}        # version 8: prismans ljusblixt (steg, radie i px)
+SAWFLY={'sawlauncher':[None,0.3,0.7,None,None]}     # version 9: klingan på väg mot siktet (andel av sträckan, None = ingen)
+GUST={'windgun':[(0,12),(1,19),(2,26),(3,31),None]}  # version 9: vindbössans luftstöt (steg, radie i px)
 AIM=(176,50)                                        # dit harpunen flyger (strax ovanför och till höger om siktet)
 OUTC=(37,19,26)
 
@@ -110,6 +116,29 @@ def flash_draw(d,mx,my,st,X0,Y0,i):
     d.ellipse((mx-c-1,my-c-1,mx+c+1,my+c+1),fill=(200,230,255,255)); d.ellipse((mx-c+1,my-c+1,mx+c-1,my+c-1),fill=(255,255,255,255))
 
 
+def saw_draw(d,mx,my,k,X0,Y0,i):
+    """Version 9: sågklingan som snurrar iväg mot siktet och krymper med avståndet."""
+    ax,ay=AIM[0]-X0,AIM[1]-Y0; px,py=mx+(ax-mx)*k,my+(ay-my)*k; r=max(3.0,11*(1-k)+3)
+    for j in range(3):   # fartstrimmor bakom klingan
+        a=np.arctan2(my-py,mx-px)+(j-1)*0.35; d.line([(px+np.cos(a)*r,py+np.sin(a)*r),(px+np.cos(a)*(r+6+4*k),py+np.sin(a)*(r+6+4*k))],fill=(236,240,248,255),width=1)
+    pts=[(px+np.cos(t)*(r if j%2==0 else r*0.8),py+np.sin(t)*(r if j%2==0 else r*0.8)*0.8) for j,t in enumerate(np.linspace(0,6.283,17)[:-1]+i)]
+    d.polygon([(x+(1 if x>px else -1),y+(1 if y>py else -1)) for x,y in pts],fill=OUTC+(255,)); d.polygon(pts,fill=(200,204,214,255))
+    d.ellipse((px-r*0.6,py-r*0.48,px+r*0.6,py+r*0.48),fill=(150,156,170,255)); d.ellipse((px-r*0.25,py-r*0.2,px+r*0.25,py+r*0.2),fill=(200,150,60,255))
+    d.arc((px-r*0.8,py-r*0.64,px+r*0.8,py+r*0.64),200,280,fill=(255,255,255,255))
+
+
+def gust_draw(d,mx,my,st,X0,Y0,i):
+    """Version 9: vindbössans luftstöt: ringar som vidgas framför trumpeten och strimmor ut åt sidorna."""
+    k,r=st; rings=[(r,(236,246,255)),(r*0.6,(196,222,246))] if k<3 else [(r,(196,222,246))]
+    for j in range(8):
+        a=j/8*6.283+0.4; r0,r1=r*0.7,r*1.15
+        d.line([(mx+np.cos(a)*r0,my+np.sin(a)*r0*0.75),(mx+np.cos(a)*r1,my+np.sin(a)*r1*0.75)],fill=OUTC+(255,),width=3)
+        d.line([(mx+np.cos(a)*r0,my+np.sin(a)*r0*0.75),(mx+np.cos(a)*r1,my+np.sin(a)*r1*0.75)],fill=(236,246,255,255),width=1)
+    for rr,c in rings:
+        d.ellipse((mx-rr,my-rr*0.75,mx+rr,my+rr*0.75),outline=OUTC+(255,),width=4)
+        d.ellipse((mx-rr+1,my-rr*0.75+1,mx+rr-1,my+rr*0.75-1),outline=c+(255,),width=2)
+
+
 def fan_pick(im):
     """Upplockningsbilden för kastknivarna: tre knivar i en solfjäder kring handtagen (bladen uppåt)."""
     W,H=im.size; S=H*3; c=Image.new('RGBA',(S,S)); px,py=S//2,S//2+H//2
@@ -150,7 +179,7 @@ if ONLY:
 for w,st in d.items():
     if ONLY and w not in ONLY: continue
     files=[]; states={}
-    for s in ['idle','fire']+[k for k in ('draw','charge','reload','empty') if k in st]:   # version 6: draw, 7: charge, 8: reload/empty
+    for s in ['idle','fire']+[k for k in ('draw','charge','reload','throw','empty') if k in st]:   # version 6: draw, 7: charge, 8: reload/empty, 9: throw
         states[s]=[]
         for fr in st[s]: states[s].append(len(files)); files.append(fr)
     ims=[Image.open(f['f']).convert('RGBA') for f in files]
@@ -177,6 +206,10 @@ for w,st in d.items():
         atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(ROPE[w]),lambda m,k:(min(m[0],AIM[0])-6,min(m[1],AIM[1])-10,max(m[0],AIM[0])+6,m[1]),rope_draw)
     if w in FLASH:
         atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(FLASH[w]),lambda m,st:(m[0]-st[1]-2,m[1]-st[1]-2,m[0]+st[1]+2,m[1]+st[1]),flash_draw)
+    if w in SAWFLY:
+        atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(SAWFLY[w]),lambda m,k:(min(m[0],AIM[0])-16,min(m[1],AIM[1])-14,max(m[0],AIM[0])+16,m[1]),saw_draw)
+    if w in GUST:
+        atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(GUST[w]),lambda m,st:(m[0]-st[1]-3,m[1]-st[1]-3,m[0]+st[1]+3,m[1]),gust_draw)
     atlas.save(OUT+f'assets/gfx/fp_{w}.png',optimize=True)
     if w in MUZZLE_IDLE: mz=[mz[0] if i in states['fire'] else m for i,m in enumerate(mz)]   # bågen: utan pil räknas mynningen från vilobilden
     out[w]={'x':x,'y':y,'w':fw,'h':fh,'states':states,'muzzle':mz,'dur':{'fire':round(st['fire_dur'],3),**{k:round(v,3) for k,v in st.get('durs',{}).items()}}}
