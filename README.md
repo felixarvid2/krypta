@@ -1310,7 +1310,18 @@ Version 8 gör spelet större med två biomer, ett talangsystem, ett nytt läge 
 - Varje våning är svårare än den förra, och det kommer en boss var sjätte våning.
 - Djupaste våningen sparas som rekord.
 
+**Lägret**
+- Ett gångbart nav mellan rundorna (knappen LÄGRET).
+- Portaler leder till Ny runda, Dagens runda, Avgrunden, Dagens avgrund, Labyrinten, Bossjakten och Fortsätt.
+- Figurerna ger själaaltaret, kortarkivet med bestiarium och statistik, upplåsningar, övning och krönikan.
+- Det står en staty för varje boss du har besegrat.
+
 **Mer**
+- Dagens avgrund: samma frö för alla en dag, med topplista.
+- Våningshändelserna Visdomens natt, Resonans (kristall) och Stormflod (sjunken stad).
+- Själaaltaret: Visdomen, Ödets tärning och Förberedelsen.
+- Handkontrollen styr alla menyer.
+- Förstagångstips för de nya systemen.
 - Kartografen säljer kartor och hemligheter.
 - Den nya klassen Dykaren.
 - 24 nya kort och två nya set: Djupets väg och Prismans väg.
