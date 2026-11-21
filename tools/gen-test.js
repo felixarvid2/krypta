@@ -12,37 +12,56 @@
 // utseenden), de nya tecknen (vapen ô û ï, fiender Ã Õ Ê Î Ô, sarkofag ², larmklocka ³, NPC:er ç ÿ ý, föremål þ ¼ ½, kvicksand ¯,
 // rullstensutlösare ¹ med level.boulders, ljusschakt level.beams, väggar È Ì Ù) bara där de får finnas, taken, att kvicksanden
 // aldrig är enda vägen (¯ som vägg) och att rullstenens korridor är rak och fri.
+// Version 8: kristallgrottorna och den sjunkna staden (75 banor + 150 med spelets opts per biom), arenorna 'crystal' och 'sunken',
+// väktarna crystalqueen och leviathan i alla biomer, de nya tecknen (vapen À Á Â, fiender Ë Í Ï Ó Ú Û Ā Ă, väggar Ą Ć Ĉ Ċ Č Ď, vatten Đ,
+// spikar Ē, tidvatten Ĕ med level.tide, kristaller Ė Ę, vrakkistor Ě, luftbubblor Ĝ, kartografen Ğ, talangaltare Ġ, kunskapsböcker Ģ)
+// bara där de får finnas, taken, att vatten/spikar/tidvatten aldrig är enda vägen (utom vattenskatten), ålar bara i vattnet, och
+// frö-stabilitet: 300 banor med en gammal biom (och 300 utan opts.biome) jämförs med gen.js från version 7 (git-objektet GEN_V7_REF,
+// eller filen i GEN_OLD): samma karta utom de nya sakerna ovanpå.
 // --show visar en bana per biom/arena.
 const fs = require('fs');
 const path = require('path');
 global.window = global;
-for (const f of ['rng.js', 'gen.js']) {
-  // eval i global scope så att window.RNG / window.Gen hamnar på global
-  (0, eval)(fs.readFileSync(path.join(__dirname, '..', 'js', f), 'utf8'));
-}
+// eval i global scope så att window.RNG / window.Gen hamnar på global
+(0, eval)(fs.readFileSync(path.join(__dirname, '..', 'js', 'rng.js'), 'utf8'));
+// version 7 av generatorn (för frö-stabiliteten): GEN_OLD=sökväg, annars ur git (commit där gen.js senast var version 7)
+const GEN_V7_REF = process.env.GEN_V7_REF || 'cf1ddaca4d35703316bf04aa9e2b4698611a1baa';
+let OldGen = null, oldGenErr = '';
+try {
+  const src = process.env.GEN_OLD ? fs.readFileSync(process.env.GEN_OLD, 'utf8')
+    : require('child_process').execFileSync('git', ['show', GEN_V7_REF + ':js/gen.js'], { cwd: path.join(__dirname, '..'), encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 1 << 26 });
+  (0, eval)(src); OldGen = global.Gen; global.Gen = undefined;
+} catch (e) { oldGenErr = String(e.message || e).split('\n')[0]; }
+(0, eval)(fs.readFileSync(path.join(__dirname, '..', 'js', 'gen.js'), 'utf8'));
 
 let failures = 0;
 const fail = msg => { failures++; if (failures <= 25) console.log('FEL: ' + msg); };
 const count = (map, ch) => map.reduce((n, r) => n + r.split(ch).length - 1, 0);
-const isWall = c => (c >= '0' && c <= '9') || '#%~&=Ø¦Ò¤ÈÌÙ'.includes(c);
-const INTERACT = '()[?;/', GATES = '|]{', DOORS = 'DG*|]{', NPCS = '£€©', V6BLOCK = '¶®÷µß', V7BLOCK = '²³çÿý';
-const isBlock = c => isWall(c) || ('fMtnkquvwyeHJT' + INTERACT + GATES + NPCS + V6BLOCK + V7BLOCK).includes(c);
-const NEW_EN = 'UXY!@^+ÅÄÖÉÜÑÆÞÐÝÃÕÊÎÔ', OLD_EN = 'SKVILNORW', ENEMIES = OLD_EN + NEW_EN + 'EQ', PROPS = 'ckjquvwyzeiFHJT' + INTERACT + V6BLOCK + '²³', LIGHTS = 'cfiF';
-const HAZ = '_-:"z<>Ç°¬±¨¯¹', LOOT = 'CAha$,¥ªþ¼½';
-const SINK = '_z¬¯'; // lava, spikar, smulande golv och kvicksand: aldrig enda vägen
+const isWall = c => (c >= '0' && c <= '9') || '#%~&=Ø¦Ò¤ÈÌÙĄĆĈĊČĎ'.includes(c);
+const INTERACT = '()[?;/', GATES = '|]{', DOORS = 'DG*|]{', NPCS = '£€©', V6BLOCK = '¶®÷µß', V7BLOCK = '²³çÿý', V8BLOCK = 'ĖĘĚĞĠ';
+const isBlock = c => isWall(c) || ('fMtnkquvwyeHJT' + INTERACT + GATES + NPCS + V6BLOCK + V7BLOCK + V8BLOCK).includes(c);
+const NEW_EN = 'UXY!@^+ÅÄÖÉÜÑÆÞÐÝÃÕÊÎÔËÍÏÓÚÛĀĂ', OLD_EN = 'SKVILNORW', ENEMIES = OLD_EN + NEW_EN + 'EQ', PROPS = 'ckjquvwyzeiFHJT' + INTERACT + V6BLOCK + '²³ĖĘĚĠ', LIGHTS = 'cfiFĘ';
+const HAZ = '_-:"z<>Ç°¬±¨¯¹ĐĒĔĜ', LOOT = 'CAha$,¥ªþ¼½Ģ';
+const SINK = '_z¬¯ĐĒĔĜÓ'; // lava, spikar, smulande golv, kvicksand, djupt vatten, kristallspikar, tidvatten (och ålen i vattnet): aldrig enda vägen
+const WATER_LOOT = '$haĢ¥'; // vattenskatten: får nås bara simmande (även vrakkistan Ě)
+const swimPass = c => !isBlock(c) && !'_z¬¯Ē'.includes(c); // simmande: vatten går bra, lava och spikar inte
 const WCH = Object.keys(Gen.WEAPONS).join(''); // vapentecknen (g r m d b s p å ä ö)
 const wchOf = w => (!w ? null : Gen.WEAPONS[w] ? w : [...WCH].find(c => Gen.WEAPONS[c] === w));
 const SPECIAL = ['shop', 'shrine', 'treasure', 'secret', 'guardian', 'special', 'vault'];
 // nya fiender: första djup och biomer där de får finnas
 const NEW_DEPTH = { U: 1, X: 1, Y: 2, '^': 2, '+': 2, '!': 3, '@': 3, 'Å': 1, 'Ä': 2, 'Ö': 2, 'É': 1, 'Ü': 2, 'Ñ': 3, 'Æ': 2, 'Þ': 1, 'Ð': 3, 'Ý': 2,
-  'Ã': 1, 'Õ': 1, 'Ê': 2, 'Î': 2, 'Ô': 3 };
+  'Ã': 1, 'Õ': 1, 'Ê': 2, 'Î': 2, 'Ô': 3, 'Ë': 1, 'Í': 1, 'Ï': 1, 'Ó': 1, 'Ú': 2, 'Û': 1, 'Ā': 2, 'Ă': 3 };
 // version 7: tjuven Î och dubbelgångaren Ô i alla biomer, Õ i grottorna, Ã på kyrkogården, Ê på borggården, gravkammarens egna
-const NEW_BIOME = { caves: 'UXÜÑÆÕÎÔ', forest: 'YUXÉÑÎÔ', graveyard: 'X!^ÅÄÖÑÐÝÃÎÔ', dungeon: '@!U+ÅÄÖÑÆÐÎÔ', courtyard: '@Y!ÄÖÑÐÊÎÔ', swamp: '^UYXÅÑÝÎÔ', frost: 'ÉÜ@ÑÝÎÔ',
-  volcano: 'YXÆ!ÑÐÞÎÔ', tomb: 'ÃÊXÕÎÔÑ' };
+// version 8: skuggjägaren Ā och häxan Ă i alla biomer, kristallgrottornas och sjunkna stadens egna
+const NEW_BIOME = { caves: 'UXÜÑÆÕÎÔĀĂ', forest: 'YUXÉÑÎÔĀĂ', graveyard: 'X!^ÅÄÖÑÐÝÃÎÔĀĂ', dungeon: '@!U+ÅÄÖÑÆÐÎÔĀĂ', courtyard: '@Y!ÄÖÑÐÊÎÔĀĂ', swamp: '^UYXÅÑÝÎÔĀĂ', frost: 'ÉÜ@ÑÝÎÔĀĂ',
+  volcano: 'YXÆ!ÑÐÞÎÔĀĂ', tomb: 'ÃÊXÕÎÔÑĀĂ', crystal: 'ËÍXÑÎÔĀĂ', sunken: 'ÏÓÚÛÑÎÔĀĂ' };
 const FEAT = { anvil: '(', fortune: ')', prisoner: '[', challenge: '?', offering: ';', lever: '/', locked: ']', cracked: '{', arrows: '<', gas: '>', lava: '_', water: '-', ice: ':', webs: '"',
   alchemist: '£', priest: '€', petcage: '©', potions: '¥', icicles: 'Ç',
   campfire: '¶', questboard: '®', runes: 'ª', meat: 'ð', firejets: '°', crumble: '¬', pendulums: '±', plates: '¨', secretstairs: '÷', poisonbarrels: 'µ', frostbarrels: 'ß',
-  sarcophagi: '²', quicksand: '¯', boulders: '¹', bells: '³', gambler: 'ç', banker: 'ÿ', wanderer: 'ý', pages: 'þ', batteries: '¼', stones: '½' };
+  sarcophagi: '²', quicksand: '¯', boulders: '¹', bells: '³', gambler: 'ç', banker: 'ÿ', wanderer: 'ý', pages: 'þ', batteries: '¼', stones: '½',
+  deepwater: 'Đ', crystalspikes: 'Ē', tide: 'Ĕ', breakcrystals: 'Ė', glowcrystals: 'Ę', wrecks: 'Ě', bubbles: 'Ĝ', cartographer: 'Ğ', talentaltar: 'Ġ',
+  books: 'Ģ', stalker: 'Ā', witch: 'Ă', eels: 'Ó' };
+const V8CAP = { 'Ā': 1, 'Ă': 1, 'Ğ': 1, 'Ġ': 1, 'Ģ': 2, 'Ė': 4, 'Ě': 3, 'Ē': 24, 'Ĕ': 48, 'Ĝ': 6, 'Ó': 4 };
 const V7CAP = { '²': 5, '³': 1, 'ç': 1, 'ÿ': 1, 'ý': 1, 'þ': 1, '¼': 2, '½': 2, '¹': 1, '¯': 32, 'Î': 1, 'Ô': 1 };
 const V6CAP = { '¶': 1, '®': 1, '÷': 1, 'ª': 1, 'ð': 2, '°': 4, '¬': 8, '±': 3, '¨': 2, 'Ñ': 2, 'Ð': 2 };
 const SP_CH = { fortune: ')', challenge: '?', offering: ';', smithy: '(', alchemy: '£', chapel2: '€', camp: '¶' };
@@ -93,17 +112,18 @@ function pathPX(m) {
   if (typeof RNG.randomSeed() !== 'number') fail('RNG.randomSeed');
 }
 
-const GAME_WEAPONS = [null, 'shotgun', 'rifle', 'smg', 'dbshotgun', 'crossbow', 'flaregun', 'sniper', 'axe', 'flamer', 'launcher', 'nailgun', 'staff', 'bow', 'knives', 'hammer', 'musket'];
-const weaponOpts = [undefined, 'g', 'r', 'm', 'd', 'b', 's', 'p', 'å', 'ä', 'ö', 'flamer', 'é', 'ü', 'ñ', 'bow', 'ô', 'û', 'ï', 'musket'];
+const GAME_WEAPONS = [null, 'shotgun', 'rifle', 'smg', 'dbshotgun', 'crossbow', 'flaregun', 'sniper', 'axe', 'flamer', 'launcher', 'nailgun', 'staff', 'bow', 'knives', 'hammer', 'musket',
+  'harpoon', 'boomerang', 'prism'];
+const weaponOpts = [undefined, 'g', 'r', 'm', 'd', 'b', 's', 'p', 'å', 'ä', 'ö', 'flamer', 'é', 'ü', 'ñ', 'bow', 'ô', 'û', 'ï', 'musket', 'À', 'Á', 'Â', 'prism'];
 const BIOME_IDS = Gen.BIOMES.map(b => b.id);
-if (BIOME_IDS.join() !== 'dungeon,caves,graveyard,forest,courtyard,swamp,frost,volcano,tomb') fail('Gen.BIOMES ' + BIOME_IDS.join());
-const OUTDOOR = { dungeon: false, caves: false, graveyard: true, forest: true, courtyard: true, swamp: true, frost: true, volcano: true, tomb: true };
+if (BIOME_IDS.join() !== 'dungeon,caves,graveyard,forest,courtyard,swamp,frost,volcano,tomb,crystal,sunken') fail('Gen.BIOMES ' + BIOME_IDS.join());
+const OUTDOOR = { dungeon: false, caves: false, graveyard: true, forest: true, courtyard: true, swamp: true, frost: true, volcano: true, tomb: true, crystal: false, sunken: true };
 const AMB = { dungeon: [0.12, 0.22], caves: [0.12, 0.17], graveyard: [0.24, 0.32], forest: [0.24, 0.32], courtyard: [0.24, 0.32], swamp: [0.2, 0.3], frost: [0.2, 0.26], volcano: [0.19, 0.25],
-  tomb: [0.22, 0.28] };
-const SKY_MIN = { graveyard: 0.75, forest: 0.85, courtyard: 0.25, swamp: 0.85, frost: 0.2, volcano: 0.2, tomb: 0.2 }; // andel himmel bland gångbara rutor
+  tomb: [0.22, 0.28], crystal: [0.1, 0.14], sunken: [0.18, 0.24] };
+const SKY_MIN = { graveyard: 0.75, forest: 0.85, courtyard: 0.25, swamp: 0.85, frost: 0.2, volcano: 0.2, tomb: 0.2, sunken: 0.2 }; // andel himmel bland gångbara rutor
 for (const a of ['lava', 'nest', 'frozen', 'flooded', 'smithy', 'trap', 'gas', 'fortune', 'prison', 'challenge', 'offering', 'levervault', 'lockedvault', 'hut', 'sunkenshrine', 'bog',
   'throne', 'frozenlake', 'barracks', 'crystalhall', 'alchemy', 'chapel2', 'forge', 'lavalake', 'ashfield', 'magmachamber', 'camp',
-  'burialchamber', 'pillarhall', 'treasury', 'sandtunnel', 'sandcourt'])
+  'burialchamber', 'pillarhall', 'treasury', 'sandtunnel', 'sandcourt', 'geode', 'prismhall', 'shardfield', 'cistern', 'drownedhall', 'wreckhall', 'coralgrotto', 'plaza'])
   if (!Gen.ARCHES.includes(a)) fail('Gen.ARCHES saknar ' + a);
 if (Gen.WEAPONS['å'] !== 'axe' || Gen.WEAPONS['ä'] !== 'flamer' || Gen.WEAPONS['ö'] !== 'launcher' || Gen.WEAPONS.g !== 'shotgun') fail('Gen.WEAPONS ' + JSON.stringify(Gen.WEAPONS));
 if (Gen.WEAPONS['é'] !== 'nailgun' || Gen.WEAPONS['ü'] !== 'staff' || Gen.WEAPONS['ñ'] !== 'bow') fail('Gen.WEAPONS (version 6) ' + JSON.stringify(Gen.WEAPONS));
@@ -117,6 +137,17 @@ if (Gen.WEAPONS['ô'] !== 'knives' || Gen.WEAPONS['û'] !== 'hammer' || Gen.WEAP
 const PH = Gen.GUARDIANS.pharaoh;
 if (!PH || PH.wall !== 'Ù' || PH.floor !== 'floor_boss_pharaoh' || PH.light !== 'c' || !PH.decor.includes('u') || !PH.decor.includes('²')) fail('Gen.GUARDIANS.pharaoh');
 { const t = Gen.BIOMES.find(b => b.id === 'tomb'); if (!t || t.name !== 'GRAVKAMMAREN' || !t.outdoor) fail('Gen.BIOMES: tomb'); }
+// version 8: vapen, väktare, arenor och biomer
+if (Gen.WEAPONS['À'] !== 'harpoon' || Gen.WEAPONS['Á'] !== 'boomerang' || Gen.WEAPONS['Â'] !== 'prism') fail('Gen.WEAPONS (version 8) ' + JSON.stringify(Gen.WEAPONS));
+{
+  const cq = Gen.GUARDIANS.crystalqueen, lv = Gen.GUARDIANS.leviathan;
+  if (!cq || cq.wall !== 'Ĉ' || cq.floor !== 'floor_boss_crystalqueen' || !'cfĘ'.includes(cq.light)) fail('Gen.GUARDIANS.crystalqueen');
+  if (!lv || lv.wall !== 'Ď' || lv.floor !== 'floor_boss_leviathan' || !'cfĘ'.includes(lv.light)) fail('Gen.GUARDIANS.leviathan');
+  if (!Gen.ARENAS.includes('crystal') || !Gen.ARENAS.includes('sunken')) fail('Gen.ARENAS saknar crystal/sunken');
+  const c = Gen.BIOMES.find(b => b.id === 'crystal'), s = Gen.BIOMES.find(b => b.id === 'sunken'), t = Gen.BIOMES.find(b => b.id === 'tomb');
+  if (!c || c.name !== 'KRISTALLGROTTORNA' || c.outdoor || c.weight !== t.weight || c.depth.join() !== '1,5') fail('Gen.BIOMES: crystal');
+  if (!s || s.name !== 'DEN SJUNKNA STADEN' || !s.outdoor || s.weight !== t.weight || s.depth.join() !== '1,5') fail('Gen.BIOMES: sunken');
+}
 const stats = { retries0: Gen.floor.stats.retries };
 const B = {}; // statistik per biom
 const samples = {};
@@ -150,9 +181,9 @@ function checkLevel(lv, seed, depth, opts, biome) {
   let px = 0, py = 0; m.forEach((r, y) => { const x = r.indexOf('P'); if (x >= 0) { px = x; py = y; } });
   m.forEach((r, y) => [...r].forEach((c, x) => { if ((ENEMIES + 'Z').includes(c) && Math.hypot(x - px, y - py) < 7) fail(tag + ` fiende ${c} ${Math.hypot(x - px, y - py).toFixed(1)} från P`); }));
   const gold = count(m, '$'), pots = count(m, 'o'), nf = count(m, 'f');
-  if (gold < 3 || gold > (biome === 'tomb' ? 16 : 8)) fail(tag + ' guld ' + gold); // gravkammarens gravkamrar och skattkammare har egna guldhögar
+  if (gold < 3 || gold > (biome === 'tomb' ? 16 : biome === 'sunken' ? 9 : 8)) fail(tag + ' guld ' + gold); // gravkammarens gravkamrar och skattkammare har egna guldhögar, sjunkna stadens vattenskatt
   if (pots < 1 || pots > 8) fail(tag + ' krukor ' + pots);
-  if (nf < 1) fail(tag + ' inga eldfat');
+  if (nf + count(m, 'Ę') < 1) fail(tag + ' inga eldfat/glödkristaller');
   const ne = count(m, 'e'), nz = count(m, 'z');
   if (ne < 1 || ne > 4) fail(tag + ' explosiva tunnor ' + ne);
   if (nz > 6) fail(tag + ' spikfällor ' + nz);
@@ -175,7 +206,7 @@ function checkLevel(lv, seed, depth, opts, biome) {
   // utgången långt bort: väglängd P->x i förhållande till kartans storlek
   const dPX = pathPX(m), rel = dPX / Math.max(W, H);
   if (dPX < 0) fail(tag + ' ingen väg P->x');
-  else if (rel < (biome === 'dungeon' || biome === 'frost' || biome === 'volcano' || biome === 'tomb' ? 0.5 : 0.8)) fail(tag + ` utgången för nära: ${dPX} steg (${rel.toFixed(2)} av kartbredden)`);
+  else if (rel < (biome === 'dungeon' || biome === 'frost' || biome === 'volcano' || biome === 'tomb' || biome === 'sunken' ? 0.5 : 0.8)) fail(tag + ` utgången för nära: ${dPX} steg (${rel.toFixed(2)} av kartbredden)`);
   // träd och gravstenar får aldrig stänga av något: ta bort dem och jämför nåbar yta (validate har redan kollat nåbarheten med dem)
   const s = B[biome];
   s.n++; s.cells += W * H; s.open += open / (W * H); s.px += rel; s.pxMin = Math.min(s.pxMin, rel); s.props += props; s.areas += lv.rooms.length;
@@ -186,6 +217,7 @@ function checkLevel(lv, seed, depth, opts, biome) {
   checkNew(lv, tag, s, biome, px, py);
   checkV6(lv, tag, s, biome, px, py, depth);
   checkV7(lv, tag, s, biome, px, py, depth);
+  checkV8(lv, tag, s, biome, px, py, depth);
   return { tag, types };
 }
 
@@ -220,13 +252,13 @@ function checkRooms(lv, tag, s, px, py) {
     // salens golv: nästan allt i vaktarens textur
     let gf = 0, gn = 0;
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (rm[y].charCodeAt(x) - 48 === gi) { gn++; if (+lv.floorMask[y][x] === bf) gf++; }
-    if (gf < gn * 0.9) fail(tag + ` vaktarens golv bara på ${gf}/${gn} rutor`);
+    if (gf < gn * (lv.guardian === 'leviathan' ? 0.7 : 0.9)) fail(tag + ` vaktarens golv bara på ${gf}/${gn} rutor`); // leviatans sal har en bassäng
     // väggarna runt salen
     let wn = 0;
     for (let y = G.y - 1; y <= G.y + G.h; y++) for (let x = G.x - 1; x <= G.x + G.w; x++) if (m[y] && m[y][x] === gd.wall) wn++;
     if (wn < 2 * (G.w + G.h)) fail(tag + ` vaktarsalen har bara ${wn} väggar ${gd.wall}`);
     if (G.w < 7 || G.h < 7 || G.w > 13 || G.h > 13) fail(tag + ` vaktarsalen ${G.w}x${G.h}`);
-    const lights = [...R[gi].chars].filter(c => c === 'c' || c === 'f').length;
+    const lights = [...R[gi].chars].filter(c => c === 'c' || c === 'f' || c === 'Ę').length;
     if (lights < 2 || lights > 4) fail(tag + ' ljuskällor i vaktarsalen ' + lights);
     // vaktaren ligger långt från start: gångavstånd P->Z jämfört med längsta gångavståndet från P
     const d = new Int32Array(W * H).fill(-1), q = [py * W + px]; d[q[0]] = 0; let mx = 0;
@@ -265,19 +297,19 @@ function checkRooms(lv, tag, s, px, py) {
   // rekvisitan stänger inte av något: med grindar/låsta dörrar/spruckna väggar stängda och utan att gå på lava eller spikar
   // nås alla gångbara rutor utom valven och hemliga rum; med allt öppet nås allt. Ingen blockerande sak står i en dörröppning.
   const closed = floodD(m, px, py, c => !isBlock(c) && !SINK.includes(c)), opened = floodD(m, px, py, c => (!isBlock(c) || GATES.includes(c)) && !SINK.includes(c));
-  const anyway = floodD(m, px, py, c => !isBlock(c) || GATES.includes(c));
+  const anyway = floodD(m, px, py, c => !isBlock(c) || GATES.includes(c)), swim = floodD(m, px, py, swimPass);
   const roomOf = (x, y) => lv.rooms[rm[y].charCodeAt(x) - 48];
   let bad = 0;
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const c = m[y][x], i = y * W + x;
     if (isBlock(c)) continue;
     const r = roomOf(x, y), opt = r && (r.type === 'vault' || r.type === 'secret');
-    const hz = SINK.includes(c);
-    if (anyway[i] < 0 || (!hz && opened[i] < 0) || (!hz && closed[i] < 0 && !opt)) bad++;
+    const hz = SINK.includes(c), wetOK = WATER_LOOT.includes(c) && swim[i] >= 0; // vattenskatten nås simmande
+    if (anyway[i] < 0 || (!hz && opened[i] < 0 && !wetOK) || (!hz && closed[i] < 0 && !opt && !wetOK)) bad++;
     if (closed[i] >= 0 && r && r.type === 'vault') fail(tag + ` valvet nås utan att öppna grinden/låset vid ${x},${y}`);
   }
   if (bad) fail(tag + ` ${bad} rutor nås inte (rekvisita, lava, spikar eller grindar stänger av)`);
-  for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) if (('kquvwyeHJT' + INTERACT + NPCS + V6BLOCK + V7BLOCK).includes(m[y][x]))
+  for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) if (('kquvwyeHJT' + INTERACT + NPCS + V6BLOCK + V7BLOCK + V8BLOCK).includes(m[y][x]))
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (DOORS.includes(m[y + dy][x + dx])) fail(tag + ` ${m[y][x]} i dörröppning vid ${x},${y}`);
   // säker väg (utan lava och spikar) P->x och P->Z
   const X = findCh(m, 'x'), Zc = findCh(m, 'Z');
@@ -326,10 +358,11 @@ function checkNew(lv, tag, s, biome, px, py) {
   for (const [r] of vaults) { s.vault[r.lock]++; if (r.w === 3 && r.h === 3 && r.tag === 'vault') s.vault.pocket++; }
   // placering
   const near = (x, y, ch, d) => { for (let yy = y - d; yy <= y + d; yy++) for (let xx = x - d; xx <= x + d; xx++) if (m[yy] && m[yy][xx] === ch) return true; return false; };
-  const closed = floodD(m, px, py, c => !isBlock(c) && !SINK.includes(c));
+  const closed = floodD(m, px, py, c => !isBlock(c) && !SINK.includes(c)), swim = floodD(m, px, py, swimPass);
   for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
     const c = m[y][x], r = roomOf(x, y);
     if (HAZ.includes(c) && (near(x, y, 'P', 1) || near(x, y, 'x', 1))) fail(tag + ` ${c} intill P/x vid ${x},${y}`);
+    if ('ĚĞĠ'.includes(c) && ![[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => closed[(y + dy) * W + x + dx] >= 0 || (c === 'Ě' && swim[(y + dy) * W + x + dx] >= 0))) fail(tag + ` ${c} nås inte vid ${x},${y}`);
     if (c === '<') {
       let ok = false;
       for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) for (let k = 1; k <= 6; k++) { const a = m[y + dy * k] && m[y + dy * k][x + dx * k]; if (a === undefined) break; if (isWall(a)) { ok = true; break; } if (isBlock(a)) break; }
@@ -524,10 +557,137 @@ function checkV7(lv, tag, s, biome, px, py, depth) {
   if (bm.length && !['tomb', 'dungeon', 'courtyard'].includes(biome)) fail(tag + ' ljusschakt i ' + biome);
   for (const { x, y } of bm) if (isBlock(m[y][x]) || rm[y][x] === '-' || (lv.sky && lv.sky[y][x] !== '0')) fail(tag + ` ljusschakt på ${m[y][x]} vid ${x},${y}`);
   s.f7 = s.f7 || {}; s.n7 = s.n7 || {};
-  for (const [k, ok] of [['scarabs', N('Õ')], ['mummy', N('Ã')], ['jackal', N('Ê')], ['thief', N('Î')], ['doppel', N('Ô')], ['beams', bm.length], ['glyphs', N('Ì')]].concat(Object.keys(FEAT).slice(-10).map(k => [k, N(FEAT[k])]))) {
+  for (const [k, ok] of [['scarabs', N('Õ')], ['mummy', N('Ã')], ['jackal', N('Ê')], ['thief', N('Î')], ['doppel', N('Ô')], ['beams', bm.length], ['glyphs', N('Ì')]].concat(['sarcophagi', 'quicksand', 'boulders', 'bells', 'gambler', 'banker', 'wanderer', 'pages', 'batteries', 'stones'].map(k => [k, N(FEAT[k])]))) {
     s.f7[k] = (s.f7[k] || 0) + (ok ? 1 : 0); s.n7[k] = (s.n7[k] || 0) + ok;
   }
   if (depth >= 2) { s.d2 = (s.d2 || 0) + 1; s.d2bank = (s.d2bank || 0) + (N('ÿ') ? 1 : 0); s.d2bell = (s.d2bell || 0) + (N('³') ? 1 : 0); }
+}
+
+// version 8: nya tecken bara där de får finnas, taken, ålar bara i vattnet, vatten/spikar/tidvatten aldrig enda vägen, level.tide
+function checkV8(lv, tag, s, biome, px, py, depth) {
+  const m = lv.map, H = m.length, W = m[0].length, rm = lv.roomMask;
+  const ri = (x, y) => (rm[y][x] === '-' ? -1 : rm[y].charCodeAt(x) - 48), roomOf = (x, y) => lv.rooms[ri(x, y)];
+  const n = {}; for (const r of m) for (const c of r) n[c] = (n[c] || 0) + 1;
+  const N = c => n[c] || 0;
+  for (const c in V8CAP) if (N(c) > V8CAP[c]) fail(tag + ` för många ${c}: ${N(c)}`);
+  if (biome === 'sunken') { if (!lv.tide || !Number.isInteger(lv.tide.period) || lv.tide.period < 24 || lv.tide.period > 40) fail(tag + ' level.tide ' + JSON.stringify(lv.tide)); }
+  else if (lv.tide !== null) fail(tag + ' level.tide ska vara null utanför sjunkna staden');
+  const combat = r => r && ['normal', 'elite', 'exit'].includes(r.type);
+  const quiet = r => r && (['shop', 'shrine', 'treasure'].includes(r.type) || (r.type === 'special' && r.arch !== 'challenge'));
+  const closed = floodD(m, px, py, c => !isBlock(c) && !SINK.includes(c)), swim = floodD(m, px, py, swimPass);
+  const reach = (d, x, y) => N4.some(([dx, dy]) => d[(y + dy) * W + x + dx] >= 0);
+  const dw = lv.floors.indexOf('floor_deepwater'), sh = lv.floors.indexOf('floor_shallow'), gi = lv.rooms.findIndex(r => r.type === 'guardian');
+  const nb8 = (x, y, set) => [-1, 0, 1].some(dy => [-1, 0, 1].some(dx => (dx || dy) && set.includes(m[y + dy][x + dx])));
+  const roomSize = {}; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (ri(x, y) >= 0 && !isWall(m[y][x])) roomSize[ri(x, y)] = (roomSize[ri(x, y)] || 0) + 1;
+  const gw = GUARD[lv.guardian] ? GUARD[lv.guardian].wall : '';
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const c = m[y][x];
+    if (!'ĄĆĈĊČĎĐĒĔĖĘĚĜĞĠĢËÍÏÓÚÛĀĂfc'.includes(c)) continue;
+    const r = ri(x, y) >= 0 ? roomOf(x, y) : null, arch = r ? r.arch : '', inG = ri(x, y) === gi, fi = +lv.floorMask[y][x];
+    if ((c === 'Ą' || c === 'Ć') && biome !== 'crystal') fail(tag + ` kristallvägg ${c} i ${biome}`);
+    if ((c === 'Ċ' || c === 'Č') && biome !== 'sunken') fail(tag + ` ruinmur/korall ${c} i ${biome}`);
+    if (c === 'Ĉ' && lv.guardian !== 'crystalqueen') fail(tag + ' kristalldrottningens vägg utan kristalldrottningen');
+    if (c === 'Ď' && lv.guardian !== 'leviathan') fail(tag + ' leviatans vägg utan leviatan');
+    if (c === 'Đ') {
+      if (biome !== 'sunken' && !(lv.guardian === 'leviathan' && inG)) fail(tag + ` djupt vatten i ${biome}/${arch || 'korridor'} vid ${x},${y}`);
+      if (fi !== dw) fail(tag + ` djupt vatten utan floor_deepwater vid ${x},${y}`);
+    }
+    if (c === 'Ē' && (biome !== 'crystal' || !(combat(r) || (r && r.type === 'treasure')))) fail(tag + ` kristallspikar i ${biome}/${r ? r.type : 'korridor'} vid ${x},${y}`);
+    if ((c === 'Ē' || c === 'Ĕ') && N4.some(([dx, dy]) => DOORS.includes(m[y + dy][x + dx]))) fail(tag + ` ${c} i dörröppning vid ${x},${y}`);
+    if (c === 'Ė' && (biome !== 'crystal' || !r || (roomSize[ri(x, y)] || 0) < 36 || Math.max(Math.abs(x - px), Math.abs(y - py)) < 3)) fail(tag + ` brytande kristall i ${biome}/${arch || 'korridor'} (${roomSize[ri(x, y)]} rutor) vid ${x},${y}`);
+    if (c === 'Ę' && biome !== 'crystal' && !(lv.guardian === 'crystalqueen' && inG)) fail(tag + ` glödkristall i ${biome} vid ${x},${y}`);
+    if ((c === 'f' || c === 'c') && biome === 'crystal' && !inG) fail(tag + ` ${c} i kristallgrottorna utanför vaktarens sal vid ${x},${y}`);
+    if (c === 'Ĕ' && (biome !== 'sunken' || !nb8(x, y, 'ĐĜÓĔ') || fi !== sh)) fail(tag + ` tidvatten i ${biome} / långt från vattnet / fel golv vid ${x},${y}`);
+    if (c === 'Ĝ' && (biome !== 'sunken' || !N4.some(([dx, dy]) => 'ĐĜÓ'.includes(m[y + dy][x + dx])) || fi !== dw)) fail(tag + ` luftbubblor utanför vattnet vid ${x},${y}`);
+    if (c === 'Ó' && (biome !== 'sunken' || !combat(r) || fi !== dw || !nb8(x, y, 'ĐĜÓ'))) fail(tag + ` ål utanför vattnet / utanför ett stridsrum vid ${x},${y}`);
+    if (c === 'Ě') {
+      const islet = N4.every(([dx, dy]) => 'ĐĜÓ'.includes(m[y + dy][x + dx]));
+      if (biome !== 'sunken' || !r || ['guardian', 'secret', 'vault', 'start', 'shop'].includes(r.type)) fail(tag + ` vrakkista i ${biome}/${r ? r.type : 'korridor'} vid ${x},${y}`);
+      if (!reach(closed, x, y) && !(islet && reach(swim, x, y))) fail(tag + ` vrakkistan nås inte vid ${x},${y}`);
+      if (islet) s.islet = (s.islet || 0) + 1;
+    }
+    if (c === 'Ğ' && !(quiet(r) || (r && r.type === 'start'))) fail(tag + ` kartografen i ${r ? r.type + '/' + arch : 'korridor'} vid ${x},${y}`);
+    if (c === 'Ġ' && !(quiet(r) || (r && r.type === 'start'))) fail(tag + ` talangaltare i ${r ? r.type + '/' + arch : 'korridor'} vid ${x},${y}`);
+    if ((c === 'Ğ' || c === 'Ġ') && !reach(closed, x, y)) fail(tag + ` ${c} nås inte från någon sida vid ${x},${y}`);
+    if (c === 'Ģ' && (!r || ['guardian', 'shop', 'start'].includes(r.type))) fail(tag + ` kunskapsbok i ${r ? r.type : 'korridor'} vid ${x},${y}`);
+    if ('ĀĂËÍÏÚÛ'.includes(c) && !combat(r)) fail(tag + ` ny fiende ${c} i ${r ? r.type : 'korridor'}`);
+  }
+  if (gw && lv.guardian === 'leviathan') { // leviatans sal: en bassäng om minst 5 rutor
+    let k = 0; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (ri(x, y) === gi && m[y][x] === 'Đ') k++;
+    if (k < 5) fail(tag + ' leviatans sal saknar bassäng (' + k + ')');
+  }
+  // vatten, spikar och tidvatten: med dem som vägg nås x, vaktaren och varje ruta i alla rum utom valv och hemliga rum (vattenskatten nås simmande)
+  if (N('Đ') + N('Ē') + N('Ĕ')) {
+    const X = findCh(m, 'x'), Zc = findCh(m, 'Z');
+    if (!X || closed[X[1] * W + X[0]] < 0) fail(tag + ' vatten/spikar stänger av vägen P->x');
+    if (Zc && !reach(closed, Zc[0], Zc[1])) fail(tag + ' vatten/spikar stänger av vaktaren');
+    const lost = new Set();
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const c = m[y][x], r = ri(x, y) >= 0 ? roomOf(x, y) : null;
+      if (!r || r.type === 'vault' || r.type === 'secret' || isBlock(c) || SINK.includes(c) || (WATER_LOOT.includes(c) && swim[y * W + x] >= 0)) continue;
+      if (closed[y * W + x] < 0) lost.add(ri(x, y));
+    }
+    if (lost.size) fail(tag + ` vatten/spikar stänger av rum ${[...lost].join(',')}`);
+    s.wetOK = (s.wetOK || 0) + 1;
+  }
+  s.f8 = s.f8 || {}; s.n8 = s.n8 || {};
+  for (const k of Object.keys(FEAT).slice(-13)) { s.f8[k] = (s.f8[k] || 0) + (N(FEAT[k]) ? 1 : 0); s.n8[k] = (s.n8[k] || 0) + N(FEAT[k]); }
+  if (depth >= 2) { s.d2s = (s.d2s || 0) + 1; s.d2stalker = (s.d2stalker || 0) + (N('Ā') ? 1 : 0); }
+  if (depth >= 3) { s.d3 = (s.d3 || 0) + 1; s.d3witch = (s.d3witch || 0) + (N('Ă') ? 1 : 0); }
+}
+
+// kristallgrottorna: väggar Ą med ådror Ć (vaktarens sal i sitt tecken), kristallgolv, kall blåviolett dimma, lågt ljus, glödkristaller,
+// inga eldfat/lava/vatten/is
+const CRYSTAL_ARCH = ['geode', 'prismhall', 'shardfield', 'grotto', 'mushroom', 'boneden', 'camp', 'prison', 'armory'];
+function checkCrystal(lv, tag) {
+  const m = lv.map, H = m.length, W = m[0].length, gw = GUARD[lv.guardian].wall, walls = new Set();
+  for (const r of m) for (const c of r) if (isWall(c)) walls.add(c);
+  for (const c of walls) if (c !== 'Ą' && c !== 'Ć' && c !== gw) fail(tag + ' kristallgrottorna har väggen ' + c);
+  if (m[0].replace(/[ĄĆ]/g, '') !== '' || m.some(r => !'ĄĆ'.includes(r[0]) || !'ĄĆ'.includes(r[r.length - 1]))) fail(tag + ' kanten är inte Ą/Ć');
+  if (lv.floors[0] !== 'floor_crystal' || lv.floor !== 'floor_crystal' || lv.ceil !== 'ceil_cave' || lv.theme !== 'crystal' || lv.secretWall !== 'Ą' || lv.sky !== null) fail(tag + ' golv/tak/tema ' + lv.floors.join() + ' ' + lv.ceil);
+  if (!/^(KRISTALLGROTTORNA|GLITTERSALEN|PRISMAGRUVAN|AMETISTDJUPET|DE SJUNGANDE KRISTALLERNA|SKÄRVGÅNGARNA)$/.test(lv.name)) fail(tag + ' namn ' + lv.name);
+  if (!(lv.fog[2] > lv.fog[0] && lv.fog[0] > lv.fog[1] && lv.fog[2] >= 26)) fail(tag + ' dimman är inte kall blåviolett ' + lv.fog);
+  if (count(m, 'Ę') < 1) fail(tag + ' inga glödkristaller');
+  if (count(m, '_') || count(m, ':') || count(m, '-') || count(m, 'Ç') || count(m, 'Ĕ') || (lv.guardian !== 'leviathan' && count(m, 'Đ'))) fail(tag + ' lava/is/vatten i kristallgrottorna'); // (leviatans sal har sin bassäng)
+  let face = 0; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if ('ĄĆ'.includes(m[y][x]) && N4.some(([dx, dy]) => m[y + dy] && m[y + dy][x + dx] !== undefined && !isWall(m[y + dy][x + dx]))) face++;
+  const veins = count(m, 'Ć');
+  if (!veins || veins > face * 0.35) fail(tag + ` kristallådror ${veins} av ${face} synliga väggrutor`);
+  if (lv.guardian === 'crystalqueen' && count(m, 'Ĉ') < 20) fail(tag + ' kristalldrottningens sal saknar väggar Ĉ');
+  lv.rooms.forEach(r => { if (!CRYSTAL_ARCH.includes(r.arch) && ['normal', 'elite', 'exit'].includes(r.type)) fail(tag + ` rumstyp ${r.arch} i kristallgrottorna`); });
+  const st = B.crystal;
+  st.veins = (st.veins || 0) + veins / Math.max(1, face); st.glow = (st.glow || 0) + count(m, 'Ę'); st.prism = (st.prism || 0) + count(m, 'Ė'); st.spk = (st.spk || 0) + count(m, 'Ē');
+  st.spkL = (st.spkL || 0) + (count(m, 'Ē') ? 1 : 0); st.prismL = (st.prismL || 0) + (count(m, 'Ė') ? 1 : 0);
+}
+
+// sjunkna staden: ruinmur Ċ och korall Č (vaktarens sal i sitt tecken), torg under himlen, plattgolv, djupt vatten (minst 12 rutor) med
+// floor_deepwater, tidvatten med floor_shallow, grönblå dimma, level.tide, inga lava/is/vanligt vatten
+const SUNKEN_ARCH = ['cistern', 'drownedhall', 'wreckhall', 'coralgrotto', 'storeroom', 'library', 'crypt', 'prison', 'plaza', 'statues', 'armory'];
+function checkSunken(lv, tag) {
+  const m = lv.map, H = m.length, W = m[0].length, gw = GUARD[lv.guardian].wall, walls = new Set();
+  for (const r of m) for (const c of r) if (isWall(c)) walls.add(c);
+  for (const c of walls) if (c !== 'Ċ' && c !== 'Č' && c !== gw) fail(tag + ' sjunkna staden har väggen ' + c);
+  if (m[0].replace(/[ĊČ]/g, '') !== '' || m.some(r => !'ĊČ'.includes(r[0]) || !'ĊČ'.includes(r[r.length - 1]))) fail(tag + ' kanten är inte Ċ/Č');
+  if (lv.floors[0] !== 'floor_sunken_tiles' || lv.floor !== 'floor_sunken_tiles' || lv.ceil !== 'floor_stone' || lv.theme !== 'sunken' || lv.secretWall !== 'Ċ' || !lv.floors.includes('floor_deepwater')) fail(tag + ' golv/tak/tema ' + lv.floors.join() + ' ' + lv.ceil);
+  if (!/^(DEN SJUNKNA STADEN|DE DRUNKNADES GATOR|KORALLTEMPLET|TIDVATTENSHAMNEN|DEN ÖVERSVÄMMADE KATEDRALEN|DJUPETS KVARTER)$/.test(lv.name)) fail(tag + ' namn ' + lv.name);
+  if (!(lv.fog[2] >= lv.fog[1] && lv.fog[1] > lv.fog[0] + 5)) fail(tag + ' dimman är inte grönblå ' + lv.fog);
+  const wet = count(m, 'Đ') + count(m, 'Ĝ') + count(m, 'Ó');
+  if (wet < 12) fail(tag + ' för lite djupt vatten ' + wet);
+  if (count(m, '_') || count(m, ':') || count(m, '-') || count(m, 'Ç') || count(m, 'Ē') || count(m, 'Ė')) fail(tag + ' lava/is/vanligt vatten/kristaller i sjunkna staden');
+  const yards = lv.rooms.map((r, i) => [r, i]).filter(([r]) => r.tag === 'yard');
+  if (!yards.length) fail(tag + ' inga torg');
+  for (const [r, i] of yards) {
+    let k = 0, sky = 0;
+    for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) if (lv.roomMask[y].charCodeAt(x) - 48 === i) { k++; if (lv.sky[y][x] === '1') sky++; }
+    if (sky < k) fail(tag + ` torg ${i}: himmel ${sky}/${k}`);
+  }
+  lv.rooms.forEach((r, i) => {
+    if (!SUNKEN_ARCH.includes(r.arch) && ['normal', 'elite', 'exit'].includes(r.type)) fail(tag + ` rumstyp ${r.arch} i sjunkna staden`);
+    if (r.tag !== 'yard') for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) if (lv.roomMask[y].charCodeAt(x) - 48 === i && lv.sky[y][x] === '1') { fail(tag + ` himmel i salen ${i} (${r.arch})`); return; }
+  });
+  if (lv.guardian === 'leviathan' && count(m, 'Ď') < 20) fail(tag + ' leviatans sal saknar väggar Ď');
+  const st = B.sunken;
+  st.wet = (st.wet || 0) + wet; st.tide = (st.tide || 0) + count(m, 'Ĕ'); st.coral = (st.coral || 0) + count(m, 'Č'); st.eels = (st.eels || 0) + count(m, 'Ó');
+  st.eelL = (st.eelL || 0) + (count(m, 'Ó') ? 1 : 0); st.wreck = (st.wreck || 0) + count(m, 'Ě'); st.bub = (st.bub || 0) + count(m, 'Ĝ'); st.tideL = (st.tideL || 0) + (count(m, 'Ĕ') ? 1 : 0);
 }
 
 // gravkammaren: väggar av sandsten È (hieroglyfer Ì, vaktarens salar i sitt tecken), gårdar under ökensolen, sandgolv i korridorer och
@@ -674,6 +834,8 @@ for (const biome of BIOME_IDS.slice(1)) {
       st.bridges = (st.bridges || 0) + lv.map.reduce((k, r, y) => k + [...r].filter((c, x) => c !== '_' && !isWall(c) && y > 0 && y < m.length - 1 && ((m[y - 1][x] === '_' && m[y + 1][x] === '_') || (r[x - 1] === '_' && r[x + 1] === '_'))).length, 0);
     }
     if (biome === 'tomb') checkTomb(lv, `[tomb seed=${seed} d=${depth}]`, opts);
+    if (biome === 'crystal') checkCrystal(lv, tag);
+    if (biome === 'sunken') checkSunken(lv, tag);
     if (!samples[biome]) samples[biome] = lv;
   }
 }
@@ -785,6 +947,94 @@ for (const biome of BIOME_IDS.slice(1)) {
   if (Gen.floor.stats.v7off > (Gen.floor.stats.retries - stats.retries0)) fail('för många ombyggen utan version 7: ' + Gen.floor.stats.v7off);
 }
 
+// ---- version 8: kristallgrottorna och sjunkna staden precis som spelet anropar dem, väktarna och vapnen, frekvenser ----
+{
+  // seed RNG.hash(seed + ':' + djup), djup min(5, pos + varv), butik på position 2 och 4, vapen-id eller null, alla väktare
+  const N = 150, ALL = Object.keys(GUARD);
+  stats.v8Game = [];
+  for (const biome of ['crystal', 'sunken']) {
+    const t = []; let cq = 0;
+    for (let i = 0; i < N; i++) {
+      const pos = 1 + (i % 5), cyc = Math.floor(i / 5) % 3, depth = Math.min(5, pos + cyc), seed = RNG.hash('krypta8-' + biome + i + ':' + (pos + 6 * cyc));
+      const opts = { shop: pos === 2 || pos === 4, weapon: GAME_WEAPONS[i % GAME_WEAPONS.length], biome, guardian: ALL[i % ALL.length] };
+      const [lv, ms] = timed(() => Gen.floor(seed, depth, opts));
+      t.push(ms);
+      const { tag } = checkLevel(lv, seed, depth, opts, biome);
+      if (biome === 'crystal') checkCrystal(lv, tag); else checkSunken(lv, tag);
+      if (lv.guardian !== opts.guardian) fail(tag + ' opts.guardian ignoreras');
+      if (i % 10 === 0 && JSON.stringify(Gen.floor(seed, depth, opts)) !== JSON.stringify(lv)) fail(tag + ' inte deterministisk');
+      if (opts.guardian === (biome === 'crystal' ? 'crystalqueen' : 'leviathan')) cq++;
+    }
+    stats.v8Game.push(`${biome}: ${N} banor, snitt ${(t.reduce((a, b) => a + b, 0) / N).toFixed(1)} ms (max ${Math.max(...t).toFixed(1)}), egen väktare ${cq}`);
+  }
+  // utan opts.guardian: kristalldrottningen/leviatan ungefär varannan gång i sin biom
+  for (const [biome, gid] of [['crystal', 'crystalqueen'], ['sunken', 'leviathan']]) {
+    let k = 0; for (let i = 0; i < 40; i++) if (Gen.floor('own-' + biome + i, 1 + (i % 5), { biome }).guardian === gid) k++;
+    if (k < 10 || k > 30) fail(`${biome}: egen väktare ${k} av 40 utan opts.guardian (väntat ~20)`);
+  }
+  // de nya väktarna och vapnen i alla biomer
+  for (const id of BIOME_IDS) {
+    for (const [gid, w] of [['crystalqueen', 'harpoon'], ['leviathan', 'Â']]) {
+      const opts = { biome: id, guardian: gid, weapon: w }, seed = gid + '-' + id, lv = Gen.floor(seed, 3, opts);
+      const { tag } = checkLevel(lv, seed, 3, opts, id);
+      if (lv.guardian !== gid || count(lv.map, GUARD[gid].wall) < 20) fail(`${tag} väktaren ${gid} saknar sina väggar`);
+    }
+    for (const w of ['Á', 'boomerang', 'prism', 'À']) { const lv = Gen.floor('wpn8-' + id + w, 2, { biome: id, weapon: w }); if (count(lv.map, wchOf(w)) !== 1) fail(`[${id}] vapnet ${w} lades inte ut`); }
+  }
+  // frekvenser: nya saker i alla biomer (andel banor) och biomernas egna
+  let n = 0, d2 = 0, d3 = 0, st2 = 0, wi3 = 0; const f = {};
+  for (const id of BIOME_IDS) { const s = B[id]; n += s.n; d2 += s.d2s || 0; d3 += s.d3 || 0; st2 += s.d2stalker || 0; wi3 += s.d3witch || 0; for (const k in s.f8) f[k] = (f[k] || 0) + s.f8[k]; }
+  const pc = k => (f[k] || 0) / n, share = (id, k) => (B[id].f8[k] || 0) / B[id].n;
+  if (pc('cartographer') < 0.09 || pc('cartographer') > 0.23) fail('kartografen på ' + (100 * pc('cartographer')).toFixed(0) + ' % av banorna (väntat ~15 %)');
+  if (pc('talentaltar') < 0.17 || pc('talentaltar') > 0.34) fail('talangaltare på ' + (100 * pc('talentaltar')).toFixed(0) + ' % av banorna (väntat ~25 %)');
+  if (pc('books') < 0.26 || pc('books') > 0.45) fail('kunskapsbok på ' + (100 * pc('books')).toFixed(0) + ' % av banorna (väntat ~35 %)');
+  if (st2 / d2 < 0.12 || st2 / d2 > 0.3) fail('skuggjägare på ' + (100 * st2 / d2).toFixed(0) + ' % av banorna på djup 2+ (väntat ~20 %)');
+  if (wi3 / d3 < 0.1 || wi3 / d3 > 0.3) fail('häxa på ' + (100 * wi3 / d3).toFixed(0) + ' % av banorna på djup 3+ (väntat ~20 %)');
+  if (share('crystal', 'glowcrystals') < 1 || share('crystal', 'crystalspikes') < 0.85 || share('crystal', 'breakcrystals') < 0.6) fail(`kristallgrottorna: glödkristaller ${share('crystal', 'glowcrystals')}, spikar ${share('crystal', 'crystalspikes')}, brytande kristaller ${share('crystal', 'breakcrystals')}`);
+  if (share('sunken', 'deepwater') < 1 || share('sunken', 'tide') < 0.9 || share('sunken', 'eels') < 0.6 || share('sunken', 'wrecks') < 0.85 || share('sunken', 'bubbles') < 0.5)
+    fail(`sjunkna staden: vatten ${share('sunken', 'deepwater')}, tidvatten ${share('sunken', 'tide')}, ålar ${share('sunken', 'eels')}, vrakkistor ${share('sunken', 'wrecks')}, luftbubblor ${share('sunken', 'bubbles')}`);
+  for (const id of BIOME_IDS) if (id !== 'crystal' && (B[id].f8.crystalspikes || B[id].f8.breakcrystals)) fail('kristallspikar/brytande kristaller i ' + id);
+  for (const id of BIOME_IDS) if (id !== 'sunken' && (B[id].f8.tide || B[id].f8.eels || B[id].f8.wrecks || B[id].f8.bubbles)) fail('tidvatten/ålar/vrakkistor/luftbubblor i ' + id);
+  stats.v8 = ['cartographer', 'talentaltar', 'books'].map(k => `${k} ${(100 * pc(k)).toFixed(0)} %`).join(', ') + `; skuggjägare ${(100 * st2 / d2).toFixed(0)} % (djup 2+), häxa ${(100 * wi3 / d3).toFixed(0)} % (djup 3+)`;
+  let wetOK = 0; for (const id of BIOME_IDS) wetOK += B[id].wetOK || 0;
+  stats.wetOK = wetOK;
+}
+
+// ---- frö-stabilitet: samma seeds med en gammal biom ger samma bana som version 7 (de nya sakerna ovanpå) ----
+{
+  if (!OldGen) fail('frö-stabilitet: kunde inte läsa gen.js från version 7 (' + oldGenErr + '); sätt GEN_OLD=sökväg till den gamla filen');
+  else {
+    const OB = OldGen.BIOMES.map(b => b.id), OG = Object.keys(OldGen.GUARDIANS), OW = [null].concat(Object.values(OldGen.WEAPONS));
+    const ONTOP = 'ĀĂĞĠĢ', OLDFOE = OLD_EN + 'UXY!@^+ÅÄÖÉÜÑÆÞÐÝÃÕÊÎÔ';
+    const KEYS = ['name', 'biome', 'guardian', 'theme', 'floor', 'floors', 'floorMask', 'roomMask', 'sky', 'rooms', 'fog', 'ambient', 'ceil', 'secretWall', 'boulders', 'beams', 'depth'];
+    let onTop = 0, levelsOnTop = 0, newB = 0;
+    const cmp = (a, b, tag) => {
+      for (const k of KEYS) if (JSON.stringify(a[k]) !== JSON.stringify(b[k])) { fail(tag + ' frö-stabilitet: fältet ' + k + ' skiljer sig från version 7'); return; }
+      let k = 0;
+      for (let y = 0; y < a.map.length; y++) for (let x = 0; x < a.map[0].length; x++) {
+        const o = a.map[y][x], c = b.map[y][x];
+        if (o === c) continue;
+        if ((o === '.' && ONTOP.includes(c)) || (OLDFOE.includes(o) && (c === 'Ā' || c === 'Ă'))) { k++; continue; }
+        fail(`${tag} frö-stabilitet: "${o}" blev "${c}" vid ${x},${y}`); return;
+      }
+      for (const key in a.features) if (a.features[key] !== b.features[key]) { fail(tag + ' frö-stabilitet: features.' + key); return; }
+      onTop += k; if (k) levelsOnTop++;
+    };
+    for (let i = 0; i < 300; i++) {
+      const biome = OB[i % OB.length], depth = 1 + (i % 5), seed = i % 2 ? 'stabil' + i : 4242 + i * 7919;
+      const opts = { biome, shop: i % 3 === 0, weapon: OW[i % OW.length], guardian: i % 4 === 3 ? undefined : OG[i % OG.length] };
+      cmp(OldGen.floor(seed, depth, opts), Gen.floor(seed, depth, opts), `[stabil ${biome} seed=${seed} d=${depth}]`);
+    }
+    for (let i = 0; i < 300; i++) { // utan opts.biome: bara banor som slår de nya biomerna ändras
+      const depth = 1 + (i % 5), seed = 'stabilmix' + i, lv = Gen.floor(seed, depth, { shop: i % 2 === 0 });
+      if (lv.biome === 'crystal' || lv.biome === 'sunken') { newB++; continue; }
+      cmp(OldGen.floor(seed, depth, { shop: i % 2 === 0 }), lv, `[stabil mix seed=${seed} d=${depth}]`);
+    }
+    if (newB < 15 || newB > 75) fail('frö-stabilitet: ' + newB + ' av 300 banor utan opts.biome slog de nya biomerna (väntat ~40)');
+    stats.stable = `300 banor med gammal biom + ${300 - newB} utan opts.biome identiska med version 7 utom ${onTop} nya rutor (Ā Ă Ğ Ġ Ģ) på ${levelsOnTop} banor; ${newB} av 300 utan opts.biome blev crystal/sunken`;
+  }
+}
+
 // ---- slumpad biom utan opts.biome: vikter och djupintervall ----
 {
   const seen = {};
@@ -796,16 +1046,18 @@ for (const biome of BIOME_IDS.slice(1)) {
     if (i < 200) for (const e of Gen.validate(lv)) fail(`[mix${i}] ${e}`);
   }
   for (const id of BIOME_IDS) if (!seen[id]) fail('biomen ' + id + ' valdes aldrig slumpmässigt');
-  if (seen.dungeon < 240 || seen.dungeon > 500) fail('fängelsehålan valdes ' + seen.dungeon + ' av 1000 gånger');
+  if (seen.dungeon < 200 || seen.dungeon > 500) fail('fängelsehålan valdes ' + seen.dungeon + ' av 1000 gånger');
   if (seen.volcano < 50 || seen.volcano > 150) fail('vulkanen valdes ' + seen.volcano + ' av 1000 gånger');
   if (seen.tomb < 50 || seen.tomb > 150) fail('gravkammaren valdes ' + seen.tomb + ' av 1000 gånger');
+  if (seen.crystal < 40 || seen.crystal > 140) fail('kristallgrottorna valdes ' + seen.crystal + ' av 1000 gånger');
+  if (seen.sunken < 40 || seen.sunken > 140) fail('sjunkna staden valdes ' + seen.sunken + ' av 1000 gånger');
   stats.mix = BIOME_IDS.map(id => id + '=' + (seen[id] || 0)).join(' ');
   if (Gen.floor(5, 3, { theme: 'kapell' }).biome !== 'dungeon') fail('opts.theme ska ge fängelsehålan');
 }
 
 // ---- bossarenor ----
 const bossMs = {};
-for (const arena of ['hall', 'graveyard', 'cave', 'forest', 'swamp', 'frost', 'volcano', 'tomb']) {
+for (const arena of ['hall', 'graveyard', 'cave', 'forest', 'swamp', 'frost', 'volcano', 'tomb', 'crystal', 'sunken']) {
   bossMs[arena] = 0;
   for (let i = 0; i < 30; i++) {
     const bossId = i % 6 === 5 ? undefined : GUARD_IDS[i % GUARD_IDS.length];
@@ -817,7 +1069,37 @@ for (const arena of ['hall', 'graveyard', 'cave', 'forest', 'swamp', 'frost', 'v
     const m = lv.map;
     if (count(m, 'B') !== 1 || count(m, 'G') !== 1 || count(m, 'x') !== 1 || count(m, 'P') !== 1) fail(tag + ' B/G/x/P antal');
     if (!lv.features || lv.features.water !== count(m, '-')) fail(tag + ' level.features');
-    m.forEach((r, y) => [...r].forEach((c, x) => { if (HAZ.includes(c) && [-1, 0, 1].some(dy => [-1, 0, 1].some(dx => 'PxB'.includes((m[y + dy] || '')[x + dx])))) fail(tag + ` ${c} intill P/x/B vid ${x},${y}`); }));
+    // (leviatans bassäng: vattnet når fram till bossen, men aldrig till P eller x)
+    m.forEach((r, y) => [...r].forEach((c, x) => { if (HAZ.includes(c) && [-1, 0, 1].some(dy => [-1, 0, 1].some(dx => (arena === 'sunken' && 'ĐĔĜ'.includes(c) ? 'Px' : 'PxB').includes((m[y + dy] || '')[x + dx])))) fail(tag + ` ${c} intill P/x/B vid ${x},${y}`); }));
+    for (const e of [...'ĐĒĔĖĚĜÓ']) if (count(m, e) && !(arena === 'crystal' ? 'Ė' : arena === 'sunken' ? 'ĐĔĜ' : '').includes(e)) fail(tag + ` ${e} i arenan ${arena}`);
+    if ((arena === 'sunken') !== !!lv.tide) fail(tag + ' level.tide ' + JSON.stringify(lv.tide));
+    if (arena === 'crystal') { // kristalltronen: ring av brytande kristaller runt den fria mitten, glödkristaller i stället för eldfat, ådror, inomhus
+      const ring = [...m.join('')].filter(c => c === 'Ė').length;
+      if (ring < 6 || ring > 8 || lv.features.breakcrystals !== ring) fail(tag + ' brytande kristaller i ringen ' + ring);
+      m.forEach((r, y) => [...r].forEach((c, x) => { if (c === 'Ė') { const d = Math.hypot((x - 12) / 7, (y - 14) / 6); if (d < 0.75 || d > 1.3) fail(tag + ` brytande kristall utanför ringen vid ${x},${y}`); } }));
+      if (count(m, 'f') || count(m, 'Ę') < 6 || !count(m, 'Ć')) fail(tag + ` ljus/ådror f${count(m, 'f')} Ę${count(m, 'Ę')} Ć${count(m, 'Ć')}`);
+      if (lv.floors[0] !== 'floor_crystal' || lv.floors[1] !== 'floor_cave' || lv.biome !== 'crystal' || lv.sky !== null || lv.ceil !== 'ceil_cave') fail(tag + ' golv/biom/tak ' + lv.floors + ' ' + lv.biome);
+    }
+    if (arena === 'sunken') { // leviatans bassäng: stor bassäng i mitten som når bossen, gångar runt om, tidvatten och luftbubblor, utomhus
+      const wet = count(m, 'Đ') + count(m, 'Ĝ');
+      if (wet < 80) fail(tag + ' för liten bassäng ' + wet);
+      for (let y = 10; y <= 18; y++) for (let x = 10; x <= 14; x++) if (!'ĐĜĔ'.includes(m[y][x])) fail(tag + ` bassängen täcker inte mitten vid ${x},${y} (${m[y][x]})`);
+      if (!'ĐĜ'.includes(m[8][12])) fail(tag + ' vattnet når inte fram till bossen');
+      if (count(m, 'Ĝ') < 2 || count(m, 'Ĝ') > 3 || count(m, 'Ĕ') < 8) fail(tag + ` luftbubblor ${count(m, 'Ĝ')} tidvatten ${count(m, 'Ĕ')}`);
+      let wx0 = 99, wx1 = 0, wy1 = 0;
+      m.forEach((r, y) => [...r].forEach((c, x) => { if ('ĐĜ'.includes(c)) { wx0 = Math.min(wx0, x); wx1 = Math.max(wx1, x); wy1 = Math.max(wy1, y); } }));
+      if (wx0 < 4 || wx1 > 20 || wy1 > 21) fail(tag + ` bassängen når gångarna (${wx0}-${wx1}, ${wy1})`);
+      const P = findCh(m, 'P'), dry = floodD(m, P[0], P[1], c => !isBlock(c) && !SINK.includes(c) || GATES.includes(c));
+      for (const [x, y, what] of [[12, 3, 'grinden'], [12, 6, 'bossen']]) if (dry[y * 25 + x] < 0) fail(tag + ` gången till ${what} är stängd`);
+      for (const [x0, x1, what] of [[1, 4, 'väster'], [20, 23, 'öster']]) { // gångarna runt bassängen: torra rutor i båda sidorna
+        let k = 0; for (let y = 10; y <= 18; y++) for (let x = x0; x <= x1; x++) if (dry[y * 25 + x] >= 0) k++;
+        if (k < 9) fail(tag + ` gången i ${what} är stängd (${k} torra rutor)`);
+      }
+      m.forEach((r, y) => [...r].forEach((c, x) => { if (c === 'Ĕ' && !N4.some(([dx, dy]) => 'ĐĜĔ'.includes(m[y + dy][x + dx]))) fail(tag + ` tidvatten långt från vattnet vid ${x},${y}`); }));
+      if (lv.floors[0] !== 'floor_sunken_tiles' || lv.floors[1] !== 'floor_deepwater' || lv.floors[2] !== 'floor_shallow' || lv.biome !== 'sunken' || !lv.sky) fail(tag + ' golv/biom/himmel ' + lv.floors + ' ' + lv.biome);
+      m.forEach((r, y) => [...r].forEach((c, x) => { if ('ĐĜ'.includes(c) && lv.floors[+lv.floorMask[y][x]] !== 'floor_deepwater') fail(tag + ` vatten utan floor_deepwater vid ${x},${y}`); }));
+      if (!(lv.tide && lv.tide.period >= 24 && lv.tide.period <= 40)) fail(tag + ' level.tide');
+    }
     if (arena === 'swamp' && count(m, '-') < 30) fail(tag + ' för lite vatten i träskarenan ' + count(m, '-'));
     if (arena === 'frost') { // ishallen: frusen sjö i mitten, pelare av Ø, istappar, inomhus, snö och frusen sten
       if (count(m, ':') < 30 || m[14][12] !== ':' && m[14][12] !== 'h' && m[14][12] !== 'a') fail(tag + ' ingen frusen sjö i mitten ' + count(m, ':'));
@@ -850,14 +1132,14 @@ for (const arena of ['hall', 'graveyard', 'cave', 'forest', 'swamp', 'frost', 'v
       if (count(m, '¶')) fail(tag + ' lägereld i bossarenan');
     }
     if (count(m, 'h') < 3 || count(m, 'a') < 3) fail(tag + ' för få h/a');
-    if (count(m, 'f') < 6) fail(tag + ' för få eldfat ' + count(m, 'f'));
+    if (count(m, 'f') + (arena === 'crystal' ? count(m, 'Ę') : 0) < 6) fail(tag + ' för få eldfat ' + count(m, 'f'));
     if (JSON.stringify(Gen.boss(seed, opts)) !== JSON.stringify(lv)) fail(tag + ' inte deterministisk');
     if (bossId) {
       // bossens väggtecken, golv och dekor
       const gd = GUARD[bossId], bf = lv.floors.indexOf(gd.floor);
       if (lv.boss !== bossId) fail(tag + ' level.boss ' + lv.boss);
       if (count(m, gd.wall) < 6) fail(tag + ` för få väggar ${gd.wall}: ${count(m, gd.wall)}`);
-      if (bf < 0 || +lv.floorMask[14][12] !== bf) fail(tag + ' bossens golv saknas i mitten');
+      if (bf < 0 || (arena === 'sunken' ? +lv.floorMask[7][12] : +lv.floorMask[14][12]) !== bf) fail(tag + ' bossens golv saknas i mitten'); // leviatans bassäng: där bossen står
       if (![...m.join('')].some(c => PROPS.includes(c))) fail(tag + ' ingen dekor');
       // samma layout som utan bosstema: alla väggar ligger på samma ställen (bara tecknet byts)
       const plain = Gen.boss(seed, Object.assign({}, opts, { boss: undefined })).map;
@@ -868,11 +1150,11 @@ for (const arena of ['hall', 'graveyard', 'cave', 'forest', 'swamp', 'frost', 'v
       for (let y = 10; y <= 18; y++) for (let x = 8; x <= 16; x++) if (isBlock(m[y][x])) fail(tag + ` hinder ${m[y][x]} i mitten vid ${x},${y}`);
       if ([...'SKVILNORWEQZ'].some(c => count(m, c))) fail(tag + ' vanliga fiender i bossarenan');
       for (let y = 5; y <= 9; y++) for (let x = 10; x <= 14; x++) if (isBlock(m[y][x])) fail(tag + ` hinder ${m[y][x]} vid bossen ${x},${y}`);
-      const outdoor = arena !== 'cave' && arena !== 'frost' && arena !== 'volcano' && arena !== 'tomb';
+      const outdoor = arena !== 'cave' && arena !== 'frost' && arena !== 'volcano' && arena !== 'tomb' && arena !== 'crystal';
       if (!!lv.sky !== outdoor) fail(tag + ' sky');
-      const wall = { graveyard: '7', cave: '8', forest: '6', swamp: '0', frost: 'Ø', volcano: 'Ò', tomb: 'È' }[arena];
+      const wall = { graveyard: '7', cave: '8', forest: '6', swamp: '0', frost: 'Ø', volcano: 'Ò', tomb: 'È', crystal: 'Ą', sunken: 'Ċ' }[arena];
       if (m[0][0] !== wall) fail(tag + ' väggtecken ' + m[0][0]);
-      if (outdoor && count(m, 'n') + count(m, 't') < 4) fail(tag + ' för lite skydd');
+      if (outdoor && arena !== 'sunken' && count(m, 'n') + count(m, 't') < 4) fail(tag + ' för lite skydd');
     }
     if (!samples['boss:' + arena]) samples['boss:' + arena] = lv;
   }
@@ -1051,6 +1333,40 @@ const mazeMs = [];
     }
     if (!found) fail('validate-test: hittade ingen korridorruta som är enda vägen (kvicksand)');
   }
+  // version 8: tak, nya tecken där de inte får vara, ål på land, tidvatten utan level.tide, vatten som enda vägen, ogiltigt level.tide
+  {
+    const sk = Gen.floor(11, 3, { biome: 'sunken' }), cr = Gen.floor(12, 3, { biome: 'crystal' });
+    if (!msg(bad, l => { l.map[3] = l.map[3].slice(0, 2) + 'ĞĞ' + l.map[3].slice(4); }, /kartografer/)) fail('validate: två kartografer ej upptäckt');
+    if (!msg(bad, l => { l.map[3] = l.map[3].slice(0, 2) + 'ĢĢĢ' + l.map[3].slice(5); }, /kunskapsböcker/)) fail('validate: tre kunskapsböcker ej upptäckt');
+    if (!msg(bad, l => { l.map[3] = l.map[3].slice(0, 2) + 'ĀĀ' + l.map[3].slice(4); }, /skuggjägare/)) fail('validate: två skuggjägare ej upptäckt');
+    if (!msg(cr, l => { l.map[3] = l.map[3].slice(0, 2) + 'ĖĖĖĖĖ' + l.map[3].slice(7); }, /brytande kristaller/)) fail('validate: fem brytande kristaller ej upptäckt');
+    if (!msg(bad, l => { l.map[0] = 'Ą' + l.map[0].slice(1); }, /hör inte hemma/)) fail('validate: kristallvägg i fängelsehålan ej upptäckt');
+    if (!msg(bad, l => putCh(l, startDot(l), 'Đ'), /hör inte hemma/)) fail('validate: djupt vatten i fängelsehålan ej upptäckt');
+    if (!msg(bad, l => putCh(l, startDot(l), 'Ë'), /hör inte hemma/)) fail('validate: kristallgolem i fängelsehålan ej upptäckt');
+    if (!startDot(sk)) fail('validate-test: ingen fri ruta i sjunkna staden');
+    else {
+      if (!msg(sk, l => putCh(l, startDot(l), 'Ó'), /ål utanför vattnet/)) fail('validate: ål på land ej upptäckt');
+      const dryDot = l => { const m = l.map, P = findCh(m, 'P'); for (let y = 2; y < m.length - 2; y++) for (let x = 2; x < m[0].length - 2; x++) if (m[y][x] === '.' && Math.max(Math.abs(x - P[0]), Math.abs(y - P[1])) >= 2 && ![-1, 0, 1].some(dy => [-1, 0, 1].some(dx => SINK.includes(m[y + dy][x + dx])))) return [x, y]; return null; };
+      if (!msg(sk, l => putCh(l, dryDot(l), 'Ĝ'), /luftbubblor utanför/)) fail('validate: luftbubblor på land ej upptäckt');
+    }
+    if (!msg(sk, l => { l.tide = null; }, /tidvatten/)) fail('validate: tidvatten utan level.tide ej upptäckt');
+    if (!msg(sk, l => { l.tide = { period: 12 }; }, /level.tide/)) fail('validate: för kort tidvattenperiod ej upptäckt');
+    // djupt vatten i en korridorruta som är enda vägen: något nås bara över vatten
+    let found = false;
+    for (let sd = 1; sd <= 12 && !found; sd++) {
+      const lv0 = Gen.floor(sd, 1 + (sd % 5), { biome: 'sunken' }), m = lv0.map;
+      for (let y = 1; y < m.length - 1 && !found; y++) for (let x = 1; x < m[0].length - 1 && !found; x++) {
+        if (m[y][x] !== '.' || lv0.roomMask[y][x] !== '-') continue;
+        if (!((isWall(m[y - 1][x]) && isWall(m[y + 1][x])) || (isWall(m[y][x - 1]) && isWall(m[y][x + 1])))) continue;
+        const l = JSON.parse(JSON.stringify(lv0)); putCh(l, [x, y], 'Đ');
+        const reach = mm => floodD(mm, ...findCh(mm, 'P'), c => !isBlock(c) && !SINK.includes(c)).reduce((k, v) => k + (v >= 0 ? 1 : 0), 0);
+        if (reach(l.map) >= reach(m) - 1) continue;
+        found = true;
+        if (!Gen.validate(l).some(e => /lava\/spikar/.test(e))) fail('validate: djupt vatten som enda vägen ej upptäckt');
+      }
+    }
+    if (!found) fail('validate-test: hittade ingen korridorruta som är enda vägen (vatten)');
+  }
   // en ring av träd runt P stänger in spelaren
   if (!hack(out, l => { const y = l.map.findIndex(r => r.includes('P')), x = l.map[y].indexOf('P'); for (let dy = -1; dy <= 1; dy++) l.map[y + dy] = l.map[y + dy].split('').map((c, xx) => (Math.abs(xx - x) <= 1 && (dy || xx !== x) && !(c >= '1' && c <= '9') ? 't' : c)).join(''); })) fail('validate: instängd av träd ej upptäckt');
 }
@@ -1088,6 +1404,15 @@ console.log('Version 7 (andel banor, alla biomer): ' + stats.v7 + `; kvicksand k
 console.log('Version 7 per biom (andel banor %): ' + BIOME_IDS.map(id => id + ' ' + ['scarabs', 'mummy', 'jackal', 'thief', 'doppel', 'sarcophagi', 'bells', 'gambler', 'banker', 'wanderer', 'pages', 'batteries', 'stones', 'quicksand', 'boulders', 'beams'].filter(k => B[id].f7[k]).map(k => k + '=' + (100 * B[id].f7[k] / B[id].n).toFixed(0)).join(' ')).join('\n  '));
 console.log(`Labyrinter: 60 st, snitt ${avg(mazeMs).toFixed(2)} ms, slingor ${(stats.mazeLoops / 60).toFixed(1)} per labyrint, t.ex. ${stats.mazeNames}`);
 console.log('NPC:er m.m. (andel banor, alla biomer): ' + stats.npc);
+{
+  const c = B.crystal, k = B.sunken;
+  console.log(`Kristallgrottorna: glödkristaller ${(c.glow / c.n).toFixed(1)} per bana, brytande kristaller ${(c.prism / c.n).toFixed(1)} (på ${(100 * c.prismL / c.n).toFixed(0)} %), kristallspikar ${(c.spk / c.n).toFixed(1)} rutor (på ${(100 * c.spkL / c.n).toFixed(0)} %), ådror ${(100 * c.veins / c.n).toFixed(0)} % av de synliga väggarna`);
+  console.log(`Sjunkna staden: djupt vatten ${(k.wet / k.n).toFixed(0)} rutor, tidvatten ${(k.tide / k.n).toFixed(1)} (på ${(100 * k.tideL / k.n).toFixed(0)} %), luftbubblor ${(k.bub / k.n).toFixed(1)}, ålar ${(k.eels / k.n).toFixed(1)} (på ${(100 * k.eelL / k.n).toFixed(0)} %), vrakkistor ${(k.wreck / k.n).toFixed(1)} (vattenskatter på holmar ${k.islet || 0}), korall ${(k.coral / k.n).toFixed(0)} väggrutor`);
+}
+console.log('Version 8 med spelets opts: ' + stats.v8Game.join('; '));
+console.log('Version 8 (andel banor, alla biomer): ' + stats.v8 + `; vatten/spikar/tidvatten kontrollerade som vägg på ${stats.wetOK} banor`);
+console.log('Version 8 per biom (andel banor %): ' + BIOME_IDS.map(id => id + ' ' + Object.keys(B[id].f8).filter(k => B[id].f8[k]).map(k => k + '=' + (100 * B[id].f8[k] / B[id].n).toFixed(0)).join(' ')).join('\n  '));
+console.log('Frö-stabilitet: ' + (stats.stable || 'EJ KONTROLLERAD'));
 console.log('\nFiender per rum (alla rum utom start: antal fiender -> antal rum):');
 for (const id of BIOME_IDS) { const h = B[id].hist; console.log(`  ${id.padEnd(10)} ` + Object.keys(h).sort((a, b) => a - b).map(k => k + ':' + h[k]).join(' ') + `   fiender/budget ${(B[id].enRel / B[id].n).toFixed(2)}  mimics ${B[id].mimic}  P->Z ${(B[id].gdist / B[id].n).toFixed(2)} (min ${B[id].gmin.toFixed(2)}) av längsta vägen`); }
 console.log('Rekvisita per bana:');
@@ -1095,7 +1420,7 @@ for (const id of BIOME_IDS) { const p = B[id].propN; console.log(`  ${id.padEnd(
 console.log('Rumstyper (antal):');
 for (const id of BIOME_IDS) { const a = B[id].arch; console.log(`  ${id.padEnd(10)} ` + Object.keys(a).sort((u, v) => a[v] - a[u]).map(k => k + '=' + a[k]).join(' ')); }
 console.log('Slumpad biom (1000 st): ' + stats.mix);
-console.log('Bossarenor 8 x 30: ' + Object.entries(bossMs).map(([k, v]) => `${k} ${(v / 30).toFixed(2)} ms`).join(', '));
-console.log(`Omförsök i generatorn: ${Gen.floor.stats.retries - stats.retries0} (varav ombyggen utan version 7: ${Gen.floor.stats.v7off})`);
+console.log('Bossarenor 10 x 30: ' + Object.entries(bossMs).map(([k, v]) => `${k} ${(v / 30).toFixed(2)} ms`).join(', '));
+console.log(`Omförsök i generatorn: ${Gen.floor.stats.retries - stats.retries0} (varav ombyggen utan version 7: ${Gen.floor.stats.v7off}; underkända banor där version 8-sakerna togs bort igen: ${Gen.floor.stats.v8off})`);
 if (failures) { console.log(`\n${failures} FEL`); process.exit(1); }
 console.log('\nALLA TESTER OK');

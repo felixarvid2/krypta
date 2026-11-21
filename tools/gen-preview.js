@@ -1,9 +1,10 @@
 'use strict';
 // Skriver ut en genererad bana som ASCII: node tools/gen-preview.js <biom> [seed] [djup] [flaggor]
-//   biom: dungeon | caves | graveyard | forest | courtyard | swamp | frost | volcano | tomb | boss | boss:hall | boss:graveyard | boss:cave
-//         | boss:forest | boss:swamp | boss:frost | boss:volcano | boss:tomb | random   (eller --biome=tomb)
-//   flaggor: --biome=swamp  --shop  --weapon=g (eller --weapon=axe, --weapon=musket)  --guardian=demon (vaktare på vanliga våningar, även
-//            frost/flame/pharaoh)  --boss=ghost (bossens tema i arenan, även flame/pharaoh)
+//   biom: dungeon | caves | graveyard | forest | courtyard | swamp | frost | volcano | tomb | crystal | sunken | boss | boss:hall
+//         | boss:graveyard | boss:cave | boss:forest | boss:swamp | boss:frost | boss:volcano | boss:tomb | boss:crystal | boss:sunken
+//         | random   (eller --biome=crystal)
+//   flaggor: --biome=swamp  --shop  --weapon=g (eller --weapon=axe, --weapon=harpoon, --weapon=Â)  --guardian=demon (vaktare på vanliga
+//            våningar, även frost/flame/pharaoh/crystalqueen/leviathan)  --boss=ghost (bossens tema i arenan, även crystalqueen/leviathan)
 //            --secret (hemlig skattvåning, Gen.secret; biomen väljer utseendet, standard dungeon)
 //            --maze (labyrint, Gen.maze; biomen väljer utseendet, standard dungeon)
 //            --beams (visa ljusschakten som ~ och rullstenens bana som =)
@@ -20,6 +21,10 @@
 //          node tools/gen-preview.js --biome=tomb 7 3 --rooms --guardian=pharaoh --beams
 //          node tools/gen-preview.js boss:tomb 3 --boss=pharaoh
 //          node tools/gen-preview.js --maze tomb 4 --rooms
+//          node tools/gen-preview.js --biome=crystal 7 3 --rooms --guardian=crystalqueen
+//          node tools/gen-preview.js --biome=sunken 7 3 --rooms --floor   (golvmasken visar vattnet)
+//          node tools/gen-preview.js boss:crystal 3 --boss=crystalqueen
+//          node tools/gen-preview.js boss:sunken 3 --boss=leviathan
 //          node tools/gen-preview.js caves 1 --stats --n=200
 const fs = require('fs');
 const path = require('path');
@@ -59,12 +64,21 @@ const LEGEND = [
   'rekvisita (blockerar): ² sarkofag  ³ larmklocka      NPC:er: ç spelare  ÿ bankir  ý vandrare',
   'föremål: þ krönikesida  ¼ lampolja  ½ kaststenar      fällor: ¯ kvicksand  ¹ rullstensutlösare (level.boulders)',
   'gravkammaren: sandstenssalar, sandgångar och gårdar under ökensolen (--sky), ljusschakt (--beams); --maze: labyrint',
+  'version 8: väggar Ą kristallvägg  Ć kristallåder  Ĉ kristalldrottningens vägg  Ċ ruinmur  Č korall  Ď leviatans vägg',
+  'vapen: À harpun  Á bumerang  Â prisma      nya fiender: Ë kristallgolem  Í skärvirrbloss  Ï drunknad sjöman  Ó ål (i vattnet)',
+  '  Ú siren  Û krabba  Ā skuggjägare  Ă häxa',
+  'farliga golv: Đ djupt vatten (simma, luft)  Ē kristallspikar  Ĕ tidvatten (grunt, periodvis djupt: level.tide)  Ĝ luftbubblor (i vattnet)',
+  'rekvisita (blockerar): Ė brytande kristall  Ę glödkristall (ljus)  Ě vrakkista  Ğ kartografen (NPC)  Ġ talangaltare      föremål: Ģ kunskapsbok',
+  'kristallgrottorna: grottor i kristall med glödkristaller och spikfläckar; sjunkna staden: ruiner med bassänger, kanaler och tidvatten',
+  'under översvämmade torg (--sky); --floor visar vattnets golv (floor_deepwater/floor_shallow)',
 ];
-const OLD_EN = 'SKVILNORW', NEW_EN = 'UXY!@^+ÅÄÖÉÜÑÆÞÐÝÃÕÊÎÔ';
+const OLD_EN = 'SKVILNORW', NEW_EN = 'UXY!@^+ÅÄÖÉÜÑÆÞÐÝÃÕÊÎÔËÍÏÓÚÛĀĂ';
 const FEAT = { anvil: '(', fortune: ')', prisoner: '[', challenge: '?', offering: ';', lever: '/', locked: ']', cracked: '{', arrows: '<', gas: '>', lava: '_', water: '-', ice: ':', webs: '"',
   alchemist: '£', priest: '€', petcage: '©', potions: '¥', icicles: 'Ç',
   campfire: '¶', questboard: '®', runes: 'ª', meat: 'ð', firejets: '°', crumble: '¬', pendulums: '±', plates: '¨', secretstairs: '÷', poisonbarrels: 'µ', frostbarrels: 'ß',
-  sarcophagi: '²', quicksand: '¯', boulders: '¹', bells: '³', gambler: 'ç', banker: 'ÿ', wanderer: 'ý', pages: 'þ', batteries: '¼', stones: '½' };
+  sarcophagi: '²', quicksand: '¯', boulders: '¹', bells: '³', gambler: 'ç', banker: 'ÿ', wanderer: 'ý', pages: 'þ', batteries: '¼', stones: '½',
+  deepwater: 'Đ', crystalspikes: 'Ē', tide: 'Ĕ', breakcrystals: 'Ė', glowcrystals: 'Ę', wrecks: 'Ě', bubbles: 'Ĝ', cartographer: 'Ğ', talentaltar: 'Ġ',
+  books: 'Ģ', stalker: 'Ā', witch: 'Ă', eels: 'Ó' };
 const makeLevel = (seed, d, shop) => (flag('secret') ? Gen.secret(seed, { biome: biome === 'random' ? undefined : biome, depth: d })
   : flag('maze') ? Gen.maze(seed, { biome: biome === 'random' ? undefined : biome, depth: d })
   : biome.startsWith('boss') ? Gen.boss(seed, { arena: biome.split(':')[1], boss: flag('boss') })
@@ -97,7 +111,7 @@ for (let k = 0; k < n; k++) {
   const H = lv.map.length, W = lv.map[0].length;
   const types = {}; for (const r of lv.rooms) types[r.type] = (types[r.type] || 0) + 1;
   console.log(`${lv.name} [${lv.biome}${lv.arena ? ':' + lv.arena : ''}] seed ${seed} djup ${lv.depth} ${W}x${H} ${ms.toFixed(1)} ms ambient ${lv.ambient} fog ${lv.fog} tak ${lv.ceil}` +
-    (lv.guardian ? ` vaktare ${lv.guardian}` : '') + (lv.boss ? ` boss ${lv.boss}` : ''));
+    (lv.guardian ? ` vaktare ${lv.guardian}` : '') + (lv.boss ? ` boss ${lv.boss}` : '') + (lv.tide ? ` tidvatten ${lv.tide.period} s` : ''));
   console.log('golv: ' + lv.floors.map((f, i) => i + '=' + f).join(' '));
   console.log('områden: ' + Object.entries(types).map(([t, c]) => t + '=' + c).join(' '));
   if (lv.features) console.log('nya saker: ' + Object.entries(lv.features).filter(([, v]) => v).map(([k, v]) => k + '=' + v).join(' '));
@@ -116,7 +130,7 @@ for (let k = 0; k < n; k++) {
     let s = '';
     for (let x = 0; x < W; x++) {
       const c = lv.map[y][x];
-      if (show) { s += (c >= '0' && c <= '9') || '#%~&=Ø¦Ò¤ÈÌÙ'.includes(c) ? '#' : (show[y] ? show[y][x] : '?'); continue; }
+      if (show) { s += (c >= '0' && c <= '9') || '#%~&=Ø¦Ò¤ÈÌÙĄĆĈĊČĎ'.includes(c) ? '#' : (show[y] ? show[y][x] : '?'); continue; }
       if (mark[y * W + x] && (c === '.' || mark[y * W + x] === '~')) { s += mark[y * W + x]; continue; }
       if (c !== '.') { s += c; continue; }
       const fi = lv.floorMask ? +lv.floorMask[y][x] : 0;
@@ -126,7 +140,7 @@ for (let k = 0; k < n; k++) {
   }
   if (flag('rooms')) {
     // per rum: typ, rumstyp, ruta, antal fiender och rekvisita (räknat via rumsmasken när den finns)
-    const ENEMY = 'SKVILNORWEQ' + NEW_EN, PROPS = 'ckjquvwyzeiFHJT()[?;/£€©¶®µß÷²³çÿý';
+    const ENEMY = 'SKVILNORWEQ' + NEW_EN, PROPS = 'ckjquvwyzeiFHJT()[?;/£€©¶®µß÷²³çÿýĖĘĚĞĠ';
     lv.rooms.forEach((r, i) => {
       let en = 0, pr = 0, items = '';
       for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -134,7 +148,7 @@ for (let k = 0; k < n; k++) {
         if (!inside) continue;
         const c = lv.map[y][x];
         if (ENEMY.includes(c)) en++; else if (PROPS.includes(c)) pr++;
-        if ("ZhaA$CMwy,'}¥ªðþ¼½".includes(c) || (Gen.WEAPONS && Gen.WEAPONS[c])) items += c;
+        if ("ZhaA$CMwy,'}¥ªðþ¼½Ģ".includes(c) || (Gen.WEAPONS && Gen.WEAPONS[c])) items += c;
       }
       console.log(`  ${String(i).padStart(2)} ${String.fromCharCode(48 + i)} ${r.type.padEnd(9)} ${(r.arch || '').padEnd(12)} ${(r.tag || r.shape || '').padEnd(9)} ${r.x},${r.y} ${r.w}x${r.h}  fiender ${en}  rekvisita ${pr}  ${items}` + (r.guardian ? '  vaktare ' + r.guardian : '') + (r.lock ? '  lås ' + r.lock : ''));
     });

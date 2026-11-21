@@ -418,7 +418,7 @@ const PROP_DEFS = {
   'Ė': { img: 'prismcrystal', n: 2, size: 0.95, block: true, fb: 'crystal' },
   'Ę': { img: 'glowcrystal', n: 4, anim: 4, size: 0.8, block: true, light: 0.9, fb: 'crystal' },
   'Ě': { img: 'wreckchest', n: 2, size: 0.7, block: true, use: 'wreck', fb: 'coffin' },
-  'Ĝ': { img: 'bubbles', n: 4, anim: 4, size: 0.5, under: 'auto', fb: 'gasvent' },
+  'Ĝ': { img: 'bubbles', n: 4, anim: 4, size: 0.5, under: 'Đ', fb: 'gasvent' },
   'Ē': { img: 'crystalspikes', n: 2, size: 0.55, trap: true, fb: 'spikes' },
   'Ğ': { img: 'npc_cartographer', src: 'npc_cartographer', n: 4, anim: 4, size: 0.95, block: true, use: 'cartographer', fb: 'prisoner', npc: true },
   'Ġ': { img: 'talentaltar', n: 2, size: 0.8, block: true, use: 'talent', fb: 'altar' },
@@ -839,7 +839,7 @@ function startLevel(level) {
       if (d.light) torches.push({ x: o.x, y: o.y, ph: o.ph, cells: [], hidden: true, str: d.light, r: 4, prop: o });
       if (d.trap || c === 'z') hazGrid[y * mw + x] = 1;
       if (d.web) { o.size = 0.85; o.z = 0.05; continue; } // nätet ligger kvar i kartan (saktar ned, kan brinna)
-      if (!d.block) map[y][x] = d.under === 'auto' && [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([a, b]) => (map[y + b] || '')[x + a] === 'Đ').length >= 2 ? 'Đ' : '.'; // ben, ljus, svamp och fällor går att gå över; bubblor i vattnet ligger kvar i vatten
+      if (!d.block) map[y][x] = d.under === 'Đ' ? 'Đ' : d.under === 'auto' && [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([a, b]) => (map[y + b] || '')[x + a] === 'Đ').length >= 2 ? 'Đ' : '.'; // ben, ljus, svamp och fällor går att gå över; bubblor i vattnet ligger kvar i vatten
     }
   }
   prepareTorchLight();
@@ -7031,6 +7031,7 @@ function setupV8(lrng) { // efter att våningen byggts
   { const bi = boomIdx(); if (bi >= 0 && P.has[bi]) P.mags[bi] = 1; WS.boomOut = 0; try { WS.boomSnd && WS.boomSnd.s.stop(); } catch (e) { /* stoppad */ } WS.boomSnd = null; } // en bumerang i luften kommer inte med till nästa våning
   spikeCells = new Set(props.filter(o => o.ch === 'Ē').map(o => o.cy * mw + o.cx)); tideWas = false; ropeTo = null; ropeT = 0; P.grapple = null; P.swim = false; P.air = 12 + mod('airMax');
   for (const e of ents) if (e.d.ai === 'eel') { totalEnemies--; e.hidden = true; } // ålar räknas inte för portalen
+  if (lvl.biome === 'crystal') lvl.ambient = Math.max(lvl.ambient || 0, 0.2); // kristallerna glimmar även i mörkret
   if (lvl.biome === 'crystal') for (let y = 0; y < mh; y++) for (let x = 0; x < mw; x++) if (map[y][x] === 'Ć' && (x * 7 + y * 13) % 9 === 0 && torches.length < 120) { // kristallådrorna lyser
     const ox = [[1, 0], [-1, 0], [0, 1], [0, -1]].find(([a, c]) => map[y + c] && map[y + c][x + a] && !solid(x + a + 0.5, y + c + 0.5)); if (ox) torches.push({ x: x + 0.5 + ox[0] * 0.6, y: y + 0.5 + ox[1] * 0.6, ph: (x + y) % 10, cells: [], hidden: true, str: 0.4, r: 3.5, col: (x + y) % 2 ? [170, 130, 255] : [120, 200, 255] }); }
   prepareTorchLight();
