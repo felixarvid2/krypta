@@ -434,6 +434,7 @@ const PROP_DEFS = {
   'ç': { img: 'npc_gambler', src: 'npc_gambler', n: 4, anim: 4, size: 0.95, block: true, use: 'gamble', fb: 'prisoner', npc: true },
   'ÿ': { img: 'npc_banker', src: 'npc_banker', n: 4, anim: 4, size: 0.95, block: true, use: 'bank', fb: 'prisoner', npc: true },
   'ý': { img: 'npc_wanderer', src: 'npc_wanderer', n: 4, anim: 4, size: 0.95, block: true, use: 'wander', fb: 'prisoner', npc: true },
+  'Ů': { img: 'npc_banker', src: 'npc_banker', n: 4, anim: 4, size: 0.95, block: true, use: 'hubWeapons', fb: 'prisoner', npc: true },
   'Ĥ': { img: 'altar', n: 2, size: 0.75, block: true, light: 0.7, use: 'hubAltar' },
   'Ħ': { img: 'npc_priest', src: 'npc_priest', n: 4, anim: 4, size: 0.95, block: true, use: 'hubArchive', fb: 'prisoner', npc: true },
   'Ĩ': { img: 'npc_alchemist', src: 'npc_alchemist', n: 4, anim: 5, size: 0.95, block: true, use: 'hubTrainer', fb: 'prisoner', npc: true },
@@ -773,7 +774,7 @@ function newRun(seed, daily) {
   resetPlayer(); recomputeMods(); if (settings.pet && PETS[settings.pet] && petOpen(settings.pet)) run.pet = settings.pet; applyClassStart();
   if (cmode('onehit')) { P.hp = 1; P.armor = 0; }
   if (cmode('dark')) P.battery += 120; // mörkerläget: extra batteri
-  run.talentRerolls = 1 + meta('talentroll'); if (meta('startlvl') && !run.practice) { run.lvl = 2; run.talentQ = 1; }
+  giveStartWeapon(); run.talentRerolls = 1 + meta('talentroll'); if (meta('startlvl') && !run.practice) { run.lvl = 2; run.talentQ = 1; }
   if (meta('stones')) P.stones += 2 * meta('stones');
   if (meta('mastery')) run.wxp = Object.fromEntries(WEAPONS.map(w => [w.id, MASTERY[1]])); // vapenvana från start
   if (meta('startrune')) { run.wrunes = run.wrunes || {}; run.wrunes.pistol = (run.wrunes.pistol || []).concat(RUNE_IDS[(Math.random() * RUNE_IDS.length) | 0]).slice(-runeSlots()); }
@@ -7154,7 +7155,7 @@ function hubLevel() {
   for (let x = 1; x < Wd - 1; x++) m[1][x] = x % 4 === 1 ? '5' : '1'; // vägg med fanor bakom portalerna
   for (const [x, y] of [[7, 7], [19, 7], [7, 12], [19, 12]]) m[y][x] = '4'; // pelare
   for (const [x, y] of [[2, 3], [24, 3], [2, 16], [24, 16], [10, 15], [16, 15]]) m[y][x] = 'c'; // ljus
-  m[10][3] = 'Ĥ'; m[10][8] = 'Ħ'; m[10][13] = 'Ĭ'; m[10][18] = 'Ĩ'; m[10][23] = 'Ī'; // figurerna
+  m[10][3] = 'Ĥ'; m[10][8] = 'Ħ'; m[10][13] = 'Ĭ'; m[10][18] = 'Ĩ'; m[10][23] = 'Ī'; m[13][4] = 'Ů'; // figurerna
   const won = BOSS_IDS.filter(id => (profile.bossWins || {})[id]); won.forEach((id, i) => { const x = 3 + i * 3; if (x < Wd - 2) m[Hd - 2][x] = 'u'; }); // en staty per besegrad boss
   m[15][13] = 'P';
   return { map: m.map(r => r.join('')), name: 'LÄGRET', biome: 'dungeon', floor: 'floor_stone_pattern', ceil: 'floor_wood_planks', fog: [26, 18, 12], ambient: 0.9, rooms: [], hub: true };
@@ -7180,8 +7181,22 @@ Object.assign(USES, {
     if (i === 0) showCodex(); else if (i === 1) showBestiary(); else if (i === 2) showAchievements(); else if (i === 3) showStats(); else if (i === 4) showTitles(); })); },
   hubUnlocks() { ensureAudio(); openUI(() => openUnlocks()); },
   hubTrainer() { openUI(() => openPractice()); },
+  hubWeapons() { openUI(() => showWeaponMaster()); },
   hubChronicle() { openUI(() => showChronicle()); },
 });
+const START_WEAPON_KILLS = 100;
+function showWeaponMaster() { // vapenmästaren: dödanden per vapen och val av startvapen
+  const wk = profile.wkills || {}, cur = settings.startWeapon || '';
+  CardUI.list('VAPENMÄSTAREN', `VAPEN DU DÖDAT ${START_WEAPON_KILLS} FIENDER MED KAN BLI DITT STARTVAPEN`, [
+    { label: (cur ? '' : '★ ') + 'INGET STARTVAPEN', text: 'KLASSENS VAPEN', color: cur ? '' : '#ffd24a', onClick: () => { settings.startWeapon = ''; saveSettings(); CardUI.close(); showWeaponMaster(); } },
+    ...WEAPONS.filter(w => w.id !== 'pistol').map(w => { const n = wk[w.id] || 0, open = n >= START_WEAPON_KILLS;
+      return { label: (cur === w.id ? '★ ' : '') + w.name, text: `${n} DÖDADE` + (open ? (cur === w.id ? ' · VALT' : ' · VÄLJ SOM STARTVAPEN') : ` · ${START_WEAPON_KILLS - n} KVAR`), dim: !open, color: cur === w.id ? '#ffd24a' : '',
+        onClick: open ? () => { settings.startWeapon = w.id; saveSettings(); CardUI.close(); play('weapon', 0.7); showWeaponMaster(); } : undefined }; })], () => refreshTitle());
+}
+function giveStartWeapon() { // valt startvapen från vapenmästaren
+  const id = settings.startWeapon; if (!id || cmode('pistol') || run.practice || (profile.wkills || {})[id] < START_WEAPON_KILLS) return;
+  const i = weaponIndex(id); if (i < 0) return; P.has[i] = true; P.mags[i] = effMag(i); const w = WEAPONS[i]; if (AMMO[w.ammo] && w.ammo !== 'none') P.ammo[w.ammo] = Math.min(AMMO[w.ammo].max, (P.ammo[w.ammo] || 0) + Math.round(AMMO[w.ammo].max * 0.3));
+}
 function hubHint(p, d) { if (d < 2.5 && p.kind === 'mode') { const m = HUB_MODES.find(x => x[0] === p.mode); hint = 'PORTAL → ' + (m ? m[1] : p.mode); return true; } return false; }
 // ---------- Version 9: sågbladskastaren, vindbössan och spjutet ----------
 function sawFire(wp, base) {
