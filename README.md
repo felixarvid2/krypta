@@ -1261,6 +1261,60 @@ Version 7 lägger till 200 förbättringar:
 
 Kombinerade utmaningar multiplicerar själarna. Sparplatsen väljs på startskärmen, och `?fro=XXXX` i adressen fyller i ett delat frö.
 
+## Version 12: Blodets rytm
+
+Version 12 gör om stridens grundloop. Den jämfördes först med tolv moderna boomer shooters: vad belönar de, vad driver spelaren framåt och vad saknade Krypta?
+
+**Jämförelsen**
+
+| Spel | Loopens kärna | Fanns i Krypta? | Version 12 tar |
+|---|---|---|---|
+| DOOM Eternal | Avrättning ger hälsa, eld ger skydd, motorsåg ger ammo: resurserna tas från fienderna | Delvis (livsstöldkort) | Avrättningar, resursloopen |
+| ULTRAKILL | Stilmätare D–SSS, blod läker när du är nära, parering läker, betyg per bana | Kombo i guld | Stilmätaren, blodläkning, sparkparering, betyg |
+| Klassiska DOOM | Fiender som träffar varandra börjar slåss inbördes | Nej | Inbördes strid |
+| Quake | Megahälsa över max som sjunker tillbaka | Nej | Överhälsa |
+| DUSK | Snabb rörelse, glidning, hemligheter, tabell per bana | Glidning, hemligheter, tabell | Glidhopp |
+| Turbo Overkill | Glidningen är ett vapen (motorsågsben) | Nej | Glidspark |
+| Mullet MadJack | Tio sekunder att leva, dödanden köper tid | Nej | Utmaningen KLOCKAN |
+| Amid Evil | Själsläge som laddas av dödanden | Förmågekort som laddas av dödanden | – |
+| Ion Fury | Förstörbar miljö, många hemligheter | Ja (krutfat, krukor, hemligheter) | – |
+| Prodeus | Köttbitar, tydliga resurser, automap | Ja | Föremål dras till dig |
+| Cultic | Glidning, vapenhjul som saktar tiden | Ja (vapenhjulet saktar tiden) | – |
+| Warhammer 40K: Boltgun | Tung närstrid som en del av skjutandet | Yxa, hammare, spark | Närstrid avrättar och ger ammo |
+| Nightmare Reaper | Roguelite med slumpade vapen | Kort, pakter och legendariska vapen | – |
+
+Snabba vapenbyten är gemensamt för nästan alla tolv, så bytet är nu ungefär en tredjedel snabbare.
+
+**Listan, och vad som är gjort**
+1. **Stilmätaren (stor):**
+   - Varje död ger poäng, och variation ger mer: nytt vapen, i luften, glidning, huvudträff, flerdöd, smygdöd, i bitar, sprängd, närstrid, avrättning, parering och inbördes strid.
+   - Att använda samma vapen gång på gång halverar poängen, och skada sänker mätaren.
+   - Nivåerna är D (DÖDANDE), C (CHOCKERANDE), B (BRUTALT), A (ANARKISTISKT), S (SKONINGSLÖST), SS (SADISTISKT) och SSS (KRYPTISKT). Från B ger varje död extra guld, och från A extra erfarenhet.
+   - Mätaren är en ruta till höger och kan stängas av i inställningarna.
+2. **Avrättningar (stor):** fiender på 25 % hälsa vacklar och blinkar blåvitt. En spark eller ett närstridsslag avrättar dem direkt och ger 15 hälsa och kort osårbarhet.
+3. **Sparkparering (mellan):** V sparkar tillbaka skott framför dig. De flyger mot skytten med 2,5 gånger skadan och ger 10 hälsa och stilpoäng.
+4. **Överhälsa (liten):** avrättningar och pareringar kan ge upp till 150 % hälsa. Överskottet sjunker två hälsa i sekunden, och vanlig läkning sänker det aldrig.
+5. **Resursloopen (mellan):**
+   - Dödanden närmare än två rutor läker 3.
+   - Fiender som brinner när de dör ger 6 skydd.
+   - Närstridsdödanden ger ammo till alla vapen du bär.
+6. **Inbördes strid (mellan):**
+   - Fiendernas skott skadar andra sorters fiender, och den som träffas ger igen i sex sekunder.
+   - Närstridsfiender går fram och slår, och skyttar skjuter tillbaka.
+   - Samma sort skadar inte varandra.
+7. **Glidspark och glidhopp (liten):** glidningen sparkar undan fiender i vägen, och ett hopp mitt i en glidning behåller farten.
+8. **Våningsbetyg (mellan):**
+   - Tid mot par (25 s + 5 s per fiende), andel dödade, hemligheter, skada och högsta stil ger betyget S, A, B, C eller D.
+   - Betyget ger 50, 30, 15, 5 eller 0 guld och visas stort i våningens tabell.
+9. **KLOCKAN (mellan):** en ny utmaning som kan kombineras med de andra.
+   - Du har tio sekunder att leva. En död ger 3 sekunder, en snygg död 4,5 och en avrättning fyller på allt, upp till 12.
+   - Klockan står still när det inte finns något att döda. Träffar på bossen ger lite tid, och läget ger +60 % själar.
+10. **Snabbare vapenbyten (liten):** fram 0,22 s och undan 0,14 s, tidigare 0,32 och 0,22.
+11. **Magnet (liten):** guld, hälsa, ammo och andra småsaker som fiender tappar dras till dig inom två rutor.
+12. **Fem prestationer:** BÖDELN, PARERINGSMÄSTAREN, KRYPTISKT, FELFRI och SPLIT OCH HÄRSKA.
+
+Sådant som redan fanns i Krypta och inte behövde göras om: själsläget (förmågekorten laddas av dödanden), förstörbar miljö, hemligheter, kombo, glidning, vapenhjulet och slumpade vapen (legendariska vapen och pakter).
+
 ## Version 11: Svampriket och Spegelpalatset
 
 Version 11 lägger till två nya biomer med egna mekaniker:

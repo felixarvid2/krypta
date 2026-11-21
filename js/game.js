@@ -177,6 +177,11 @@ const ACH = [
   ['reflect25', 'SPEGEL, SPEGEL', 'STUDSA TILLBAKA 25 SKOTT MED SPEGELSKÖLDEN', p => (p.reflects || 0) >= 25, p => [p.reflects || 0, 25]],
   ['bounce30', 'SVAMPHOPPAREN', 'STUDSA 30 GÅNGER PÅ STUDSPLATTOR', p => (p.bounces || 0) >= 30, p => [p.bounces || 0, 30]],
   ['teleport20', 'HÄR OCH DÄR', 'ANVÄND TELEPORTRAR 20 GÅNGER', p => (p.teleports || 0) >= 20, p => [p.teleports || 0, 20]],
+  ['exec50', 'BÖDELN', 'AVRÄTTA 50 VACKLANDE FIENDER', p => (p.executions || 0) >= 50, p => [p.executions || 0, 50]],
+  ['parry25', 'PARERINGSMÄSTAREN', 'SPARKA TILLBAKA 25 SKOTT', p => (p.parries || 0) >= 25, p => [p.parries || 0, 25]],
+  ['styleSSS', 'KRYPTISKT', 'NÅ HÖGSTA STILNIVÅN', p => (p.styleMax || 0) >= 6],
+  ['gradeS', 'FELFRI', 'FÅ BETYGET S PÅ EN VÅNING', p => (p.gradeS || 0) >= 1],
+  ['infight20', 'SPLIT OCH HÄRSKA', 'FÅ FIENDER ATT SLÅSS MOT VARANDRA 20 GÅNGER', p => (p.infights || 0) >= 20, p => [p.infights || 0, 20]],
   ['legend1', 'LEGENDEN', 'HITTA ETT LEGENDARISKT VAPEN', p => (p.legendsFound || []).length >= 1],
   ['legend6', 'SAMLAREN AV LEGENDER', 'HITTA ALLA SEX LEGENDARISKA VAPEN', p => (p.legendsFound || []).length >= 6, p => [(p.legendsFound || []).length, 6]],
   ['allbosses12', 'ALLA FJORTON', 'BESEGRA ALLA FJORTON BOSSAR', p => BOSS_IDS.every(id => (p.bossWins || {})[id]), p => [BOSS_IDS.filter(id => (p.bossWins || {})[id]).length, BOSS_IDS.length]],
@@ -194,7 +199,16 @@ function checkAch() {
   dqCheck();
 }
 function showNews() {
-  CardUI.list('NYHETER', 'VERSION 11: SVAMPRIKET OCH SPEGELPALATSET', [
+  CardUI.list('NYHETER', 'VERSION 12: BLODETS RYTM', [
+    { label: 'VERSION 12 – BLODETS RYTM', head: true, color: '#ff8060' },
+    { label: 'STILMÄTAREN', text: 'VARIERA DIG: NYTT VAPEN, I LUFTEN, HUVUDTRÄFF, FLERDÖD, AVRÄTTNING. NIVÅERNA D TILL SSS GER GULD OCH ERFARENHET. SKADA SÄNKER DEN.' },
+    { label: 'AVRÄTTNINGAR', text: 'FIENDER PÅ LÅG HÄLSA VACKLAR OCH LYSER. SPARKA (V) ELLER SLÅ DEM – DE DÖR DIREKT OCH DU FÅR HÄLSA, ÄVEN ÖVER MAX.' },
+    { label: 'SPARKPARERING', text: 'SPARKA ETT SKOTT PRECIS INNAN DET TRÄFFAR – DET FLYGER TILLBAKA MOT SKYTTEN MED DUBBEL KRAFT OCH DU FÅR 10 HÄLSA.' },
+    { label: 'RESURSLOOPEN', text: 'DÖDANDEN NÄRA LÄKER LITE, BRINNANDE FIENDER GER SKYDD NÄR DE DÖR OCH NÄRSTRIDSDÖDANDEN GER AMMO.' },
+    { label: 'INBÖRDES STRID', text: 'FIENDERNAS SKOTT SKADAR ANDRA SORTERS FIENDER – SOM GER IGEN.' },
+    { label: 'GLIDSPARK OCH GLIDHOPP', text: 'SPRING OCH DUCKA FÖR ATT GLIDA. GLIDNINGEN SPARKAR UNDAN FIENDER, OCH ETT HOPP MITT I BEHÅLLER FARTEN.' },
+    { label: 'BETYG OCH KLOCKAN', text: 'VARJE VÅNING FÅR BETYG S–D SOM GER GULD. NY UTMANING: KLOCKAN – TIO SEKUNDER ATT LEVA, VARJE DÖD GER MER TID.' },
+    { label: 'MER', text: 'SNABBARE VAPENBYTEN, PENGAR OCH AMMO DRAS TILL DIG, FEM NYA PRESTATIONER.' },
     { label: 'VERSION 11 – SVAMPRIKET OCH SPEGELPALATSET', head: true, color: '#b0ffb8' },
     { label: 'TVÅ NYA BIOMER', text: 'SVAMPRIKET MED GLÖDSVAMPAR, STUDSPLATTOR SOM KASTAR DIG LÅNGT OCH SPORPÖLAR SOM VÄNDER PÅ STYRNINGEN OCH GER SYNER. SPEGELPALATSET MED SPEGELVÄGGAR SOM STUDSAR ALLA SKOTT OCH TELEPORTRAR I PAR.' },
     { label: 'TRE NYA VAPEN', text: 'SPORKASTAREN (SPORBOLLAR SOM LÄMNAR GIFTMOLN), SPEGELSKÖLDEN (SLAG – OCH HÖGERKLICK HÅLLER UPP SKÖLDEN SOM STUDSAR TILLBAKA SKOTTEN, PERFEKT TIMING PARERAR) OCH PISKAN (LÅNG RÄCKVIDD, SPETSEN SMÄLLER HÅRDAST, DRAR FIENDER TILL DIG) – MED PAKTER.' },
@@ -261,6 +275,11 @@ function showManual() {
     { label: 'VÄRLDEN', head: true, color: '#ffd24a' }, { label: 'LAVA', text: 'BRÄNNER – HOPPA ÖVER.' }, { label: 'VATTEN OCH NÄT', text: 'SAKTAR NED. NÄT BRINNER.' }, { label: 'IS', text: 'HALT.' },
     { label: 'NYCKLAR', text: 'ÖPPNAR LÅSTA DÖRRAR OCH KISTOR.' }, { label: 'SPAKAR', text: 'ÖPPNAR JÄRNGALLER NÅGONSTANS PÅ VÅNINGEN.' }, { label: 'SPRUCKNA VÄGGAR', text: 'SPRÄNG DEM MED GRANATER ELLER KRUTFAT.' },
     { label: 'SMEDJAN', text: 'GER VAPNET +12 % SKADA PER NIVÅ OCH FÄSTER RUNOR.' },
+    { label: 'VERSION 12', head: true, color: '#ff8060' }, { label: 'STILMÄTAREN', text: 'SYNS TILL HÖGER NÄR DU DÖDAR. VARIATION GER POÄNG, UPPREPNING OCH SKADA SÄNKER. HÖGRE NIVÅ GER MER GULD OCH ERFARENHET. KAN STÄNGAS AV I INSTÄLLNINGARNA.' },
+    { label: 'AVRÄTTNING', text: 'EN VACKLANDE FIENDE (LYSER BLÅVITT) DÖR AV EN SPARK ELLER ETT NÄRSTRIDSSLAG. GER 15 HÄLSA OCH KORT OSÅRBARHET.' },
+    { label: 'PARERING', text: 'V SPARKAR TILLBAKA SKOTT FRAMFÖR DIG. DE TRÄFFAR SKYTTEN MED DUBBEL SKADA OCH GER 10 HÄLSA.' },
+    { label: 'ÖVERHÄLSA', text: 'AVRÄTTNINGAR OCH PARERINGAR KAN GE UPP TILL 150 % HÄLSA. ÖVERSKOTTET SJUNKER SAKTA.' },
+    { label: 'BETYG', text: 'TID, DÖDADE, HEMLIGHETER, SKADA OCH STIL GER VÅNINGEN ETT BETYG. S GER 50 GULD.' },
     { label: 'VERSION 11', head: true, color: '#b0ffb8' }, { label: 'STUDSPLATTOR', text: 'KASTAR DIG LÅNGT I DEN RIKTNING DU GÅR. I LUFTEN NÅR FIENDERNA DIG INTE LIKA LÄTT.' },
     { label: 'SPORPÖLAR', text: 'VÄNDER PÅ STYRNINGEN EN STUND OCH GER SYNER AV FIENDER SOM INTE FINNS. MYCELBESTAR LÄKER SIG I DEM.' },
     { label: 'SPEGLAR', text: 'SPEGELVÄGGAR STUDSAR SKOTT – DINA OCH FIENDERNAS. KULOR KAN TRÄFFA FIENDER RUNT HÖRN.' },
@@ -944,7 +963,7 @@ function startLevel(level) {
   }
   prepareTorchLight();
   quests = null; run.inSecret = !!lvl.secret; boulders = []; smokes = []; tornados = [];
-  pickFloorEvent(lrng); setupQuests(lrng); addCobwebs(lrng); lockChests(lrng); setupNpcFloor(lrng); setupV8(lrng); setupV9(); setupV11();
+  pickFloorEvent(lrng); setupQuests(lrng); addCobwebs(lrng); lockChests(lrng); setupNpcFloor(lrng); setupV8(lrng); setupV9(); setupV11(); setupLoop();
   if (dmod('giants')) for (const e of ents) if (!e.boss) { e.hp = e.maxHp = e.maxHp * 1.3; e.d = { ...e.d, size: e.d.size * 1.2, score: e.d.score * 1.5 }; }
   if (run.floorCurse) for (const e of ents) if (!e.boss) { e.hp = e.maxHp = e.maxHp * 1.2; e.d = { ...e.d, dmg: e.d.dmg * 1.3 }; }
   if (!boss && !merchants.length && run.depth >= 2 && lrng.next() < 0.15) { const sp = randomFreeCell(lrng); if (sp) { merchants.push({ x: sp[0], y: sp[1], stock: null, wander: true }); map[sp[1] | 0][sp[0] | 0] = 'M'; logEvent('VANDRANDE KÖPMAN'); } } // vandrande köpman
@@ -1702,7 +1721,7 @@ function weaponFrame() { // bildruta och förskjutning: vapnet sticker rakt fram
   const kt = WS.shot / 0.16; // rekyl: knyck nedåt och tillbaka
   if (kt < 1) dy += Math.sin(Math.min(1, kt) * Math.PI) * wp.kick * 7 * (1 - WS.aim * 0.5);
   if (WS.state === 'draw') dy += (1 - easeOut(WS.t / drawTime())) * f.h;
-  else if (WS.state === 'holster') dy += easeIn(WS.t / 0.22) * f.h;
+  else if (WS.state === 'holster') dy += easeIn(WS.t / 0.14) * f.h;
   else if (WS.state === 'reload' && !(st.reload && !wp.shellReload)) {
     if (wp.shellReload) { // ner lite för varje patron
       const k = WS.t / shellSeg(WS.shellPhase);
@@ -1715,7 +1734,7 @@ function weaponFrame() { // bildruta och förskjutning: vapnet sticker rakt fram
   return { f, idx, dx, dy };
 }
 const easeOut = k => 1 - (1 - clamp(k, 0, 1)) ** 2, easeIn = k => clamp(k, 0, 1) ** 2;
-const drawTime = () => 0.32;
+const drawTime = () => 0.22; // snabba byten som i Doom och Dusk
 const shellSeg = ph => (ph === 'start' ? 0.32 : ph === 'step' ? 0.5 : 0.42) * reloadMul();
 function drawWeapon() {
   const { f, idx, dx, dy } = weaponFrame();
@@ -1848,7 +1867,7 @@ function drawHUD() {
   const wp = WEAPONS[P.weapon], cx = i => (HUD_CELLS[i] + (HUD_CELLS[i + 1] || W)) / 2;
   const big = (s, x, col) => txt(s, Math.round(x - textW(s)), y0 + 7, col, 2), lab = (s, x, col = '#7a6448') => txt(s, Math.round(x - textW(s) / 2), y0 + 25, col);
   // hälsa
-  big(String(Math.max(0, Math.ceil(P.hp))), cx(0), P.hp > maxHp() * 0.3 ? '#e8d9b0' : (tmr % 0.6 < 0.3 ? '#ff4d3d' : '#a02a20')); lab('HÄLSA', cx(0));
+  big(String(Math.max(0, Math.ceil(P.hp))), cx(0), P.hp > maxHp() + 0.5 ? '#a0ffd0' : P.hp > maxHp() * 0.3 ? '#e8d9b0' : (tmr % 0.6 < 0.3 ? '#ff4d3d' : '#a02a20')); lab('HÄLSA', cx(0));
   // rustning
   big(String(Math.ceil(P.armor)), cx(1), P.armor > 0 ? '#9fc4ff' : '#4a3a28'); lab('SKYDD', cx(1));
   // ammunition: magasinet stort, reserven liten bredvid
@@ -1864,7 +1883,7 @@ function drawHUD() {
   // våningen och guldet
   { const f = boss ? 'BOSS' : `VÅN ${run.depth}`, gtx = `${run.gold}G`; txt(f, Math.round(cx(4) - textW(f) / 2), y0 + 11, '#c9a87a'); txt(gtx, Math.round(cx(4) - textW(gtx) / 2), y0 + 25, '#ffd24a'); }
   if (settings.bigHud) { let yy = 6; msgs.forEach((m, i) => { const a = Math.min(1, m.t * 2); if (i === 0) for (const ln of wrapText(m.text, 19).slice(0, 2)) { g.fillStyle = `rgba(0,0,0,${0.55 * a})`; g.fillRect((W - textW(ln) * 2) / 2 - 3, yy - 2, textW(ln) * 2 + 6, 19); txt(ln, (W - textW(ln) * 2) / 2, yy, '#ffe9a8', 2, true, a); yy += 19; } else { txt(m.text, (W - textW(m.text)) / 2, yy, '#c9b080', 1, true, a); yy += 11; } }); }
-  else if (levelBanner <= 0.5 && bossBanner <= 0.5 && state === 'play') msgs.slice(0, 2).forEach((m, i) => { const lines = wrapText(m.text, 26).slice(0, i ? 1 : 2), a = Math.min(1, m.t * 2) * (i ? 0.55 : 1); lines.forEach((ln, k) => txt(ln, Math.round((W - textW(ln)) / 2), (hb ? 40 : 5) + (i ? 22 : k * 10), i ? '#b8a078' : '#ffe9a8', 1, true, a)); }); // ett meddelande i taget, det förra bleknar under
+  else if (levelBanner <= 0.5 && bossBanner <= 0.5 && state === 'play') msgs.slice(0, 2).forEach((m, i) => { const lines = wrapText(m.text, 26).slice(0, i ? 1 : 2), a = Math.min(1, m.t * 2) * (i ? 0.55 : 1); lines.forEach((ln, k) => txt(ln, Math.round((W - textW(ln)) / 2), (hb ? 40 : cmode('clock') ? 24 : 5) + (i ? 22 : k * 10), i ? '#b8a078' : '#ffe9a8', 1, true, a)); }); // ett meddelande i taget, det förra bleknar under
   if (state === 'play' && WS.state === 'reload' && !WEAPONS[P.weapon].shellReload) { // omladdningsmätare med det aktiva fältet
     const k = clamp(WS.t / (WEAPONS[P.weapon].reload * reloadMul()), 0, 1), bw = 44, bx = (W - bw) / 2, by = HORIZON + 10;
     g.fillStyle = '#000a'; g.fillRect(bx - 1, by - 1, bw + 2, 5);
@@ -1884,7 +1903,7 @@ function drawHUD() {
   if (WS.nameT > 0 && state === 'play') { const w = WEAPONS[P.weapon], nm = w.name; txt(nm, (W - textW(nm)) / 2, VH - 24, '#ffd24a', 1, true, Math.min(1, WS.nameT * 2));
     const info = `SKADA ${Math.round(w.dmg * (w.pellets || 1) * 10)} · ${w.melee ? 'NÄRSTRID' : (1 / w.delay).toFixed(1) + ' SKOTT/S'}${wlvl(w.id) ? ' · NIVÅ ' + wlvl(w.id) : ''}`; txt(info, (W - textW(info)) / 2, VH - 14, '#c9a87a', 1, true, Math.min(1, WS.nameT * 2)); }
   if (WS.boost && state === 'play') txt('+15%', W / 2 + 12, HORIZON - 14, '#9fe060', 1, true, 0.8);
-  if (state === 'play') { drawBowAim(g); drawStaffCharge(g); drawAbilityHud(g); drawTutorial(g); drawHammerCharge(g); drawStealthHud(g); drawLampHud(g); drawCues(g); drawMazeTimer(g); drawXpHud(g); drawAirHud(g); drawTimeHud(g); drawDpsHud(g); drawV11Hud(g); }
+  if (state === 'play') { drawBowAim(g); drawStaffCharge(g); drawAbilityHud(g); drawTutorial(g); drawHammerCharge(g); drawStealthHud(g); drawLampHud(g); drawCues(g); drawMazeTimer(g); drawXpHud(g); drawAirHud(g); drawTimeHud(g); drawDpsHud(g); drawV11Hud(g); drawLoopHud(g); }
   if (state === 'play') drawHudExtras(g);
   if (wheel && !wheel.open && performance.now() - wheel.t0 > 260) wheel.open = true;
   if (wheel && wheel.open && state === 'play') drawWheel(g);
@@ -1897,7 +1916,6 @@ function drawHUD() {
     if (P.iframe > 0) st.push(['OSÅRBAR', '#ffffff']);
     if (P.slowT > 0) st.push(['LÅNGSAM' + sec(P.slowT), '#80b0ff']);
     if (P.poisonT > 0) st.push(['FÖRGIFTAD' + sec(P.poisonT), '#9fe060']);
-    if (P.comboT > 0 && P.combo >= 2) st.push([`KOMBO x${P.combo}`, '#ffb040']);
     if (floorEvent) st.push([EVENTS[floorEvent].name, '#ff7060']);
     if (P.shield > 0) st.push([`SKÖLD ${Math.ceil(P.shield)}`, '#7fc0ff']);
     if (up('bullettime') && WS.aim > 0.8) st.push(['TIDSSTOPP', '#80b0ff']);
@@ -2480,6 +2498,7 @@ function autoSwitch() {
 function hurtEnemy(e, dmg, hx, hy, opt = {}) {
   if (e.dead || e.dying || e.hidden) return false;
   { const r = v11Defend(e, dmg, opt); if (r === null) return false; dmg = r; } // illusioner och speglar
+  if (opt.melee && !opt.exec && canExec(e)) return execute(e); // närstrid mot en vacklande fiende: avrättning
   if (e.dummy) { dpsLog.push({ t: tmr, d: dmg }); e.flash = 0.1; spawnNumber ? spawnNumber(e.x, e.y, dmg, opt.crit) : 0; return false; } // provdockan tar ingen skada men räknar
   if (Math.random() < mod('clockSlow')) e.slow = Math.max(e.slow || 0, 2);
   const wasUnaware = !e.alert && !e.dormant && !opt.noProc;
@@ -2499,6 +2518,7 @@ function hurtEnemy(e, dmg, hx, hy, opt = {}) {
   if (!opt.noProc && !e.boss && e.alert === false && !e.dormant) { dmg *= 1.5 + mod('stealthDmg'); if ((e.surpT || 0) < tmr) { e.surpT = tmr + 1; spawnText(e.x, e.y, 'ÖVERRASKAD', '#c0c0ff'); } } // ovetande fiender
   if (run) run.dmgDealt = (run.dmgDealt || 0) + Math.max(0, Math.min(dmg, e.hp));
   e.hp -= dmg; e.flash = 0.12; alertEnemy(e, true);
+  staggerCheck(e, opt); if (e.boss && cmode('clock')) clockAdd(0.25);
   if (e.boss && !e.dying) { bossStagger(e, dmg); if (e.id === 'ghost' && mirrors.length) { for (const m of mirrors) spawnPuff(m.x, m.y, 6); mirrors = []; } }
   if (e.hp <= 0 && -e.hp > e.maxHp * 0.6 && !e.boss) e.overkill = true; // överdöd: sprängs i bitar
   if (mod('lifesteal') > 0) heal(dmg * mod('lifesteal'), true);
@@ -2517,7 +2537,7 @@ function hurtEnemy(e, dmg, hx, hy, opt = {}) {
   if (opt.melee && hasMod(e, 'thorny') && (e.thornT || 0) < tmr) { e.thornT = tmr + 0.4; hurtPlayer(3, e.x, e.y, 'melee'); spawnText(e.x, e.y, 'TAGGAR', '#b0e080'); }
   if (e.hp <= 0 && clockRewind(e)) return false;
   if (e.hp <= 0 && hasMod(e, 'undying') && !e.revived) { e.revived = true; e.hp = e.maxHp * 0.5; e.burn = 0; e.poison = 0; spawnText(e.x, e.y, 'ÅTERUPPSTÅR!', '#c0ffc0'); spawnPuff(e.x, e.y, 8); play('necro_raise', 0.6, 1.2, { x: e.x, y: e.y }); return false; } // odödlig en gång
-  if (e.hp <= 0) { if (wasUnaware && !e.boss) stealthKill(e); killEnemy(e); return true; }
+  if (e.hp <= 0) { if (wasUnaware && !e.boss) stealthKill(e); killCtx = Object.assign({ stealth: wasUnaware && !e.boss }, opt); killEnemy(e); killCtx = null; return true; }
   if (e.d.ai === 'blink' && (e.blinkCd || 0) <= 0 && Math.random() < 0.45) blink(e);
   if (!e.boss && !opt.quiet && Math.random() < 0.55 && e.state !== 'attack') { e.state = 'pain'; e.t = 0; }
   return false;
@@ -2555,7 +2575,7 @@ function killEnemy(e) {
   else if (e.burn > 0 && !e.boss) { e.gibbed = true; for (let i = 0; i < 6; i++) particles.push({ x: e.x + rnd(-0.2, 0.2), y: e.y + rnd(-0.2, 0.2), z: rnd(0.1, 0.7), vx: rnd(-0.3, 0.3), vy: rnd(-0.3, 0.3), vz: 0.4, life: 1.5, maxLife: 1.5, img: fx.parts.ash ? fx.parts.ash[i % 2] : fx.hit[0], size: 0.07, drift: true }); if (fx.parts.scorch) decals.push({ x: e.x, y: e.y, img: fx.parts.scorch[0], size: 0.08 }); } // brända blir aska
   if (e.leader) leaderDied(e);
   if (lvl && lvl.biome) { const wb = (profile.wkillsBiome = profile.wkillsBiome || {}), bb = (wb[lvl.biome] = wb[lvl.biome] || {}), wid = WEAPONS[P.weapon].id; bb[wid] = (bb[wid] || 0) + 1; }
-  abilityKill(); masteryKill(); v11Kill(e); legendDropChance(e); if (legendCtx === 'bloodaxe') P.rageT = Math.max(P.rageT || 0, 2.5); if (e.d.ai === 'clocksoldier' && mod('rewindHeal')) heal(mod('rewindHeal'), true); gainXp(e.boss && !e.guardian ? 150 : e.guardian ? 70 : clamp((e.d.score || 100) / 12, 3, 40) * (e.elite ? 2.5 : 1) * (e.minion ? 0.3 : 1)); // erfarenhet: vanliga fiender efter svårighet, väktare och bossar fast
+  abilityKill(); masteryKill(); v11Kill(e); loopKill(e); legendDropChance(e); if (legendCtx === 'bloodaxe') P.rageT = Math.max(P.rageT || 0, 2.5); if (e.d.ai === 'clocksoldier' && mod('rewindHeal')) heal(mod('rewindHeal'), true); gainXp(e.boss && !e.guardian ? 150 : e.guardian ? 70 : clamp((e.d.score || 100) / 12, 3, 40) * (e.elite ? 2.5 : 1) * (e.minion ? 0.3 : 1)); // erfarenhet: vanliga fiender efter svårighet, väktare och bossar fast
   if (e.elite) run.wanderElite = (run.wanderElite || 0) + 1; if (e.guardian) run.wanderGuard = (run.wanderGuard || 0) + 1;
   if (quests) for (const q of quests) { if (q.kind === 'wkills' && !q.done && WEAPONS[P.weapon].id === q.weapon) q.have++; if (q.kind === 'elite' && e.elite) q.eliteKilled = true; }
   if ('YÉÅ'.includes(e.type) && Math.random() < 0.15) dropItem('meat', e.x, e.y);
@@ -3129,8 +3149,9 @@ const ownedCount = () => { const o = {}; if (run) for (const id of run.owned) o[
 const CMODES = { '': { name: 'INGEN UTMANING', text: 'VANLIG RUNDA' }, onehit: { name: 'ETT SLAG', text: '1 HP – EN TRÄFF OCH DU ÄR DÖD. +50 % SJÄLAR' },
   quick: { name: 'SNABB RUNDA', text: 'PORTALEN ÖPPNAS NÄR 60 % AV FIENDERNA ÄR DÖDA. −30 % SJÄLAR' },
   pistol: { name: 'BARA PISTOL', text: 'ANDRA VAPEN BLIR AMMO OCH GULD. +30 % SJÄLAR' }, nocards: { name: 'INGA KORT', text: 'KORTVAL BLIR GULD. +40 % SJÄLAR' },
-  dark: { name: 'MÖRKER', text: 'BARA FICKLAMPAN LYSER – FACKLORNA ÄR SLOCKNADE. +35 % SJÄLAR' } };
-const CMODE_SOULS = { onehit: 1.5, pistol: 1.3, nocards: 1.4, quick: 0.7, dark: 1.35 };
+  dark: { name: 'MÖRKER', text: 'BARA FICKLAMPAN LYSER – FACKLORNA ÄR SLOCKNADE. +35 % SJÄLAR' },
+  clock: { name: 'KLOCKAN', text: 'TIO SEKUNDER ATT LEVA – VARJE DÖD GER MER TID, EN AVRÄTTNING FYLLER PÅ ALLT. +60 % SJÄLAR' } };
+const CMODE_SOULS = { clock: 1.6, onehit: 1.5, pistol: 1.3, nocards: 1.4, quick: 0.7, dark: 1.35 };
 const cmode = id => !!(run && run.cmode && run.cmode.split('+').includes(id)); // lägen kan kombineras: 'onehit+dark'
 // vibrationsmönster
 const VIB = { pickup: [12], kill: [18, 30, 18], boss: [90, 40, 140], potion: [25, 25, 25], level: [40, 60, 40], fuse: [30, 20, 60], headshot: [10, 15, 30], hurt: null };
@@ -3195,7 +3216,7 @@ function dissolve(e) { // spöken och irrbloss löses upp
 }
 function headshotCheck(e, perp, wp) { // träff mitt i fienden (huvudet) med ett enkelskottsvapen
   if (wp.pellets > 1 || wp.proj || e.d.stone || perp > 0.075 * e.d.size * (e.boss ? 1.8 : 1)) return 1;
-  stat('headshots'); run.headshots = (run.headshots || 0) + 1;
+  stat('headshots'); run.headshots = (run.headshots || 0) + 1; e.headT = tmr;
   if (e.id === 'pharaoh') { if ((P.jwT || 0) < tmr) { P.jwT = tmr + 0.5; spawnText(e.x, e.y, '★ JUVELEN!', '#60c0ff'); } return 2.2 + mod('headshot'); } // faraonens svaga punkt
   if ((P.hsT || 0) < tmr) { P.hsT = tmr + 0.4; spawnText(e.x, e.y, '★ HUVUDTRÄFF', '#ffe070'); play('headshot', 0.55, rnd(0.95, 1.1)); vib('headshot'); }
   return 1.5 + mod('headshot');
@@ -4565,7 +4586,7 @@ function openAltar() {
     return { ok: true, gold: profile.souls, items: items() };
   }, () => refreshTitle(), { title: 'SJÄLAALTARET', currency: 'SJÄLAR', currencyColor: '#c0a0ff' });
 }
-function heal(n, silent) { if (dmod('gold')) n *= 0.7; const before = P.hp; if (!silent) lvlStat.healed = (lvlStat.healed || 0) + 1; P.hp = Math.min(maxHp(), P.hp + n); return P.hp - before; }
+function heal(n, silent) { if (dmod('gold')) n *= 0.7; const before = P.hp; if (!silent) lvlStat.healed = (lvlStat.healed || 0) + 1; P.hp = Math.max(P.hp, Math.min(maxHp(), P.hp + n)); return P.hp - before; }
 // kind: 'melee' | 'proj' | undefined
 function hurtPlayer(d, fx0, fy0, kind) {
   if (params.has('god') || state !== 'play' || P.iframe > 0) return;
@@ -4582,7 +4603,7 @@ function hurtPlayer(d, fx0, fy0, kind) {
   if (fx0 !== undefined && (boss || guardianE)) { const b = boss || guardianE; if (Math.hypot(b.x - fx0, b.y - fy0) < 3) taunt(b); }
   noteDamage(d, fx0, fy0, kind);
   if (run && run.practice && run.practice.god) d = Math.min(d, Math.max(0, P.hp - 1)); // övning: du kan inte dö
-  P.hp -= d; P.hurt = 0.35; P.shake = Math.max(P.shake, 1.2); lvlStat.taken += d; talentHooksHurt();
+  P.hp -= d; P.hurt = 0.35; P.shake = Math.max(P.shake, 1.2); lvlStat.taken += d; talentHooksHurt(); style.v = Math.max(0, style.v - 6 - d * 0.6); // skada sänker stilen
   { const c = run.cause || ''; P.hurtCol = /LAVA|ELD|BRAND|HETTA|SOL|BOMB|EXPLOS/.test(c) ? '230,110,20' : /GIFT|SLEM|SPINDEL|SKARAB/.test(c) ? '60,170,40' : /IS|FROST|KYL|SNÖ/.test(c) ? '60,140,230' : /BLIXT|STORM/.test(c) ? '170,120,255' : '190,0,0'; }
   if (settings.vibrate !== false && navigator.vibrate) try { navigator.vibrate(Math.min(120, 20 + d * 4)); } catch (e) { /* ingen vibration */ }
   play('hurt', 0.8, rnd(0.9, 1.1)); rumble(Math.min(1, 0.3 + d / 30), 160);
@@ -4632,12 +4653,13 @@ function useKey() {
 function kick() { // spark: knuffar fiender bakåt, bryter krukor och lådor
   if (P.kickT > 0 || state !== 'play') return;
   P.kickT = 0.55; WS.kick = 0.3; play('whoosh', 0.4, 1.4);
-  let hit = false;
+  let hit = kickParry() > 0;
   for (const e of ents) {
     if (e.dead || e.dying || e.hidden) continue;
     const dx = e.x - P.x, dy = e.y - P.y, d = Math.hypot(dx, dy);
     let off = Math.atan2(dy, dx) - P.a; off = Math.atan2(Math.sin(off), Math.cos(off));
     if (d > 1.5 + e.d.size * 0.3 || Math.abs(off) > 0.7) continue;
+    if (canExec(e)) { execute(e); hit = true; continue; } // avrättning
     hit = true; hurtEnemy(e, 2 * (1 + mod('dmg')), e.x, e.y, { noProc: true });
     if (!e.boss && !e.dead) { for (let i = 0; i < 6; i++) tryMove(e, dx / d * 0.22, dy / d * 0.22, 0.28); e.state = 'pain'; e.t = 0; e.charge = 0; }
   }
@@ -4911,7 +4933,7 @@ function update(dt) {
   const edt = slowBubble > 0 ? dt * 0.35 : dt; // tidsbubblan
   for (const e of ents) try { if (e.boss) updateBoss(e, edt); else updateEnemy(e, edt); } catch (err) { spriteError(err, { o: e }); if (e.renderFail > 30 && !e.boss) { e.dead = true; e.gibbed = true; } } // en trasig fiende får inte stoppa spelet
   updateProjectiles(edt); updateFuses(dt); updatePortals(dt); updateHazards(dt); updateProps(dt); updateGroundFires(dt); updateBossFx(dt); updateWorldEvents(dt); updateSpores(dt); updateIcicles(dt);
-  updatePet(dt); updateAllies(dt); updatePotions(dt); updateNpcTalk(dt); updateTorchFx(dt); updateHeat(dt); updateAbility(dt); questTick(); updateSmokes(dt); updateTomb(dt); updateTornados(dt); beamDust(dt); updateLamp(dt); updateMaze(dt); practiceTick(dt); sneakMusicTick(dt); updateWater(dt); updateCrystal(dt); harpoonTick(dt); talentTick(); updateV9(dt); rootsTick(dt); updateV11(dt); P.vanishT = Math.max(0, (P.vanishT || 0) - dt);
+  updatePet(dt); updateAllies(dt); updatePotions(dt); updateNpcTalk(dt); updateTorchFx(dt); updateHeat(dt); updateAbility(dt); questTick(); updateSmokes(dt); updateTomb(dt); updateTornados(dt); beamDust(dt); updateLamp(dt); updateMaze(dt); practiceTick(dt); sneakMusicTick(dt); updateWater(dt); updateCrystal(dt); harpoonTick(dt); talentTick(); updateV9(dt); rootsTick(dt); updateV11(dt); loopTick(dt); P.vanishT = Math.max(0, (P.vanishT || 0) - dt);
   if (secrets > (P.secLast || 0)) { run.wanderSecret = (run.wanderSecret || 0) + 1; } P.secLast = secrets; updateSurvival(dt); ghostTick(dt); tutTick(dt); feelTick(dt);
   if (cmode('onehit')) P.armor = 0;
   for (let i = decals.length - 1; i >= 0; i--) if (decals[i].life !== undefined && (decals[i].life -= dt) <= 0) decals.splice(i, 1);
@@ -5010,7 +5032,7 @@ function updateMovement(dt, fwd, str) {
   P.dashCd = Math.max(0, P.dashCd - dt);
   // hopp och fall
   if (!ground || P.jv > 0) {
-    P.jz += P.jv * dt; P.jv -= 9.5 * dt * (P.launch ? 0.45 : 1); // studsplattan ger lång lufttid
+    P.jz += P.jv * dt; P.jv -= 9.5 * dt * (P.launch && !P.launch.keepG ? 0.45 : 1); // studsplattan ger lång lufttid
     if (P.jz <= 0) {
       P.jz = 0; P.dj = false;
       if (P.jv < -2.2) { play('land', 0.5, rnd(0.9, 1.1)); P.shake = Math.max(P.shake, 0.35); P.landT = 0.18; if (c === '-') play('splash', 0.5);
@@ -5027,7 +5049,7 @@ function updateMovement(dt, fwd, str) {
 }
 function jump() {
   if (state !== 'play' || P.swim) return;
-  if (onGround()) { if (P.stam < 0.1) return; stat('jumps'); P.jv = 3.4; P.jz = 0.001; P.stam = Math.max(0, P.stam - 0.12); P.stamT = 0.9; play('jump', 0.4, rnd(0.95, 1.05)); P.crouch = 0; return; }
+  if (onGround()) { if (P.stam < 0.1) return; stat('jumps'); P.jv = 3.4; P.jz = 0.001; P.stam = Math.max(0, P.stam - 0.12); P.stamT = 0.9; play('jump', 0.4, rnd(0.95, 1.05)); P.crouch = 0; slideJump(); return; }
   if ((mod('doubleJump') > 0 || (run && run.featherFloor === run.depth) || (P.owlJumpT || 0) > tmr) && !P.dj) { P.dj = true; P.jv = 3.0; play('jump', 0.45, 1.25); spawnPuff(P.x, P.y, 4); }
 }
 function dash(dx, dy) { // rusning: snabbt utfall med kort osårbarhet
@@ -5140,7 +5162,7 @@ function updateWeapon(dt) {
   WS.idleT = WS.state === 'idle' && !mouseDown ? WS.idleT + dt : 0;
   if (settings.autoReload !== false && WS.idleT > 2.2 && P.mags[P.weapon] < effMag(P.weapon) * 0.5 && P.ammo[wp.ammo] > 0) { WS.idleT = 0; startReload(); }
   if (mod('ammoRegen') > 0) { P.ammoAcc = (P.ammoAcc || 0) + dt * mod('ammoRegen') * effMag(P.weapon); if (P.ammoAcc >= 1) { const n = Math.floor(P.ammoAcc); P.ammoAcc -= n; P.ammo[wp.ammo] = Math.min(AMMO[wp.ammo].max, P.ammo[wp.ammo] + n); } }
-  if (WS.state === 'holster' && WS.t >= 0.22) { P.weapon = WS.next; WS.state = 'draw'; WS.t = 0; WS.nameT = 1.6; }
+  if (WS.state === 'holster' && WS.t >= 0.14) { P.weapon = WS.next; WS.state = 'draw'; WS.t = 0; WS.nameT = 1.6; }
   else if (WS.state === 'draw' && WS.t >= drawTime()) { WS.state = 'idle'; WS.t = 0; }
   else if (WS.state === 'reload') {
     if (wp.shellReload) {
@@ -5287,6 +5309,7 @@ function updateEnemy(e, dt) {
   e.growlT -= dt; if (e.growlT <= 0) { e.growlT = rnd(4, 9); play(e.d.growl, e.d.ai === 'stealth' ? 0.15 : 0.45, rnd(0.9, 1.2), { x: e.x, y: e.y }); }
   if (e.frozen > 0) { e.state = 'pain'; e.t = 0; return; } // frusen
   if (e.stun > 0 && e.d.ai !== 'charge') { e.stun -= dt; e.state = 'pain'; e.t = Math.min(e.t, 0.25); return; } // bländad
+  if (e.feud && feudTick(e, dt)) return; // ger igen mot en annan fiende
   if (e.d.ai && ENEMY_AI[e.d.ai](e, dt, dist, los)) return;
   if (e.state === 'pain') { if (e.t > 5 / 14) { e.state = 'move'; e.t = 0; } return; }
   e.cd -= dt;
@@ -5543,6 +5566,7 @@ function updateProjectiles(dt) {
       }
       continue;
     }
+    if (infightHit(p)) continue; // fiendernas skott träffar andra fiender
     if (WS.charge > 0.15 && WEAPONS[P.weapon].melee && Math.hypot(p.x - P.x, p.y - P.y) < 1 && Math.abs(Math.atan2(Math.sin(Math.atan2(p.y - P.y, p.x - P.x) - P.a), Math.cos(Math.atan2(p.y - P.y, p.x - P.x) - P.a))) < 0.9) { p.dead = true; play('shield_block', 0.6, 1.2); sparks(p.x, p.y, 0.5, 4); continue; } // yxan blockerar
     const pr = (p.big ? 0.5 : 0.35) * (P.crouch > 0.5 ? 0.6 : 1), low = (p.z || 0.5) < 0.32;
     if (Math.hypot(p.x - P.x, p.y - P.y) < pr && !(low && P.jz > 0.22)) { hurtPlayer(p.dmg, p.src.x, p.src.y, 'proj'); p.dead = true; if (p.kind === 'bandage') { P.pullFrom = { x: p.src.x, y: p.src.y }; if (p.hook) { P.pullT = 0.7; P.slowT = Math.max(P.slowT, 1); say(p.tongue ? 'TUNGAN DRAR DIG!' : 'BÅTSHAKEN DRAR DIG!', 1); } else bandageHit(); } if (p.kind === 'hex') witchHex(); if (p.kind === 'chain') { P.rootT = Math.max(P.rootT || 0, 1.1); play('chain_bind', 0.7); say('KEDJAN BINDER DIG', 1); } if (p.kind === 'web' && mod('hazardImmune') <= 0) { P.slowT = Math.max(P.slowT, 2.5); say('FAST I NÄTET', 1); play('web', 0.7); } }
@@ -6007,7 +6031,8 @@ function floorDone() {
   if (run.floorCurse) { run.gold += 60; extra.push('FÖRBANNELSEN BRUTEN: +60 GULD'); run.floorCurse = false; }
   let open = 0, saw = 0; for (let i = 0; i < mw * mh; i++) { const c = map[(i / mw) | 0][i % mw]; if (!isWallChar(c)) { open++; if (seen[i]) saw++; } }
   if (!run.practice) { profile.floorRec = Object.assign({}, profile.floorRec); if (!profile.floorRec[run.depth] || levelTime < profile.floorRec[run.depth]) profile.floorRec[run.depth] = Math.round(levelTime); }
-  stats = { name: lvl.name, kills, totalEnemies, secrets, totalSecrets, items: itemsTaken, totalItems, time: levelTime, rec: (profile.floorRec || {})[run.depth], stealth: run.floorStealth || 0, bonus,
+  const grade = floorGrade(extra);
+  stats = { grade: grade.g, name: lvl.name, kills, totalEnemies, secrets, totalSecrets, items: itemsTaken, totalItems, time: levelTime, rec: (profile.floorRec || {})[run.depth], stealth: run.floorStealth || 0, bonus,
     extra, acc: lvlStat.shots ? Math.round(100 * lvlStat.hits / lvlStat.shots) : 0, taken: Math.round(lvlStat.taken), explored: Math.round(100 * saw / Math.max(1, open)), tip: TIPS[(Math.random() * TIPS.length) | 0] };
   run.graph = run.graph || []; run.graph.push({ hp: P.hp / maxHp(), gold: run.gold, dmg: Math.round((run.dmgDealt || 0) * 10) });
   ghostSave(); stat('floors');
@@ -6174,10 +6199,11 @@ function drawStats() {
   { const nd = run.depth + 1, t = 'NÄSTA: ' + (isBossDepth(nd) ? 'BOSSEN' : BIOME_NAME[biomeFor(nd)] || ''); txt(t, (W - textW(t)) / 2, 28, '#8a7558'); }
   const est = Math.round((run.kills * 0.6 + (run.depth - 1) * 6 + (run.guardians || 0) * 5 + (run.bosses || 0) * 15) * diff().souls);
   const rows = [['FIENDER', `${s.kills}/${s.totalEnemies}${s.stealth ? ` (${s.stealth} OSEDDA)` : ''}`], ['HEMLIGHETER', `${s.secrets}/${s.totalSecrets}`], ['UTFORSKAT', `${s.explored}%`], ['TRÄFFSÄKERHET', `${s.acc}%`], ['SKADA TAGEN', String(s.taken)], ['TID', fmtTime(s.time) + (s.rec ? (s.time < s.rec ? ' REKORD!' : ` (${fmtTime(s.rec)})`) : '')], ['BONUS', `+${s.bonus}`], ['GULD', String(run.gold)], ['SJÄLAR', `~${est}`]];
-  rows.forEach(([k, v], i) => { const y = 42 + i * 10; txt(k, 56, y, '#8a7558'); txt(v, 264 - textW(v), y, k === 'SJÄLAR' ? '#c0a0ff' : '#e8d9b0'); });
+  rows.forEach(([k, v], i) => { const y = 42 + i * 10; txt(k, 40, y, '#8a7558'); txt(v, 236 - textW(v), y, k === 'SJÄLAR' ? '#c0a0ff' : '#e8d9b0'); });
+  if (s.grade) { txt('BETYG', 252, 44, '#8a7558'); ctx.font = '32px "PressStart2P"'; const gw = ctx.measureText(s.grade).width; txt(s.grade, Math.round(272 - gw / 2), 58, GRADE_COL[s.grade] || '#e8d9b0', 4); }
   let y = 42 + rows.length * 10 + 4;
-  if (s.extra && s.extra.length) { const ex = s.extra.slice(0, 4), line1 = ex.slice(0, 2).join(' · '), line2 = ex.slice(2).join(' · ');
-    for (const l of [line1, line2]) if (l) { txt(l, (W - textW(l)) / 2, y, '#9fe060'); y += 10; } }
+  if (s.extra && s.extra.length) { const out = []; for (const e of s.extra) { const c = out.length ? out[out.length - 1] + ' · ' + e : ''; if (out.length && c.length <= 38) out[out.length - 1] = c; else out.push(e); } // så många som får plats per rad
+    for (const l of out.slice(0, 3)) { txt(l, (W - textW(l)) / 2, y, '#9fe060'); y += 10; } }
   const f = isTouch() ? 'TRYCK FÖR ATT VÄLJA KORT' : 'KLICKA FÖR ATT VÄLJA KORT'; txt(f, (W - textW(f)) / 2, H - 34, '#ffe9a8', 1, true, 0.55 + 0.45 * Math.abs(Math.sin(tmr * 2.5)));
   const tip = s.tip ? 'TIPS: ' + s.tip : !isTouch() ? `D = SVÅRIGHET: ${DIFF[settings.diff].name}` : '';
   if (tip) wrapText(tip, 38).slice(0, 2).forEach((ln, i) => txt(ln, (W - textW(ln)) / 2, H - 21 + i * 10, '#6a5a44'));
@@ -6320,6 +6346,7 @@ function openSettings(onClose) {
     select('SIKTESFÄRG', 'xcolor', [['', 'VIT'], ['rgba(120,255,120,0.9)', 'GRÖN'], ['rgba(255,220,80,0.9)', 'GUL'], ['rgba(110,230,255,0.9)', 'CYAN']]);
     select('KARTA', 'map', [[0, 'AV'], [1, 'LITEN I HÖRNET'], [2, 'STOR']], () => { showMap = settings.map; });
     check('VISA FPS', 'fps');
+    check('STILMÄTARE', 'styleMeter');
     check('MINSKADE EFFEKTER', 'lowfx');
     check('VAPNET GUNGAR', 'bob');
     check('VIBRATION (MOBIL)', 'vibrate');
@@ -8115,7 +8142,7 @@ function updateRefl(p, dt) { // skott som skölden har studsat tillbaka
   if (p.life <= 0 || solid(p.x, p.y)) { p.dead = true; sparks(p.x - p.vx * dt, p.y - p.vy * dt, 0.5, 3); if (p.reflK === 'sporeb') sporeBurst(p.x - p.vx * dt * 1.5, p.y - p.vy * dt * 1.5, p.dmg); return; }
   const hit = ents.find(e => !e.dead && !e.dying && !e.hidden && !e.dormant && Math.hypot(e.x - p.x, e.y - p.y) < 0.4 * e.d.size * (e.boss ? 1.8 : 1));
   if (!hit) return;
-  p.dead = true; const k = hurtEnemy(hit, p.dmg, p.x, p.y, {}); hitMark = 0.14; hitKill = hitKill || k; lvlStat.hits++; if (k) stat('reflectKills');
+  p.dead = true; const k = hurtEnemy(hit, p.dmg, p.x, p.y, { parry: !!p.parried }); hitMark = 0.14; hitKill = hitKill || k; lvlStat.hits++; if (k) stat('reflectKills');
   if (p.reflK === 'sporeb') sporeBurst(p.x, p.y, p.dmg);
 }
 
@@ -8179,6 +8206,150 @@ Object.assign(PROJ_DRAW_V8, {
   refl: o => drawSprite(fx.fireball[Math.floor(tmr * 14) % fx.fireball.length], o.x, o.y, 0.26, o.z - 0.13, false, 1.2, 0, 0, true, [190, 230, 255]),
   illu: o => drawSprite(fx.parts.illusion ? fx.parts.illusion[Math.floor(tmr * 10) % fx.parts.illusion.length] : fx.fireball[0], o.x, o.y, 0.24, o.z - 0.12, false, 1.2, 0, 0, true, [220, 170, 255]),
 });
+// ---------- Version 12: Blodets rytm – stil, avrättningar, resurser, parering, överhälsa, inbördes strid, klockan och betyg ----------
+// Förebilder: Ultrakill (stilmätare, blodläkning, parering), Doom Eternal (avrättningar och resursloopen), Doom (inbördes strid),
+// Quake (överhälsa), Turbo Overkill och Dusk (glidspark och glidhopp), Mullet MadJack (klockan) och Ultrakill/Dusk (våningsbetyg).
+const STYLE_RANKS = [['D', 'DÖDANDE', '#8a7558', 0], ['C', 'CHOCKERANDE', '#c9a87a', 20], ['B', 'BRUTALT', '#9fe060', 45], ['A', 'ANARKISTISKT', '#60c0ff', 75], ['S', 'SKONINGSLÖST', '#ffd24a', 110], ['SS', 'SADISTISKT', '#ff9040', 150], ['SSS', 'KRYPTISKT', '#ff4030', 200]];
+let style = { v: 0, peak: 0, floorPeak: 0, feed: [], last: [] }, killCtx = null;
+const styleRank = () => { let r = 0; for (let i = 0; i < STYLE_RANKS.length; i++) if (style.v >= STYLE_RANKS[i][3]) r = i; return r; };
+function styleAdd(pts, label) {
+  if (!run) return; const before = styleRank(); style.v = Math.min(240, style.v + pts);
+  if (label) { style.feed.unshift({ t: label, k: 2.4 }); if (style.feed.length > 3) style.feed.length = 3; }
+  const r = styleRank(); style.floorPeak = Math.max(style.floorPeak, r);
+  if (r > before) { if (r >= 3) play('combo', 0.5, 1 + r * 0.08); if (r > (profile.styleMax || 0)) profile.styleMax = r; }
+}
+function streamTo(x, y, n, tint) { for (let i = 0; i < n; i++) { const dx = P.x - x, dy = P.y - y; particles.push({ x: x + rnd(-0.2, 0.2), y: y + rnd(-0.2, 0.2), z: rnd(0.2, 0.7), vx: dx * rnd(1.6, 2.4), vy: dy * rnd(1.6, 2.4), vz: 0.2, life: 0.45, maxLife: 0.45, img: fx.hit[1], size: 0.06, add: true, tint }); } }
+function overheal(n) { // läkning som får gå över max (upp till 150 %) och sjunker sakta tillbaka
+  const cap = maxHp() * 1.5; if (P.hp >= cap) return 0; const b = P.hp; P.hp = Math.min(cap, P.hp + n * (dmod('gold') ? 0.7 : 1)); return P.hp - b;
+}
+function loopKill(e) { // varje död: stilpoäng, blodläkning, resurser och klockan
+  const ctx = killCtx || {}, wid = WEAPONS[P.weapon].id, d = Math.hypot(e.x - P.x, e.y - P.y), tags = [];
+  let pts = e.boss ? 60 : e.guardian ? 40 : e.elite ? 20 : 8;
+  if (ctx.exec) tags.push(['AVRÄTTNING', 10]); else if (ctx.parry) tags.push(['PARERAD', 10]); else if (ctx.infight) tags.push(['INBÖRDES', 12]); else if (ctx.melee || ctx.kick) tags.push(['NÄRSTRID', 6]);
+  if (!ctx.infight && !ctx.quiet && !ctx.exec) { const n = style.last.filter(w => w === wid).length; if (style.last.length >= 3 && n === 0) tags.push(['NYTT VAPEN', 6]); else if (n >= 5) pts *= 0.5; style.last.unshift(wid); if (style.last.length > 6) style.last.length = 6; }
+  if (P.jz > 0.25) tags.push(['I LUFTEN', 8]);
+  if (P.slide > 0) tags.push(['GLIDNING', 6]);
+  if (e.headT && tmr - e.headT < 0.1) tags.push(['HUVUDTRÄFF', 5]);
+  if (killTimes.length >= 2) tags.push([killTimes.length >= 4 ? 'MASSAKER' : 'FLERDÖD', 4 * killTimes.length]);
+  if (ctx.stealth) tags.push(['SMYGDÖD', 8]);
+  if (e.overkill) tags.push(['I BITAR', 4]); else if (ctx.boom) tags.push(['SPRÄNGD', 5]);
+  for (const [, p] of tags) pts += p;
+  for (const [t] of tags.slice(0, 2).reverse()) style.feed.unshift({ t: '+' + t, k: 2.4 }); if (style.feed.length > 3) style.feed.length = 3;
+  styleAdd(pts, tags.length ? '' : '+DÖD');
+  const r = styleRank(); if (r >= 2 && !e.boss) run.gold += r - 1; if (r >= 3) gainXp(r);
+  if (d < 2.3 && !e.boss && !ctx.exec) { const h = heal(3 + mod('bloodHeal'), true); if (h > 0) streamTo(e.x, e.y, 4, [255, 60, 50]); } // blodet: dödanden nära läker
+  if (e.burn > 0 && !e.boss) { const a = 6; P.armor = Math.min(200, P.armor + a); streamTo(e.x, e.y, 5, [120, 180, 255]); spawnText(e.x, e.y, `+${a} SKYDD`, '#9fc4ff'); } // brinnande fiender ger skydd
+  if ((ctx.melee || ctx.kick || ctx.exec) && !e.boss) ammoBits(e); // närstridsdödanden ger ammo
+  if (cmode('clock')) clockAdd(ctx.exec ? 99 : tags.length ? 4.5 : 3);
+}
+function ammoBits(e) {
+  let any = false; for (let i = 0; i < WEAPONS.length; i++) { const w = WEAPONS[i], k = w.ammo; if (!P.has[i] || !AMMO[k] || k === 'none' || k === 'mana' || !AMMO[k].max) continue; const add = Math.max(1, Math.ceil(AMMO[k].max * 0.06)); if (P.ammo[k] < AMMO[k].max) { P.ammo[k] = Math.min(AMMO[k].max, P.ammo[k] + add); any = true; } }
+  if (any) { streamTo(e.x, e.y, 5, [255, 220, 90]); spawnText(e.x, e.y, '+AMMO', '#ffd24a'); }
+}
+// ---- avrättningar: fiender på låg hälsa vacklar; en spark eller ett närstridsslag avrättar dem och ger hälsa ----
+const canExec = e => e && !e.dead && !e.dying && !e.boss && (e.staggerT || 0) > tmr;
+function staggerCheck(e, opt) {
+  if (e.boss || e.hp <= 0 || e.staggered || opt.quiet || opt.exec || e.maxHp < 3 || e.decoy) return;
+  if (e.hp <= e.maxHp * 0.25) { e.staggered = true; e.staggerT = tmr + 2.4; e.stun = Math.max(e.stun || 0, 1.3); spawnText(e.x, e.y, 'VACKLAR', '#80e0ff'); firstHint('stagger', 'VACKLANDE FIENDER LYSER – SPARKA (V) ELLER SLÅ DEM FÖR EN AVRÄTTNING SOM GER HÄLSA.'); }
+}
+function execute(e) {
+  if (!canExec(e)) return false;
+  e.staggerT = 0; const x = e.x, y = e.y;
+  hurtEnemy(e, e.hp + 999, x, y, { noProc: true, exec: true });
+  const h = overheal(15 + mod('killHeal')); P.iframe = Math.max(P.iframe, 0.5); hitStop = Math.max(hitStop, 0.12); P.shake = Math.max(P.shake, 1.1);
+  play('kick', 1, 0.7); play('gore', 0.8, 0.9, { x, y }); streamTo(x, y, 10, [255, 70, 60]); spawnText(x, y, h > 0 ? `AVRÄTTAD +${Math.round(h)}` : 'AVRÄTTAD', '#ff6050');
+  for (let i = 0; i < 6; i++) spawnBlood(x, y); stat('executions'); vib('kill');
+  return true;
+}
+// ---- sparkparering: sparka ett skott i rätt ögonblick så flyger det tillbaka mot skytten ----
+function kickParry() {
+  let n = 0;
+  for (const p of projectiles) {
+    if (p.dead || p.friendly || !p.src || NOREFL.has(p.kind)) continue;
+    const dx = p.x - P.x, dy = p.y - P.y, d = Math.hypot(dx, dy); if (d > 1.7) continue;
+    let off = Math.atan2(dy, dx) - P.a; off = Math.atan2(Math.sin(off), Math.cos(off)); if (Math.abs(off) > 1.05) continue;
+    const src = p.src !== P && !p.src.dead && p.src.x !== undefined ? p.src : null, a = src ? Math.atan2(src.y - P.y, src.x - P.x) : P.a, sp = Math.max(11, Math.hypot(p.vx, p.vy) * 1.6);
+    p.vx = Math.cos(a) * sp; p.vy = Math.sin(a) * sp; p.x = P.x + Math.cos(a) * 0.6; p.y = P.y + Math.sin(a) * 0.6;
+    p.friendly = true; p.reflK = p.kind; p.kind = 'refl'; p.life = 2; p.src = P; p.parried = true; p.dmg = Math.max(6, p.dmg || 5) * 2.5 * (1 + mod('reflectDmg')); n++;
+  }
+  if (n) { overheal(10); hitStop = Math.max(hitStop, 0.1); play('parry', 0.9, 1.2); flashes.push({ x: P.x, y: P.y, t: 0.12, r: 3, col: [255, 240, 200] }); spawnText(P.x + Math.cos(P.a), P.y + Math.sin(P.a), 'PARERAT! +10', '#ffe9a8'); styleAdd(12 * n, '+PARERING'); stat('parries'); }
+  return n;
+}
+// ---- inbördes strid: fiendernas skott skadar andra fiender, som då ger igen ----
+function infightHit(p) {
+  if (!p.src || p.src === P || !p.src.d || p.friendly) return false;
+  const v = ents.find(o => o !== p.src && !o.dead && !o.dying && !o.hidden && !o.ally && !o.dormant && !o.dummy && Math.hypot(o.x - p.x, o.y - p.y) < 0.32 * o.d.size * (o.boss ? 1.8 : 1));
+  if (!v || v.type === p.src.type) return false; // samma sort skadar inte varandra
+  p.dead = true; hurtEnemy(v, p.dmg || 5, p.x, p.y, { noProc: true, infight: true });
+  if (!v.dead && !v.boss && !p.src.boss && !p.src.dead) { v.feud = p.src; v.feudT = tmr + 6; if ((v.feudMsg || 0) < tmr) { v.feudMsg = tmr + 3; spawnText(v.x, v.y, 'BRÅK!', '#ff9050'); } firstHint('infight', 'FIENDERNAS SKOTT SKADAR ANDRA SORTERS FIENDER – LOCKA DEM ATT TRÄFFA VARANDRA.'); stat('infights'); }
+  return true;
+}
+function feudTick(e, dt) { // en fiende som blivit träffad av en annan ger igen en stund
+  const t = e.feud; if (!t || t.dead || t.dying || (e.feudT || 0) < tmr || e.boss) { e.feud = null; return false; }
+  const d = Math.hypot(t.x - e.x, t.y - e.y), a = Math.atan2(t.y - e.y, t.x - e.x); e.cd -= dt;
+  if (e.d.melee) {
+    if (d > e.d.range + 0.4) { const sp = e.d.speed * diff().speed * dt * (e.slow > 0 ? 0.5 : 1); const ox = e.x, oy = e.y; tryMove(e, Math.cos(a) * sp, Math.sin(a) * sp, 0.28); e.mvx = e.x - ox; e.mvy = e.y - oy; e.state = 'move'; }
+    else if (e.cd <= 0) { e.cd = e.d.cd; e.state = 'attack'; e.t = 0; e.didHit = true; hurtEnemy(t, e.d.dmg * 0.8, t.x, t.y, { noProc: true, infight: true }); if (!t.dead && !t.boss) { t.feud = e; t.feudT = tmr + 6; } play('splat', 0.4, 0.8, { x: t.x, y: t.y }); }
+  } else if (e.cd <= 0 && hasLOS(e.x, e.y, t.x, t.y)) { e.cd = e.d.cd * 1.2; e.state = 'attack'; e.t = 0; e.didHit = true; shootFireball(e, a, e.d.proj === 'orb' ? 3.4 : 5.2, e.d.dmg, false, e.d.proj); }
+  if (e.state === 'attack' && e.t > 0.5) e.state = 'move';
+  return true;
+}
+// ---- glidspark och glidhopp ----
+function slideTick(dt) {
+  if (P.slide > 0 && !P.wasSliding) { P.slideId = (P.slideId || 0) + 1; } P.wasSliding = P.slide > 0;
+  if (!(P.slide > 0)) return;
+  const sp = Math.hypot(P.vx, P.vy); if (sp < 2) return; const mx = P.vx / sp, my = P.vy / sp;
+  for (const e of ents) {
+    if (e.dead || e.dying || e.hidden || e.dormant || e.slideHit === P.slideId) continue;
+    const dx = e.x - P.x, dy = e.y - P.y, d = Math.hypot(dx, dy); if (d > 0.9 + e.d.size * 0.25 || (dx * mx + dy * my) < 0) continue;
+    e.slideHit = P.slideId; const k = hurtEnemy(e, 5 * meleeMul(), e.x, e.y, { melee: true, slide: true });
+    if (!k && !e.boss && !e.dead) { e.knock = { vx: mx * 7 / Math.max(0.6, e.d.size), vy: my * 7 / Math.max(0.6, e.d.size), t: 0.25 }; e.stun = Math.max(e.stun || 0, 0.6); }
+    play('kick', 0.8, 0.9); hitStop = Math.max(hitStop, 0.04); P.shake = Math.max(P.shake, 0.5); styleAdd(3, '');
+  }
+}
+function slideJump() { // hopp mitt i en glidning behåller farten
+  if (!(P.slide > 0)) return; const sp = Math.hypot(P.vx, P.vy); if (sp < 2) return;
+  P.launch = { vx: P.vx / sp * 3.4, vy: P.vy / sp * 3.4, t: 0, keepG: true }; P.slide = 0; P.jv = 3.7; play('whoosh', 0.5, 1.3); styleAdd(2, '');
+}
+// ---- klockan: ett utmaningsläge där varje död köper mer tid ----
+const CLOCK_MAX = 12;
+function clockAdd(s) { if (!run) return; run.clockT = Math.min(CLOCK_MAX, (run.clockT || 0) + s); run.clockFlash = 0.4; }
+function clockTick(dt) {
+  if (!cmode('clock') || !lvl || lvl.hub || state !== 'play') return;
+  run.clockFlash = Math.max(0, (run.clockFlash || 0) - dt);
+  if (levelBanner > 0.5 || bossBanner > 0.5 || portals.length || !ents.some(e => !e.dead && !e.dummy && !e.ally && !e.dormant)) return; // tiden står still när det inte finns något att döda
+  run.clockT = (run.clockT ?? 10) - dt;
+  if (run.clockT <= 3 && Math.floor(run.clockT * 2) !== Math.floor((run.clockT + dt) * 2)) play('click', 0.6, 1.6);
+  if (run.clockT <= 0) { run.cause = 'KLOCKAN'; P.iframe = 0; hurtPlayer(1e6); }
+}
+// ---- våningsbetyg ----
+function floorGrade(extra) {
+  const par = 25 + totalEnemies * 5, tk = levelTime <= par ? 1 : par / levelTime, kl = totalEnemies ? kills / totalEnemies : 1, sc = totalSecrets ? secrets / totalSecrets : 1, dm = 1 - Math.min(1, lvlStat.taken / (maxHp() * 1.5)), st = style.floorPeak / (STYLE_RANKS.length - 1);
+  const v = tk * 0.22 + kl * 0.22 + sc * 0.14 + dm * 0.22 + st * 0.2, g = v >= 0.85 ? 'S' : v >= 0.7 ? 'A' : v >= 0.55 ? 'B' : v >= 0.4 ? 'C' : 'D', bonus = { S: 50, A: 30, B: 15, C: 5, D: 0 }[g];
+  if (bonus) { run.gold += bonus; extra.push(`BETYG ${g}: +${bonus} GULD`); }
+  if (g === 'S') stat('gradeS'); run.grades = (run.grades || '') + g;
+  return { g, v };
+}
+const GRADE_COL = { S: '#ffd24a', A: '#9fe060', B: '#60c0ff', C: '#c9a87a', D: '#8a7558' };
+// ---- per bildruta ----
+function setupLoop() { style.v = Math.min(style.v, 30); style.floorPeak = 0; style.feed = []; if (run) run.clockT = cmode('clock') ? 10 : 0; P.launch = null; }
+function loopTick(dt) {
+  style.v = Math.max(0, style.v - dt * (1.5 + styleRank() * 1.4)); for (const f of style.feed) f.k -= dt; style.feed = style.feed.filter(f => f.k > 0);
+  if (P.hp > maxHp()) P.hp = Math.max(maxHp(), P.hp - dt * 2); // överhälsan sjunker
+  for (const e of ents) if (canExec(e)) { if (Math.floor(tmr * 8) % 2) e.flash = Math.max(e.flash, 0.05); if (!settings.lowfx && Math.random() < dt * 12) particles.push({ x: e.x + rnd(-0.2, 0.2), y: e.y + rnd(-0.2, 0.2), z: e.d.size * 0.9, vx: 0, vy: 0, vz: 0.5, life: 0.4, maxLife: 0.4, img: fx.hit[1], size: 0.05, add: true, tint: [140, 230, 255] }); }
+  for (const it of items) { if (it.taken || !it.drop || !LOOP_MAGNET.has(it.type)) continue; const dx = P.x - it.x, dy = P.y - it.y, d = Math.hypot(dx, dy); if (d < 2.4 && d > 0.2) { it.x += dx / d * Math.min(d, 7 * dt); it.y += dy / d * Math.min(d, 7 * dt); } } // föremål dras till dig
+  slideTick(dt); clockTick(dt);
+}
+const LOOP_MAGNET = new Set(['health', 'ammo', 'armor', 'gold', 'goldpile', 'gear', 'sporesack', 'meat', 'stones', 'battery']);
+function drawLoopHud(g) {
+  if (cmode('clock') && run && lvl && !lvl.hub) { const t = Math.max(0, run.clockT || 0), s = t.toFixed(1), w = textW(s) * 2; txt(s, Math.round((W - w) / 2), 4, t < 3 ? (tmr % 0.4 < 0.2 ? '#ff4030' : '#a02010') : run.clockFlash > 0 ? '#9fe060' : '#ffe9a8', 2); }
+  if (settings.styleMeter === false || style.v < 0.5) return;
+  const r = styleRank(), R = STYLE_RANKS[r], x0 = W - 96, y0 = 72, nx = STYLE_RANKS[r + 1], k = nx ? (style.v - R[3]) / (nx[3] - R[3]) : 1, lines = style.feed.slice(0, 3);
+  g.fillStyle = 'rgba(0,0,0,0.45)'; g.fillRect(x0 - 3, y0 - 3, 95, 26 + lines.length * 9);
+  txt(R[0], x0, y0, R[2], 2); txt('STIL', x0 + textW(R[0]) * 2 + 4, y0 + 7, '#8a7558');
+  g.fillStyle = '#2a2018'; g.fillRect(x0, y0 + 18, 88, 2); g.fillStyle = R[2]; g.fillRect(x0, y0 + 18, Math.round(88 * clamp(k, 0, 1)), 2);
+  lines.forEach((f, i) => { const s = f.t.length > 11 ? f.t.slice(0, 11) : f.t; txt(s, x0, y0 + 23 + i * 9, '#e8d9b0', 1, true, Math.min(1, f.k * 2)); });
+}
 (async () => {
   const st = document.getElementById('status');
   try {
@@ -8200,7 +8371,7 @@ Object.assign(PROJ_DRAW_V8, {
     fire, useKey, startReload, switchWeapon, floorDone, nextFloor, projectiles: () => projectiles, secrets: () => secrets, keys, setMouse: (d, aim) => { mouseDown = d; aimDown = !!aim; }, pause, resume, hurtPlayer,
     light: () => light, lvl: () => lvl, boss: () => boss, gainCard, startLevel, props: () => props, guardian: () => guardianE, explode, alertEnemy, WEAPONS, mods: () => M, loadFloor, openShop, openChest, profile, showTitle, endRun, hurtEnemy,
     spawnEnemy: (type, x, y) => { const e = makeEnemy(type, x, y); ents.push(e); totalEnemies++; return e; }, portals: () => portals, particles: () => particles, hazards: () => hazards,
-    pet: () => pet, allies: () => allies, beginMaze, beginBossHunt, beginEnemyPractice, beginAbyss, beginHub, openEditor, edEncode, edDecode, playCustom, giveLegend, LEGENDS, beginCampaign, pclouds: () => pclouds, tports: () => tports, beginFinale, lightningAt, bubbles: () => timeBubbles, sawsRef: () => saws, voidAt, solid, hasLOS, freeSpot, mapRef: () => map, enterPortal, killAllCheat: () => { for (const e of ents) if (!e.dead && !e.boss) hurtEnemy(e, 99999, e.x, e.y, { noProc: true }); if (boss && !boss.dead) hurtEnemy(boss, 99999, boss.x, boss.y, { noProc: true }); }, talentPick, gainXp, TALENTS, talent, deepAt, tideHigh, pauseMenu, settings, refreshTitle, checkAch, showStats, levelTime: () => levelTime, showTitles, cmode, shareSeed, soundCue, cues: () => cues, deathMap: () => deathMap, findPage, showChronicle, toggleLamp, throwStone, openGambler, openBanker, openWanderer, visibility, addPropAt, openCampfire, openQuestBoard, giveRune, useAbility, quests: () => quests, drinkPotion, swapPotion, givePotion, givePet, spawnAlly, spawnPortal, dropItem, openAlchemist, openPriest, openPetCage, biomeFor, useProp };
+    pet: () => pet, allies: () => allies, beginMaze, beginBossHunt, beginEnemyPractice, beginAbyss, beginHub, openEditor, styleRef: () => style, execute, canExec, kickParry, edEncode, edDecode, playCustom, giveLegend, LEGENDS, beginCampaign, pclouds: () => pclouds, tports: () => tports, beginFinale, lightningAt, bubbles: () => timeBubbles, sawsRef: () => saws, voidAt, solid, hasLOS, freeSpot, mapRef: () => map, enterPortal, killAllCheat: () => { for (const e of ents) if (!e.dead && !e.boss) hurtEnemy(e, 99999, e.x, e.y, { noProc: true }); if (boss && !boss.dead) hurtEnemy(boss, 99999, boss.x, boss.y, { noProc: true }); }, talentPick, gainXp, TALENTS, talent, deepAt, tideHigh, pauseMenu, settings, refreshTitle, checkAch, showStats, levelTime: () => levelTime, showTitles, cmode, shareSeed, soundCue, cues: () => cues, deathMap: () => deathMap, findPage, showChronicle, toggleLamp, throwStone, openGambler, openBanker, openWanderer, visibility, addPropAt, openCampfire, openQuestBoard, giveRune, useAbility, quests: () => quests, drinkPotion, swapPotion, givePotion, givePet, spawnAlly, spawnPortal, dropItem, openAlchemist, openPriest, openPetCage, biomeFor, useProp };
   if (params.has('autostart')) begin('new');
 })();
 document.getElementById('start').addEventListener('click', () => startMode('new'));
