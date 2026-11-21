@@ -33,6 +33,7 @@
 //          node tools/gen-preview.js boss:sky 3 --boss=thunderbird --winds
 //          node tools/gen-preview.js --maze sky 4    /    node tools/gen-preview.js --secret clock 5
 //          node tools/gen-preview.js caves 1 --stats --n=200
+//          node tools/gen-preview.js --biome=courtyard 7 3 --rooms --legend   (version 10: nya fiender Ō ō Ŏ ŏ Ő ő, legendaltaret Œ)
 const fs = require('fs');
 const path = require('path');
 global.window = global;
@@ -84,8 +85,11 @@ const LEGEND = [
   'faror: Ŀ sågspår (level.saws)  ŀ tidsbubbla  Ń tomrum/avgrund (ingen väg dit)  ń vindruta (level.winds; --winds visar riktningen)',
   'rekvisita (blockerar): Ņ urverk (ljus)  ņ blixtstång  Ň klockspel  ň molnkista      föremål: Ŋ kugghjul  ŋ fjäder',
   'klocktornet: mässingssalar med urverk, sågspår och tidsbubblor; molnborgen: öar (salar) och broar (korridorer) över tomrummet',
+  'version 10, nya fiender (inbytta i stridsrummens grupper): Ō fångvaktare (kryptan)  ō grävare (grottorna)  Ŏ likgrävare (kyrkogården)',
+  '  ŏ rotvätte (skogen, grupper om 2-3)  Ő armborstskytt (borggården, vid skydd)  ő paddjätte (träsket, nära vatten); sällsynta i grannbiomen',
+  'rekvisita (blockerar): Œ legendaltaret (gör ett vapen legendariskt; ~12 % av banorna på djup 2+, i ett lugnt rum)',
 ];
-const OLD_EN = 'SKVILNORW', NEW_EN = 'UXY!@^+ÅÄÖÉÜÑÆÞÐÝÃÕÊÎÔËÍÏÓÚÛĀĂĳĴĵĶķĸ';
+const OLD_EN = 'SKVILNORW', NEW_EN = 'UXY!@^+ÅÄÖÉÜÑÆÞÐÝÃÕÊÎÔËÍÏÓÚÛĀĂĳĴĵĶķĸ' + 'ŌōŎŏŐő';
 const FEAT = { anvil: '(', fortune: ')', prisoner: '[', challenge: '?', offering: ';', lever: '/', locked: ']', cracked: '{', arrows: '<', gas: '>', lava: '_', water: '-', ice: ':', webs: '"',
   alchemist: '£', priest: '€', petcage: '©', potions: '¥', icicles: 'Ç',
   campfire: '¶', questboard: '®', runes: 'ª', meat: 'ð', firejets: '°', crumble: '¬', pendulums: '±', plates: '¨', secretstairs: '÷', poisonbarrels: 'µ', frostbarrels: 'ß',
@@ -93,7 +97,8 @@ const FEAT = { anvil: '(', fortune: ')', prisoner: '[', challenge: '?', offering
   deepwater: 'Đ', crystalspikes: 'Ē', tide: 'Ĕ', breakcrystals: 'Ė', glowcrystals: 'Ę', wrecks: 'Ě', bubbles: 'Ĝ', cartographer: 'Ğ', talentaltar: 'Ġ',
   books: 'Ģ', stalker: 'Ā', witch: 'Ă', eels: 'Ó',
   saws: 'Ŀ', timebubbles: 'ŀ', void: 'Ń', winds: 'ń', clockworks: 'Ņ', lightningrods: 'ņ', chimes: 'Ň', cloudchests: 'ň', gears: 'Ŋ', feathers: 'ŋ',
-  gearspiders: 'Ĵ', cloudgiants: 'ĸ' };
+  gearspiders: 'Ĵ', cloudgiants: 'ĸ',
+  jailers: 'Ō', burrowers: 'ō', gravediggers: 'Ŏ', rootlings: 'ŏ', crossbowmen: 'Ő', toads: 'ő', legendaltar: 'Œ' };
 const makeLevel = (seed, d, shop) => (flag('secret') ? Gen.secret(seed, { biome: biome === 'random' ? undefined : biome, depth: d })
   : flag('maze') ? Gen.maze(seed, { biome: biome === 'random' ? undefined : biome, depth: d })
   : biome.startsWith('boss') ? Gen.boss(seed, { arena: biome.split(':')[1], boss: flag('boss') })
@@ -158,7 +163,7 @@ for (let k = 0; k < n; k++) {
   }
   if (flag('rooms')) {
     // per rum: typ, rumstyp, ruta, antal fiender och rekvisita (räknat via rumsmasken när den finns)
-    const ENEMY = 'SKVILNORWEQ' + NEW_EN, PROPS = 'ckjquvwyzeiFHJT()[?;/£€©¶®µß÷²³çÿýĖĘĚĞĠŅņŇň';
+    const ENEMY = 'SKVILNORWEQ' + NEW_EN, PROPS = 'ckjquvwyzeiFHJT()[?;/£€©¶®µß÷²³çÿýĖĘĚĞĠŅņŇňŒ';
     lv.rooms.forEach((r, i) => {
       let en = 0, pr = 0, items = '';
       for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {

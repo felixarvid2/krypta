@@ -24,6 +24,11 @@
 // klockspel Ň, molnkistor ň, kugghjul Ŋ, fjädrar ŋ) bara där de får finnas, taken, att sågspår/tidsbubblor aldrig är enda vägen och att allt
 // nås utan att gå på tomrummet, Gen.secret/Gen.maze med de nya utseendena, negativa validate-tester, och frö-stabilitet mot version 8
 // (git-objektet GEN_V8_REF eller filen i GEN_OLD8): samma karta utom kugghjul och fjädrar ovanpå.
+// Version 10: de nya fienderna i de gamla biomerna (Ō ō Ŏ ŏ Ő ő: bara i sin biom och den närliggande, djup, tak, i stridsrum, grävaren aldrig
+// intill vatten, rotvättar i grupper om 2-3, armborstskyttar helst vid skydd, paddjättar helst nära vatten) och legendaltaret Œ (högst 1, djup
+// 2+, lugnt rum, fri framsida, nås med grindarna stängda, aldrig i arenor/hemliga våningar/labyrinter), frekvenser per biom (75 banor + 100
+// med spelets opts per gammal biom), negativa validate-tester och frö-stabilitet mot version 9 (git-objektet GEN_V9_REF, gen.js i HEAD när
+// version 10 skrevs, eller filen i GEN_OLD9): samma bana utom inbytta fiender och legendaltaret ovanpå.
 // --show visar en bana per biom/arena.
 const fs = require('fs');
 const path = require('path');
@@ -46,6 +51,15 @@ try {
     : require('child_process').execFileSync('git', ['show', GEN_V8_REF + ':js/gen.js'], { cwd: path.join(__dirname, '..'), encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 1 << 26 });
   (0, eval)(src); OldGen8 = global.Gen; global.Gen = undefined;
 } catch (e) { oldGen8Err = String(e.message || e).split('\n')[0]; }
+// version 9 av generatorn (för frö-stabiliteten i version 10): GEN_OLD9=sökväg, annars ur git (commit där gen.js senast var version 9, = HEAD
+// när version 10 skrevs)
+const GEN_V9_REF = process.env.GEN_V9_REF || '26ae0d512fd8ffd5a2300a35ff49fc2c49e28b00';
+let OldGen9 = null, oldGen9Err = '';
+try {
+  const src = process.env.GEN_OLD9 ? fs.readFileSync(process.env.GEN_OLD9, 'utf8')
+    : require('child_process').execFileSync('git', ['show', GEN_V9_REF + ':js/gen.js'], { cwd: path.join(__dirname, '..'), encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 1 << 26 });
+  (0, eval)(src); OldGen9 = global.Gen; global.Gen = undefined;
+} catch (e) { oldGen9Err = String(e.message || e).split('\n')[0]; }
 (0, eval)(fs.readFileSync(path.join(__dirname, '..', 'js', 'gen.js'), 'utf8'));
 
 let failures = 0;
@@ -53,9 +67,10 @@ const fail = msg => { failures++; if (failures <= 25) console.log('FEL: ' + msg)
 const count = (map, ch) => map.reduce((n, r) => n + r.split(ch).length - 1, 0);
 const isWall = c => (c >= '0' && c <= '9') || '#%~&=Ø¦Ò¤ÈÌÙĄĆĈĊČĎĹĺĻļĽľ'.includes(c);
 const edgeC = c => isWall(c) || c === 'Ń'; // vägg eller tomrum (molnborgens ökant)
-const INTERACT = '()[?;/', GATES = '|]{', DOORS = 'DG*|]{', NPCS = '£€©', V6BLOCK = '¶®÷µß', V7BLOCK = '²³çÿý', V8BLOCK = 'ĖĘĚĞĠ', V9BLOCK = 'ŅņŇň';
-const isBlock = c => isWall(c) || ('fMtnkquvwyeHJT' + INTERACT + GATES + NPCS + V6BLOCK + V7BLOCK + V8BLOCK + V9BLOCK + 'Ń').includes(c);
-const NEW_EN = 'UXY!@^+ÅÄÖÉÜÑÆÞÐÝÃÕÊÎÔËÍÏÓÚÛĀĂĳĴĵĶķĸ', OLD_EN = 'SKVILNORW', ENEMIES = OLD_EN + NEW_EN + 'EQ', PROPS = 'ckjquvwyzeiFHJT' + INTERACT + V6BLOCK + '²³ĖĘĚĠ' + V9BLOCK, LIGHTS = 'cfiFĘŅ';
+const INTERACT = '()[?;/', GATES = '|]{', DOORS = 'DG*|]{', NPCS = '£€©', V6BLOCK = '¶®÷µß', V7BLOCK = '²³çÿý', V8BLOCK = 'ĖĘĚĞĠ', V9BLOCK = 'ŅņŇň', V10BLOCK = 'Œ';
+const isBlock = c => isWall(c) || ('fMtnkquvwyeHJT' + INTERACT + GATES + NPCS + V6BLOCK + V7BLOCK + V8BLOCK + V9BLOCK + V10BLOCK + 'Ń').includes(c);
+const V10EN = 'ŌōŎŏŐő'; // version 10: fångvaktare, grävare, likgrävare, rotvätte, armborstskytt, paddjätte
+const NEW_EN = 'UXY!@^+ÅÄÖÉÜÑÆÞÐÝÃÕÊÎÔËÍÏÓÚÛĀĂĳĴĵĶķĸ' + V10EN, OLD_EN = 'SKVILNORW', ENEMIES = OLD_EN + NEW_EN + 'EQ', PROPS = 'ckjquvwyzeiFHJT' + INTERACT + V6BLOCK + '²³ĖĘĚĠ' + V9BLOCK + V10BLOCK, LIGHTS = 'cfiFĘŅ';
 const HAZ = '_-:"z<>Ç°¬±¨¯¹ĐĒĔĜĿŀŃń', LOOT = 'CAha$,¥ªþ¼½ĢŊŋ';
 const SINK = '_z¬¯ĐĒĔĜÓĿŀ'; // lava, spikar, smulande golv, kvicksand, djupt vatten, kristallspikar, tidvatten (och ålen i vattnet), sågspår, tidsbubblor: aldrig enda vägen
 const WATER_LOOT = '$haĢ¥'; // vattenskatten: får nås bara simmande (även vrakkistan Ě)
@@ -65,10 +80,12 @@ const wchOf = w => (!w ? null : Gen.WEAPONS[w] ? w : [...WCH].find(c => Gen.WEAP
 const SPECIAL = ['shop', 'shrine', 'treasure', 'secret', 'guardian', 'special', 'vault'];
 // nya fiender: första djup och biomer där de får finnas
 const NEW_DEPTH = { U: 1, X: 1, Y: 2, '^': 2, '+': 2, '!': 3, '@': 3, 'Å': 1, 'Ä': 2, 'Ö': 2, 'É': 1, 'Ü': 2, 'Ñ': 3, 'Æ': 2, 'Þ': 1, 'Ð': 3, 'Ý': 2,
-  'Ã': 1, 'Õ': 1, 'Ê': 2, 'Î': 2, 'Ô': 3, 'Ë': 1, 'Í': 1, 'Ï': 1, 'Ó': 1, 'Ú': 2, 'Û': 1, 'Ā': 2, 'Ă': 3, 'ĳ': 1, 'Ĵ': 1, 'ĵ': 2, 'Ķ': 1, 'ķ': 2, 'ĸ': 3 };
+  'Ã': 1, 'Õ': 1, 'Ê': 2, 'Î': 2, 'Ô': 3, 'Ë': 1, 'Í': 1, 'Ï': 1, 'Ó': 1, 'Ú': 2, 'Û': 1, 'Ā': 2, 'Ă': 3, 'ĳ': 1, 'Ĵ': 1, 'ĵ': 2, 'Ķ': 1, 'ķ': 2, 'ĸ': 3,
+  'Ō': 1, 'ō': 2, 'Ŏ': 1, 'ŏ': 1, 'Ő': 1, 'ő': 2 };
 // version 7: tjuven Î och dubbelgångaren Ô i alla biomer, Õ i grottorna, Ã på kyrkogården, Ê på borggården, gravkammarens egna
 // version 8: skuggjägaren Ā och häxan Ă i alla biomer, kristallgrottornas och sjunkna stadens egna
-const NEW_BIOME = { caves: 'UXÜÑÆÕÎÔĀĂ', forest: 'YUXÉÑÎÔĀĂ', graveyard: 'X!^ÅÄÖÑÐÝÃÎÔĀĂ', dungeon: '@!U+ÅÄÖÑÆÐÎÔĀĂ', courtyard: '@Y!ÄÖÑÐÊÎÔĀĂ', swamp: '^UYXÅÑÝÎÔĀĂ', frost: 'ÉÜ@ÑÝÎÔĀĂ',
+// version 10: Ō ō Ŏ ŏ Ő ő infödda i sin biom och sällsynta i den närliggande (V10_HOME / V10_NEAR)
+const NEW_BIOME = { caves: 'UXÜÑÆÕÎÔĀĂō', forest: 'YUXÉÑÎÔĀĂŏő', graveyard: 'X!^ÅÄÖÑÐÝÃÎÔĀĂŎō', dungeon: '@!U+ÅÄÖÑÆÐÎÔĀĂŌŎŐ', courtyard: '@Y!ÄÖÑÐÊÎÔĀĂŐŌ', swamp: '^UYXÅÑÝÎÔĀĂőŏ', frost: 'ÉÜ@ÑÝÎÔĀĂ',
   volcano: 'YXÆ!ÑÐÞÎÔĀĂ', tomb: 'ÃÊXÕÎÔÑĀĂ', crystal: 'ËÍXÑÎÔĀĂ', sunken: 'ÏÓÚÛÑÎÔĀĂ', clock: 'ĳĴĵÑÎÔĀĂ', sky: 'ĶķĸÑÎÔĀĂ' }; // version 9: klocktornets och molnborgens egna
 const FEAT = { anvil: '(', fortune: ')', prisoner: '[', challenge: '?', offering: ';', lever: '/', locked: ']', cracked: '{', arrows: '<', gas: '>', lava: '_', water: '-', ice: ':', webs: '"',
   alchemist: '£', priest: '€', petcage: '©', potions: '¥', icicles: 'Ç',
@@ -77,10 +94,16 @@ const FEAT = { anvil: '(', fortune: ')', prisoner: '[', challenge: '?', offering
   deepwater: 'Đ', crystalspikes: 'Ē', tide: 'Ĕ', breakcrystals: 'Ė', glowcrystals: 'Ę', wrecks: 'Ě', bubbles: 'Ĝ', cartographer: 'Ğ', talentaltar: 'Ġ',
   books: 'Ģ', stalker: 'Ā', witch: 'Ă', eels: 'Ó',
   saws: 'Ŀ', timebubbles: 'ŀ', void: 'Ń', winds: 'ń', clockworks: 'Ņ', lightningrods: 'ņ', chimes: 'Ň', cloudchests: 'ň', gears: 'Ŋ', feathers: 'ŋ',
-  gearspiders: 'Ĵ', cloudgiants: 'ĸ' };
+  gearspiders: 'Ĵ', cloudgiants: 'ĸ',
+  jailers: 'Ō', burrowers: 'ō', gravediggers: 'Ŏ', rootlings: 'ŏ', crossbowmen: 'Ő', toads: 'ő', legendaltar: 'Œ' };
 const K8 = ['deepwater', 'crystalspikes', 'tide', 'breakcrystals', 'glowcrystals', 'wrecks', 'bubbles', 'cartographer', 'talentaltar', 'books', 'stalker', 'witch', 'eels'];
 const K9 = ['saws', 'timebubbles', 'void', 'winds', 'clockworks', 'lightningrods', 'chimes', 'cloudchests', 'gears', 'feathers', 'gearspiders', 'cloudgiants'];
 const V9CAP = { 'Ŋ': 3, 'ŋ': 1, 'ŀ': 3, 'Ň': 1, 'ň': 3, 'ĸ': 2 };
+const K10 = ['jailers', 'burrowers', 'gravediggers', 'rootlings', 'crossbowmen', 'toads', 'legendaltar'];
+const V10CAP = { 'Ō': 4, 'ō': 4, 'Ŏ': 2, 'ŏ': 3, 'Ő': 4, 'ő': 2, 'Œ': 1 };
+const V10_HOME = { 'Ō': 'dungeon', 'ō': 'caves', 'Ŏ': 'graveyard', 'ŏ': 'forest', 'Ő': 'courtyard', 'ő': 'swamp' };
+const V10_NEAR = { 'Ō': 'courtyard', 'ō': 'graveyard', 'Ŏ': 'dungeon', 'ŏ': 'swamp', 'Ő': 'dungeon', 'ő': 'forest' };
+const OLD6 = ['dungeon', 'caves', 'graveyard', 'forest', 'courtyard', 'swamp'];
 const V8CAP = { 'Ā': 1, 'Ă': 1, 'Ğ': 1, 'Ġ': 1, 'Ģ': 2, 'Ė': 4, 'Ě': 3, 'Ē': 24, 'Ĕ': 48, 'Ĝ': 6, 'Ó': 4 };
 const V7CAP = { '²': 5, '³': 1, 'ç': 1, 'ÿ': 1, 'ý': 1, 'þ': 1, '¼': 2, '½': 2, '¹': 1, '¯': 32, 'Î': 1, 'Ô': 1 };
 const V6CAP = { '¶': 1, '®': 1, '÷': 1, 'ª': 1, 'ð': 2, '°': 4, '¬': 8, '±': 3, '¨': 2, 'Ñ': 2, 'Ð': 2 };
@@ -252,6 +275,7 @@ function checkLevel(lv, seed, depth, opts, biome) {
   checkV7(lv, tag, s, biome, px, py, depth);
   checkV8(lv, tag, s, biome, px, py, depth);
   checkV9(lv, tag, s, biome, px, py, depth);
+  checkV10(lv, tag, s, biome, px, py, depth);
   return { tag, types };
 }
 
@@ -343,7 +367,7 @@ function checkRooms(lv, tag, s, px, py) {
     if (closed[i] >= 0 && r && r.type === 'vault') fail(tag + ` valvet nås utan att öppna grinden/låset vid ${x},${y}`);
   }
   if (bad) fail(tag + ` ${bad} rutor nås inte (rekvisita, lava, spikar eller grindar stänger av)`);
-  for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) if (('kquvwyeHJT' + INTERACT + NPCS + V6BLOCK + V7BLOCK + V8BLOCK + V9BLOCK).includes(m[y][x]))
+  for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) if (('kquvwyeHJT' + INTERACT + NPCS + V6BLOCK + V7BLOCK + V8BLOCK + V9BLOCK + V10BLOCK).includes(m[y][x]))
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (DOORS.includes(m[y + dy][x + dx])) fail(tag + ` ${m[y][x]} i dörröppning vid ${x},${y}`);
   // säker väg (utan lava och spikar) P->x och P->Z
   const X = findCh(m, 'x'), Zc = findCh(m, 'Z');
@@ -848,6 +872,51 @@ function checkV9(lv, tag, s, biome, px, py, depth) {
   if (depth >= 3) { s.d3v9 = (s.d3v9 || 0) + 1; s.d3giant = (s.d3giant || 0) + (N('ĸ') ? 1 : 0); }
 }
 
+// version 10: de nya fienderna (biom och djup kontrolleras i checkLevel via NEW_BIOME/NEW_DEPTH; här tak, i stridsrum, grävaren aldrig
+// intill vatten, rotvättar i grupper om 2-3, armborstskyttar vid skydd, paddjättar nära vatten) och legendaltaret (djup 2+, lugnt rum,
+// fri framsida, nås med grindarna stängda, påverkar inte nåbarheten: med Œ som golv nås exakt en ruta till)
+const COVER10 = 'TeHJkquv²µßĖ';
+function checkV10(lv, tag, s, biome, px, py, depth) {
+  const m = lv.map, H = m.length, W = m[0].length, rm = lv.roomMask;
+  const ri = (x, y) => (rm[y][x] === '-' ? -1 : rm[y].charCodeAt(x) - 48), roomOf = (x, y) => lv.rooms[ri(x, y)];
+  const n = {}; for (const r of m) for (const c of r) n[c] = (n[c] || 0) + 1;
+  const N = c => n[c] || 0;
+  for (const c in V10CAP) if (N(c) > V10CAP[c]) fail(tag + ` för många ${c}: ${N(c)}`);
+  const at = (x, y) => (x < 0 || y < 0 || x >= W || y >= H ? '1' : m[y][x]);
+  const combat = r => r && ['normal', 'elite', 'exit'].includes(r.type);
+  const quiet = r => r && (['shrine', 'treasure', 'start'].includes(r.type) || (r.type === 'special' && r.arch !== 'challenge'));
+  const wet = c => c === '-' || 'ĐĔĜÓ'.includes(c);
+  const pillar = (x, y) => isWall(at(x, y)) && x > 0 && y > 0 && x < W - 1 && y < H - 1 && [-1, 0, 1].reduce((k, dy) => k + [-1, 0, 1].filter(dx => (dx || dy) && !isWall(at(x + dx, y + dy))).length, 0) >= 5;
+  const near = (x, y, rad, f) => { for (let dy = -rad; dy <= rad; dy++) for (let dx = -rad; dx <= rad; dx++) if ((dx || dy) && f(x + dx, y + dy)) return true; return false; };
+  const roots = {};
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const c = m[y][x];
+    if (c !== 'Œ' && !V10EN.includes(c)) continue;
+    const r = ri(x, y) >= 0 ? roomOf(x, y) : null;
+    if (c === 'Œ') {
+      if (depth < 2 || !quiet(r)) fail(tag + ` legendaltare på djup ${depth} i ${r ? r.type + '/' + r.arch : 'korridor'} vid ${x},${y}`);
+      if (!N4.some(([dx, dy]) => !isBlock(at(x + dx, y + dy)) && !HAZ.includes(at(x + dx, y + dy)))) fail(tag + ` legendaltaret saknar fri framsida vid ${x},${y}`);
+      // nåbarheten: med grindarna stängda, utan lava/spikar; med Œ som golv nås exakt en ruta till (altarets egen)
+      const pass = c2 => !isBlock(c2) && !SINK.includes(c2), cnt = d => d.reduce((k, v) => k + (v >= 0 ? 1 : 0), 0);
+      const with_ = floodD(m, px, py, pass), m2 = m.slice(); m2[y] = m2[y].slice(0, x) + '.' + m2[y].slice(x + 1);
+      if (cnt(floodD(m2, px, py, pass)) !== cnt(with_) + 1) fail(tag + ` legendaltaret stänger av något / nås inte vid ${x},${y}`);
+      s.altarRoom = s.altarRoom || {}; s.altarRoom[r ? r.type : '-'] = (s.altarRoom[r ? r.type : '-'] || 0) + 1;
+      continue;
+    }
+    if (!combat(r)) fail(tag + ` ny fiende ${c} i ${r ? r.type : 'korridor'} vid ${x},${y}`);
+    if (c === 'ō' && N4.some(([dx, dy]) => wet(at(x + dx, y + dy)))) fail(tag + ` grävare intill vatten vid ${x},${y}`);
+    if (c === 'ŏ') roots[ri(x, y)] = (roots[ri(x, y)] || 0) + 1;
+    if (c === 'Ő') { s.xbowN = (s.xbowN || 0) + 1; if (near(x, y, 1, (xx, yy) => COVER10.includes(at(xx, yy)) || pillar(xx, yy))) s.xbowCover = (s.xbowCover || 0) + 1; }
+    if (c === 'ő') { s.toadN = (s.toadN || 0) + 1; if (near(x, y, 2, (xx, yy) => wet(at(xx, yy)))) s.toadWet = (s.toadWet || 0) + 1; }
+  }
+  for (const k in roots) if (roots[k] < 2 || roots[k] > 3) fail(tag + ` rotvättar i rum ${k}: ${roots[k]} (väntat en grupp om 2-3)`);
+  s.f10 = s.f10 || {}; s.n10 = s.n10 || {}; s.e10 = s.e10 || {};
+  for (const c of V10EN + 'Œ') {
+    if (depth < (c === 'Œ' ? 2 : NEW_DEPTH[c])) continue; // andel bland banorna där saken får finnas
+    s.e10[c] = (s.e10[c] || 0) + 1; s.f10[c] = (s.f10[c] || 0) + (N(c) ? 1 : 0); s.n10[c] = (s.n10[c] || 0) + N(c);
+  }
+}
+
 // klocktornet: mässingsväggar Ĺ med kuggväggar ĺ (vaktarens sal i sitt tecken), inomhus, mässingsgolv, varm dimma, urverk, sågspår och
 // tidsbubblor, inget tomrum/lava/vatten/is
 const CLOCK_ARCH = ['gearworks', 'pendulumhall', 'workshop', 'storeroom', 'armory', 'library', 'prison', 'crypt'];
@@ -1251,6 +1320,7 @@ for (const biome of BIOME_IDS.slice(1)) {
         const o = a.map[y][x], c = b.map[y][x];
         if (o === c) continue;
         if (o === '.' && 'Ŋŋ'.includes(c)) { k++; continue; }
+        if ((o === '.' && c === 'Œ') || ('SKVILNORWUXY!@^ÅÄÉÜ'.includes(o) && V10EN.includes(c))) continue; // version 10 ovanpå
         fail(`${tag} frö-stabilitet: "${o}" blev "${c}" vid ${x},${y}`); return;
       }
       for (const key in a.features) if (a.features[key] !== b.features[key]) { fail(tag + ' frö-stabilitet: features.' + key); return; }
@@ -1271,6 +1341,90 @@ for (const biome of BIOME_IDS.slice(1)) {
   }
 }
 
+// ---- version 10: de gamla biomerna med spelets opts (100 banor per biom) och frekvenser per biom ----
+{
+  // seed RNG.hash(seed + ':' + djup), djup min(5, pos + varv), butik på position 2 och 4, vapen-id eller null, alla väktare
+  const N = 100, ALL = Object.keys(GUARD);
+  stats.v10Game = [];
+  for (const biome of OLD6) {
+    const t = [];
+    for (let i = 0; i < N; i++) {
+      const pos = 1 + (i % 5), cyc = Math.floor(i / 5) % 3, depth = Math.min(5, pos + cyc), seed = RNG.hash('krypta10-' + biome + i + ':' + (pos + 6 * cyc));
+      const opts = { shop: pos === 2 || pos === 4, weapon: GAME_WEAPONS[i % GAME_WEAPONS.length], biome, guardian: ALL[i % ALL.length] };
+      const [lv, ms] = timed(() => Gen.floor(seed, depth, opts));
+      t.push(ms);
+      const { tag } = checkLevel(lv, seed, depth, opts, biome);
+      if (i % 10 === 0 && JSON.stringify(Gen.floor(seed, depth, opts)) !== JSON.stringify(lv)) fail(tag + ' inte deterministisk');
+    }
+    t.sort((a, b) => a - b);
+    stats.v10Game.push(`${biome} snitt ${(t.reduce((a, b) => a + b, 0) / N).toFixed(1)} ms (median ${t[N >> 1].toFixed(1)})`);
+  }
+  const share = (id, c) => (B[id].f10 && B[id].e10[c] ? B[id].f10[c] / B[id].e10[c] : 0), per = (id, c) => (B[id].f10[c] ? B[id].n10[c] / B[id].f10[c] : 0);
+  let nearL = 0, nearN = 0;
+  for (const c of V10EN) {
+    const h = V10_HOME[c], nb = V10_NEAR[c];
+    if (share(h, c) < 0.35 || share(h, c) > 0.72) fail(`${c} på ${(100 * share(h, c)).toFixed(0)} % av banorna i ${h} (väntat ~50 %)`);
+    if (per(h, c) < (c === 'ŏ' ? 2 : 1.2)) fail(`${c}: ${per(h, c).toFixed(2)} per bana i ${h} (väntat några)`);
+    if (share(nb, c) > 0.2) fail(`${c} på ${(100 * share(nb, c)).toFixed(0)} % av banorna i ${nb} (väntat sällsynt, ~8 %)`);
+    nearL += B[nb].f10[c] || 0; nearN += B[nb].e10[c] || 0;
+    for (const id of BIOME_IDS) if (id !== h && id !== nb && B[id].f10 && B[id].f10[c]) fail(`${c} i ${id}`);
+  }
+  if (nearL / nearN < 0.02 || nearL / nearN > 0.16) fail(`de nya fienderna i närliggande biomer på ${(100 * nearL / nearN).toFixed(0)} % av banorna (väntat ~8 %)`);
+  let aL = 0, aN = 0; for (const id of BIOME_IDS) { aL += B[id].f10['Œ'] || 0; aN += B[id].e10['Œ'] || 0; }
+  if (aL / aN < 0.07 || aL / aN > 0.18) fail(`legendaltaret på ${(100 * aL / aN).toFixed(0)} % av banorna på djup 2+ (väntat ~12 %)`);
+  const xb = B.courtyard.xbowCover / Math.max(1, B.courtyard.xbowN), td = B.swamp.toadWet / Math.max(1, B.swamp.toadN);
+  if (xb < 0.5) fail(`armborstskyttar vid skydd: ${(100 * xb).toFixed(0)} % på borggården`);
+  if (td < 0.8) fail(`paddjättar nära vatten: ${(100 * td).toFixed(0)} % i träsket`);
+  const ar = {}; for (const id of BIOME_IDS) for (const k in B[id].altarRoom || {}) ar[k] = (ar[k] || 0) + B[id].altarRoom[k];
+  stats.v10 = OLD6.map(id => `${id}: ` + [...V10EN].filter(c => B[id].e10[c] && (V10_HOME[c] === id || V10_NEAR[c] === id))
+    .map(c => `${c} ${(100 * share(id, c)).toFixed(0)} %${V10_HOME[c] === id ? ` (${per(id, c).toFixed(1)}/bana)` : ''}`).join(', ')).join('; ') +
+    `\n  legendaltaret ${(100 * aL / aN).toFixed(0)} % av banorna på djup 2+ (${aL}/${aN}; rum: ${Object.entries(ar).map(([k, v]) => k + '=' + v).join(' ')}), per biom: ` +
+    BIOME_IDS.map(id => id + ' ' + (100 * share(id, 'Œ')).toFixed(0)).join(' ') +
+    `\n  armborstskyttar vid skydd ${(100 * xb).toFixed(0)} %, paddjättar nära vatten ${(100 * td).toFixed(0)} %`;
+}
+
+// ---- frö-stabilitet (version 10): samma seeds ger samma bana som version 9 (nya fiender inbytta, legendaltaret ovanpå) ----
+{
+  if (!OldGen9) fail('frö-stabilitet: kunde inte läsa gen.js från version 9 (' + oldGen9Err + '); sätt GEN_OLD9=sökväg till den gamla filen');
+  else {
+    const OB = OldGen9.BIOMES.map(b => b.id), OG = Object.keys(OldGen9.GUARDIANS), OW = [null].concat(Object.values(OldGen9.WEAPONS));
+    const KEYS = ['name', 'biome', 'guardian', 'theme', 'floor', 'floors', 'floorMask', 'roomMask', 'sky', 'rooms', 'fog', 'ambient', 'ceil', 'secretWall', 'boulders', 'beams', 'tide', 'saws', 'winds', 'depth', 'seed'];
+    const FROM = 'SKVILNORWUXY!@^ÅÄÉÜ'; // fiender som content10 får byta ut
+    let swaps = 0, altars = 0, levels = 0;
+    const cmp = (a, b, tag) => {
+      for (const k of KEYS) if (JSON.stringify(a[k]) !== JSON.stringify(b[k])) { fail(tag + ' frö-stabilitet: fältet ' + k + ' skiljer sig från version 9'); return; }
+      let k = 0;
+      for (let y = 0; y < a.map.length; y++) for (let x = 0; x < a.map[0].length; x++) {
+        const o = a.map[y][x], c = b.map[y][x];
+        if (o === c) continue;
+        if (o === '.' && c === 'Œ') { altars++; k++; continue; }
+        if (FROM.includes(o) && V10EN.includes(c)) { swaps++; k++; continue; }
+        fail(`${tag} frö-stabilitet: "${o}" blev "${c}" vid ${x},${y}`); return;
+      }
+      for (const key in a.features) if (a.features[key] !== b.features[key]) { fail(tag + ' frö-stabilitet: features.' + key); return; }
+      if (k) levels++;
+    };
+    for (let i = 0; i < 390; i++) { // alla tretton biomer (30 var)
+      const biome = OB[i % OB.length], depth = 1 + (i % 5), seed = i % 2 ? 'stabil10-' + i : 6161 + i * 7919;
+      const opts = { biome, shop: i % 3 === 0, weapon: OW[i % OW.length], guardian: i % 4 === 3 ? undefined : OG[i % OG.length] };
+      cmp(OldGen9.floor(seed, depth, opts), Gen.floor(seed, depth, opts), `[stabil10 ${biome} seed=${seed} d=${depth}]`);
+    }
+    for (let i = 0; i < 300; i++) { // utan opts.biome: inga nya biomer, alla banor jämförs
+      const depth = 1 + (i % 5), seed = 'stabilmix10-' + i;
+      cmp(OldGen9.floor(seed, depth, { shop: i % 2 === 0 }), Gen.floor(seed, depth, { shop: i % 2 === 0 }), `[stabil10 mix seed=${seed} d=${depth}]`);
+    }
+    // arenor, hemliga våningar och labyrinter är oförändrade (utom de nya nycklarna i features)
+    const same = (a, b) => { const x = Object.assign({}, a, { features: null }), y = Object.assign({}, b, { features: null }); return JSON.stringify(x) === JSON.stringify(y); };
+    for (const arena of OldGen9.ARENAS) if (!same(OldGen9.boss('st10-' + arena, { arena }), Gen.boss('st10-' + arena, { arena }))) fail('frö-stabilitet: arenan ' + arena + ' ändrades');
+    for (const id of OB) {
+      if (!same(OldGen9.secret('st10s-' + id, { biome: id, depth: 2 }), Gen.secret('st10s-' + id, { biome: id, depth: 2 }))) fail('frö-stabilitet: hemliga våningen ' + id + ' ändrades');
+      if (!same(OldGen9.maze('st10m-' + id, { biome: id, depth: 3 }), Gen.maze('st10m-' + id, { biome: id, depth: 3 }))) fail('frö-stabilitet: labyrinten ' + id + ' ändrades');
+    }
+    if (!swaps || !altars) fail(`frö-stabilitet (version 10): inga nya fiender (${swaps}) eller legendaltare (${altars}) i jämförelsen`);
+    stats.stable10 = `390 banor i alla biomer + 300 utan opts.biome identiska med version 9 (${GEN_V9_REF.slice(0, 7)}) utom ${swaps} inbytta fiender och ${altars} legendaltare på ${levels} banor; arenor, hemliga våningar och labyrinter oförändrade`;
+  }
+}
+
 // ---- frö-stabilitet: samma seeds med en gammal biom ger samma bana som version 7 (de nya sakerna ovanpå) ----
 {
   if (!OldGen) fail('frö-stabilitet: kunde inte läsa gen.js från version 7 (' + oldGenErr + '); sätt GEN_OLD=sökväg till den gamla filen');
@@ -1286,6 +1440,7 @@ for (const biome of BIOME_IDS.slice(1)) {
         const o = a.map[y][x], c = b.map[y][x];
         if (o === c) continue;
         if ((o === '.' && ONTOP.includes(c)) || (OLDFOE.includes(o) && (c === 'Ā' || c === 'Ă'))) { k++; continue; }
+        if ((o === '.' && c === 'Œ') || ('SKVILNORWUXY!@^ÅÄÉÜ'.includes(o) && V10EN.includes(c))) continue; // version 10 ovanpå
         fail(`${tag} frö-stabilitet: "${o}" blev "${c}" vid ${x},${y}`); return;
       }
       for (const key in a.features) if (a.features[key] !== b.features[key]) { fail(tag + ' frö-stabilitet: features.' + key); return; }
@@ -1738,6 +1893,68 @@ const mazeMs = [];
       if (!found) fail(`validate-test: hittade ingen korridorruta som är enda vägen (${what})`);
     }
   }
+  // version 10: de nya fienderna utanför sin biom, i arenor och på hemliga våningar, på för litet djup, över taken, grävare intill vatten,
+  // ensam rotvätte; legendaltare: två, i ett stridsrum, på djup 1, i en arena/labyrint, utan fri framsida, som enda vägen
+  {
+    const cv = Gen.floor(24, 3, { biome: 'caves' }), fo = Gen.floor(25, 3, { biome: 'forest' }), sw = Gen.floor(26, 3, { biome: 'swamp' }), co = Gen.floor(27, 3, { biome: 'courtyard' });
+    const cv1 = Gen.floor(28, 1, { biome: 'caves' }), d3 = Gen.floor(29, 3, { biome: 'dungeon' });
+    if (!msg(cv, l => putCh(l, startDot(l), 'Ō'), /hör inte hemma/)) fail('validate: fångvaktare i grottorna ej upptäckt');
+    if (!msg(fo, l => putCh(l, startDot(l), 'Ŏ'), /hör inte hemma/)) fail('validate: likgrävare i skogen ej upptäckt');
+    if (!msg(co, l => putCh(l, startDot(l), 'ŏ'), /hör inte hemma/)) fail('validate: rotvätte på borggården ej upptäckt');
+    if (!msg(bad, l => putCh(l, startDot(l), 'ő'), /hör inte hemma/)) fail('validate: paddjätte i fängelsehålan ej upptäckt');
+    if (!msg(sw, l => putCh(l, startDot(l), 'ō'), /hör inte hemma/)) fail('validate: grävare i träsket ej upptäckt');
+    if (!msg(fo, l => putCh(l, startDot(l), 'Ő'), /hör inte hemma/)) fail('validate: armborstskytt i skogen ej upptäckt');
+    if (!msg(cv1, l => putCh(l, startDot(l), 'ō'), /på djup 1/)) fail('validate: grävare på djup 1 ej upptäckt');
+    if (!msg(Gen.floor(30, 1, { biome: 'swamp' }), l => putCh(l, startDot(l), 'ő'), /på djup 1/)) fail('validate: paddjätte på djup 1 ej upptäckt');
+    if (!msg(d3, l => { l.map[3] = l.map[3].slice(0, 2) + 'ŌŌŌŌŌ' + l.map[3].slice(7); }, /för många Ō/)) fail('validate: fem fångvaktare ej upptäckt');
+    if (!msg(d3, l => { l.map[3] = l.map[3].slice(0, 2) + 'ŎŎŎ' + l.map[3].slice(5); }, /för många Ŏ/)) fail('validate: tre likgrävare ej upptäckt');
+    if (!msg(sw, l => { l.map[3] = l.map[3].slice(0, 2) + 'őőő' + l.map[3].slice(5); }, /för många ő/)) fail('validate: tre paddjättar ej upptäckt');
+    if (!msg(fo, l => putCh(l, startDot(l), 'ŏ'), /rotvättar/)) fail('validate: ensam rotvätte ej upptäckt');
+    if (!msg(fo, l => { l.map[3] = l.map[3].slice(0, 2) + 'ŏŏŏŏ' + l.map[3].slice(6); }, /för många ŏ/)) fail('validate: fyra rotvättar ej upptäckt');
+    // grävare intill vatten (grottor med vatten -)
+    let wetSpot = null;
+    for (let sd = 1; sd <= 40 && !wetSpot; sd++) {
+      const lv = Gen.floor('neg10w-' + sd, 3, { biome: 'caves' }), m = lv.map;
+      for (let y = 1; y < m.length - 1 && !wetSpot; y++) for (let x = 1; x < m[0].length - 1; x++) if (m[y][x] === '.' && N4.some(([dx, dy]) => m[y + dy][x + dx] === '-')) { wetSpot = [lv, [x, y]]; break; }
+    }
+    if (!wetSpot) fail('validate-test: inga grottor med vatten');
+    else if (!msg(wetSpot[0], l => putCh(l, wetSpot[1], 'ō'), /grävare i vattnet/)) fail('validate: grävare intill vatten ej upptäckt');
+    // fiender och altare i arenor, hemliga våningar och labyrinter
+    const arena = Gen.boss(31, { arena: 'graveyard' }), sec = Gen.secret(32, { biome: 'dungeon', depth: 3 }), mz = Gen.maze(33, { biome: 'forest', depth: 3 });
+    const dotOf = l => { const P = findCh(l.map, 'P'); for (let y = 1; y < l.map.length - 1; y++) for (let x = 1; x < l.map[0].length - 1; x++) if (l.map[y][x] === '.' && Math.hypot(x - P[0], y - P[1]) > 7 && N4.every(([dx, dy]) => !isBlock(l.map[y + dy][x + dx]))) return [x, y]; return null; };
+    if (!msg(arena, l => putCh(l, dotOf(l), 'Ŏ'), /hör inte hemma/)) fail('validate: likgrävare i en arena ej upptäckt');
+    if (!msg(sec, l => putCh(l, dotOf(l), 'Ō'), /hör inte hemma/)) fail('validate: fångvaktare på en hemlig våning ej upptäckt');
+    if (!msg(mz, l => putCh(l, dotOf(l), 'ŏ'), /hör inte hemma/)) fail('validate: rotvätte i en labyrint ej upptäckt');
+    if (!msg(arena, l => putCh(l, dotOf(l), 'Œ'), /legendaltare här/)) fail('validate: legendaltare i en arena ej upptäckt');
+    if (!msg(mz, l => putCh(l, dotOf(l), 'Œ'), /legendaltare här/)) fail('validate: legendaltare i en labyrint ej upptäckt');
+    if (!msg(sec, l => putCh(l, dotOf(l), 'Œ'), /legendaltare här/)) fail('validate: legendaltare på en hemlig våning ej upptäckt');
+    // legendaltare: två, i ett stridsrum, på djup 1, i en korridor, utan fri framsida
+    const calmDot = l => { const m = l.map; for (let y = 2; y < m.length - 2; y++) for (let x = 2; x < m[0].length - 2; x++) { const k = l.roomMask[y][x]; if (m[y][x] === '.' && k !== '-' && ['treasure', 'shrine'].includes(l.rooms[k.charCodeAt(0) - 48].type) && N4.every(([dx, dy]) => !isBlock(m[y + dy][x + dx]))) return [x, y]; } return null; };
+    const combatDot = l => { const m = l.map; for (let y = 2; y < m.length - 2; y++) for (let x = 2; x < m[0].length - 2; x++) { const k = l.roomMask[y][x]; if (m[y][x] === '.' && k !== '-' && ['normal', 'elite', 'exit'].includes(l.rooms[k.charCodeAt(0) - 48].type) && N4.every(([dx, dy]) => !isBlock(m[y + dy][x + dx]))) return [x, y]; } return null; };
+    if (!calmDot(d3) || !combatDot(d3)) fail('validate-test: ingen fri ruta i skattrummet/ett stridsrum');
+    else {
+      if (Gen.validate((l => (putCh(l, calmDot(l), 'Œ'), l))(JSON.parse(JSON.stringify(d3)))).length) fail('validate-test: legendaltare i skattrummet underkänns: ' + Gen.validate((l => (putCh(l, calmDot(l), 'Œ'), l))(JSON.parse(JSON.stringify(d3))))[0]);
+      if (!msg(d3, l => { putCh(l, calmDot(l), 'Œ'); putCh(l, combatDot(l), 'Œ'); }, /för många legendaltare/)) fail('validate: två legendaltare ej upptäckt');
+      if (!msg(d3, l => putCh(l, combatDot(l), 'Œ'), /legendaltare i normal|legendaltare i elite|legendaltare i exit/)) fail('validate: legendaltare i ett stridsrum ej upptäckt');
+      if (!msg(d3, l => { const p = calmDot(l); putCh(l, p, 'Œ'); for (const [dx, dy] of N4) putCh(l, [p[0] + dx, p[1] + dy], 'T'); }, /fri framsida/)) fail('validate: legendaltare utan fri framsida ej upptäckt');
+    }
+    if (!calmDot(bad)) fail('validate-test: inget skattrum med fri ruta på djup 1');
+    else if (!msg(bad, l => putCh(l, calmDot(l), 'Œ'), /djup 1/)) fail('validate: legendaltare på djup 1 ej upptäckt');
+    // legendaltare som enda vägen (en korridorruta som är enda vägen till något): nåbarheten underkänns
+    let found = false;
+    for (let sd = 1; sd <= 12 && !found; sd++) {
+      const lv0 = Gen.floor('neg10-' + sd, 2 + (sd % 4), { biome: 'dungeon' }), m = lv0.map;
+      for (let y = 1; y < m.length - 1 && !found; y++) for (let x = 1; x < m[0].length - 1 && !found; x++) {
+        if (m[y][x] !== '.' || lv0.roomMask[y][x] !== '-') continue;
+        const l = JSON.parse(JSON.stringify(lv0)); putCh(l, [x, y], 'Œ');
+        const reach = mm => floodD(mm, ...findCh(mm, 'P'), c => !isBlock(c) && !SINK.includes(c)).reduce((k, v) => k + (v >= 0 ? 1 : 0), 0);
+        if (reach(l.map) >= reach(m) - 1) continue;
+        found = true;
+        if (!Gen.validate(l).some(e => /onåbar|nås inte|nås bara/.test(e))) fail('validate: legendaltare som enda vägen ej upptäckt');
+      }
+    }
+    if (!found) fail('validate-test: hittade ingen korridorruta som är enda vägen (legendaltare)');
+  }
   // en ring av träd runt P stänger in spelaren
   if (!hack(out, l => { const y = l.map.findIndex(r => r.includes('P')), x = l.map[y].indexOf('P'); for (let dy = -1; dy <= 1; dy++) l.map[y + dy] = l.map[y + dy].split('').map((c, xx) => (Math.abs(xx - x) <= 1 && (dy || xx !== x) && !(c >= '1' && c <= '9') ? 't' : c)).join(''); })) fail('validate: instängd av träd ej upptäckt');
 }
@@ -1793,6 +2010,9 @@ console.log('Version 9 med spelets opts: ' + stats.v9Game.join('; '));
 console.log('Version 9 (andel banor): ' + stats.v9 + `; sågspår/tidsbubblor kontrollerade som vägg på ${stats.sawOK} banor, tomrummet på ${stats.voidOK}`);
 console.log('Version 9 per biom (andel banor %): ' + BIOME_IDS.map(id => id + ' ' + Object.keys(B[id].f9).filter(k => B[id].f9[k]).map(k => k + '=' + (100 * B[id].f9[k] / B[id].n).toFixed(0)).join(' ')).join('\n  '));
 console.log('Frö-stabilitet (version 9): ' + (stats.stable9 || 'EJ KONTROLLERAD'));
+console.log('Version 10 med spelets opts (100 banor per gammal biom): ' + stats.v10Game.join(', '));
+console.log('Version 10 (andel banor där saken får finnas, snitt antal på banorna med den):\n  ' + stats.v10);
+console.log('Frö-stabilitet (version 10): ' + (stats.stable10 || 'EJ KONTROLLERAD'));
 console.log('\nFiender per rum (alla rum utom start: antal fiender -> antal rum):');
 for (const id of BIOME_IDS) { const h = B[id].hist; console.log(`  ${id.padEnd(10)} ` + Object.keys(h).sort((a, b) => a - b).map(k => k + ':' + h[k]).join(' ') + `   fiender/budget ${(B[id].enRel / B[id].n).toFixed(2)}  mimics ${B[id].mimic}  P->Z ${(B[id].gdist / B[id].n).toFixed(2)} (min ${B[id].gmin.toFixed(2)}) av längsta vägen`); }
 console.log('Rekvisita per bana:');
@@ -1801,6 +2021,6 @@ console.log('Rumstyper (antal):');
 for (const id of BIOME_IDS) { const a = B[id].arch; console.log(`  ${id.padEnd(10)} ` + Object.keys(a).sort((u, v) => a[v] - a[u]).map(k => k + '=' + a[k]).join(' ')); }
 console.log('Slumpad biom (1000 st): ' + stats.mix);
 console.log('Bossarenor 10 x 30: ' + Object.entries(bossMs).map(([k, v]) => `${k} ${(v / 30).toFixed(2)} ms`).join(', '));
-console.log(`Omförsök i generatorn: ${Gen.floor.stats.retries - stats.retries0} (varav ombyggen utan version 7: ${Gen.floor.stats.v7off}; underkända banor där version 8-sakerna togs bort igen: ${Gen.floor.stats.v8off}, version 9-sakerna: ${Gen.floor.stats.v9off})`);
+console.log(`Omförsök i generatorn: ${Gen.floor.stats.retries - stats.retries0} (varav ombyggen utan version 7: ${Gen.floor.stats.v7off}; underkända banor där version 8-sakerna togs bort igen: ${Gen.floor.stats.v8off}, version 9-sakerna: ${Gen.floor.stats.v9off}, version 10-sakerna: ${Gen.floor.stats.v10off})`);
 if (failures) { console.log(`\n${failures} FEL`); process.exit(1); }
 console.log('\nALLA TESTER OK');

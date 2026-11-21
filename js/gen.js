@@ -264,6 +264,27 @@
 //  Gen.secret och Gen.maze har även utseendena clock och sky (molnlabyrinten: murar av molnsten under öppen himmel, inget tomrum).
 //  Frön: vanliga våningar med en gammal biom ger samma karta som i version 8 med kugghjul och fjädrar ovanpå (underkänns en bana med dem
 //    tas de bort igen och banan blir exakt som i version 8); utan opts.biome ändras bara banorna som slår klocktornet eller molnborgen.
+// Version 10 – "Nya invånare" (enskilda tecken utanför ASCII; allt nytt har egna slumpflöden ur gaffeln 'v10', content10 körs sist av allt):
+//  Nya fiender i de gamla biomerna (gångbara, räknas som fiender i alla rumsregler). De byts in mot redan utplacerade fiender i stridsrummen
+//    (samma ruta i samma grupp, aldrig i spindelboet, aldrig E/Q/Z/vilande statyer): gruppernas storlek, antal fiender och avstånd till P
+//    står kvar. Varje sort är infödd i en biom (~50-55 % av banorna där på tillåtna djup, några per bana) och sällsynt (~8 %, en, rotvättar
+//    en grupp om 2) i en närliggande biom; se FOES10:
+//    Ō fångvaktare (jailer): kryptan/fängelsehålan (dungeon), djup 1+, 1-3, högst 4; sällsynt på borggården
+//    ō grävare (burrower): grottorna (caves), djup 2+, 1-3, högst 4, aldrig i/intill vatten (ingen av de fyra grannarna är - eller djupt
+//      vatten); sällsynt på kyrkogården
+//    Ŏ likgrävare (gravedigger): kyrkogården (graveyard), djup 1+, 1-2, högst 2; sällsynt i kryptan
+//    ŏ rotvätte (rootling): skogen (forest), djup 1+, alltid en hel grupp om 2-3 i samma stridsrum, högst 3; sällsynt i träsket
+//    Ő armborstskytt (crossbowman): borggården (courtyard), djup 1+, 1-3, högst 4; helst i rum med skydd (lådor T, tunnor, bord, ställ,
+//      statyer, fristående pelare) och på en ruta intill skyddet; sällsynt i kryptan
+//    ő paddjätte (toad): träsket (swamp), djup 2+, 1-2, högst 2; helst nära vatten -; sällsynt i skogen
+//  Rekvisita (blockerar, fri framsida, nås med grindarna stängda, aldrig i dörröppningar/flaskhalsar):
+//    Œ legendaltaret (legendaltar; use: byter själar/guld mot att ett vapen blir legendariskt): högst 1, ~12 % av de vanliga banorna på
+//      djup 2+ (alla biomer), i ett lugnt rum (helgedomen, skattrummet eller ett specialrum utom utmaningen; annars startrummet), aldrig i ett
+//      stridsrum, vaktarens sal, en bossarena, en hemlig våning eller en labyrint
+//  level.features utökas med { jailers, burrowers, gravediggers, rootlings, crossbowmen, toads, legendaltar } (antal tecken: Ō ō Ŏ ŏ Ő ő Œ)
+//  Frön: alla vanliga våningar ger samma karta som i version 9 (samma biom, rum, golv, himmel, sågspår, vind ...) med de nya fienderna
+//    inbytta och legendaltaret ovanpå; underkänns en bana med dem tas de bort igen (opts.v10.undo) och banan blir exakt som i version 9.
+//    Arenor, hemliga våningar och labyrinter är oförändrade.
 (function () {
   // vapen på kartan: g hagelgevär, r gevär, m kpist, d dubbelbössa, b armborst, s signalpistol, p prickskyttegevär,
   // å yxa, ä eldkastare, ö granatkastare, é spikpistol, ü stav, ñ båge, ô kastknivar, û hammare, ï musköt, À harpun, Á bumerang, Â prisma,
@@ -292,8 +313,9 @@
   const NPCS8 = 'Ğ'; // version 8: kartografen (blockerar, fri framsida, måste nås)
   const PROPS9 = 'Ņņ'; // version 9: urverk, blixtstång (blockerar)
   const INTER9 = 'Ňň'; // version 9: klockspel, molnkista (blockerar, fri framsida, måste nås)
-  const BLOCK_PROPS = 'tnkquvwyeHJT' + INTERACT + INTER6 + BARRELS6 + INTER7 + PROPS8 + INTER8 + PROPS9 + INTER9; // rekvisita som blockerar spelaren
-  const PROP_CHARS = 'ckjquvwyzeiFHJT' + INTERACT + INTER6 + BARRELS6 + INTER7 + PROPS8 + INTER8 + PROPS9 + INTER9; // ny rekvisita (räknas som rummets dekor)
+  const INTER10 = 'Œ'; // version 10: legendaltaret (blockerar, fri framsida, måste nås)
+  const BLOCK_PROPS = 'tnkquvwyeHJT' + INTERACT + INTER6 + BARRELS6 + INTER7 + PROPS8 + INTER8 + PROPS9 + INTER9 + INTER10; // rekvisita som blockerar spelaren
+  const PROP_CHARS = 'ckjquvwyzeiFHJT' + INTERACT + INTER6 + BARRELS6 + INTER7 + PROPS8 + INTER8 + PROPS9 + INTER9 + INTER10; // ny rekvisita (räknas som rummets dekor)
   const GATES = '|]{'; // järngrind, låst dörr, sprucken vägg: blockerar tills de öppnas
   const WALLS = '0123456789#%~&=Ø¦Ò¤ÈÌÙ' + 'ĄĆĈĊČĎ' + 'ĹĺĻļĽľ';
   // version 9: tomrum Ń (avgrund: ingen går där, allt nås utan den), sågspår Ŀ och tidsbubblor ŀ (aldrig enda vägen, som lava)
@@ -311,7 +333,7 @@
   const genBlk = c => T_GEN[c.charCodeAt(0)] === 1; // generatorn räknar även krukor, lava och spikar som hinder
   const isWet = c => T_WET[c.charCodeAt(0)] === 1;
   const isDoorCh = c => c === 'D' || c === 'G' || c === '*' || c === '|' || c === ']' || c === '{';
-  const isInter = c => INTERACT.includes(c) || NPCS.includes(c) || INTER6.includes(c) || INTER7.includes(c) || NPCS7.includes(c) || INTER8.includes(c) || NPCS8.includes(c) || INTER9.includes(c); // fri framsida, ska nås med grindarna stängda
+  const isInter = c => INTERACT.includes(c) || NPCS.includes(c) || INTER6.includes(c) || INTER7.includes(c) || NPCS7.includes(c) || INTER8.includes(c) || NPCS8.includes(c) || INTER9.includes(c) || c === 'Œ'; // fri framsida, ska nås med grindarna stängda
   const HAZARD = '_-:"z<>Ç°¬±¨¯¹' + 'ĐĒĔĜ' + 'ĿŀŃń'; // farliga golv och fällor (och tomrummet): aldrig på eller intill P och x
   const cheb = (ax, ay, bx, by) => Math.max(Math.abs(ax - bx), Math.abs(ay - by));
 
@@ -479,6 +501,9 @@
     // version 9: ĳ urverkssoldat och ĵ tidsväktare (klocktornets egna), Ķ harpya och ķ stormkallare (molnborgens egna);
     // Ĵ kuggspindel (grupper) och ĸ molnjätte byts in efteråt av content9
     'ĳ': [1, d => 2.2 + 0.5 * d], 'ĵ': [2, d => 0.8 + 0.4 * d], 'Ĵ': [1, d => 1], 'Ķ': [1, d => 2.2 + 0.5 * d], 'ķ': [2, d => 0.9 + 0.4 * d], 'ĸ': [3, d => 0.3],
+    // version 10: Ō fångvaktare, ō grävare, Ŏ likgrävare, ŏ rotvätte, Ő armborstskytt, ő paddjätte; alla byts in efteråt av content10
+    // (vikterna används inte: de står inte i BIOME_ENEMIES), se FOES10
+    'Ō': [1, d => 1], 'ō': [2, d => 1], 'Ŏ': [1, d => 1], 'ŏ': [1, d => 1], 'Ő': [1, d => 1], 'ő': [2, d => 1],
   };
   const BIOME_ENEMIES = { caves: 'UXÜ', forest: 'YUXÉ', graveyard: 'X!^ÅÄÖ', dungeon: '@!U+ÅÄÖ', courtyard: '@Y!ÄÖ', swamp: '^UYXÅ', frost: 'ÉÜ@', volcano: 'YXÆ!',
     tomb: 'ÃÊX', crystal: 'ËÍX', sunken: 'ÏÛÚ', clock: 'ĳĵ', sky: 'Ķķ' };
@@ -971,7 +996,7 @@
     }
     throw new Error('Gen.floor: kunde inte bygga en giltig bana (seed ' + seed + ', djup ' + depth + ')');
   }
-  floor.stats = { retries: 0, v7off: 0, v8off: 0, v9off: 0 };
+  floor.stats = { retries: 0, v7off: 0, v8off: 0, v9off: 0, v10off: 0 };
 
   // version 7: bygger banan (build6), gör banobjektet med mk(lv) och validerar. Underkänns en bana där version 7 lagt ut nya saker
   // byggs samma försök om utan dem (opts.v7off), så att seeds som klarade sig i version 6 aldrig får ett nytt omförsök.
@@ -980,18 +1005,25 @@
   // (kristallgrottorna och sjunkna staden byggs alltid med version 8).
   // version 9: likadant med content9 (gaffeln 'v9'): underkänns banan tas version 9-sakerna bort först (opts.v9.undo, utom i klocktornet
   // och molnborgen) och banan valideras om; den är då exakt som i version 8, och först därefter prövas version 8-ångringen.
+  // version 10: likadant med content10 (gaffeln 'v10', alla biomer): först tas version 10-sakerna bort (opts.v10.undo) och banan blir exakt
+  // som i version 9, sedan prövas version 9- och version 8-ångringen.
   function build7(f, opts, mk) {
     const make = lv => { const level = mk(lv); level.boulders = level.boulders || []; level.beams = level.beams || [];
       if (level.tide === undefined) level.tide = null;
       level.saws = level.saws || []; level.winds = level.winds || [];
       level.features = features(level.map, level.beams); return level; };
     const try8 = extra => {
-      const o8 = { v8: {}, v9: {} }, lv = build6(f, Object.assign({}, opts, extra, o8));
+      const o8 = { v8: {}, v9: {}, v10: {} }, lv = build6(f, Object.assign({}, opts, extra, o8));
       if (!lv) return null;
       const level = make(lv);
       if (!validate(level).length) return level;
       const rows = level.map.map(r => r.split(''));
       const redo = () => { level.map = rows.map(r => r.join('')); level.features = features(level.map, level.beams); return !validate(level).length; };
+      if (o8.v10.added) {
+        floor.stats.v10off++;
+        for (let k = o8.v10.undo.length - 1; k >= 0; k--) { const [x, y, c] = o8.v10.undo[k]; rows[y][x] = c; }
+        if (redo()) return level;
+      }
       if (o8.v9.added && !o8.v9.keep) {
         floor.stats.v9off++;
         for (const [x, y, c] of o8.v9.undo) rows[y][x] = c;
@@ -1026,7 +1058,8 @@
     deepwater: 'Đ', crystalspikes: 'Ē', tide: 'Ĕ', breakcrystals: 'Ė', glowcrystals: 'Ę', wrecks: 'Ě', bubbles: 'Ĝ', cartographer: 'Ğ', talentaltar: 'Ġ',
     books: 'Ģ', stalker: 'Ā', witch: 'Ă', eels: 'Ó',
     saws: 'Ŀ', timebubbles: 'ŀ', void: 'Ń', winds: 'ń', clockworks: 'Ņ', lightningrods: 'ņ', chimes: 'Ň', cloudchests: 'ň', gears: 'Ŋ', feathers: 'ŋ',
-    gearspiders: 'Ĵ', cloudgiants: 'ĸ' };
+    gearspiders: 'Ĵ', cloudgiants: 'ĸ',
+    jailers: 'Ō', burrowers: 'ō', gravediggers: 'Ŏ', rootlings: 'ŏ', crossbowmen: 'Ő', toads: 'ő', legendaltar: 'Œ' }; // version 10
   function features(map, beams) {
     const n = {}; for (const row of map) for (const c of row) n[c] = (n[c] || 0) + 1;
     const out = {}; for (const k in FEATURE_CH) out[k] = n[FEATURE_CH[k]] || 0;
@@ -1753,7 +1786,7 @@
       '£': 1, '€': 1, '©': 1, '¥': 2, 'Ç': 8, '¶': 1, '®': 1, '÷': 1, 'ª': 1, 'ð': 2, '°': 4, '¬': 8, '±': 3, '¨': 2, 'µ': 3, 'ß': 3,
       '²': 5, '³': 1, 'ç': 1, 'ÿ': 1, 'ý': 1, 'þ': 1, '¼': 2, '½': 2, '¹': 1, '¯': QUICKSAND_CAP, 'Î': 1, 'Ô': 1,
       'Ė': 4, 'Ě': 3, 'Ğ': 1, 'Ġ': 1, 'Ģ': 2, 'Ā': 1, 'Ă': 1, 'Ē': SPIKES8_CAP, 'Ĕ': TIDE_CAP, 'Ĝ': 6, 'Ó': 4,
-      'Ŋ': 3, 'ŋ': 1, 'ŀ': 3, 'Ň': 1, 'ň': 3, 'ĸ': 2 };
+      'Ŋ': 3, 'ŋ': 1, 'ŀ': 3, 'Ň': 1, 'ň': 3, 'ĸ': 2, 'Œ': 1 };
     const can = ch => CAP[ch] === undefined || (cnt[ch] || 0) < CAP[ch];
     const set = (x, y, ch) => {
       g[y][x] = ch; cnt[ch] = (cnt[ch] || 0) + 1;
@@ -2433,6 +2466,8 @@
     if (!content8(G, depth, opts, L, { rng: rng.fork('v8'), rooms, fight, P, X, cnt, can, set, place, trapOK, nearCh, nWall, farFromP, nearPX, rid, size, isCombat, floorIdx })) return null;
     // ----- version 9: klocktornets och molnborgens egna saker, kugghjul och fjädrar i alla biomer (gaffeln 'v9') -----
     if (!content9(G, depth, opts, L, { rng: rng.fork('v9'), rooms, fight, P, X, cnt, can, set, place, trapOK, nearCh, nWall, farFromP, nearPX, rid, size, isCombat, floorIdx })) return null;
+    // ----- version 10: nya fiender i de gamla biomerna och legendaltaret (gaffeln 'v10', med ångra-lista) -----
+    content10(G, depth, opts, L, { rng: rng.fork('v10'), rooms, fight, cnt, place, rid, size });
 
     // ----- utdata: rumslista och rumsmask -----
     const out = rooms.map(r => {
@@ -3314,6 +3349,96 @@
       drop(RF, 'ŋ', RF.chance(sky ? 0.25 : 0.15) ? 1 : 0, r => (r.type === 'secret' ? 5 : r.type === 'vault' || r.type === 'treasure' ? 3 : 1));
       if (added && opts.v9) opts.v9.added = true;
     }
+    return true;
+  }
+
+  // ---------- Version 10: nya invånare i de gamla biomerna och legendaltaret ----------
+  // FOES10: tecken -> { home: biomen där den är infödd, near: närliggande biomer där den är sällsynt, d: första djup, p: andel banor hemma,
+  //   n: [min, max] per bana hemma (sällsynt: n[0]), max: tak (validate), group: alltid en hel grupp i samma stridsrum }
+  const FOES10 = {
+    'Ō': { home: 'dungeon', near: ['courtyard'], d: 1, p: 0.55, n: [1, 3], max: 4 }, // fångvaktare
+    'ō': { home: 'caves', near: ['graveyard'], d: 2, p: 0.55, n: [1, 3], max: 4 }, // grävare (aldrig i/intill vatten)
+    'Ŏ': { home: 'graveyard', near: ['dungeon'], d: 1, p: 0.55, n: [1, 2], max: 2 }, // likgrävare
+    'ŏ': { home: 'forest', near: ['swamp'], d: 1, p: 0.5, n: [2, 3], max: 3, group: true }, // rotvätte
+    'Ő': { home: 'courtyard', near: ['dungeon'], d: 1, p: 0.55, n: [1, 3], max: 4 }, // armborstskytt (helst vid skydd)
+    'ő': { home: 'swamp', near: ['forest'], d: 2, p: 0.5, n: [1, 2], max: 2 }, // paddjätte (helst nära vatten)
+  };
+  const FOES10_CH = Object.keys(FOES10).join(''), NEAR10_P = 0.08, ALTAR10_P = 0.12;
+  const COVER10 = 'TeHJkquv²µßĖ'; // skydd för armborstskyttarna (utöver fristående pelare)
+  // Körs allra sist i content med egna slumpflöden (forks av content-slumpens 'v10'): allt från version 9 ligger kvar. De nya fienderna byts
+  // in mot redan utplacerade fiender i stridsrummen (samma ruta i samma grupp) och legendaltaret läggs på golvet, allt med en ångra-lista
+  // (opts.v10.undo, tecknet som stod där förut): underkänns banan tas de bort igen och banan blir exakt som i version 9 (se build7).
+  function content10(G, depth, opts, L, H) {
+    const { W, g, lock } = G, { rooms, fight, cnt, place } = H, b = L.biome;
+    const fk = tag => H.rng.fork(tag);
+    if (opts.v10) { opts.v10.added = false; opts.v10.undo = []; }
+    const undo = opts.v10 ? opts.v10.undo : [];
+    let added = false;
+    const swap = (x, y, ch) => { const o = g[y][x]; undo.push([x, y, o]); cnt[o]--; g[y][x] = ch; cnt[ch] = (cnt[ch] || 0) + 1; added = true; };
+    const wetAt = (x, y) => { const c = G.at(x, y); return c === '-' || isWet(c); };
+    const pillar = (x, y) => G.inb(x, y) && isWall(g[y][x]) && RX.filter((dx, k) => !isWall(G.at(x + dx, y + RY[k]))).length >= 5;
+    const coverAt = (x, y) => COVER10.includes(G.at(x, y)) || pillar(x, y);
+    const nearBy = (x, y, rad, f) => { for (let yy = y - rad; yy <= y + rad; yy++) for (let xx = x - rad; xx <= x + rad; xx++) if ((xx !== x || yy !== y) && f(xx, yy)) return true; return false; };
+    const host = fight.filter(r => r.arch !== 'nest'); // (spindelboet behåller sina spindlar)
+
+    // ----- nya fiender: infödda i sin biom, sällsynta i en närliggande -----
+    for (const ch of FOES10_CH) {
+      const F = FOES10[ch], R = fk('foe-' + ch), home = b === F.home;
+      if (depth < F.d || (!home && !F.near.includes(b))) continue;
+      if (!R.chance(home ? F.p : NEAR10_P)) continue;
+      let want = Math.min(F.max, home ? R.int(F.n[0], F.n[1]) : F.n[0]);
+      const ok = (x, y) => FOE_FROM.includes(g[y][x]) && (ch !== 'ō' || ![0, 1, 2, 3].some(d => wetAt(x + DX[d], y + DY[d])));
+      // rumsordning (slump; armborstskyttar helst i rum med skydd, paddjättar helst i rum med vatten) och rutornas ordning i rummet
+      const pref = ch === 'Ő' ? (x, y) => nearBy(x, y, 1, coverAt) : ch === 'ő' ? (x, y) => nearBy(x, y, 2, wetAt) : null;
+      let order = R.shuffle(host.slice());
+      if (pref) {
+        const score = new Map(order.map(r => [r, r.cells.some(([x, y]) => (ch === 'Ő' ? coverAt(x, y) || nearBy(x, y, 1, pillar) : wetAt(x, y))) ? 0 : 1]));
+        order = order.sort((p, q) => score.get(p) - score.get(q));
+      }
+      const cands = r => {
+        const c = R.shuffle(r.cells.filter(([x, y]) => ok(x, y)));
+        return pref ? c.map(p => [p, pref(p[0], p[1]) ? 0 : 1]).sort((p, q) => p[1] - q[1]).map(p => p[0]) : c;
+      };
+      if (F.group) { // en hel grupp i ett rum (2-3 av gruppens fiender)
+        for (const r of order) {
+          const c = cands(r);
+          if (c.length < 2) continue;
+          for (const [x, y] of c.slice(0, Math.max(2, want))) swap(x, y, ch);
+          break;
+        }
+        continue;
+      }
+      for (let pass = 0; pass < 2 && want > 0; pass++) for (const r of order) { // en per rum först, sedan tätare
+        if (want <= 0) break;
+        const c = cands(r);
+        if (!c.length) continue;
+        swap(c[0][0], c[0][1], ch); want--;
+      }
+    }
+
+    // ----- legendaltaret Œ (~12 % på djup 2+): i ett lugnt rum (helgedomen, skattrummet, specialrum utom utmaningen; annars startrummet) -----
+    {
+      const R = fk('legendaltar');
+      if (depth >= 2 && R.chance(ALTAR10_P)) {
+        const front = (x, y) => [0, 1, 2, 3].some(k => isWall(g[y + DY[k]][x + DX[k]]) && g[y - DY[k]][x - DX[k]] === '.' && lock[(y - DY[k]) * W + x - DX[k]] < 2);
+        const freeSide = (x, y) => [0, 1, 2, 3].some(d => g[y + DY[d]][x + DX[d]] === '.' && lock[(y + DY[d]) * W + x + DX[d]] < 2);
+        // ett nytt hinder får inte stänga in en kruka, spikfälla, lavaruta o.d.: de behåller en fri granne (vatten: en fri granne eller mer vatten)
+        const safe = (x, y) => [0, 1, 2, 3].every(d => {
+          const nx = x + DX[d], ny = y + DY[d], c = g[ny][nx];
+          if (!genBlk(c) || isBlock(c)) return true;
+          const wet = isWet(c);
+          return [0, 1, 2, 3].some(e => { const mx = nx + DX[e], my = ny + DY[e]; if (mx === x && my === y) return false; const m = G.at(mx, my); return !genBlk(m) || (wet && isWet(m)); });
+        });
+        const calm = r => r.type === 'shrine' || r.type === 'treasure' || (r.type === 'special' && r.special !== 'challenge' && r.arch !== 'challenge');
+        const hosts = R.shuffle(rooms.filter(calm)).concat(rooms.filter(r => r.type === 'start'));
+        for (const r of hosts) {
+          const p = place(r, 'Œ', 1, { wall: true, center: true, jit: 2, pred: (x, y) => front(x, y) && safe(x, y), rng: R })[0]
+            || place(r, 'Œ', 1, { center: true, pred: (x, y) => freeSide(x, y) && safe(x, y), rng: R })[0];
+          if (p) { undo.push([p[0], p[1], '.']); added = true; break; }
+        }
+      }
+    }
+    if (added && opts.v10) opts.v10.added = true;
     return true;
   }
 
@@ -4833,6 +4958,32 @@
         if ((c === 'Ŀ' || c === 'ŀ' || c === 'ń') && [0, 1, 2, 3].some(d => isDoorCh(at(x + DX[d], y + DY[d])))) errs.push('fälla ' + c + ' i dörröppning vid ' + x + ',' + y);
         if (c === 'ŀ' && rmk9 && rmk9[y] && rmk9[y][x] === '-') errs.push('tidsbubbla utanför ett rum vid ' + x + ',' + y);
       }
+    }
+    // version 10: de nya fienderna bara i sin biom och den närliggande (aldrig i arenor/labyrinter), på tillåtna djup, under taken; grävaren
+    // aldrig intill vatten, rotvättarna i grupper om 2-3 i samma rum; legendaltaret högst 1, djup 2+, i ett lugnt rum med fri framsida
+    if ([...FOES10_CH, 'Œ'].some(c => nCh[c])) {
+      const bio = level.biome, rmk10 = Array.isArray(level.roomMask) && level.roomMask.length === H ? level.roomMask : null;
+      const rooms0 = level.rooms || [], told = {}, roots = {};
+      const roomAt = (x, y) => (rmk10 && rmk10[y] && rmk10[y][x] !== '-' ? rooms0[rmk10[y].charCodeAt(x) - 48] : null);
+      for (const c of FOES10_CH) if ((nCh[c] || 0) > FOES10[c].max) errs.push('för många ' + c + ': ' + nCh[c]);
+      if ((nCh['Œ'] || 0) > 1) errs.push('för många legendaltare: ' + nCh['Œ']);
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const c = map[y][x];
+        if (c === 'Œ') {
+          const r = roomAt(x, y);
+          if (level.arena || level.maze || level.secret || (level.depth !== undefined && level.depth < 2)) errs.push('legendaltare här (arena/labyrint/hemlig våning/djup ' + level.depth + ') vid ' + x + ',' + y);
+          else if (rmk10 && (!r || ['normal', 'elite', 'exit', 'guardian', 'boss'].includes(r.type) || r.arch === 'challenge')) errs.push('legendaltare i ' + (r ? r.type + '/' + r.arch : 'korridor') + ' vid ' + x + ',' + y);
+          if (![0, 1, 2, 3].some(d => { const a = at(x + DX[d], y + DY[d]); return !isBlock(a) && !HAZARD.includes(a); })) errs.push('legendaltaret saknar fri framsida vid ' + x + ',' + y);
+          continue;
+        }
+        const F = FOES10[c];
+        if (!F) continue;
+        if ((level.arena || level.maze || level.secret || (bio !== F.home && !F.near.includes(bio))) && !told[c]) { told[c] = 1; errs.push('tecknet ' + c + ' hör inte hemma här (' + bio + ') vid ' + x + ',' + y); }
+        if (level.depth !== undefined && level.depth < F.d) errs.push('fiende ' + c + ' på djup ' + level.depth + ' (minst ' + F.d + ') vid ' + x + ',' + y);
+        if (c === 'ō' && [0, 1, 2, 3].some(d => { const a = at(x + DX[d], y + DY[d]); return a === '-' || isWet(a); })) errs.push('grävare i vattnet vid ' + x + ',' + y);
+        if (c === 'ŏ') { const k = rmk10 && rmk10[y] ? rmk10[y][x] : '?'; roots[k] = (roots[k] || 0) + 1; }
+      }
+      for (const k in roots) if (roots[k] < 2 || roots[k] > 3) errs.push('rotvättar: ' + roots[k] + ' i ' + (k === '-' ? 'en korridor' : 'rum ' + (k.charCodeAt(0) - 48)) + ' (väntat en grupp om 2-3)');
     }
     if (level.saws !== undefined || nCh['Ŀ']) {
       const saws = level.saws;
