@@ -1,9 +1,9 @@
 'use strict';
-// Procedurell bangenerator för KRYPTA: tretton biomer som delar ett rutnäts-API, en flood fill-pass (connectRegions)
+// Procedurell bangenerator för KRYPTA: femton biomer som delar ett rutnäts-API, en flood fill-pass (connectRegions)
 // och en gemensam innehållspass (content: rumstyper, rekvisita, föremål, fiendegrupper, vaktarens sal).
 //   Gen.floor(seed, depth, opts)  -> banobjekt (kartsträngar + tema) för djup 1-5
 //   Gen.boss(seed, opts)          -> bossarena (opts.arena: 'hall' | 'graveyard' | 'cave' | 'forest' | 'swamp' | 'frost' | 'volcano' | 'tomb'
-//                                    | 'crystal' | 'sunken' | 'clock' | 'sky',
+//                                    | 'crystal' | 'sunken' | 'clock' | 'sky' | 'fungus' | 'mirror',
 //                                    opts.boss: vaktar-id)
 //   Gen.secret(seed, opts)        -> hemlig skattvåning (opts.biome: utseende, standard dungeon; opts.depth)
 //   Gen.maze(seed, opts)          -> en stor labyrint (version 7; opts.biome: utseende, standard dungeon; opts.depth, standard 3)
@@ -13,18 +13,20 @@
 //   Gen.GUARDIANS                 -> bossar/vaktare (id -> väggtecken, golvtextur, ljus, dekor)
 //   Gen.ARCHES                    -> rumstypernas id
 //   Gen.WEAPONS                   -> vapentecken -> vapen-id (g shotgun ... å axe, ä flamer, ö launcher, ô knives, û hammer, ï musket,
-//                                    À harpoon, Á boomerang, Â prism, Į sawlauncher, į windgun, Ĳ spear);
+//                                    À harpoon, Á boomerang, Â prism, Į sawlauncher, į windgun, Ĳ spear, Ŕ sporelauncher,
+//                                    ŕ mirrorshield, Ŗ whip);
 //   Gen.ARENAS                    -> arenornas id
 // opts för floor: { biome: id, shop: bool, weapon: ett tecken ur WEAPONS (eller vapnets id), theme: id|index (bara dungeon),
 //   guardian: 'demon' | 'beast' | 'nightmare' | 'ogre' | 'ghost' | 'frost' | 'flame' | 'pharaoh' | 'crystalqueen' | 'leviathan'
-//   | 'clockmaker' | 'thunderbird' (annars väljs den ur seeden) }
+//   | 'clockmaker' | 'thunderbird' | 'mycelmother' | 'mirrorking' (annars väljs den ur seeden) }
 //
 // Biomer: dungeon (rum i olika former + korridorer), caves (cellautomat), graveyard (öppet fält med prefabs),
 //   forest (brusmask + slingrande stig), courtyard (borggård omgiven av byggnadslängor), swamp (vatten, mossöar, spänger, pålhyddor),
 //   frost (fängelsehålans salar och korridorer i frusen sten kring 1-3 snögårdar under himlen, rummen där har tag 'yard'),
 //   volcano (samma bygge i obsidian med askfält), tomb (samma bygge i sandsten med ökengårdar, version 7),
 //   crystal (grottans bygge i kristall, version 8), sunken (fängelsehålans bygge i ruinmur med översvämmade torg, version 8),
-//   clock (fängelsehålans bygge i mässing, inomhus, version 9), sky (fängelsehålans bygge som öar och broar över tomrummet, version 9)
+//   clock (fängelsehålans bygge i mässing, inomhus, version 9), sky (fängelsehålans bygge som öar och broar över tomrummet, version 9),
+//   fungus (grottans bygge i svampvägg, version 11), mirror (fängelsehålans bygge i marmor med spegelväggar, inomhus, version 11)
 // Varje vanlig våning har en vaktares sal (rumstyp 'guardian') med Z i mitten, väggar i vaktarens väggtecken och
 //   golv i vaktarens golvtextur. Fält utöver kartan: biome, guardian (vaktar-id), sky (null inomhus, annars '1' öppen
 //   himmel / '0' tak per ruta), floors (golvtexturer, [0] = floor, högst 10) + floorMask ('0'-'9' per ruta = index i floors),
@@ -285,14 +287,69 @@
 //  Frön: alla vanliga våningar ger samma karta som i version 9 (samma biom, rum, golv, himmel, sågspår, vind ...) med de nya fienderna
 //    inbytta och legendaltaret ovanpå; underkänns en bana med dem tas de bort igen (opts.v10.undo) och banan blir exakt som i version 9.
 //    Arenor, hemliga våningar och labyrinter är oförändrade.
+// Version 11 – "Svampriket och Spegelpalatset" (enskilda tecken utanför ASCII; allt nytt har egna slumpflöden ur gaffeln 'v11', content11
+//   körs sist av allt):
+//  Väggar: ŝ svampvägg (mycel; svamprikets väggar)  Ş glödande svamphatt (glesa sträckor om 1-3 rutor i de synliga svampväggarna, aldrig vid den
+//    hemliga/spruckna väggen; även fristående stjälkar i jättesvampssalarna)  ş mycelmoderns vägg (vaktar-/bosstema 'mycelmother')
+//    Š marmor (spegelpalatsets väggar)  š spegelvägg (studsar skott; hela väggsegment i salarna, se nedan)  Ţ spegelkungens vägg (vaktar-/bosstema
+//    'mirrorking')
+//  Vapen (föremål, ett per våning via opts.weapon): Ŕ sporkastare (sporelauncher)  ŕ spegelsköld (mirrorshield)  Ŗ piska (whip)
+//  Nya fiender (gångbara, räknas som fiender i alla rumsregler, alltid i stridsrum):
+//    ř svampshaman (myconid; svamprikets egen, djup 2+)  ŗ sporling (svampriket ~85 % av banorna: alltid en hel grupp om 3-5 i ett stridsrum,
+//    djup 3+ ibland två grupper; byts in mot gruppens fiender)  Ř mycelbest (mycelbrute; svampriket, djup 2+, ~55 %, 1-2, högst 2; byts in i
+//    stridsrum om minst 30 gångbara rutor)
+//    Ś spegelriddare (mirrorknight; spegelpalatsets egen, djup 1+)  ś illusionist (spegelpalatset, djup 2+, ~55 %, 1-2, högst 2; byts in)
+//    Ŝ glasskärva (shardling; spegelpalatset ~75 %: alltid en hel grupp om 2-4 i ett stridsrum, djup 3+ ibland två grupper)
+//  Golvrutor (gångbara, aldrig på/intill P och x, aldrig i en dörröppning; validate räknar dem som lava: med dem som vägg nås allt ändå):
+//    ţ studsplatta (svampriket 1-4 per bana, högst 4: i strids- och skattrummen (annars startrummet/helgedomen), på öppet golv, aldrig intill en
+//      dörr (de åtta grannarna), en per rum först)
+//    Ť sporpöl (svampriket: 2-4 fläckar om 2-6 rutor i strids- och skattrummen, högst 24 rutor; aldrig intill en dörr)
+//    ť teleporter (spegelpalatset: 1-3 par per bana, varje par i två olika rum (ett rum har högst en teleporter), aldrig intill en dörr,
+//      minst 2 rutor från P och x, minst två fria grannar). level.teleports = [{ a: { x, y }, b: { x, y } }]: varje ť på kartan ingår i exakt ett
+//      par. Alla banor (även arenor, hemliga våningar och labyrinter) har level.teleports (tom lista när det saknas)
+//  Rekvisita (blockerar, aldrig i dörröppningar/flaskhalsar): Ŧ glödsvamp (ljuskälla; ersätter alla eldfat f i svampriket utom i vaktarens
+//    sal (kandelabrarna c blir lysande svamp F), 1-2 klungor i sporgrottorna, en i mycelnästena; mycelmoderns ljus)
+//    ŧ spegelstaty (dekor; spegelsalar 1-2, balsalar 0-1, gallerier 1 och 1-3 till i andra rum; spegelkungens dekor)
+//  Föremål (gångbara, alla biomer, med ångra-lista): Ũ sporsäck (ammo till sporkastaren; ~25 % av banorna, svampriket ~45 %, 1-2, högst 2; helst
+//    i hemliga rum, valv och skattrum; aldrig i arenor, hemliga våningar eller labyrinter)
+//  Biom fungus (SVAMPRIKET; inomhus, vikt 12, djup 1-5, i ett eget slag ur gaffeln 'v11' så att övriga seeds behåller sin biom): grottans bygge
+//    (cellautomat, vaktarens lya) i svampvägg ŝ med svamphattar Ş; floors [0] floor_moss, [1] floor_cave (fläckar), [2] vaktarens; tak ceil_cave;
+//    grön-lila sporrök (grönast, lila skimmer). Namn: SVAMPRIKET, MYCELDJUPET, SPORGROTTORNA, DE GLÖDANDE HATTARNA, RÖTANS RIKE,
+//    JÄTTESVAMPARNAS SKOG. Rumstyper: sporegrotto (sporgrotta), giantcaps (jättesvampar), myceliumden (mycelnäste) och grottans mushroom,
+//    boneden, camp, nest. Infödda fiender: ř, ^ och U (vikt x2 utom U); ŗ och Ř byts in. Vaktaren är mycelmodern varannan gång.
+//  Biom mirror (SPEGELPALATSET; inomhus, vikt 12, djup 1-5, eget slag ur 'v11'): fängelsehålans bygge (salar + korridorer, inga gårdar) i marmor Š;
+//    floors [0] floor_marble, [1] vaktarens (gallerier, bibliotek och matsalar får trägolv, kapell blå plattor); tak floor_marble; blek
+//    silverviolett dimma. Namn: SPEGELPALATSET, DE TUSEN SPEGLARNA, MARMORSALARNA, GLASKUNGENS HOV, ILLUSIONERNAS SAL, DEN BRUTNA SPEGELN.
+//    Rumstyper: mirrorhall (spegelsal), ballroom (balsal: pelarrader av Š), gallery (konstgalleri) och library, dining, chapel, storeroom, armory.
+//    Spegelväggar: salarnas väggar = ringen runt rummets ruta utan hörnen (alla rum utom vaktarens sal, valv och hemliga rum, rutor Š eller š);
+//    hela raka segment (minst 2 rutor, synliga från salen, avbrutna vid dörrkarmarna) blir š tills 24-31 % av salarnas väggar är speglar (alltid
+//    20-35 %, annars byggs banan om); aldrig på en dörrkarm (ingen dörr/grind/hemlig vägg bland de åtta grannarna) eller vid den hemliga väggen.
+//    Infödda fiender: Ś och @ (Ś vikt x2); ś och Ŝ byts in. Vaktaren är spegelkungen varannan gång.
+//  Vaktar-/bosstema 'mycelmother' (MYCELMODERN): väggar ş, golv floor_boss_mycelmother, ljus Ŧ, dekor F och j.
+//  Vaktar-/bosstema 'mirrorking' (SPEGELKUNGEN): väggar Ţ, golv floor_boss_mirrorking, ljus c, dekor ŧ och u.
+//  Bossarena 'fungus' (MYCELMODERNS LYA): grottarenans form i ŝ (berget växer in), svampstjälkar, svamphattar Ş och glödsvampar Ŧ i speglade par,
+//    2-4 studsplattor ţ i speglade par (x 3-6 resp. 18-21, y 11-13 och 19-21, fritt runt om), 2-3 speglade sporpölsfläckar Ť om 2-5 rutor
+//    (x 1-8 resp. 16-23, aldrig nära P, B eller grinden), glödsvampar i stället för eldfat, ådror av Ş; floors [0] floor_moss, [1] floor_cave; inomhus.
+//  Bossarena 'mirror' (SPEGELKUNGENS SAL): raka marmorväggar Š; spegelväggar š i hela segment längs väster- och östväggen (två speglade par,
+//    y ca 5-22) och södra väggen på var sida om P; ett teleporterpar ť (level.teleports) speglat på var sida om den fria mitten (x 3-5 resp.
+//    19-21, y 12-16, fritt runt om); marmorpelare, spegelpelare š och spegelstatyer ŧ i speglade par; floors [0] floor_marble; inomhus.
+//    Båda arenorna har samma P/B/G/x-kontrakt och fria 9x9-mitt som de andra (inga hinder och inga nya golvrutor där).
+//  level.features utökas med { bouncepads, sporepools, teleporters, glowshrooms, mirrorstatues, mirrorwalls, capwalls, sporesacks, sporelings,
+//    mycelbrutes, shamans, mirrorknights, illusionists, shardlings } (antal tecken på kartan: ţ Ť ť Ŧ ŧ š Ş Ũ ŗ Ř ř Ś ś Ŝ)
+//  Gen.secret och Gen.maze har även utseendena fungus (myceltrasslet: svamphattar Ş runt rummen) och mirror (spegellabyrinten: spegelväggar š
+//    runt rummen).
+//  Frön: vanliga våningar med en gammal biom ger samma bana som i version 10 med sporsäckar ovanpå (underkänns en bana med dem tas de bort igen,
+//    opts.v11.undo, och banan blir exakt som i version 10); utan opts.biome ändras bara banorna som slår svampriket eller spegelpalatset.
+//    Arenor, hemliga våningar och labyrinter med de gamla utseendena är oförändrade (utom level.teleports och de nya nycklarna i features).
 (function () {
   // vapen på kartan: g hagelgevär, r gevär, m kpist, d dubbelbössa, b armborst, s signalpistol, p prickskyttegevär,
   // å yxa, ä eldkastare, ö granatkastare, é spikpistol, ü stav, ñ båge, ô kastknivar, û hammare, ï musköt, À harpun, Á bumerang, Â prisma,
-  // Į sågbladskastare, į vindbössa, Ĳ spjut.
+  // Į sågbladskastare, į vindbössa, Ĳ spjut, Ŕ sporkastare, ŕ spegelsköld, Ŗ piska.
   // opts.weapon får vara tecknet eller vapnets id ('axe', 'bow', 'harpoon', ...)
   const WEAPONS = { g: 'shotgun', r: 'rifle', m: 'smg', d: 'dbshotgun', b: 'crossbow', s: 'flaregun', p: 'sniper', 'å': 'axe', 'ä': 'flamer', 'ö': 'launcher',
     'é': 'nailgun', 'ü': 'staff', 'ñ': 'bow', 'ô': 'knives', 'û': 'hammer', 'ï': 'musket', 'À': 'harpoon', 'Á': 'boomerang', 'Â': 'prism',
-    'Į': 'sawlauncher', 'į': 'windgun', 'Ĳ': 'spear' }; // version 9: sågbladskastare, vindbössa, spjut
+    'Į': 'sawlauncher', 'į': 'windgun', 'Ĳ': 'spear', // version 9: sågbladskastare, vindbössa, spjut
+    'Ŕ': 'sporelauncher', 'ŕ': 'mirrorshield', 'Ŗ': 'whip' }; // version 11: sporkastare, spegelsköld, piska
   const WEAPON_CHARS = Object.keys(WEAPONS).join('');
   const weaponChar = w => (!w ? null : WEAPONS[w] ? w : Object.keys(WEAPONS).find(c => WEAPONS[c] === w) || null);
   'use strict';
@@ -314,19 +371,22 @@
   const PROPS9 = 'Ņņ'; // version 9: urverk, blixtstång (blockerar)
   const INTER9 = 'Ňň'; // version 9: klockspel, molnkista (blockerar, fri framsida, måste nås)
   const INTER10 = 'Œ'; // version 10: legendaltaret (blockerar, fri framsida, måste nås)
-  const BLOCK_PROPS = 'tnkquvwyeHJT' + INTERACT + INTER6 + BARRELS6 + INTER7 + PROPS8 + INTER8 + PROPS9 + INTER9 + INTER10; // rekvisita som blockerar spelaren
-  const PROP_CHARS = 'ckjquvwyzeiFHJT' + INTERACT + INTER6 + BARRELS6 + INTER7 + PROPS8 + INTER8 + PROPS9 + INTER9 + INTER10; // ny rekvisita (räknas som rummets dekor)
+  const PROPS11 = 'Ŧŧ'; // version 11: glödsvamp (ljuskälla), spegelstaty (blockerar)
+  const BLOCK_PROPS = 'tnkquvwyeHJT' + INTERACT + INTER6 + BARRELS6 + INTER7 + PROPS8 + INTER8 + PROPS9 + INTER9 + INTER10 + PROPS11; // rekvisita som blockerar spelaren
+  const PROP_CHARS = 'ckjquvwyzeiFHJT' + INTERACT + INTER6 + BARRELS6 + INTER7 + PROPS8 + INTER8 + PROPS9 + INTER9 + INTER10 + PROPS11; // ny rekvisita (räknas som rummets dekor)
   const GATES = '|]{'; // järngrind, låst dörr, sprucken vägg: blockerar tills de öppnas
-  const WALLS = '0123456789#%~&=Ø¦Ò¤ÈÌÙ' + 'ĄĆĈĊČĎ' + 'ĹĺĻļĽľ';
+  const WALLS = '0123456789#%~&=Ø¦Ò¤ÈÌÙ' + 'ĄĆĈĊČĎ' + 'ĹĺĻļĽľ' + 'ŝŞşŠšŢ'; // version 11: svampvägg, svamphatt, mycelmoderns, marmor, spegel, spegelkungens
   // version 9: tomrum Ń (avgrund: ingen går där, allt nås utan den), sågspår Ŀ och tidsbubblor ŀ (aldrig enda vägen, som lava)
   const VOID9 = 'Ń', SINK9 = 'Ŀŀ';
+  // version 11: studsplatta ţ, sporpöl Ť och teleporter ť (gångbara rutor som aldrig är enda vägen: generatorn räknar dem som hinder)
+  const SINK11 = 'ţŤť';
   const WET8 = 'ĐĒĔĜÓ'; // version 8: djupt vatten, kristallspikar, tidvatten, luftbubblor, ål (står i vattnet): aldrig enda vägen
   const WATER8 = 'ĐĔĜÓ'; // simbart vatten (kristallspikarna räknas som lava)
   // teckentabeller över hela BMP (de nya tecknen ligger utanför ASCII, € = 8364)
   const T_WALL = new Uint8Array(65536), T_BLOCK = new Uint8Array(65536), T_GEN = new Uint8Array(65536), T_WET = new Uint8Array(65536);
   for (const c of WALLS) T_WALL[c.charCodeAt(0)] = 1;
   for (const c of WALLS + 'fM' + BLOCK_PROPS + GATES + NPCS + NPCS7 + NPCS8 + VOID9) T_BLOCK[c.charCodeAt(0)] = 1;
-  for (const c of WALLS + 'fMo_z¬¯' + WET8 + BLOCK_PROPS + GATES + NPCS + NPCS7 + NPCS8 + VOID9 + SINK9) T_GEN[c.charCodeAt(0)] = 1; // lava, spikar, smulande golv, kvicksand och vatten ska alltid gå att gå runt
+  for (const c of WALLS + 'fMo_z¬¯' + WET8 + BLOCK_PROPS + GATES + NPCS + NPCS7 + NPCS8 + VOID9 + SINK9 + SINK11) T_GEN[c.charCodeAt(0)] = 1; // lava, spikar, smulande golv, kvicksand och vatten ska alltid gå att gå runt
   for (const c of WET8) T_WET[c.charCodeAt(0)] = 1;
   const isWall = c => T_WALL[c.charCodeAt(0)] === 1;
   const isBlock = c => T_BLOCK[c.charCodeAt(0)] === 1; // blockerar spelaren
@@ -334,7 +394,7 @@
   const isWet = c => T_WET[c.charCodeAt(0)] === 1;
   const isDoorCh = c => c === 'D' || c === 'G' || c === '*' || c === '|' || c === ']' || c === '{';
   const isInter = c => INTERACT.includes(c) || NPCS.includes(c) || INTER6.includes(c) || INTER7.includes(c) || NPCS7.includes(c) || INTER8.includes(c) || NPCS8.includes(c) || INTER9.includes(c) || c === 'Œ'; // fri framsida, ska nås med grindarna stängda
-  const HAZARD = '_-:"z<>Ç°¬±¨¯¹' + 'ĐĒĔĜ' + 'ĿŀŃń'; // farliga golv och fällor (och tomrummet): aldrig på eller intill P och x
+  const HAZARD = '_-:"z<>Ç°¬±¨¯¹' + 'ĐĒĔĜ' + 'ĿŀŃń' + SINK11; // farliga golv och fällor (och tomrummet): aldrig på eller intill P och x
   const cheb = (ax, ay, bx, by) => Math.max(Math.abs(ax - bx), Math.abs(ay - by));
 
   // ---------- Biomer ----------
@@ -352,6 +412,8 @@
     { id: 'sunken', name: 'DEN SJUNKNA STADEN', outdoor: true, weight: 12, depth: [1, 5] }, // version 8: översvämmade ruiner, bassänger, tidvatten
     { id: 'clock', name: 'KLOCKTORNET', outdoor: false, weight: 12, depth: [1, 5] }, // version 9: mässingssalar, urverk, sågspår och tidsbubblor
     { id: 'sky', name: 'MOLNBORGEN', outdoor: true, weight: 12, depth: [1, 5] }, // version 9: flytande öar över tomrummet, broar och vindbyar
+    { id: 'fungus', name: 'SVAMPRIKET', outdoor: false, weight: 12, depth: [1, 5] }, // version 11: svampgrottor, glödsvampar, studsplattor och sporpölar
+    { id: 'mirror', name: 'SPEGELPALATSET', outdoor: false, weight: 12, depth: [1, 5] }, // version 11: marmorsalar, spegelväggar och teleportrar
   ];
 
   // ---------- Vaktare/bossar: väggtecken, golvtextur, ljuskälla och dekor runt salens kanter ----------
@@ -368,6 +430,8 @@
     leviathan: { wall: 'Ď', floor: 'floor_boss_leviathan', light: 'c', decor: 'jjuu' }, // version 8 (salen får en bassäng Đ)
     clockmaker: { wall: 'Ļ', floor: 'floor_boss_clockmaker', light: 'f', decor: 'ŅŅuu' }, // version 9: urmakaren (dekor: urverk)
     thunderbird: { wall: 'ľ', floor: 'floor_boss_thunderbird', light: 'f', decor: 'ņņuu' }, // version 9: stormfågeln (dekor: blixtstänger)
+    mycelmother: { wall: 'ş', floor: 'floor_boss_mycelmother', light: 'Ŧ', decor: 'FFjj' }, // version 11: mycelmodern (ljus: glödsvampar)
+    mirrorking: { wall: 'Ţ', floor: 'floor_boss_mirrorking', light: 'c', decor: 'ŧŧuu' }, // version 11: spegelkungen (dekor: spegelstatyer)
   };
   // slumpad vaktare (utan opts.guardian): de fem ursprungliga; i frostfästet blir det frostväktaren varannan gång
   const GUARD_IDS = ['demon', 'beast', 'nightmare', 'ogre', 'ghost'];
@@ -414,6 +478,10 @@
     crystal: { wall: 'Ą', biome: 'crystal', floors: ['floor_crystal', 'floor_cave'], ceil: 'ceil_cave', ambient: [0.1, 0.14],
       fog: rng => [rng.int(14, 18), rng.int(10, 13), rng.int(28, 34)], // kall blåviolett
       names: ['KRISTALLGROTTORNA', 'GLITTERSALEN', 'PRISMAGRUVAN', 'AMETISTDJUPET', 'DE SJUNGANDE KRISTALLERNA', 'SKÄRVGÅNGARNA'] },
+    // svampriket (version 11): grottans bygge i svampvägg ŝ (glesa glödande svamphattar Ş); floors[0] mossa, [1] grottberg (fläckar)
+    fungus: { wall: 'ŝ', biome: 'fungus', floors: ['floor_moss', 'floor_cave'], ceil: 'ceil_cave', ambient: [0.13, 0.18],
+      fog: rng => [rng.int(16, 19), rng.int(25, 29), rng.int(20, 24)], // grön-lila sporrök (grönast, med lila skimmer)
+      names: ['SVAMPRIKET', 'MYCELDJUPET', 'SPORGROTTORNA', 'DE GLÖDANDE HATTARNA', 'RÖTANS RIKE', 'JÄTTESVAMPARNAS SKOG'] },
   };
   // frostfästet: byggs som fängelsehålan (salar + korridorer i Ø) men med snögårdar under himlen;
   // floors: [0] frusen sten (inomhus), [1] vaktarens golv, [2] snö (gårdarna)
@@ -447,6 +515,13 @@
   const SKY_FOG = rng => [rng.int(25, 28), rng.int(30, 33), rng.int(34, 38)]; // ljus blåvit
   const SKY = { id: 'sky', wall: 'ļ', floor: 'floor_cloud', snow: 'floor_cloud', ceil: 'floor_cloud', ambient: [0.26, 0.32],
     fog: SKY_FOG, names: ['MOLNBORGEN', 'STORMENS TINNAR', 'DE SVÄVANDE ÖARNA', 'VINDARNAS RIKE', 'ÅSKANS TRAPPOR', 'HIMMELSBORGEN'] };
+
+  // spegelpalatset (version 11): fängelsehålans bygge (salar + korridorer, inomhus) i marmor Š med spegelväggar š (hela väggsegment i salarna);
+  // floors: [0] marmor, [1] vaktarens golv; spegelväggar, teleporterpar och spegelstatyer sätts av content11
+  const MIRROR_FOG = rng => [rng.int(24, 27), rng.int(23, 26), rng.int(30, 34)]; // blek silverviolett
+  const MIRROR = { id: 'mirror', wall: 'Š', floor: 'floor_marble', snow: 'floor_marble', ceil: 'floor_marble', ambient: [0.2, 0.26], indoor: true,
+    fog: MIRROR_FOG, names: ['SPEGELPALATSET', 'DE TUSEN SPEGLARNA', 'MARMORSALARNA', 'GLASKUNGENS HOV', 'ILLUSIONERNAS SAL', 'DEN BRUTNA SPEGELN'] };
+  const FUNGUS_FOG = LOOKS.fungus.fog;
 
   const roundAmb = (rng, a) => Math.max(a[0], Math.min(a[1], Math.round(rng.range(a[0], a[1]) * 100) / 100));
   const mapSize = (rng, depth) => { const base = 30 + (depth - 1) * 3; return [Math.min(44, base + rng.int(0, 2)), Math.min(44, base + rng.int(0, 2))]; };
@@ -504,13 +579,16 @@
     // version 10: Ō fångvaktare, ō grävare, Ŏ likgrävare, ŏ rotvätte, Ő armborstskytt, ő paddjätte; alla byts in efteråt av content10
     // (vikterna används inte: de står inte i BIOME_ENEMIES), se FOES10
     'Ō': [1, d => 1], 'ō': [2, d => 1], 'Ŏ': [1, d => 1], 'ŏ': [1, d => 1], 'Ő': [1, d => 1], 'ő': [2, d => 1],
+    // version 11: ř svampshaman (svamprikets egen, djup 2+) och Ś spegelriddare (spegelpalatsets egen); ŗ sporling (grupper), Ř mycelbest,
+    // ś illusionist och Ŝ glasskärva (grupper) byts in efteråt av content11
+    'ř': [2, d => 0.9 + 0.4 * d], 'Ś': [1, d => 2.2 + 0.5 * d], 'ŗ': [1, d => 1], 'Ř': [2, d => 1], 'ś': [2, d => 1], 'Ŝ': [1, d => 1],
   };
   const BIOME_ENEMIES = { caves: 'UXÜ', forest: 'YUXÉ', graveyard: 'X!^ÅÄÖ', dungeon: '@!U+ÅÄÖ', courtyard: '@Y!ÄÖ', swamp: '^UYXÅ', frost: 'ÉÜ@', volcano: 'YXÆ!',
-    tomb: 'ÃÊX', crystal: 'ËÍX', sunken: 'ÏÛÚ', clock: 'ĳĵ', sky: 'Ķķ' };
+    tomb: 'ÃÊX', crystal: 'ËÍX', sunken: 'ÏÛÚ', clock: 'ĳĵ', sky: 'Ķķ', fungus: 'ř^U', mirror: 'Ś@' };
   const enemyTypes = (depth, biome) => [['S', Math.max(4, 10 - depth)], ['K', 3 + 1.2 * depth], ['V', depth >= 2 ? 1.5 + 1.5 * (depth - 1) : 0],
     ['L', 2 + 0.5 * depth], ['I', depth >= 2 ? 1 + depth : 0], ['O', depth >= 2 ? 0.8 + 0.4 * depth : 0],
     ['N', depth >= 3 ? 0.5 + 0.5 * depth : 0], ['R', depth >= 3 ? 1 + 0.5 * depth : 0], ['W', depth >= 3 ? 0.6 + 0.6 * depth : 0]]
-    .concat([...(BIOME_ENEMIES[biome] || '')].map(c => [c, depth >= NEW_ENEMIES[c][0] ? NEW_ENEMIES[c][1](depth) * ((biome === 'frost' && c !== '@') || (biome === 'volcano' && c === 'Æ') || (biome === 'tomb' && c !== 'X') || (biome === 'crystal' && c !== 'X') || biome === 'sunken' || biome === 'clock' || biome === 'sky' ? 2 : 1) : 0]));
+    .concat([...(BIOME_ENEMIES[biome] || '')].map(c => [c, depth >= NEW_ENEMIES[c][0] ? NEW_ENEMIES[c][1](depth) * ((biome === 'frost' && c !== '@') || (biome === 'volcano' && c === 'Æ') || (biome === 'tomb' && c !== 'X') || (biome === 'crystal' && c !== 'X') || biome === 'sunken' || biome === 'clock' || biome === 'sky' || (biome === 'fungus' && c !== 'U') || (biome === 'mirror' && c === 'Ś') ? 2 : 1) : 0]));
 
   // ---------- Rumstyper (arketyper) ----------
   // mix: fiendesorter som trivs här (vikt x3), floor: golvtextur inomhus (paint: även utomhus/i grottan),
@@ -846,6 +924,37 @@
       F.place(r, 'ņ', F.int(0, 1), { open: true, spread: 4 });
       F.place(r, 'j', F.int(1, 2), {});
     } },
+    // --- version 11: svampriket (glödsvampar Ŧ blockerar som rekvisita och lyser) ---
+    sporegrotto: { mix: 'ř^K', min: 10, fill(r, F) { // sporgrotta: klungor av glödsvampar och lysande svamp
+      for (let k = F.int(1, 2); k > 0; k--) {
+        const s = F.place(r, 'Ŧ', 1, { wall: true, avoid: ['Ŧ', 3] })[0];
+        if (s) F.place(r, 'F', F.int(1, 3), { near: [s[0], s[1], 1.8] });
+      }
+    } },
+    giantcaps: { mix: '^ŘS', min: 20, fits: r => r.box.w >= 5 && r.box.h >= 5, fill(r, F) { // jättesvampar: fristående stjälkar av glödande svamphatt
+      F.place(r, 'Ş', F.int(1, 3), { open: true, spread: 3, avoid: ['Ş', 2] });
+      F.place(r, 'F', F.int(1, 2), {});
+    } },
+    myceliumden: { mix: 'U^L', min: 9, fill(r, F) { // mycelnäste: ben och bråte insnärjda i mycel, en glödsvamp
+      F.place(r, 'j', F.int(2, 3), { spread: 2 });
+      F.place(r, 'Ŧ', 1, { wall: true });
+      F.place(r, 'T', F.int(0, 1), { corner: true });
+    } },
+    // --- version 11: spegelpalatset (spegelstatyer ŧ blockerar som rekvisita) ---
+    mirrorhall: { mix: 'ŚKS', min: 12, fill(r, F) { // spegelsal: spegelstatyer längs väggarna och kandelabrar
+      F.place(r, 'ŧ', F.int(1, 2), { wall: true, spread: 3 });
+      F.place(r, 'c', F.int(1, 2), { wall: true, spread: 3 });
+    } },
+    ballroom: { mix: 'Ś@S', min: 16, fits: r => r.box.w >= 5 && r.box.h >= 5 && r.box.w * r.box.h >= 30, fill(r, F) { // balsal: rader av marmorpelare
+      F.pillars(r, 'Š');
+      F.place(r, 'c', F.int(1, 2), { wall: true, spread: 3 });
+      F.place(r, 'ŧ', F.int(0, 1), { wall: true });
+    } },
+    gallery: { mix: 'ŚKN', floor: 'floor_wood_planks', min: 12, fill(r, F) { // konstgalleri: statyer, en spegelstaty och ett bord
+      F.place(r, 'u', F.int(1, 3), { wall: true, spread: 2 });
+      F.place(r, 'ŧ', 1, { wall: true });
+      F.place(r, 'J', F.int(0, 1), { open: true });
+    } },
     // --- specialrum (inga fiender) ---
     alchemy: { floor: 'floor_wood_planks', fill(r, F) { // alkemistens rum: alkemisten, bokhyllor, bord med drycker
       const a = F.npc(r, '£');
@@ -925,6 +1034,8 @@
       yard: [['plaza', 3], ['statues', 0.8]] },
     clock: { room: [['gearworks', 3], ['pendulumhall', 2.5], ['workshop', 2.5], ['storeroom', 1.5], ['armory', 1.5], ['library', 1], ['prison', 0.8], ['crypt', 0.6]] },
     sky: { room: [['cloudisle', 3], ['harpynest', 2], ['stormspire', 2], ['storeroom', 0.6], ['statues', 0.8]], yard: [['cloudcourt', 3], ['statues', 1]] },
+    fungus: { open: [['sporegrotto', 3], ['giantcaps', 2.5], ['myceliumden', 2], ['mushroom', 2], ['boneden', 1], ['camp', 1.2], ['nest', 0.8]] }, // version 11
+    mirror: { room: [['mirrorhall', 3], ['ballroom', 2.5], ['gallery', 2.5], ['library', 1.2], ['dining', 1], ['chapel', 1], ['storeroom', 0.8], ['armory', 0.8]] },
   };
 
   // ---------- Bana ----------
@@ -933,7 +1044,7 @@
     if (opts.theme !== undefined && opts.theme !== null) return BIOMES[0]; // teman finns bara i fängelsehålan
     // de gamla biomerna dras som förut (samma seed ger samma biom); frostfästet och vulkanen tar sina andelar i egna slag
     const ok = b => depth >= b.depth[0] && depth <= b.depth[1], frost = BIOMES.find(b => b.id === 'frost'), volc = BIOMES.find(b => b.id === 'volcano');
-    const tomb = BIOMES.find(b => b.id === 'tomb'), late = b => b === volc || b === tomb || b.id === 'crystal' || b.id === 'sunken' || b.id === 'clock' || b.id === 'sky'; // egna slag
+    const tomb = BIOMES.find(b => b.id === 'tomb'), late = b => b === volc || b === tomb || ['crystal', 'sunken', 'clock', 'sky', 'fungus', 'mirror'].includes(b.id); // egna slag
     const base = rng.weighted(BIOMES, b => (b !== frost && !late(b) && ok(b) ? b.weight : 0));
     const tot = BIOMES.reduce((n, b) => n + (ok(b) && !late(b) ? b.weight : 0), 0);
     const v5 = ok(frost) && rng.fork('frost').chance(frost.weight / tot) ? frost : base;
@@ -947,7 +1058,11 @@
     // version 9: klocktornet och molnborgen tar sina andelar i egna slag ur gaffeln 'v9' (övriga seeds behåller sin biom)
     const clk = BIOMES.find(b => b.id === 'clock'), skb = BIOMES.find(b => b.id === 'sky'), f9 = rng.fork('v9'), t9 = t8 + cry.weight + sun.weight;
     const v9 = ok(clk) && f9.fork('clock').chance(clk.weight / (t9 + clk.weight)) ? clk : v8b;
-    return ok(skb) && f9.fork('sky').chance(skb.weight / (t9 + clk.weight + skb.weight)) ? skb : v9;
+    const v9b = ok(skb) && f9.fork('sky').chance(skb.weight / (t9 + clk.weight + skb.weight)) ? skb : v9;
+    // version 11: svampriket och spegelpalatset tar sina andelar i egna slag ur gaffeln 'v11' (övriga seeds behåller sin biom)
+    const fun = BIOMES.find(b => b.id === 'fungus'), mir = BIOMES.find(b => b.id === 'mirror'), f11 = rng.fork('v11'), t11 = t9 + clk.weight + skb.weight;
+    const v11 = ok(fun) && f11.fork('fungus').chance(fun.weight / (t11 + fun.weight)) ? fun : v9b;
+    return ok(mir) && f11.fork('mirror').chance(mir.weight / (t11 + fun.weight + mir.weight)) ? mir : v11;
   }
   // vaktaren: opts.guardian, annars deterministiskt ur seeden (frostfästet: frostväktaren varannan gång, vulkanen: flamväktaren,
   // gravkammaren: faraonen)
@@ -958,7 +1073,9 @@
           : biome === 'crystal' && root.fork('guardian-crystal').chance(0.5) ? 'crystalqueen' // version 8
             : biome === 'sunken' && root.fork('guardian-sunken').chance(0.5) ? 'leviathan'
               : biome === 'clock' && root.fork('guardian-clock').chance(0.5) ? 'clockmaker' // version 9
-                : biome === 'sky' && root.fork('guardian-sky').chance(0.5) ? 'thunderbird' : root.fork('guardian').pick(GUARD_IDS));
+                : biome === 'sky' && root.fork('guardian-sky').chance(0.5) ? 'thunderbird'
+                  : biome === 'fungus' && root.fork('guardian-fungus').chance(0.5) ? 'mycelmother' // version 11
+                    : biome === 'mirror' && root.fork('guardian-mirror').chance(0.5) ? 'mirrorking' : root.fork('guardian').pick(GUARD_IDS));
 
   function floor(seed, depth, opts) {
     opts = opts || {};
@@ -973,6 +1090,7 @@
     if (biome.id === 'sunken') return frostFloor(root, seed, depth, opts, gid, SUNKEN);
     if (biome.id === 'clock') return frostFloor(root, seed, depth, opts, gid, CLOCK); // version 9
     if (biome.id === 'sky') return frostFloor(root, seed, depth, opts, gid, SKY);
+    if (biome.id === 'mirror') return frostFloor(root, seed, depth, opts, gid, MIRROR); // version 11 (svampriket byggs som grottan i biomeFloor)
     if (biome.id !== 'dungeon') return biomeFloor(root, seed, depth, opts, biome, gid);
     const trng = root.fork('theme');
     let theme;
@@ -989,14 +1107,14 @@
         name, biome: 'dungeon', floor: lv.floors[0], floors: lv.floors, floorMask: rowsOf(lv.W, lv.H, lv.fm),
         ceil: theme.ceil, sky: null, secretWall: theme.wall, fog: theme.fog.slice(), ambient,
         map: lv.map, depth, seed, rooms: lv.rooms, roomMask: lv.roomMask, theme: theme.id, guardian: gid, boulders: lv.boulders, beams: lv.beams,
-        saws: lv.saws, winds: lv.winds,
+        saws: lv.saws, winds: lv.winds, teleports: lv.teleports,
       }));
       if (!level) { floor.stats.retries++; continue; }
       return level;
     }
     throw new Error('Gen.floor: kunde inte bygga en giltig bana (seed ' + seed + ', djup ' + depth + ')');
   }
-  floor.stats = { retries: 0, v7off: 0, v8off: 0, v9off: 0, v10off: 0 };
+  floor.stats = { retries: 0, v7off: 0, v8off: 0, v9off: 0, v10off: 0, v11off: 0 };
 
   // version 7: bygger banan (build6), gör banobjektet med mk(lv) och validerar. Underkänns en bana där version 7 lagt ut nya saker
   // byggs samma försök om utan dem (opts.v7off), så att seeds som klarade sig i version 6 aldrig får ett nytt omförsök.
@@ -1010,15 +1128,20 @@
   function build7(f, opts, mk) {
     const make = lv => { const level = mk(lv); level.boulders = level.boulders || []; level.beams = level.beams || [];
       if (level.tide === undefined) level.tide = null;
-      level.saws = level.saws || []; level.winds = level.winds || [];
+      level.saws = level.saws || []; level.winds = level.winds || []; level.teleports = level.teleports || [];
       level.features = features(level.map, level.beams); return level; };
     const try8 = extra => {
-      const o8 = { v8: {}, v9: {}, v10: {} }, lv = build6(f, Object.assign({}, opts, extra, o8));
+      const o8 = { v8: {}, v9: {}, v10: {}, v11: {} }, lv = build6(f, Object.assign({}, opts, extra, o8));
       if (!lv) return null;
       const level = make(lv);
       if (!validate(level).length) return level;
       const rows = level.map.map(r => r.split(''));
       const redo = () => { level.map = rows.map(r => r.join('')); level.features = features(level.map, level.beams); return !validate(level).length; };
+      if (o8.v11.added) { // version 11: sporsäckarna (Ũ) bort först, banan är då exakt som i version 10
+        floor.stats.v11off++;
+        for (let k = o8.v11.undo.length - 1; k >= 0; k--) { const [x, y, c] = o8.v11.undo[k]; rows[y][x] = c; }
+        if (redo()) return level;
+      }
       if (o8.v10.added) {
         floor.stats.v10off++;
         for (let k = o8.v10.undo.length - 1; k >= 0; k--) { const [x, y, c] = o8.v10.undo[k]; rows[y][x] = c; }
@@ -1059,7 +1182,9 @@
     books: 'Ģ', stalker: 'Ā', witch: 'Ă', eels: 'Ó',
     saws: 'Ŀ', timebubbles: 'ŀ', void: 'Ń', winds: 'ń', clockworks: 'Ņ', lightningrods: 'ņ', chimes: 'Ň', cloudchests: 'ň', gears: 'Ŋ', feathers: 'ŋ',
     gearspiders: 'Ĵ', cloudgiants: 'ĸ',
-    jailers: 'Ō', burrowers: 'ō', gravediggers: 'Ŏ', rootlings: 'ŏ', crossbowmen: 'Ő', toads: 'ő', legendaltar: 'Œ' }; // version 10
+    jailers: 'Ō', burrowers: 'ō', gravediggers: 'Ŏ', rootlings: 'ŏ', crossbowmen: 'Ő', toads: 'ő', legendaltar: 'Œ', // version 10
+    bouncepads: 'ţ', sporepools: 'Ť', teleporters: 'ť', glowshrooms: 'Ŧ', mirrorstatues: 'ŧ', mirrorwalls: 'š', capwalls: 'Ş', sporesacks: 'Ũ', // version 11
+    sporelings: 'ŗ', mycelbrutes: 'Ř', shamans: 'ř', mirrorknights: 'Ś', illusionists: 'ś', shardlings: 'Ŝ' };
   function features(map, beams) {
     const n = {}; for (const row of map) for (const c of row) n[c] = (n[c] || 0) + 1;
     const out = {}; for (const k in FEATURE_CH) out[k] = n[FEATURE_CH[k]] || 0;
@@ -1078,7 +1203,7 @@
           name, biome: biome.id, floor: res.floors[0], floors: res.floors, floorMask: rowsOf(G.W, G.H, G.fm),
           ceil: look.ceil, sky: biome.outdoor ? rowsOf(G.W, G.H, G.sky) : null, secretWall: look.wall, fog, ambient,
           map: G.g.map(r => r.join('')), depth, seed, rooms: res.rooms, roomMask: res.roomMask, theme: biome.id, guardian: gid, boulders: G.boulders, beams: G.beams,
-          saws: G.saws, winds: G.winds,
+          saws: G.saws, winds: G.winds, teleports: G.teleports,
         };
       });
       if (!level) { floor.stats.retries++; continue; }
@@ -1099,7 +1224,7 @@
         name, biome: id, floor: lv.floors[0], floors: lv.floors, floorMask: rowsOf(lv.W, lv.H, lv.fm),
         ceil: T.ceil, sky: T.indoor ? null : rowsOf(lv.W, lv.H, lv.sky), secretWall: T.wall, fog, ambient,
         map: lv.map, depth, seed, rooms: lv.rooms, roomMask: lv.roomMask, theme: id, guardian: gid, boulders: lv.boulders, beams: lv.beams,
-        saws: lv.saws, winds: lv.winds, tide: tide ? { period: tide.period } : null,
+        saws: lv.saws, winds: lv.winds, teleports: lv.teleports, tide: tide ? { period: tide.period } : null,
       }));
       if (!level) { floor.stats.retries++; continue; }
       return level;
@@ -1116,7 +1241,8 @@
   // frost = 'sky': molnborgen (version 9; som frostfästet med gårdar = stora öar, allt under himlen; väggarna blir tomrum i content9)
   function build(rng, depth, theme, opts, K, frost) {
     const wc = theme.wall, volc = frost === 'volcano', tomb = frost === 'tomb', sunk = frost === 'sunken', clock = frost === 'clock', skyB = frost === 'sky';
-    if (clock) frost = false;
+    const mirror = frost === 'mirror'; // version 11: spegelpalatset byggs som klocktornet (inomhus, utan gårdar)
+    if (clock || mirror) frost = false;
     const base = 30 + (depth - 1) * 3;
     const W = Math.min(44, base + rng.int(0, 2)), H = Math.min(44, base + rng.int(0, 2));
     const G = Grid(W, H, wc), g = G.g;
@@ -1432,7 +1558,7 @@
     const corridors = [];
     for (let i = 0; i < W * H; i++) if (corr[i] && rid[i] < 0 && g[(i / W) | 0][i % W] === '.') corridors.push([i % W, (i / W) | 0]);
     const res = content(G, rng, depth, opts, {
-      biome: clock ? 'clock' : skyB ? 'sky' : tomb ? 'tomb' : sunk ? 'sunken' : volc ? 'volcano' : frost ? 'frost' : 'dungeon', P, X, rooms: recs, rid, corridors,
+      biome: mirror ? 'mirror' : clock ? 'clock' : skyB ? 'sky' : tomb ? 'tomb' : sunk ? 'sunken' : volc ? 'volcano' : frost ? 'frost' : 'dungeon', P, X, rooms: recs, rid, corridors,
       floors: frost && !tomb && !sunk && !skyB ? [theme.floor, K.floor, theme.snow] : [theme.floor, K.floor], gid: K.id,
       guardian: { center: [gr.cx, gr.cy] }, secret: srec, spikes: frost ? rng.int(1, 3) : rng.int(2, 4), vaultWall: wc,
       cfg: frost ? { barrels: { p: 0.5, min: 2 }, deadEnd: true, eliteTags: ['yard'] } : { barrels: { p: 0.55, min: 2 }, deadEnd: true },
@@ -1444,7 +1570,7 @@
       if (sky < walk * 0.22) return null;
     }
     return { map: g.map(row => row.join('')), rooms: res.rooms, roomMask: res.roomMask, floors: res.floors, fm: G.fm, sky: G.sky, W, H, boulders: G.boulders, beams: G.beams,
-      saws: G.saws, winds: G.winds };
+      saws: G.saws, winds: G.winds, teleports: G.teleports };
   }
 
   // hemligt rum: kortkista eller rustning i mitten, resten slumpat
@@ -1786,7 +1912,7 @@
       '£': 1, '€': 1, '©': 1, '¥': 2, 'Ç': 8, '¶': 1, '®': 1, '÷': 1, 'ª': 1, 'ð': 2, '°': 4, '¬': 8, '±': 3, '¨': 2, 'µ': 3, 'ß': 3,
       '²': 5, '³': 1, 'ç': 1, 'ÿ': 1, 'ý': 1, 'þ': 1, '¼': 2, '½': 2, '¹': 1, '¯': QUICKSAND_CAP, 'Î': 1, 'Ô': 1,
       'Ė': 4, 'Ě': 3, 'Ğ': 1, 'Ġ': 1, 'Ģ': 2, 'Ā': 1, 'Ă': 1, 'Ē': SPIKES8_CAP, 'Ĕ': TIDE_CAP, 'Ĝ': 6, 'Ó': 4,
-      'Ŋ': 3, 'ŋ': 1, 'ŀ': 3, 'Ň': 1, 'ň': 3, 'ĸ': 2, 'Œ': 1 };
+      'Ŋ': 3, 'ŋ': 1, 'ŀ': 3, 'Ň': 1, 'ň': 3, 'ĸ': 2, 'Œ': 1, 'Ũ': SPORESACK11_CAP, 'Ř': 2, 'ś': 2 };
     const can = ch => CAP[ch] === undefined || (cnt[ch] || 0) < CAP[ch];
     const set = (x, y, ch) => {
       g[y][x] = ch; cnt[ch] = (cnt[ch] || 0) + 1;
@@ -2043,7 +2169,7 @@
     const spareRoom = (q, extra) => q.far < 4 || rooms.reduce((n, a) => n + (isCombat(a) && a !== q ? capOf(a) : 0), 0) >= needCap + (extra || 0);
     // ----- specialrum utan fiender: spåaltare, offerskål, utmaningsaltare (öppen sal >= 7x7) och smedja (väljs före de andra rollerna) -----
     const wantAnvil = rng.chance(0.4);
-    const roomy = L.biome === 'dungeon' || L.biome === 'courtyard' || L.biome === 'frost' || L.biome === 'volcano' || L.biome === 'tomb' || L.biome === 'sunken' || L.biome === 'clock'; // biomer med möblerade salar inomhus
+    const roomy = L.biome === 'dungeon' || L.biome === 'courtyard' || L.biome === 'frost' || L.biome === 'volcano' || L.biome === 'tomb' || L.biome === 'sunken' || L.biome === 'clock' || L.biome === 'mirror'; // biomer med möblerade salar inomhus
     const v6 = rng.fork('v6'); // version 6: eget slumpflöde så att banor utan de nya sakerna blir som förut
     let anvilArmory = wantAnvil && roomy && rng.chance(0.5);
     const npcLeft = []; // NPC:er som inte fick ett eget rum (hamnar i butiken eller ett annat specialrum)
@@ -2468,6 +2594,8 @@
     if (!content9(G, depth, opts, L, { rng: rng.fork('v9'), rooms, fight, P, X, cnt, can, set, place, trapOK, nearCh, nWall, farFromP, nearPX, rid, size, isCombat, floorIdx })) return null;
     // ----- version 10: nya fiender i de gamla biomerna och legendaltaret (gaffeln 'v10', med ångra-lista) -----
     content10(G, depth, opts, L, { rng: rng.fork('v10'), rooms, fight, cnt, place, rid, size });
+    // ----- version 11: svamprikets och spegelpalatsets egna saker, sporsäckar i alla biomer (gaffeln 'v11', körs sist av allt) -----
+    if (!content11(G, depth, opts, L, { rng: rng.fork('v11'), rooms, fight, P, X, cnt, set, place, trapOK, nearPX, rid, size, isCombat, floorIdx })) return null;
 
     // ----- utdata: rumslista och rumsmask -----
     const out = rooms.map(r => {
@@ -3442,6 +3570,238 @@
     return true;
   }
 
+  // ---------- Version 11: svampriket, spegelpalatset och sporsäckar ----------
+  // Körs allra sist i content med egna slumpflöden (forks av content-slumpens 'v11'): allt från version 10 ligger kvar. Svamprikets och
+  // spegelpalatsets egna saker läggs alltid (opts.v11.keep); sporsäckarna Ũ i alla biomer läggs med en ångra-lista (opts.v11.undo):
+  // underkänns banan tas de bort igen och banan blir exakt som i version 10 (se build7). Lägger teleporterparen i G.teleports
+  // ([{ a: { x, y }, b: { x, y } }]).
+  const SPORESACK11_CAP = 2, SPOREPOOL11_CAP = 24, MIRROR11 = [0.2, 0.35]; // tak för sporsäckar och sporpölsrutor; spegelväggarnas andel av salarnas väggar
+  const SPORESACK11_P = 0.25;
+  // rumsväggarna (ringen runt rummets ruta utan hörnen) i salarna där spegelväggar får sitta: [[x, y, sida], ...]; delas med validate/test
+  const mirrorRing = (r, at) => {
+    const out = [], { x, y, w, h } = r;
+    for (let k = 0; k < w; k++) { out.push([x + k, y - 1, 3]); out.push([x + k, y + h, 1]); }
+    for (let k = 0; k < h; k++) { out.push([x - 1, y + k, 2]); out.push([x + w, y + k, 0]); }
+    return out.filter(([xx, yy]) => { const c = at(xx, yy); return c === 'Š' || c === 'š'; });
+  };
+  const mirrorHall = r => r.type !== 'guardian' && r.type !== 'secret' && r.type !== 'vault';
+  function content11(G, depth, opts, L, H) {
+    const { W, g, lock } = G, { rooms, fight, P, X, cnt, set, place, trapOK, rid, size } = H, b = L.biome;
+    const fk = tag => H.rng.fork(tag);
+    const fungus = b === 'fungus', mirror = b === 'mirror';
+    G.teleports = [];
+    if (opts.v11) { opts.v11.added = false; opts.v11.undo = []; if (fungus || mirror) opts.v11.keep = true; }
+    const undo = opts.v11 ? opts.v11.undo : [];
+    const bump = (ch, n) => { cnt[ch] = (cnt[ch] || 0) + n; };
+    // ett nytt hinder (eller en ruta som aldrig får vara enda vägen) får inte stänga in en kruka, spikfälla, lavaruta o.d.
+    const safe11 = (x, y) => [0, 1, 2, 3].every(d => {
+      const nx = x + DX[d], ny = y + DY[d], c = g[ny][nx];
+      if (!genBlk(c) || isBlock(c)) return true;
+      const wet = isWet(c);
+      return [0, 1, 2, 3].some(e => { const mx = nx + DX[e], my = ny + DY[e]; if (mx === x && my === y) return false; const m = G.at(mx, my); return !genBlk(m) || (wet && isWet(m)); });
+    });
+    const gRoom = rooms.find(r => r.type === 'guardian'), inG = (x, y) => !!gRoom && rid[y * W + x] === gRoom.id;
+    const doorNear = (x, y) => RX.some((dx, k) => isDoorCh(G.at(x + dx, y + RY[k]))); // dörr, grind, hemlig/sprucken vägg i de åtta grannarna
+    // ingen ny fara intill en annan fara (utom den egna fläckens rutor)
+    const HZ11 = SINK11 + '_z¬¯°<>±¨¹' + WET8 + SINK9 + 'Ńń';
+    const touch = (x, y, own) => RX.some((dx, k) => { const xx = x + dx, yy = y + RY[k]; return HZ11.includes(G.at(xx, yy)) && !own.some(p => p[0] === xx && p[1] === yy); });
+    const hidden = [];
+    for (let y = 1; y < G.H - 1; y++) for (let x = 1; x < W - 1; x++) if (g[y][x] === '*' || g[y][x] === '{') hidden.push([x, y]);
+    const nearHidden = (x, y) => hidden.some(([hx, hy]) => cheb(hx, hy, x, y) <= 2);
+    const swapIn = (x, y, ch) => { cnt[g[y][x]]--; g[y][x] = ch; bump(ch, 1); };
+
+    // ----- svampriket: glödande svamphattar i väggarna, glödsvampar, studsplattor, sporpölar, sporlingar och mycelbestar -----
+    if (fungus) {
+      // svamphattar Ş: glesa sträckor (1-3 rutor) i de synliga svampväggarna, aldrig vid den hemliga/spruckna väggen
+      {
+        const R = fk('caps');
+        const face = (x, y) => x >= 0 && y >= 0 && x < W && y < G.H && g[y][x] === 'ŝ' && !nearHidden(x, y) && [0, 1, 2, 3].some(d => !isWall(G.at(x + DX[d], y + DY[d])));
+        for (let y = 0; y < G.H; y++) for (let x = 0; x < W; x++) {
+          if (!face(x, y) || !R.chance(0.045)) continue;
+          g[y][x] = 'Ş';
+          let cx = x, cy = y;
+          for (let k = R.int(0, 2); k > 0; k--) {
+            const nb = [0, 1, 2, 3].map(d => [cx + DX[d], cy + DY[d]]).filter(([nx, ny]) => face(nx, ny));
+            if (!nb.length) break;
+            [cx, cy] = R.pick(nb); g[cy][cx] = 'Ş';
+          }
+        }
+      }
+      // glödsvampar Ŧ i stället för eldfaten och lysande svamp F i stället för kandelabrarna (utom i vaktarens sal)
+      for (let y = 1; y < G.H - 1; y++) for (let x = 1; x < W - 1; x++) {
+        const c = g[y][x];
+        if ((c !== 'f' && c !== 'c') || inG(x, y)) continue;
+        const to = c === 'f' ? 'Ŧ' : 'F';
+        g[y][x] = to; cnt[c]--; bump(to, 1);
+      }
+      // studsplattor ţ (1-4): i stridsrummen och skattrummen (annars startrummet), på öppet golv, aldrig vid dörrar, P eller x,
+      // aldrig enda vägen (localOK: med plattan som hinder hänger allt ihop)
+      {
+        const R = fk('bounce'), want = R.int(1, 4);
+        const okB = (x, y) => trapOK(x, y) && !doorNear(x, y) && !inG(x, y) && safe11(x, y) && !touch(x, y, []);
+        const host = R.shuffle(rooms.filter(r => (H.isCombat(r) || r.type === 'treasure') && size(r) >= 12));
+        const more = rooms.filter(r => r.type === 'start' || r.type === 'shrine' || (r.type === 'special' && size(r) >= 12));
+        let n = 0;
+        for (let pass = 0; pass < 3 && n < want; pass++) for (const r of pass < 2 ? host : more) {
+          if (n >= want) break;
+          if (pass === 0 && r.cells.some(([x, y]) => g[y][x] === 'ţ')) continue; // först en per rum
+          n += place(r, 'ţ', 1, { open: pass < 2, center: pass === 0, jit: 3, spread: 4, avoid: ['ţ', 3], pred: okB, rng: R }).length;
+        }
+        if (!n) return null;
+      }
+      // sporpölar Ť: 2-4 fläckar om 2-6 rutor i strids- och skattrummen och ibland i breda korridorer; aldrig vid dörrar, P eller x,
+      // aldrig enda vägen (varje ruta läggs med localOK)
+      {
+        const R = fk('spores'), okS = own => (x, y) => trapOK(x, y) && !doorNear(x, y) && !inG(x, y) && localOK(G, x, y) && safe11(x, y) && !touch(x, y, own);
+        const hosts = R.shuffle(rooms.filter(r => H.isCombat(r) || r.type === 'treasure'));
+        let patches = R.int(2, 4);
+        for (const r of hosts) {
+          if (patches <= 0) break;
+          const s = R.shuffle(r.cells.filter(([x, y]) => okS([])(x, y)))[0];
+          if (!s) continue;
+          const want = R.int(2, 6), done = [], fr = [s], seen = new Set([s[1] * W + s[0]]);
+          while (fr.length && done.length < want && (cnt['Ť'] || 0) < SPOREPOOL11_CAP) {
+            const [x, y] = fr.splice(R.int(0, fr.length - 1), 1)[0];
+            if (!okS(done)(x, y)) continue;
+            set(x, y, 'Ť'); done.push([x, y]);
+            for (let d = 0; d < 4; d++) { const nx = x + DX[d], ny = y + DY[d], ni = ny * W + nx; if (!seen.has(ni) && rid[ni] === r.id) { seen.add(ni); fr.push([nx, ny]); } }
+          }
+          if (done.length === 1) { const [x, y] = done[0]; g[y][x] = '.'; cnt['Ť']--; } else if (done.length) patches--;
+        }
+      }
+      // sporlingar ŗ: en hel grupp (3-5) i ett stridsrum (~85 %, djup 3+ ibland två grupper); byts in mot gruppens fiender
+      {
+        const R = fk('sporelings'), mob = FOE_FROM + 'ř';
+        let groups = R.chance(0.85) ? (depth >= 3 && R.chance(0.35) ? 2 : 1) : 0;
+        for (const r of R.shuffle(fight.filter(r => r.arch !== 'nest'))) {
+          if (groups <= 0) break;
+          const c = R.shuffle(r.cells.filter(([x, y]) => mob.includes(g[y][x])));
+          if (c.length < 3) continue;
+          for (const [x, y] of c.slice(0, R.int(3, 5))) swapIn(x, y, 'ŗ');
+          groups--;
+        }
+      }
+      // mycelbestar Ř (djup 2+, ~55 %, 1-2, högst 2): byts in i stora stridsrum (minst 30 rutor)
+      {
+        const R = fk('brutes'), mob = FOE_FROM + 'ř';
+        let n = depth >= 2 && R.chance(0.55) ? (R.chance(0.35) ? 2 : 1) : 0;
+        const open = r => r.cells.reduce((k, [x, y]) => k + (isWall(g[y][x]) ? 0 : 1), 0); // rutor som inte blivit vägg (svampstjälkar o.d.)
+        for (const r of R.shuffle(fight.filter(r => open(r) >= 30 && r.arch !== 'nest'))) {
+          if (n <= 0) break;
+          const c = r.cells.filter(([x, y]) => mob.includes(g[y][x]));
+          if (!c.length) continue;
+          const [x, y] = R.pick(c); swapIn(x, y, 'Ř'); n--;
+        }
+      }
+    }
+
+    // ----- spegelpalatset: spegelväggar, spegelstatyer, teleporterpar, illusionister och glasskärvor -----
+    if (mirror) {
+      // spegelväggar š: hela väggsegment (rak sträcka längs en sida av salen, minst 2 rutor, avbrutna vid dörrkarmarna) tills ~20-35 % av
+      // salarnas väggar är speglar; aldrig på en dörrkarm (ingen dörr/grind/hemlig vägg bland de åtta grannarna) och aldrig vid den hemliga väggen
+      {
+        const R = fk('mirrors'), at = (x, y) => G.at(x, y), segs = [];
+        let tot = 0;
+        for (const r of rooms.filter(mirrorHall)) {
+          const ring = mirrorRing(r.box, at);
+          tot += ring.length;
+          for (let side = 0; side < 4; side++) {
+            let run = [];
+            const flush = () => { if (run.length >= 2) segs.push(run); run = []; };
+            for (const p of ring.filter(q => q[2] === side)) {
+              const [x, y] = p, prev = run[run.length - 1];
+              if (prev && cheb(prev[0], prev[1], x, y) !== 1) flush();
+              const ix = x - DX[side], iy = y - DY[side]; // rutan innanför (salens sida)
+              if (doorNear(x, y) || nearHidden(x, y) || isWall(G.at(ix, iy))) { flush(); continue; }
+              run.push(p);
+            }
+            flush();
+          }
+        }
+        const target = R.range(0.24, 0.31) * tot, cap = MIRROR11[1] * tot;
+        let n = 0;
+        for (const seg of R.shuffle(segs)) {
+          if (n >= target) break;
+          if (n + seg.length > cap) continue;
+          for (const [x, y] of seg) g[y][x] = 'š';
+          n += seg.length;
+        }
+        if (!tot || n < MIRROR11[0] * tot) return null;
+      }
+      // spegelstatyer ŧ (1-3 till utöver salarnas): mot en vägg i salarna, aldrig nära P
+      {
+        const R = fk('statues'), want = R.int(1, 3);
+        const host = R.shuffle(rooms.filter(r => !['guardian', 'vault', 'secret', 'shop'].includes(r.type)));
+        let n = 0;
+        for (const r of host) { if (n >= want) break; n += place(r, 'ŧ', 1, { wall: true, avoid: ['ŧ', 2], pred: (x, y) => safe11(x, y) && cheb(x, y, P[0], P[1]) >= 2, rng: R }).length; }
+      }
+      // teleporterpar ť (1-3): varje par i två olika rum (ett rum har högst en teleporter), helst långt ifrån varandra; aldrig vid
+      // dörrar, P eller x, aldrig enda vägen (localOK: allt nås till fots med teleportrarna som hinder)
+      {
+        const R = fk('teleports'), want = R.int(1, 3);
+        const okT = (x, y) => trapOK(x, y) && !doorNear(x, y) && !inG(x, y) && cheb(x, y, P[0], P[1]) >= 2 && cheb(x, y, X[0], X[1]) >= 2
+          && safe11(x, y) && !touch(x, y, []) && [0, 1, 2, 3].filter(d => !genBlk(g[y + DY[d]][x + DX[d]])).length >= 2;
+        const host = R.shuffle(rooms.filter(r => ['normal', 'elite', 'exit', 'treasure', 'start', 'shrine', 'special'].includes(r.type) && size(r) >= 9));
+        const used = new Set();
+        for (let k = 0; k < want; k++) {
+          const free = host.filter(r => !used.has(r.id));
+          let done = false;
+          for (const ra of free) {
+            const order = free.filter(r => r !== ra).sort((p, q) => Math.hypot(q.cx - ra.cx, q.cy - ra.cy) - Math.hypot(p.cx - ra.cx, p.cy - ra.cy));
+            const a = place(ra, 'ť', 1, { center: true, jit: 2.5, pred: okT, rng: R })[0];
+            if (!a) continue;
+            for (const rb of order.slice(0, 4)) {
+              const bb = place(rb, 'ť', 1, { center: true, jit: 2.5, pred: okT, rng: R })[0];
+              if (!bb) continue;
+              G.teleports.push({ a: { x: a[0], y: a[1] }, b: { x: bb[0], y: bb[1] } });
+              used.add(ra.id); used.add(rb.id); done = true; break;
+            }
+            if (done) break;
+            g[a[1]][a[0]] = '.'; cnt['ť']--;
+          }
+          if (!done) break;
+        }
+        if (!G.teleports.length) return null;
+      }
+      // illusionister ś (djup 2+, ~55 %, 1-2, högst 2): byts in mot redan utplacerade fiender i stridsrummen
+      {
+        const R = fk('illusionists'), mob = FOE_FROM + 'Ś';
+        let n = depth >= 2 && R.chance(0.55) ? (R.chance(0.35) ? 2 : 1) : 0;
+        for (const r of R.shuffle(fight.filter(r => r.arch !== 'nest'))) {
+          if (n <= 0) break;
+          const c = r.cells.filter(([x, y]) => mob.includes(g[y][x]));
+          if (!c.length) continue;
+          const [x, y] = R.pick(c); swapIn(x, y, 'ś'); n--;
+        }
+      }
+      // glasskärvor Ŝ: en hel grupp (2-4) i ett stridsrum (~75 %, djup 3+ ibland två grupper)
+      {
+        const R = fk('shards'), mob = FOE_FROM + 'Ś';
+        let groups = R.chance(0.75) ? (depth >= 3 && R.chance(0.3) ? 2 : 1) : 0;
+        for (const r of R.shuffle(fight.filter(r => r.arch !== 'nest' && !r.cells.some(([x, y]) => g[y][x] === 'ś')))) {
+          if (groups <= 0) break;
+          const c = R.shuffle(r.cells.filter(([x, y]) => mob.includes(g[y][x])));
+          if (c.length < 2) continue;
+          for (const [x, y] of c.slice(0, R.int(2, 4))) swapIn(x, y, 'Ŝ');
+          groups--;
+        }
+      }
+    }
+
+    // ----- alla biomer: sporsäckar Ũ (~25 %, svampriket ~45 %, 1-2, högst 2; helst i hemliga rum, valv och skattrum) -----
+    {
+      let added = false;
+      const R = fk('sporesacks'), loot = rooms.filter(r => r.type !== 'guardian' && r.type !== 'shop' && r.type !== 'start');
+      const n = R.chance(fungus ? 0.45 : SPORESACK11_P) ? R.int(1, 2) : 0;
+      for (let k = 0; k < n; k++) for (let t = 0; t < 6; t++) {
+        const r = R.weighted(loot, q => (q.type === 'secret' ? 3 : q.type === 'vault' || q.type === 'treasure' ? 2 : 1)), p = r && place(r, 'Ũ', 1, { rng: R })[0];
+        if (p) { undo.push([p[0], p[1], '.']); added = true; break; }
+      }
+      if (added && opts.v11) opts.v11.added = true;
+    }
+    return true;
+  }
+
   // ---------- Områden för biomerna: start, utgång, områdesindelning, sedan content ----------
   // cfg: { biome, gid, floors, guardian: { cells, center, doors: [[x, y] utanför ingången] }, P, X: [x,y] (annars BFS-längst
   //   bort från vaktaren resp. P), seeds: [{x, y, tag, box | cells}] (utsedda områden, växer inte), areaCells (önskad storlek
@@ -4255,6 +4615,7 @@
   LOOKS.forest.build = buildForest;
   LOOKS.courtyard.build = buildCourtyard;
   LOOKS.crystal.build = buildCaves; // version 8: kristallgrottorna byggs som grottan
+  LOOKS.fungus.build = buildCaves; // version 11: svampriket byggs som grottan
 
   // ---------- Bossarena ----------
   const ARENAS = {
@@ -4292,6 +4653,14 @@
     // en bro, 2-3 speglade par små öar via broar (1-2 breda), blixtstänger ņ, vindbyar (ń, level.winds) på ett par broar; utomhus
     sky: { biome: 'sky', wall: 'Ľ', floors: ['floor_cloud', 'floor_void', 'floor_wind'], ceil: 'floor_cloud', outdoor: true, ambient: [0.26, 0.32],
       fog: SKY_FOG, names: ['STORMFÅGELNS NÄSTE', 'ÅSKANS TRON', 'DEN HÖGSTA TINNEN'] },
+    // mycelmoderns grotta (version 11): grottarenans form i svampvägg ŝ med glödande svamphattar Ş, studsplattor (ţ) i speglade par och
+    // sporpölar (Ť) utanför den fria mitten, glödsvampar Ŧ i stället för eldfat; floors [0] mossa, [1] grottberg; inomhus
+    fungus: { biome: 'fungus', wall: 'ŝ', floors: ['floor_moss', 'floor_cave'], ceil: 'ceil_cave', outdoor: false, ambient: [0.13, 0.18],
+      fog: FUNGUS_FOG, names: ['MYCELMODERNS LYA', 'SPORHJÄRTAT', 'DEN STORA RÖTAN'] },
+    // spegelkungens sal (version 11): raka marmorväggar Š med spegelväggar š (hela segment, speglade väster/öster och på var sida om P),
+    // ett teleporterpar (ť, level.teleports) speglat på var sida om den fria mitten, marmorpelare, spegelpelare och spegelstatyer; inomhus
+    mirror: { biome: 'mirror', wall: 'Š', floors: ['floor_marble'], ceil: 'floor_marble', outdoor: false, ambient: [0.2, 0.26],
+      fog: MIRROR_FOG, names: ['SPEGELKUNGENS SAL', 'DEN KRISTALLKLARA TRONEN', 'TUSEN SPEGLARS HALL'] },
   };
   // tempelhallens fyra passager över kvicksandsringen (norr vid bossen, söder mot P, väster och öster), 3 rutor breda
   const tombGap = (x, y) => (Math.abs(x - 12) <= 1 && (y <= 11 || y >= 17)) || (Math.abs(y - 14) <= 1 && (x <= 8 || x >= 16));
@@ -4367,7 +4736,7 @@
       name: rng.pick(theme.names), biome: 'dungeon', floor: theme.floor, floors, floorMask: rowsOf(W, H, G.fm),
       ceil: theme.ceil, sky: null, secretWall: wc, fog: theme.fog.slice(), ambient: roundAmb(rng, theme.ambient),
       map: g.map(r => r.join('')), depth: opts.depth || 6, seed, arena: 'hall',
-      rooms: [{ x: AX0, y: AY0, w: AX1 - AX0 + 1, h: AY1 - AY0 + 1, type: 'boss' }, { x: cx - 1, y: 1, w: 3, h: 2, type: 'exit' }], saws: [], winds: [],
+      rooms: [{ x: AX0, y: AY0, w: AX1 - AX0 + 1, h: AY1 - AY0 + 1, type: 'boss' }, { x: cx - 1, y: 1, w: 3, h: 2, type: 'exit' }], saws: [], winds: [], teleports: [],
     };
     if (gid) level.boss = gid;
     level.features = features(level.map);
@@ -4492,9 +4861,48 @@
           }
         }
       }
+      const teleports = [];
+      if (arena === 'mirror') { // spegelväggar: hela segment längs väster- och östväggen (speglade) och södra väggen på var sida om P; ett teleporterpar
+        const segs = [[0, rng.int(5, 7), 0, 1, rng.int(5, 7)], [0, rng.int(14, 16), 0, 1, rng.int(5, 7)], [rng.int(2, 3), H - 1, 1, 0, rng.int(5, 7)]];
+        for (const [x0, y0, dx, dy, len] of segs) for (let k = 0; k < len; k++) for (const x of [x0 + dx * k, W - 1 - x0 - dx * k]) {
+          const y = y0 + dy * k;
+          if (y >= 4 && y <= H - 1 && cheb(x, y, cx, 3) > 2 && cheb(x, y, PX, PY) > 3 && g[y][x] === wc) g[y][x] = 'š';
+        }
+        const ty = rng.int(12, 16), tx = rng.int(3, 5);
+        for (const x of [tx, W - 1 - tx]) { if (g[ty][x] !== '.' || !localOK(G, x, ty)) break; g[ty][x] = 'ť'; }
+        if (g[ty][tx] !== 'ť' || g[ty][W - 1 - tx] !== 'ť') continue;
+        teleports.push({ a: { x: tx, y: ty }, b: { x: W - 1 - tx, y: ty } });
+        for (const x of [tx, W - 1 - tx]) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) G.lockMin(x + dx, ty + dy, 1); // fritt runt teleportrarna
+      }
+      if (arena === 'fungus') { // studsplattor i speglade par utanför mitten (väster/öster, och ibland vid P:s sida), sporpölar i speglade fläckar
+        const pads = [[rng.int(4, 6), rng.int(11, 13)], [rng.int(3, 5), rng.int(19, 21)]];
+        let np = 0;
+        for (const [px0, py0] of pads) for (const x of [px0, W - 1 - px0]) {
+          if (g[py0][x] !== '.' || G.lock[py0 * W + x] || cheb(x, py0, PX, PY) <= 2 || !localOK(G, x, py0)) continue;
+          g[py0][x] = 'ţ'; np++;
+          for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) G.lockMin(x + dx, py0 + dy, 1);
+        }
+        if (np < 2) continue;
+        const NS = fbm(rng, W, H, 3);
+        let ns = 0;
+        for (let t = 0; t < 40 && ns < 3; t++) { // 2-3 speglade fläckar om 2-5 rutor
+          const sx = rng.int(2, 7), sy = rng.int(6, 23), want = rng.int(2, 5), cells = [];
+          if (mid(sx, sy) || mid(W - 1 - sx, sy)) continue;
+          for (let k = 0; k < 9 && cells.length < want; k++) {
+            const x = sx + (k % 3) - 1, y = sy + ((k / 3) | 0) - 1;
+            if (NS[y * W + x] < 0.35 && cells.length) continue;
+            const ok = xx => g[y][xx] === '.' && !G.lock[y * W + xx] && !mid(xx, y) && cheb(xx, y, PX, PY) > 2 && cheb(xx, y, BX, BY) > 2 && cheb(xx, y, cx, 3) > 2
+              && !RX.some((ddx, q) => 'ţ'.includes(G.at(xx + ddx, y + RY[q]))) && localOK(G, xx, y);
+            if (!ok(x) || !ok(W - 1 - x)) continue;
+            g[y][x] = 'Ť'; g[y][W - 1 - x] = 'Ť'; cells.push([x, y]);
+          }
+          if (cells.length >= 2) ns++; else for (const [x, y] of cells) { g[y][x] = '.'; g[y][W - 1 - x] = '.'; }
+        }
+        if (ns < 2) continue;
+      }
       const N2 = fbm(rng, W, H, 4);
       // ojämna kanter: berg/bryn växer in från väggen (inte i kyrkogårdens raka mur)
-      if (arena !== 'graveyard' && arena !== 'frost' && arena !== 'volcano' && arena !== 'tomb' && arena !== 'sunken' && arena !== 'clock' && arena !== 'sky') {
+      if (arena !== 'graveyard' && arena !== 'frost' && arena !== 'volcano' && arena !== 'tomb' && arena !== 'sunken' && arena !== 'clock' && arena !== 'sky' && arena !== 'mirror') {
         for (let y = AY0; y <= AY1; y++) for (let x = AX0; x <= AX1; x++) {
           const e = Math.min(x - AX0, AX1 - x, y - AY0, AY1 - y), v = N2[y * W + x];
           if ((e === 0 && v > 0.3) || (e === 1 && v > 0.6) || (e === 2 && v > 0.85)) plant(G, x, y, ic);
@@ -4515,6 +4923,8 @@
         const kind = rng.next();
         const cellsK = arena === 'graveyard' ? (kind < 0.45 ? [[0, 0, 'n'], [2, 0, 'n'], [4, 0, 'n']] : kind < 0.75 ? [[0, 0, 't']] : [[0, 0, ic], [1, 0, ic]])
           : arena === 'cave' || arena === 'crystal' ? (kind < 0.6 ? [[0, 0, ic], [1, 0, ic], [0, 1, ic], [1, 1, ic]].filter(() => rng.chance(0.85)) : [[0, 0, ic]])
+            : arena === 'fungus' ? (kind < 0.45 ? [[0, 0, ic], [1, 0, ic], [0, 1, ic], [1, 1, ic]].filter(() => rng.chance(0.85)) : kind < 0.75 ? [[0, 0, 'Ş']] : [[0, 0, 'Ŧ']]) // svampstjälkar, svamphattar, glödsvampar
+            : arena === 'mirror' ? (kind < 0.4 ? [[0, 0, ic], [1, 0, ic], [0, 1, ic], [1, 1, ic]] : kind < 0.7 ? [[0, 0, 'š']] : [[0, 0, 'ŧ']]) // marmorpelare, spegelpelare, spegelstatyer
             : arena === 'sunken' ? (kind < 0.45 ? [[0, 0, ic], [1, 0, ic], [0, 1, ic], [1, 1, ic]] : kind < 0.75 ? [[0, 0, 'Č']] : [[0, 0, 'u']]) // ruinpelare, korall, statyer
             : arena === 'clock' ? (kind < 0.45 ? [[0, 0, ic], [1, 0, ic], [0, 1, ic], [1, 1, ic]] : kind < 0.75 ? [[0, 0, 'Ņ']] : [[0, 0, 'ĺ'], [1, 0, 'ĺ']]) // mässingspelare, urverk, kuggväggar
             : arena === 'sky' ? (kind < 0.4 ? [[0, 0, 'ļ']] : kind < 0.7 ? [[0, 0, 'Ľ'], [1, 0, 'Ľ']] : [[0, 0, 'u']]) // molnstenspelare, låga stormmurar, statyer
@@ -4535,7 +4945,8 @@
       // strödda gravstenar / träd / droppstenar
       const loose = arena === 'graveyard' ? 'n' : arena === 'forest' || arena === 'swamp' ? 't' : arena === 'frost' ? 'i' : arena === 'volcano' ? (rng.chance(0.5) ? 'i' : 'Ò')
         : arena === 'tomb' ? (rng.chance(0.5) ? 'u' : ic) : arena === 'crystal' ? 'i' : arena === 'sunken' ? (rng.chance(0.5) ? 'u' : 'Č')
-          : arena === 'clock' ? (rng.chance(0.5) ? 'Ņ' : 'ĺ') : arena === 'sky' ? (rng.chance(0.5) ? 'ņ' : 'ļ') : ic; // ishallen: glödande iskristaller
+          : arena === 'clock' ? (rng.chance(0.5) ? 'Ņ' : 'ĺ') : arena === 'sky' ? (rng.chance(0.5) ? 'ņ' : 'ļ')
+            : arena === 'fungus' ? (rng.chance(0.5) ? 'F' : 'Ş') : arena === 'mirror' ? (rng.chance(0.5) ? 'ŧ' : 'u') : ic; // ishallen: glödande iskristaller
       for (let k = rng.int(5, 9); k > 0; k--) { const x = rng.int(2, 22), y = rng.int(6, 23); if (!mid(x, y)) plant(G, x, y, loose); }
       // eldfat runt kanterna
       const jit = () => rng.int(-1, 1), spots = [];
@@ -4562,9 +4973,9 @@
       const nh = rng.int(3, 4), na = rng.int(3, 4);
       for (let i = 0; i < nh + na && i < fc.length; i++) g[fc[i][1]][fc[i][0]] = i < nh ? 'h' : 'a';
       // golv: grus-/jordstig från start till grinden, annars lera eller vissnat gräs i fläckar
-      const hall = arena === 'cave' || arena === 'frost' || arena === 'volcano' || arena === 'tomb' || arena === 'crystal'; // ingen stig; grottan: lera, ishallen: snödrivor, obsidianhallen: aska, tempelhallen: sand, kristalltronen: berg (floors[1])
+      const hall = arena === 'cave' || arena === 'frost' || arena === 'volcano' || arena === 'tomb' || arena === 'crystal' || arena === 'fungus'; // ingen stig; mycelmoderns grotta: berg (floors[1]); grottan: lera, ishallen: snödrivor, obsidianhallen: aska, tempelhallen: sand, kristalltronen: berg (floors[1])
       const wetA = arena === 'sunken'; // leviatans bassäng: golven följer vattnet
-      const plainA = arena === 'clock' || arena === 'sky'; // urverkshallen: mässing överallt; stormfågelns näste: moln, tomrum och vind
+      const plainA = arena === 'clock' || arena === 'sky' || arena === 'mirror'; // spegelkungens sal: marmor överallt; urverkshallen: mässing överallt; stormfågelns näste: moln, tomrum och vind
       for (let y = 2; y <= AY1; y++) for (let x = cx - 1; x <= cx + 1; x++) if (!hall && !wetA && !plainA && (x === cx || N2[y * W + x] > 0.4)) fm[y * W + x] = 1;
       for (let i = 0; i < W * H; i++) if (!wetA && !plainA && !fm[i] && N2[i] < 0.3) fm[i] = hall ? 1 : 2;
       if (arena === 'sky') for (let i = 0; i < W * H; i++) { const c = g[(i / W) | 0][i % W]; if (c === 'Ń') fm[i] = 1; else if (c === 'ń') fm[i] = 2; }
@@ -4597,17 +5008,19 @@
       if (gid) {
         // bossens golv i en cirkel kring arenans mitt (hela grottan), bakväggen i bossens väggtecken, dekor längs kanterna
         floors.push(GUARDIANS[gid].floor);
-        const rr = arena === 'cave' || arena === 'crystal' ? 7.5 : wetA ? 9.5 : 5.5, bi = floors.length - 1;
+        const rr = arena === 'cave' || arena === 'crystal' || arena === 'fungus' ? 7.5 : wetA ? 9.5 : 5.5, bi = floors.length - 1;
         for (let y = AY0; y <= AY1; y++) for (let x = AX0; x <= AX1; x++) if (Math.hypot(x - cx, y - 14) <= rr && !(wetA && WATER8.includes(g[y][x])) && g[y][x] !== 'Ń' && g[y][x] !== 'ń') fm[y * W + x] = bi;
         if (wetA) fm[BY * W + BX] = bi; // leviatans bassäng: bossens golv på gångarna runt vattnet och där bossen står
         for (let y = 1; y <= 3; y++) for (let x = 1; x <= W - 2; x++) if (g[y][x] === wc) g[y][x] = ic;
         bossDecor(G, root.fork('decor' + attempt), gid, { cx, PX, PY, BX, BY, AX0, AX1, AY0, AY1 });
       }
       // kristalltronen: glödkristaller i stället för eldfat och kristallådror; leviatans bassäng: korall i murarna; urverkshallen: kuggväggar
-      if (arena === 'crystal' || arena === 'sunken' || arena === 'clock') {
-        const vr = root.fork('veins' + attempt), from = arena === 'crystal' ? 'Ą' : arena === 'clock' ? 'Ĺ' : 'Ċ', to = arena === 'crystal' ? 'Ć' : arena === 'clock' ? 'ĺ' : 'Č', faces = [];
+      if (arena === 'crystal' || arena === 'sunken' || arena === 'clock' || arena === 'fungus') { // mycelmoderns grotta: glödsvampar och svamphattar
+        const vr = root.fork('veins' + attempt), from = arena === 'crystal' ? 'Ą' : arena === 'clock' ? 'Ĺ' : arena === 'fungus' ? 'ŝ' : 'Ċ';
+        const to = arena === 'crystal' ? 'Ć' : arena === 'clock' ? 'ĺ' : arena === 'fungus' ? 'Ş' : 'Č', faces = [];
         for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
           if (arena === 'crystal' && g[y][x] === 'f') g[y][x] = 'Ę';
+          if (arena === 'fungus' && g[y][x] === 'f') g[y][x] = 'Ŧ';
           if (g[y][x] === from && [0, 1, 2, 3].some(d => !isWall(G.at(x + DX[d], y + DY[d])))) faces.push([x, y]);
         }
         let nv = 0;
@@ -4618,7 +5031,7 @@
         name, biome: A.biome, floor: floors[0], floors, floorMask: rowsOf(W, H, fm), ceil: A.ceil, sky: A.outdoor ? rowsOf(W, H, G.sky) : null,
         secretWall: wc, fog, ambient, map: g.map(r => r.join('')), depth: opts.depth || 6, seed, arena,
         rooms: [{ x: AX0, y: AY0, w: AX1 - AX0 + 1, h: AY1 - AY0 + 1, type: 'boss' }, { x: cx - 1, y: 1, w: 3, h: 2, type: 'exit' }],
-        tide: tide ? { period: tide.period } : null, saws, winds,
+        tide: tide ? { period: tide.period } : null, saws, winds, teleports,
       };
       if (gid) level.boss = gid;
       level.features = features(level.map);
@@ -4644,6 +5057,8 @@
     sunken: { wall: 'Ċ', floors: ['floor_sunken_tiles', 'floor_wood_planks'], ceil: 'floor_stone', names: ['VRAKETS LASTRUM', 'DEN SJUNKNA SKATTKAMMAREN', 'PIRATERNAS GÖMMA'] },
     clock: { wall: 'Ĺ', floors: ['floor_brass', 'floor_gold_tiles'], ceil: 'floor_brass', names: ['URMAKARENS SKATTKAMMARE', 'DET GYLLENE URVERKET', 'TIDENS GÖMMA'] }, // version 9
     sky: { wall: 'ļ', floors: ['floor_cloud', 'floor_gold_tiles'], ceil: 'floor_cloud', names: ['MOLNSKATTEN', 'STORMFÅGELNS BO', 'DEN SVÄVANDE SKATTKAMMAREN'] }, // version 9
+    fungus: { wall: 'ŝ', floors: ['floor_moss', 'floor_cave'], ceil: 'ceil_cave', names: ['SPORVALVET', 'DEN GLÖDANDE GÖMMAN', 'MYCELETS SKATTKAMMARE'] }, // version 11
+    mirror: { wall: 'Š', floors: ['floor_marble', 'floor_gold_tiles'], ceil: 'floor_marble', names: ['SPEGELKUNGENS SKATTKAMMARE', 'DEN FÖRGYLLDA SPEGELN', 'GLASVALVET'] }, // version 11
   };
   const GOLD_FOG = rng => [rng.int(24, 28), rng.int(19, 23), rng.int(8, 12)]; // varmt guldskimmer
   function secret(seed, opts) {
@@ -4656,7 +5071,7 @@
       if (!lv) continue;
       const level = {
         name, biome: bid, floor: look.floors[0], floors: look.floors.slice(), floorMask: lv.floorMask, ceil: look.ceil, sky: null,
-        secretWall: look.wall, fog, ambient, map: lv.map, depth, seed, rooms: lv.rooms, roomMask: lv.roomMask, theme: 'secret', secret: true, saws: [], winds: [],
+        secretWall: look.wall, fog, ambient, map: lv.map, depth, seed, rooms: lv.rooms, roomMask: lv.roomMask, theme: 'secret', secret: true, saws: [], winds: [], teleports: [],
       };
       level.features = features(level.map);
       if (!validate(level).length) return level;
@@ -4737,6 +5152,9 @@
     // version 9: urverkslabyrinten (mässing, kuggväggar runt rummen) och molnlabyrinten (murar av molnsten under öppen himmel, inget tomrum)
     clock: { wall: 'Ĺ', floors: ['floor_brass', 'floor_wood_planks'], ceil: 'floor_brass', sky: false, fog: [30, 23, 12], ambient: [0.15, 0.2], names: ['URVERKSLABYRINTEN', 'KUGGARNAS IRRGÅNG'] },
     sky: { wall: 'ļ', floors: ['floor_cloud', 'floor_cloud'], ceil: 'floor_cloud', sky: true, fog: [28, 31, 36], ambient: [0.24, 0.3], names: ['MOLNLABYRINTEN', 'VINDARNAS IRRGÅNG'] },
+    // version 11: myceltrasslet (svampvägg, glödande svamphattar runt rummen) och spegellabyrinten (marmor, spegelväggar runt rummen)
+    fungus: { wall: 'ŝ', floors: ['floor_moss', 'floor_cave'], ceil: 'ceil_cave', sky: false, fog: [19, 27, 23], ambient: [0.12, 0.17], names: ['MYCELTRASSLET', 'SPORERNAS IRRGÅNG'] },
+    mirror: { wall: 'Š', floors: ['floor_marble', 'floor_gold_tiles'], ceil: 'floor_marble', sky: false, fog: [25, 24, 32], ambient: [0.18, 0.24], names: ['SPEGELLABYRINTEN', 'DE TUSEN SPEGLARNAS IRRGÅNG'] },
   };
   function maze(seed, opts) {
     opts = opts || {};
@@ -4749,7 +5167,7 @@
       const level = {
         name, biome: bid, floor: look.floors[0], floors: look.floors.slice(), floorMask: lv.floorMask, ceil: look.ceil, sky: look.sky ? lv.sky : null,
         secretWall: look.wall, fog: look.fog.slice(), ambient, map: lv.map, depth, seed, rooms: lv.rooms, roomMask: lv.roomMask, theme: 'maze', maze: true,
-        boulders: [], beams: [], saws: [], winds: [],
+        boulders: [], beams: [], saws: [], winds: [], teleports: [],
       };
       level.features = features(level.map, level.beams);
       if (!validate(level).length) return level;
@@ -4867,6 +5285,9 @@
     // urverkslabyrinten: kuggväggar runt rummen; molnlabyrinten: stormmur runt rummen (version 9)
     if (bid === 'clock' || bid === 'sky') for (const r of rms) for (let y = r.y - 1; y <= r.y + r.h; y++) for (let x = r.x - 1; x <= r.x + r.w; x++)
       if (G.inb(x, y) && g[y][x] === wc && (x + y) % 3 === 0) g[y][x] = bid === 'clock' ? 'ĺ' : 'Ľ';
+    // myceltrasslet: glödande svamphattar runt rummen; spegellabyrinten: spegelväggar runt rummen (version 11)
+    if (bid === 'fungus' || bid === 'mirror') for (const r of rms) for (let y = r.y - 1; y <= r.y + r.h; y++) for (let x = r.x - 1; x <= r.x + r.w; x++)
+      if (G.inb(x, y) && g[y][x] === wc && (x + y) % 3 === 0) g[y][x] = bid === 'fungus' ? 'Ş' : 'š';
     const mask = new Array(N);
     for (let i = 0; i < N; i++) mask[i] = rid[i] < 0 ? '-' : String.fromCharCode(48 + rid[i]);
     const sky = new Array(N).fill('1');
@@ -4878,7 +5299,7 @@
 
   // ---------- Validering ----------
   const ENEMY_CHARS = 'SKVILNORWE' + Object.keys(NEW_ENEMIES).join('');
-  const VALID = new Set((WALLS + 'DG*xPBhaA$CMfotn.QZ' + ENEMY_CHARS + PROP_CHARS + WEAPON_CHARS + GATES + HAZARD + NPCS + NPCS7 + NPCS8 + ",'}¥ªðþ¼½Ģ" + 'Ŋŋ').split(''));
+  const VALID = new Set((WALLS + 'DG*xPBhaA$CMfotn.QZ' + ENEMY_CHARS + PROP_CHARS + WEAPON_CHARS + GATES + HAZARD + NPCS + NPCS7 + NPCS8 + ",'}¥ªðþ¼½Ģ" + 'Ŋŋ' + 'Ũ').split(''));
   const WATER_LOOT = '$haĢ¥'; // version 8: föremål som får ligga på en holme som bara nås simmande (vattenskatten; vrakkistan Ě räknas också)
   function validate(level) {
     const errs = [];
@@ -4985,6 +5406,42 @@
       }
       for (const k in roots) if (roots[k] < 2 || roots[k] > 3) errs.push('rotvättar: ' + roots[k] + ' i ' + (k === '-' ? 'en korridor' : 'rum ' + (k.charCodeAt(0) - 48)) + ' (väntat en grupp om 2-3)');
     }
+    // version 11: svamprikets och spegelpalatsets tecken bara där de får finnas (även i deras arenor, hemliga våningar och labyrinter),
+    // fienderna på tillåtna djup och under taken, spegelväggar aldrig på dörrkarmar, studsplattor/sporpölar/teleportrar aldrig vid dörrar;
+    // level.teleports stämmer med kartan (exakta par, i olika rum)
+    if (['ŝ', 'Ş', 'ş', 'Š', 'š', 'Ţ', 'ţ', 'Ť', 'ť', 'Ŧ', 'ŧ', 'ŗ', 'Ř', 'ř', 'Ś', 'ś', 'Ŝ', 'Ũ'].some(c => nCh[c])) {
+      const bio = level.biome, gb = level.guardian || level.boss, fu = bio === 'fungus', mi = bio === 'mirror';
+      const where = { 'ŝ': fu, 'Ş': fu, 'ş': gb === 'mycelmother', 'Š': mi, 'š': mi, 'Ţ': gb === 'mirrorking', 'ţ': fu, 'Ť': fu, 'ť': mi,
+        'Ŧ': fu || gb === 'mycelmother', 'ŧ': mi || gb === 'mirrorking', 'ŗ': fu, 'Ř': fu, 'ř': fu, 'Ś': mi, 'ś': mi, 'Ŝ': mi, 'Ũ': true };
+      const deep = { 'Ř': 2, 'ř': 2, 'ś': 2 }, told = {};
+      for (const [c, lim, what] of [['Ř', 2, 'mycelbestar'], ['ś', 2, 'illusionister'], ['Ũ', 2, 'sporsäckar'], ['Ť', level.arena ? 40 : SPOREPOOL11_CAP, 'sporpölsrutor'],
+        ['ţ', level.arena ? 8 : 4, 'studsplattor'], ['ť', 6, 'teleportrar']])
+        if ((nCh[c] || 0) > lim) errs.push('för många ' + what + ': ' + nCh[c]);
+      if (nCh['Ũ'] && (level.arena || level.maze || level.secret)) errs.push('sporsäck i en arena/labyrint/hemlig våning');
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const c = map[y][x];
+        if (where[c] === undefined) continue;
+        if (!where[c] && !told[c]) { told[c] = 1; errs.push('tecknet ' + c + ' hör inte hemma här (' + bio + ', ' + gb + ') vid ' + x + ',' + y); }
+        if (deep[c] && level.depth !== undefined && level.depth < deep[c]) errs.push('fiende ' + c + ' på djup ' + level.depth + ' (minst ' + deep[c] + ') vid ' + x + ',' + y);
+        if ((c === 'š' || c === 'ť') && RX.some((dx, k) => isDoorCh(at(x + dx, y + RY[k])))) errs.push((c === 'š' ? 'spegelvägg på en dörrkarm' : 'teleporter intill en dörr') + ' vid ' + x + ',' + y);
+        if ((c === 'ţ' || c === 'Ť') && [0, 1, 2, 3].some(d => isDoorCh(at(x + DX[d], y + DY[d])))) errs.push('fälla ' + c + ' i dörröppning vid ' + x + ',' + y);
+      }
+    }
+    if (level.teleports !== undefined || nCh['ť']) {
+      const tps = level.teleports, rmk11 = Array.isArray(level.roomMask) && level.roomMask.length === H ? level.roomMask : null;
+      if (!Array.isArray(tps)) errs.push('teleportrar ť utan level.teleports (eller ogiltigt level.teleports)');
+      else {
+        const seen = new Set(), ok = p => p && Number.isInteger(p.x) && Number.isInteger(p.y) && at(p.x, p.y) === 'ť';
+        for (const tp of tps) {
+          const { a, b } = tp || {};
+          if (!ok(a) || !ok(b)) { errs.push('teleporterparet pekar inte på två ť: ' + JSON.stringify(tp)); continue; }
+          for (const p of [a, b]) { if (seen.has(p.y * W + p.x)) errs.push('teleportern finns i två par vid ' + p.x + ',' + p.y); seen.add(p.y * W + p.x); }
+          if (a.x === b.x && a.y === b.y) errs.push('teleporterparet har samma ruta vid ' + a.x + ',' + a.y);
+          else if (rmk11 && (rmk11[a.y][a.x] === '-' || rmk11[b.y][b.x] === '-' || rmk11[a.y][a.x] === rmk11[b.y][b.x])) errs.push('teleporterparet ligger inte i två olika rum: ' + JSON.stringify(tp));
+        }
+        if (seen.size !== (nCh['ť'] || 0)) errs.push('level.teleports har ' + seen.size + ' teleportrar men kartan har ' + (nCh['ť'] || 0) + ' ť');
+      }
+    }
     if (level.saws !== undefined || nCh['Ŀ']) {
       const saws = level.saws;
       if (!Array.isArray(saws)) errs.push('sågspår Ŀ utan level.saws (eller ogiltigt level.saws)');
@@ -5060,7 +5517,8 @@
     if (nP === 1) {
       // smulande golv, kvicksand, djupt vatten, kristallspikar, tidvatten, sågspår och tidsbubblor räknas som lava: de får aldrig vara
       // enda vägen (tomrummet Ń blockerar: allt nås utan att gå på det)
-      const N = W * H, isGate = c => GATES.includes(c), haz = c => c === '_' || c === 'z' || c === '¬' || c === '¯' || isWet(c) || c === 'Ŀ' || c === 'ŀ';
+      // version 11: studsplattor, sporpölar och teleportrar likaså (allt nås till fots utan dem)
+      const N = W * H, isGate = c => GATES.includes(c), haz = c => c === '_' || c === 'z' || c === '¬' || c === '¯' || isWet(c) || c === 'Ŀ' || c === 'ŀ' || c === 'ţ' || c === 'Ť' || c === 'ť';
       // per ruta: 1 gångbar, 2 grind (| ] {), 4 lava/spikar/vatten, 8 lava/spikar (inte simbart vatten)
       const cls = new Uint8Array(N);
       let wetN = 0;

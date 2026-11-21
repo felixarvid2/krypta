@@ -1261,6 +1261,51 @@ Version 7 lägger till 200 förbättringar:
 
 Kombinerade utmaningar multiplicerar själarna. Sparplatsen väljs på startskärmen, och `?fro=XXXX` i adressen fyller i ett delat frö.
 
+## Version 11: Svampriket och Spegelpalatset
+
+Version 11 lägger till två nya biomer med egna mekaniker:
+- **Bilder:** ritas med `tools/props9/make.py`.
+- **Ljud och musik:** byggs med `tools/sounds/make9.sh`.
+- **Bangeneratorn:** har fått biomerna, arenorna och väktarna.
+
+**Två nya biomer**
+- **Svampriket (`fungus`):**
+  - Grottor med glödsvampar (Ŧ) som lyser.
+  - Studsplattor (ţ) kastar dig långt i den riktning du går, med lång lufttid.
+  - Sporpölar (Ť) vänder på styrningen en stund och ger syner av fiender som inte finns.
+- **Spegelpalatset (`mirror`):**
+  - Marmorsalar med spegelväggar (š) som studsar alla skott, både dina och fiendernas. Kulor kan studsa upp till tre gånger och träffa runt hörn.
+  - Teleportrar (ť) går i par (`level.teleports`).
+  - Spegelstatyer (ŧ).
+
+**Tre nya vapen, med pakter och uppgraderingar**
+- **Sporkastaren (Ŕ, ammo sporsäckar Ũ):** sporbollar i båge som lämnar giftmoln. Svampfolket läker sig i molnen.
+- **Spegelskölden (ŕ):**
+  - Slaget knuffar fiender.
+  - Höger musknapp håller upp skölden. Skott framifrån studsar då tillbaka, och slag framifrån tar bara en fjärdedel av skadan.
+  - Den som höjer skölden precis före träffen parerar: skottet går tillbaka mot skytten.
+- **Piskan (Ŗ):**
+  - Lång räckvidd, och spetsen smäller hårdast.
+  - Drar mindre fiender till dig.
+
+**Sex nya fiender**
+- **Sporling:** spricker i ett giftmoln.
+- **Mycelbest:** läker sig i sporer.
+- **Svampshaman:** kastar sporbollar och väcker sporlingar.
+- **Spegelriddare:** studsar skott framifrån när skölden är uppe.
+- **Illusionist:** byter plats med falska kopior som försvinner vid en träff.
+- **Glasskärva:** splittras i skärvor när den dör.
+
+**Två nya bossar**, som även kan dyka upp som väktare:
+- **Mycelmodern (boss9):** sporbollar, mycel som växer upp under dig, ett tungt markslag och ett sporfält som hon läker sig i.
+- **Spegelkungen (boss10):** glasskärvor och en speglande ställning som skickar tillbaka skotten. Han delar sig också i spegelbilder och byter plats med en av dem, och när den äkta kungen träffas krossas bilderna.
+
+**Mer**
+- 24 nya kort, två nya set och åtta nya kortegenskaper:
+  - sporeResist, bounceHeight, teleportShield, reflectDmg
+  - illusionSight, mirrorShards, fungusHeal, whipReach
+- Tre nya prestationer. Nyheterna och handboken är uppdaterade.
+
 ## Version 10: Nya invånare
 
 Version 10 fyller de tidiga biomerna, som man ser oftast, med nytt liv:
@@ -1490,6 +1535,10 @@ Version 8 gör spelet större med två biomer, ett talangsystem, ett nytt läge 
 | Version 9: 39 nya kortbilder | `tools/card-art/make.py . v9` ur `assets/ashfall-ai` och Kenney *particle-pack* (CC0); pakternas vapen ritas i skriptet |
 | Version 10: sex fiender, sex följeslagare, legendaltaret, legendariska vapen, partiklar och ikoner | `tools/props8/make.py`. Fångvaktaren, likgrävaren och armborstskytten bygger på *Pixel Crawler 2.11* (Anokolisa); de legendariska vapnen är omfärgningar av spelets egna vapenbilder; resten ritas i skriptet |
 | Version 10: 27 ljud, Lägrets musik och kapitelfanfaren | `tools/sounds/make8.sh`: 400 Sounds Pack och Kenney *impact-sounds* och *rpg-audio* (CC0); musiken syntetiseras i skriptet |
+| Version 11: sex fiender, två bossar, svamp- och marmorväggar, spegelväggen, golvrutor, rekvisita, partiklar och ikoner | `tools/props9/make.py`. Spegelriddaren och illusionisten bygger på Body_A ur Pixel Crawler Free Pack 2.11 (Anokolisa; fri kommersiell användning, ändringar tillåtna, ingen vidareförsäljning). Marmorns ådror kommer från Classic 64 Asset Pack 0.6 (CC0). Resten ritas i skriptet |
+| Version 11: förstapersonsvapnen sporkastaren, spegelskölden och piskan | `tools/weapon-frames` (static-defs.json, pack.py). Spegelsköldens svärd är `sword_B` ur KayKit Fantasy Weapons Bits (CC0) |
+| Version 11: 25 ljud och musik för Svampriket, Spegelpalatset, Mycelmodern och Spegelkungen | `tools/sounds/make9.sh`: Kenney *impact-sounds* och *rpg-audio* samt 400 Sounds Pack (CC0); musiken syntetiseras i skriptet |
+| Version 11: 39 kortbilder | `tools/card-art/make.py . v11`: meshy-ikoner, vfx och partiklar som inte använts tidigare; pakternas vapen ritas som siluetter |
 | Typsnitt | Press Start 2P (OFL) |
 
 Se licensfilerna i respektive källpaket.

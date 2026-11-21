@@ -122,3 +122,27 @@ node render-static.mjs side sawlauncher,windgun,spear
 python3 pack.py xframes ../../ sawlauncher,windgun,spear   # övriga poster i js/weapons.js lämnas orörda
 python3 pack.py pick ../../ sawlauncher,windgun,spear      # pick_sawlauncher/_windgun/_spear
 ```
+
+Version 11: sporkastaren (`sporelauncher`), spegelskölden (`mirrorshield`) och piskan (`whip`).
+Sporkastaren har ingen modell (`"model": "none"`): en rundad svampkanon byggd av enkla former, kolv och pistolgrepp av trä,
+en mässingskammare, ett grovt rör med mässingsringar, en lila svamphatt med vita prickar över röret (`name: cap`), en utsvängd
+mässingsmynning (`name: muzzle`, mynningen) och en grön sporburk på kolven (`name: jar`) som lyser upp i skjutrutorna
+(`partPose emissive`). `pack.py` ritar sporpuffen vid mynningen och sporbollen på väg mot `AIM` (`SPOREFLY`). Läget `reload`
+(`extra`) lutar kanonen, lyfter ur burken och sätter i en ny: `states: {idle:[0], fire:[1..5], reload:[6..10]}`, `dur: {fire, reload}`.
+Spegelskölden är två renderingar i närstridsläget: `mirrorshield` är ett kort svärd (KayKit `sword_B`, CC0) i spjutets hand och
+`mirrorshield_s` är den runda spegelskölden (skiva, guldkant, ljusa reflexer och en buckla av enkla former) på vänster underarm.
+`pack.py` lägger sköldrenderingen över varje ruta i samma läge (`MERGE`), så båda måste ha lika många rutor per läge.
+`fire` är ett slag från höger till vänster och `block` (`melee.extra`) lyfter upp skölden mitt framför kameran (sista rutan
+är den hållna posen): `states: {idle:[0], fire:[1..5], block:[6..8]}`, `dur: {fire, block}`. `pack.py` tar nu läget `block`
+(efter `empty`), och upplockningsbilden tas ur sköldens sidovy (`PICK_SIDE`).
+Piskan är ett skaft av läder med mässingsringar i spjutets hand och en hoprullad snärt (`name: coil`, tre torusar) som döljs i
+skjutrutorna; `pack.py` ritar själva snärten från skaftets spets (`nozzle: tip`) ut i bilden (`LASH`): slängd bakåt, en båge
+framåt, utsträckt mot `WAIM` med en smäll, en våg tillbaka och fallande: `states: {idle:[0], fire:[1..5]}`, `dur: {fire}`.
+
+```bash
+cd retrofps/tools/weapon-frames     # via symlänken, så att render-static.mjs hittar assets/3d-models
+node render-static.mjs fp sporelauncher,mirrorshield,mirrorshield_s,whip
+node render-static.mjs side sporelauncher,mirrorshield,mirrorshield_s,whip
+python3 pack.py xframes ../../ sporelauncher,mirrorshield,whip   # övriga poster i js/weapons.js lämnas orörda
+python3 pack.py pick ../../ sporelauncher,mirrorshield,whip      # pick_sporelauncher/_mirrorshield/_whip
+```
