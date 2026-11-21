@@ -5,6 +5,9 @@
 # Version 7: kastknivar (knives), stridshammare (hammer, extra läget charge) och musköt (musket, röken ritas in i rutorna).
 #   Källor: KayKit Fantasy Weapons Bits dagger_A och hammer_A (Kay Lousberg, CC0), PSX Shotgun Pack OneBarrelShotgun
 #   (samma paket som dubbelbössan) med längre pipa och mässingsband ur enkla former; röken ritas i smoke_frames().
+# Version 8: harpungevär (harpoon, extra läget reload, repet till harpunen ritas in i skjutrutorna), bumerang (boomerang,
+#   en hand av enkla former, extra läget empty = tom hand) och prisma (prism, ljusblixten vid kristallen ritas in).
+#   Källor: Guns&Explosives Shotgun och Suomi_KP, KayKit spear_A (CC0), övrigt enkla former i static.html.
 import json, re, sys
 import numpy as np
 from PIL import Image
@@ -14,14 +17,18 @@ ONLY=sys.argv[3].split(',') if len(sys.argv)>3 else None
 VW,VH=320,166
 TARGET={'pistol':(84,178,24),'shotgun':(112,196,40),'rifle':(112,184,42),'smg':(98,178,32),
         'dbshotgun':(110,194,40),'crossbow':(66,166,14),'flaregun':(80,180,22),'sniper':(118,186,46),
-        'flamer':(104,226,34),'launcher':(100,188,30),'nailgun':(96,210,22),'musket':(128,196,40)}  # höjd i px, mittpunkt x, hur mycket som skärs av nedtill
-HARD={'axe','flamer','launcher','nailgun','staff','bow','knives','hammer','musket'}   # version 5 och 6: hel eller ingen täckning per pixel
+        'flamer':(104,226,34),'launcher':(100,188,30),'nailgun':(96,210,22),'musket':(128,196,40),
+        'harpoon':(124,198,40),'prism':(118,196,40)}  # höjd i px, mittpunkt x, hur mycket som skärs av nedtill
+HARD={'axe','flamer','launcher','nailgun','staff','bow','knives','hammer','musket','harpoon','boomerang','prism'}   # version 5 och 6: hel eller ingen täckning per pixel
 MUZZLE_IDLE={'bow'}
 PICK={'nailgun':(48,'w'),'staff':(48,'w',-90),'bow':(46,'w',90,'string'),'axe':(44,'w',90),'flamer':(54,'w'),'launcher':(46,'w'),
-      'knives':(24,'h',0,'fan'),'hammer':(44,'w',90),'musket':(60,'w')}  # upplockningsbildens storlek (höjd eller bredd i px)
+      'knives':(24,'h',0,'fan'),'hammer':(44,'w',90),'musket':(60,'w'),'harpoon':(58,'w'),'boomerang':(22,'w'),'prism':(54,'w')}  # upplockningsbildens storlek (höjd eller bredd i px)
 
 
 SMOKE={'musket':[(0,5),(1,10),(2,14),(3,17),(4,18),(5,17)]}   # version 7: rökpuff vid mynningen per skjutruta (steg, radie i px)
+ROPE={'harpoon':[0.45,1.0,1.0,0.9,None]}          # version 8: repet från mynningen mot siktet (andel av sträckan, None = inget)
+FLASH={'prism':[(0,14),(1,10),(2,6),None]}        # version 8: prismans ljusblixt (steg, radie i px)
+AIM=(176,50)                                        # dit harpunen flyger (strax ovanför och till höger om siktet)
 OUTC=(37,19,26)
 
 
@@ -60,6 +67,47 @@ def smoke_frames(atlas,n,x,y,fw,fh,mz,steps):
             fr=Image.alpha_composite(fr,sm)
         out.paste(hard(fr),(i*nw,0))
     return out,X0,Y0,nw,nh
+
+
+def fx_frames(atlas,n,x,y,fw,fh,mz,steps,ext,draw):
+    """Version 8: ritar en effekt (rep, ljusblixt) in i rutorna; rutan växer så att effekten får plats (x/y flyttas)."""
+    from PIL import ImageDraw
+    es=[ext(mz[i],steps[i]) for i in range(n) if steps[i] is not None]
+    X0=max(0,min([x]+[int(np.floor(e[0])) for e in es])); Y0=max(0,min([y]+[int(np.floor(e[1])) for e in es]))
+    X1=min(VW,max([x+fw]+[int(np.ceil(e[2])) for e in es]))
+    nw,nh=X1-X0,y+fh-Y0
+    out=Image.new('RGBA',(nw*n,nh))
+    for i in range(n):
+        fr=Image.new('RGBA',(nw,nh)); fr.paste(atlas.crop((i*fw,0,(i+1)*fw,fh)),(x-X0,y-Y0))
+        if steps[i] is not None:
+            ov=Image.new('RGBA',(nw,nh)); draw(ImageDraw.Draw(ov),mz[i][0]-X0,mz[i][1]-Y0,steps[i],X0,Y0,i)
+            fr=Image.alpha_composite(ov,fr) if FX_BEHIND else Image.alpha_composite(fr,ov)
+        out.paste(hard(fr),(i*nw,0))
+    return out,X0,Y0,nw,nh
+
+
+FX_BEHIND=False
+
+
+def rope_draw(d,mx,my,k,X0,Y0,i):
+    """Harpunens rep: en hampalina som slingrar sig från mynningen mot siktet."""
+    ax,ay=AIM[0]-X0,AIM[1]-Y0; ex,ey=mx+(ax-mx)*k,my+(ay-my)*k
+    pts=[]
+    for j in range(25):
+        t=j/24; sag=np.sin(t*np.pi)*(3 if i<2 else 7)+np.sin(t*12+i)*1.2*(1-t)
+        pts.append((mx+(ex-mx)*t,my+(ey-my)*t+sag))
+    d.line(pts,fill=OUTC+(255,),width=4); d.line(pts,fill=(200,170,110,255),width=2)
+    if i==0: d.ellipse((mx-3,my-3,mx+3,my+3),fill=(240,250,255,255))
+
+
+def flash_draw(d,mx,my,st,X0,Y0,i):
+    """Prismans ljusblixt: vit kärna, regnbågsstrålar."""
+    k,r=st; cols=[(255,120,120),(255,220,110),(120,230,140),(110,190,255),(200,130,255)]
+    for j in range(10):
+        a=j/10*6.283+0.3*k; rr=r*(1.0 if j%2==0 else 0.6)
+        d.line([(mx,my),(mx+np.cos(a)*rr,my+np.sin(a)*rr*0.8)],fill=cols[j%5]+(255,),width=2 if k==0 else 1)
+    c=max(2,r//3)
+    d.ellipse((mx-c-1,my-c-1,mx+c+1,my+c+1),fill=(200,230,255,255)); d.ellipse((mx-c+1,my-c+1,mx+c-1,my+c-1),fill=(255,255,255,255))
 
 
 def fan_pick(im):
@@ -102,7 +150,7 @@ if ONLY:
 for w,st in d.items():
     if ONLY and w not in ONLY: continue
     files=[]; states={}
-    for s in ['idle','fire']+[k for k in ('draw','charge') if k in st]:   # version 6: bågens draw, version 7: hammarens charge
+    for s in ['idle','fire']+[k for k in ('draw','charge','reload','empty') if k in st]:   # version 6: draw, 7: charge, 8: reload/empty
         states[s]=[]
         for fr in st[s]: states[s].append(len(files)); files.append(fr)
     ims=[Image.open(f['f']).convert('RGBA') for f in files]
@@ -123,6 +171,12 @@ for w,st in d.items():
         atlas.paste(hard(fr) if w in HARD else fr,(i*fw,0))
     mz=[[round(x+(f['muzzle'][0]-bb[0])*sc,1),round(y+(f['muzzle'][1]-bb[1])*sc,1)] for f in files]
     if w in SMOKE: atlas,x,y,fw,fh=smoke_frames(atlas,len(ims),x,y,fw,fh,mz,[None]+SMOKE[w])
+    def steps_for(tab):   # version 8: effekten bara i skjutrutorna
+        f_=states['fire']; return [tab[f_.index(i)] if i in f_ and f_.index(i)<len(tab) else None for i in range(len(ims))]
+    if w in ROPE:
+        atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(ROPE[w]),lambda m,k:(min(m[0],AIM[0])-6,min(m[1],AIM[1])-10,max(m[0],AIM[0])+6,m[1]),rope_draw)
+    if w in FLASH:
+        atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(FLASH[w]),lambda m,st:(m[0]-st[1]-2,m[1]-st[1]-2,m[0]+st[1]+2,m[1]+st[1]),flash_draw)
     atlas.save(OUT+f'assets/gfx/fp_{w}.png',optimize=True)
     if w in MUZZLE_IDLE: mz=[mz[0] if i in states['fire'] else m for i,m in enumerate(mz)]   # bågen: utan pil räknas mynningen från vilobilden
     out[w]={'x':x,'y':y,'w':fw,'h':fh,'states':states,'muzzle':mz,'dur':{'fire':round(st['fire_dur'],3),**{k:round(v,3) for k,v in st.get('durs',{}).items()}}}

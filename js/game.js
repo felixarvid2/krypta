@@ -334,14 +334,14 @@ const ENEMY_DEFS = {
   'Ê': { name: 'SCHAKALKRIGARE', sheet: 'jackal', move: 'movement', hp: 11, speed: 1.7, melee: true, dmg: 12, range: 1.05, cd: 1.0, size: 1.1, growl: 'jackal', score: 280, atkFps: 12, hitAt: 0.5, ai: 'jackal', tip: 'PARERAR NÄR DU SIKTAR – VÄNTA UT DEN' },
   'Î': { name: 'FICKTJUV', sheet: 'thief', move: 'movement', hp: 5, speed: 2.9, melee: true, dmg: 2, range: 0.9, cd: 1.2, size: 1.0, growl: 'thief', score: 150, atkFps: 12, hitAt: 0.5, ai: 'thief', cowardly: true, tip: 'STJÄL GULD – DÖDA DEN FÖR ATT FÅ TILLBAKA DET' },
   'Ô': { name: 'DUBBELGÅNGARE', sheet: 'doppelganger', move: 'movement', hp: 14, speed: 1.4, melee: false, dmg: 6, range: 9, cd: 1.6, size: 1.3, growl: 'doppel', score: 380, atkFps: 10, hitAt: 0.5, ai: 'doppel', kite: 4, tip: 'SKJUTER MED DITT VAPEN' },
-  'Ë': { name: 'KRISTALLGOLEM', sheet: 'crystalgolem', move: 'movement', hp: 30, speed: 0.75, melee: true, dmg: 17, range: 1.3, cd: 1.6, size: 1.3, growl: 'golem', score: 450, atkFps: 9, hitAt: 0.6, ai: 'golem', stone: true, crystal: true, tip: 'SLÅR SÖNDER MARKEN – HOPPA. HAMMARE OCH SPRÄNGMEDEL BITER' },
-  'Í': { name: 'SKÄRVIRRBLOSS', sheet: 'shardwisp', move: 'movement', hp: 5, speed: 1.8, melee: false, dmg: 6, range: 9, cd: 99, size: 0.75, growl: 'shardwisp', score: 170, atkFps: 10, hitAt: 0.5, ai: 'shardwisp', kite: 4, crystal: true, float: true, tip: 'HOPPAR UNDAN NÄR DEN TRÄFFAS' },
+  'Ë': { name: 'KRISTALLGOLEM', sheet: 'crystalgolem', move: 'movement', hp: 30, speed: 0.75, melee: true, dmg: 17, range: 1.3, cd: 1.6, size: 0.9, growl: 'golem', score: 450, atkFps: 9, hitAt: 0.6, ai: 'golem', stone: true, crystal: true, tip: 'SLÅR SÖNDER MARKEN – HOPPA. HAMMARE OCH SPRÄNGMEDEL BITER' },
+  'Í': { name: 'SKÄRVIRRBLOSS', sheet: 'shardwisp', move: 'movement', hp: 5, speed: 1.8, melee: false, dmg: 6, range: 9, cd: 99, size: 0.65, growl: 'shardwisp', score: 170, atkFps: 10, hitAt: 0.5, ai: 'shardwisp', kite: 4, crystal: true, float: true, tip: 'HOPPAR UNDAN NÄR DEN TRÄFFAS' },
   'Ï': { name: 'DRUNKNAD SJÖMAN', sheet: 'sailor', move: 'movement', hp: 9, speed: 1.2, melee: true, dmg: 10, range: 1.0, cd: 1.1, size: 1.05, growl: 'sailor', score: 200, atkFps: 11, hitAt: 0.55, ai: 'sailor', tip: 'BÅTSHAKEN DRAR DIG NÄRMARE' },
   'Ó': { name: 'ÅL', sheet: 'eel', move: 'movement', hp: 7, speed: 2.4, melee: true, dmg: 11, range: 1.5, cd: 99, size: 1.0, growl: 'eel', score: 160, atkFps: 12, hitAt: 0.5, ai: 'eel', tip: 'HÅLL DIG BORTA FRÅN DJUPT VATTEN' },
-  'Ú': { name: 'SIREN', sheet: 'siren', move: 'movement', hp: 8, speed: 1.0, melee: false, dmg: 0, range: 9, cd: 99, size: 1.0, growl: 'siren_song', score: 260, atkFps: 8, hitAt: 0.5, ai: 'siren', kite: 5, tip: 'SÅNGEN DRAR DIG – SKJUT HENNE FÖR ATT BRYTA DEN' },
-  'Û': { name: 'JÄTTEKRABBA', sheet: 'crab', move: 'movement', hp: 10, speed: 1.6, melee: true, dmg: 8, range: 0.95, cd: 1.0, size: 0.85, growl: 'crab', score: 180, atkFps: 12, hitAt: 0.5, ai: 'crab', tip: 'SKALET SKYDDAR FRAMIFRÅN – SLÅ, SPRÄNG ELLER GÅ RUNT' },
-  'Ā': { name: 'SKUGGJÄGARE', sheet: 'stalker', move: 'movement', hp: 8, speed: 2.5, melee: true, dmg: 14, range: 1.0, cd: 0.9, size: 1.0, growl: 'stalker', score: 300, atkFps: 14, hitAt: 0.5, ai: 'stalker', tip: 'SYNS BARA I LJUS – TÄND LAMPAN' },
-  'Ă': { name: 'HÄXA', sheet: 'witch', move: 'movement', hp: 9, speed: 1.1, melee: false, dmg: 5, range: 9, cd: 99, size: 1.0, growl: 'witch', score: 280, atkFps: 10, hitAt: 0.5, ai: 'witch', kite: 5, tip: 'FÖRHÄXAR DIG OCH TELEPORTERAR SIG NÄR HON TRÄFFAS' },
+  'Ú': { name: 'SIREN', sheet: 'siren', move: 'movement', hp: 8, speed: 1.0, melee: false, dmg: 0, range: 9, cd: 99, size: 0.85, growl: 'siren_song', score: 260, atkFps: 8, hitAt: 0.5, ai: 'siren', kite: 5, tip: 'SÅNGEN DRAR DIG – SKJUT HENNE FÖR ATT BRYTA DEN' },
+  'Û': { name: 'JÄTTEKRABBA', sheet: 'crab', move: 'movement', hp: 10, speed: 1.6, melee: true, dmg: 8, range: 0.95, cd: 1.0, size: 0.9, growl: 'crab', score: 180, atkFps: 12, hitAt: 0.5, ai: 'crab', tip: 'SKALET SKYDDAR FRAMIFRÅN – SLÅ, SPRÄNG ELLER GÅ RUNT' },
+  'Ā': { name: 'SKUGGJÄGARE', sheet: 'stalker', move: 'movement', hp: 8, speed: 2.5, melee: true, dmg: 14, range: 1.0, cd: 0.9, size: 1.1, growl: 'stalker', score: 300, atkFps: 14, hitAt: 0.5, ai: 'stalker', tip: 'SYNS BARA I LJUS – TÄND LAMPAN' },
+  'Ă': { name: 'HÄXA', sheet: 'witch', move: 'movement', hp: 9, speed: 1.1, melee: false, dmg: 5, range: 9, cd: 99, size: 1.05, growl: 'witch', score: 280, atkFps: 10, hitAt: 0.5, ai: 'witch', kite: 5, tip: 'FÖRHÄXAR DIG OCH TELEPORTERAR SIG NÄR HON TRÄFFAS' },
   'Ü': { name: 'IRRBLOSS', sheet: 'wisp', move: 'movement', hp: 3, speed: 2.2, melee: true, dmg: 0, range: 1.0, cd: 1, size: 0.8, growl: 'wisp', score: 120, atkFps: 12, hitAt: 0.5, ai: 'wisp', tip: 'SPRÄNGS I FROST – HÅLL AVSTÅND' },
   S: { name: 'SKELETT', sheet: 'skeleton1', move: 'movement', hp: 5, speed: 1.35, melee: true, dmg: 9, range: 0.95, cd: 0.9, size: 1.0, growl: 'growl', score: 100, atkFps: 14, hitAt: 0.55 },
   K: { name: 'ELDSKELETT', sheet: 'skeleton2', move: 'movemen', hp: 6, speed: 0.95, melee: false, dmg: 8, range: 8.5, cd: 1.8, size: 1.05, growl: 'hiss', score: 150, atkFps: 12, hitAt: 0.5 },
@@ -363,7 +363,7 @@ const BOSSES = {
   ogre: { title: 'SKOGENS SLAKTARE', name: 'OGERN', hp: 420, speed: 1.3, size: 2.6, dmg: 26, range: 3.0, arena: 'forest', phaseMsg: ['OGERN KALLAR PÅ SINA SÖNER', 'OGERN BLIR RASANDE!'] },
   frost: { title: 'VINTERNS HJÄRTA', name: 'ISDRAKEN', hp: 330, speed: 1.0, size: 2.4, dmg: 18, range: 2.2, arena: 'frost', phaseMsg: ['ISDRAKEN KALLAR PÅ STORMEN', 'ISDRAKEN BLIR KALLARE ÄN DÖDEN!'] },
   flame: { title: 'VULKANENS HJÄRTA', name: 'ELDKUNGEN', hp: 360, speed: 1.05, size: 3.0, dmg: 19, range: 2.3, arena: 'volcano', phaseMsg: ['ELDKUNGEN TÄNDER MARKEN', 'ELDKUNGEN RASAR – ALLT BRINNER!'] },
-  crystalqueen: { title: 'SPEGLARNAS HÄRSKARINNA', name: 'KRISTALLDROTTNINGEN', hp: 420, speed: 1.1, size: 3.6, dmg: 16, range: 2.0, arena: 'crystal', phaseMsg: ['DROTTNINGEN SPLITTRAS – SKÄRVORNA VAKNAR', 'DROTTNINGEN BRINNER AV LJUS!'] },
+  crystalqueen: { title: 'SPEGLARNAS HÄRSKARINNA', name: 'KRISTALLDROTTNINGEN', hp: 420, speed: 1.1, size: 4.2, dmg: 16, range: 2.0, arena: 'crystal', phaseMsg: ['DROTTNINGEN SPLITTRAS – SKÄRVORNA VAKNAR', 'DROTTNINGEN BRINNER AV LJUS!'] },
   leviathan: { title: 'DJUPETS FASA', name: 'LEVIATAN', hp: 480, speed: 0.6, size: 4.2, dmg: 20, range: 2.6, arena: 'sunken', phaseMsg: ['LEVIATAN KALLAR PÅ DJUPET', 'LEVIATAN RASAR – HAVET STIGER!'] },
   pharaoh: { title: 'SANDENS HERRE', name: 'FARAONEN', hp: 380, speed: 1.0, size: 3.8, dmg: 18, range: 2.2, arena: 'tomb', phaseMsg: ['FARAONEN VÄCKER SINA TJÄNARE', 'FARAONEN RASAR – SANDEN STIGER!'] },
   ghost: { title: 'DEN SOM ALDRIG SOVER', name: 'VÅLNADEN', hp: 260, speed: 1.6, size: 2.3, dmg: 14, range: 1.4, arena: 'swamp', phaseMsg: ['VÅLNADEN VÄCKER DE DÖDA', 'VÅLNADENS SKRIK FYLLER LUFTEN!'] },
@@ -416,7 +416,7 @@ const PROP_DEFS = {
   'Ī': { img: 'bookshelf', size: 1.0, block: true, use: 'hubChronicle' },
   'Ĭ': { img: 'npc_wanderer', src: 'npc_wanderer', n: 4, anim: 4, size: 0.95, block: true, use: 'hubUnlocks', fb: 'prisoner', npc: true },
   'Ė': { img: 'prismcrystal', n: 2, size: 0.95, block: true, fb: 'crystal' },
-  'Ę': { img: 'glowcrystal', n: 2, anim: 2, size: 0.8, block: true, light: 0.9, fb: 'crystal' },
+  'Ę': { img: 'glowcrystal', n: 4, anim: 4, size: 0.8, block: true, light: 0.9, fb: 'crystal' },
   'Ě': { img: 'wreckchest', n: 2, size: 0.7, block: true, use: 'wreck', fb: 'coffin' },
   'Ĝ': { img: 'bubbles', n: 4, anim: 4, size: 0.5, under: 'auto', fb: 'gasvent' },
   'Ē': { img: 'crystalspikes', n: 2, size: 0.55, trap: true, fb: 'spikes' },
@@ -554,11 +554,11 @@ async function loadAll(setStatus) {
   for (const k of ['rune_fire', 'rune_ice', 'rune_poison', 'rune_storm', 'rune_blood', 'rune_echo', 'ab_blink', 'ab_slowmo', 'ab_bubble', 'ab_summon', 'ab_quake']) { try { const im = await load(`${A}gfx/${k}.png`); spr[k] = pixels(im); hudImg[k] = im; } catch (e) { /* valfri */ } }
   try { spr.meat = pixels(await load(`${A}gfx/item_meat.png`)); } catch (e) { /* valfri */ }
   for (const [k, f] of [['page', 'item_page'], ['battery', 'item_battery'], ['stone', 'item_stone'], ['tome', 'item_tome']]) { try { spr[k] = pixels(await load(`${A}gfx/${f}.png`)); } catch (e) { /* valfri */ } }
-  for (const k of ['icon_eye', 'icon_ear']) { try { hudImg[k] = await load(`${A}gfx/${k}.png`); } catch (e) { /* valfri */ } }
+  for (const k of ['icon_eye', 'icon_ear', 'icon_air', 'icon_xp']) { try { hudImg[k] = await load(`${A}gfx/${k}.png`); } catch (e) { /* valfri */ } }
   for (const k of ['potion_heal', 'potion_rage', 'potion_ghost', 'potion_speed', 'potion_ice', 'potion_unknown']) { try { const im = await load(`${A}gfx/${k}.png`); spr[k] = pixels(im); hudImg[k] = im; } catch (e) { /* valfri */ } }
   try { fx.crateBits = strip(await load(A + 'gfx/prop_crate_broken.png'), 4); } catch (e) { fx.crateBits = null; }
   fx.parts = {}; // biompartiklar (tools/props/make.py); saknas en används träffgnistan
-  for (const [n, k] of [['knife', 1], ['bandage', 2], ['sand', 2], ['smoke2', 4], ['beam', 1], ['dust_mote', 1], ['nail', 1], ['arrow', 1], ['lightning', 4], ['ashfall', 2], ['lavadrop', 2], ['heat', 1], ['snow', 2], ['footprint', 1], ['breath', 2], ['icicle', 1], ['flame', 4], ['blood_trail', 2], ['eye', 1], ['leaf', 4], ['firefly', 2], ['drop', 1], ['rain', 1], ['fog', 1], ['bat', 4], ['ember', 2], ['dust', 1], ['wisp', 4], ['shell', 1], ['blood_pool', 3],
+  for (const [n, k] of [['bubble', 2], ['shard', 2], ['splash_big', 4], ['prismbeam', 1], ['note', 2], ['ink', 2], ['harpoonrope', 1], ['knife', 1], ['bandage', 2], ['sand', 2], ['smoke2', 4], ['beam', 1], ['dust_mote', 1], ['nail', 1], ['arrow', 1], ['lightning', 4], ['ashfall', 2], ['lavadrop', 2], ['heat', 1], ['snow', 2], ['footprint', 1], ['breath', 2], ['icicle', 1], ['flame', 4], ['blood_trail', 2], ['eye', 1], ['leaf', 4], ['firefly', 2], ['drop', 1], ['rain', 1], ['fog', 1], ['bat', 4], ['ember', 2], ['dust', 1], ['wisp', 4], ['shell', 1], ['blood_pool', 3],
     ['gib', 4], ['spore', 2], ['webshot', 1], ['scorch', 1], ['hole', 2], ['ash', 2], ['smoke', 4], ['ice', 3], ['gas', 2], ['skull', 2], ['log', 2], ['rock', 1], ['shadow', 1], ['zzz', 1], ['star', 1], ['meteor', 2]]) {
     try { fx.parts[n] = strip(await load(`${A}gfx/part_${n}.png`), k); } catch (e) { /* valfri */ }
   }
@@ -1577,12 +1577,14 @@ function weaponFrame() { // bildruta och förskjutning: vapnet sticker rakt fram
   let idx = st.idle[0], dx = 0, dy = 0;
   if (WS.shot < f.dur.fire) idx = pick(st.fire, WS.shot / f.dur.fire);
   else if (st.draw && WS.draw > 0) idx = pick(st.draw, WS.draw * 0.999); // bågen spänns
+  else if (st.empty && wp.boomerang && P.mags[P.weapon] <= 0) idx = st.empty[0]; // bumerangen är i luften
+  else if (st.reload && WS.state === 'reload' && !wp.shellReload) idx = pick(st.reload, clamp(WS.t / (wp.reload * reloadMul()), 0, 0.999)); // egna omladdningsrutor
   else if (st.charge && WS.hcharge > 0) { idx = pick(st.charge, Math.min(1, WS.hcharge) * 0.999); if (WS.hcharge >= 0.7 && !settings.reduceMotion) dx += Math.sin(tmr * 40) * 1.2; } // hammaren lyfts och darrar
   const kt = WS.shot / 0.16; // rekyl: knyck nedåt och tillbaka
   if (kt < 1) dy += Math.sin(Math.min(1, kt) * Math.PI) * wp.kick * 7 * (1 - WS.aim * 0.5);
   if (WS.state === 'draw') dy += (1 - easeOut(WS.t / drawTime())) * f.h;
   else if (WS.state === 'holster') dy += easeIn(WS.t / 0.22) * f.h;
-  else if (WS.state === 'reload') {
+  else if (WS.state === 'reload' && !(st.reload && !wp.shellReload)) {
     if (wp.shellReload) { // ner lite för varje patron
       const k = WS.t / shellSeg(WS.shellPhase);
       dy += WS.shellPhase === 'start' ? easeOut(k) * 34 : WS.shellPhase === 'end' ? (1 - easeIn(k)) * 34 : 34 + Math.sin(k * Math.PI) * 10;

@@ -8,6 +8,9 @@
 // och `bow` bygger bågsträng och pil kring KayKits båge (spänd med `draw`).
 // Version 7: `fan` håller flera kopior av modellen (kastknivarna) i en solfjäder; per bildruta kan `melee.fan` dölja
 // eller flytta enskilda kopior (`hide`, `move`: [dx,dy,dz,rx,ry,rz] i andelar av modellens längd och grader).
+// Version 8: `model: "none"` bygger vapnet enbart av `parts` (en osynlig ruta `base` [x,y,z] ger måttet), och per bildruta
+// `partPose` {delnamn: {hide, move:[dx,dy,dz], rot:[x,y,z], scale, emissive}} (i `melee` eller direkt i en rekylruta) döljer,
+// flyttar, vrider, förstorar eller tänder enskilda delar efter att bilden centrerats, så att bildutsnittet inte hoppar.
 import * as THREE from 'three';
 import {FBXLoader} from 'three/addons/loaders/FBXLoader.js';
 import {OBJLoader} from 'three/addons/loaders/OBJLoader.js';
@@ -38,13 +41,17 @@ function prim(d){
   else if(d.prim==='cone')g=new THREE.ConeGeometry(s[0],s[1],d.seg||10);
   else if(d.prim==='sphere')g=new THREE.SphereGeometry(s[0],d.seg||10,8);
   else if(d.prim==='torus')g=new THREE.TorusGeometry(s[0],s[1],6,d.seg||12);
+  else if(d.prim==='oct')g=new THREE.OctahedronGeometry(s[0],0); // version 8: kristall
   else g=new THREE.BoxGeometry(...s);
   const mesh=new THREE.Mesh(g,new THREE.MeshLambertMaterial({color:d.color||'#555',side:THREE.DoubleSide,emissive:d.emissive||'#000'}));
+  if(d.stretch)mesh.scale.set(...d.stretch); // version 8: utdragen form (prismans kristall)
   mesh.name=d.name||d.prim;mesh.frustumCulled=false;return mesh;
 }
 async function model(p){
   const key=p.model+'|'+p.tex+'|'+JSON.stringify(p.parts||[])+'|'+JSON.stringify(p.split||null)+'|'+JSON.stringify(p.fan||null);if(cache[key])return cache[key];
-  const obj=await loadObj(p.model,p.tex,p.hide);
+  let obj;
+  if(/\/none$/.test(p.model)){obj=new THREE.Group();const bs=p.base||[1,0.1,0.1];const bm=new THREE.Mesh(new THREE.BoxGeometry(...bs),new THREE.MeshBasicMaterial({color:0}));bm.name='base';bm.visible=false;obj.add(bm);} // version 8: bara delar
+  else obj=await loadObj(p.model,p.tex,p.hide);
   const body=new THREE.Group();body.add(obj);
   const parts=[];
   for(const d of p.parts||[]){
@@ -106,6 +113,18 @@ async function bowParts(obj,b,key){
     hold.position.set(nock.x+(b.arrowOff?.[0]||0)*span,nock.y+(b.arrowOff?.[1]||0)*span,nock.z);g.add(hold);}
   obj.add(g);bowExtra[key]=g;
 }
+// version 8: per-bildruta-läge för namngivna delar (efter centreringen, så att utsnittet står still)
+function applyPartPose(parts,pose){
+  for(const h of parts){const d=h.userData.d,q=(pose||{})[d.name];const ol=h.userData.ol||1;
+    h.traverse(o=>{if(o.isMesh&&o.material&&o.material.emissive){if(!o.userData.em0)o.userData.em0=o.material.emissive.clone();o.material.emissive.copy(o.userData.em0);}});
+    if(d.hidden&&!(q&&q.show))h.visible=false; // `hidden`: syns bara i rutor som visar den (show)
+    if(!q)continue;
+    if(q.hide)h.visible=false;
+    if(q.move)h.position.add(new THREE.Vector3(...q.move).multiplyScalar(ol));
+    if(q.rot)h.rotation.set(...q.rot.map(x=>x*Math.PI/180));
+    if(q.scale)h.scale.multiplyScalar(q.scale);
+    if(q.emissive)h.traverse(o=>{if(o.isMesh&&o.material&&o.material.emissive)o.material.emissive.set(q.emissive)});}
+}
 window.renderFrame=async(p)=>{
   for(const k in cache)cache[k].pv.visible=false;
   const {pv,obj,inner,body,parts,split,fan}=await model(p);pv.visible=true;
@@ -115,13 +134,13 @@ window.renderFrame=async(p)=>{
   for(const [nm,rr] of Object.entries(p.meshRot||{}))obj.traverse(o=>{if(o.name===nm)o.rotation.set(...rr.map(x=>x*Math.PI/180))});
   // orientering: rot (grader) vrider modellen så att pipan pekar längs +X och ovansidan uppåt, tilt lutar den runt Z
   obj.rotation.set(...(p.rot||[0,0,0]).map(x=>x*Math.PI/180));obj.position.set(0,0,0);
-  pv.position.set(0,0,0);pv.rotation.set(0,0,0);inner.rotation.set(0,0,(p.tilt||0)*Math.PI/180);inner.position.set(0,0,0);
+  pv.position.set(0,0,0);pv.rotation.set(0,0,0);inner.rotation.set(0,(p.view==='side'?(p.sideYaw||0):0)*Math.PI/180,(p.tilt||0)*Math.PI/180);inner.position.set(0,0,0); // sideYaw (version 8) vrider sidovyn: bumerangen ligger i bildplanet
   if(p.stretch)obj.scale.set(...p.stretch); // sträcker huvudmodellen i dess egna axlar (t.ex. ett längre rör)
   if(p.tint&&!obj.userData.tinted){obj.traverse(o=>{if(o.isMesh)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>{if(!m.userData.t){m.color.multiply(new THREE.Color(p.tint));m.userData.t=1}})});obj.userData.tinted=1;}
   pv.updateMatrixWorld(true);
   // hopbyggda delar: storlek och läge i andelar av huvudmodellens längd, räknat från dess mittpunkt
   if(parts.length){const ob=new THREE.Box3().setFromObject(obj);const oc=ob.getCenter(new THREE.Vector3());const ol=ob.max.x-ob.min.x;
-    for(const h of parts){const d=h.userData.d;h.scale.setScalar((d.scale||0.3)*ol/h.userData.max);h.position.set(...(d.pos||[0,0,0])).multiplyScalar(ol).add(oc);}
+    for(const h of parts){const d=h.userData.d;h.scale.setScalar((d.scale||0.3)*ol/h.userData.max);h.position.set(...(d.pos||[0,0,0])).multiplyScalar(ol).add(oc);h.rotation.set(0,0,0);h.visible=true;h.userData.ol=ol;}
     pv.updateMatrixWorld(true);}
   const box=new THREE.Box3().setFromObject(body);const c=box.getCenter(new THREE.Vector3());inner.position.sub(c);
   const len=box.max.x-box.min.x;
@@ -133,6 +152,7 @@ window.renderFrame=async(p)=>{
     const b0=new THREE.Box3().setFromObject(fan?obj:body);const L=b0.max.y-b0.min.y; // solfjädern: greppet räknas från originalmodellen så att ett kastat blad inte flyttar de andra
     inner.position.set(-(b0.min.x+b0.max.x)/2,-b0.min.y-(m.grip||0.08)*L,-(b0.min.z+b0.max.z)/2); // greppet i pivotpunkten
     inner.rotation.set(0,0,0);
+    applyPartPose(parts,m.partPose);
     const [hx,hy,hz]=m.hand,[ax,ay,az]=m.ang;
     pv.position.set(hx*L,hy*L,hz*L);pv.rotation.set(ax*Math.PI/180,ay*Math.PI/180,az*Math.PI/180,'XZY');pv.updateMatrixWorld(true);
     if(p.bow){await bowParts(obj,{...p.bow,...(m.bow||{})},p.model);pv.updateMatrixWorld(true);}
@@ -148,6 +168,7 @@ window.renderFrame=async(p)=>{
     const ndc=mc.clone().project(cam);r.render(sc,cam);
     return {png:r.domElement.toDataURL('image/png'),muzzle:[(ndc.x+1)/2*W,(1-ndc.y)/2*H],len:L};
   }
+  applyPartPose(parts,p.partPose);
   // rekyl: bakåt längs -X och nosen uppåt
   const k=p.kick||0;pv.position.set(-k*(p.back||0.08)*len,(p.dy||0)*len,(p.dz||0)*len);pv.rotation.set((p.roll||0)*Math.PI/180,0,k*(p.pitch||6)*Math.PI/180);
   pv.updateMatrixWorld(true);
@@ -156,7 +177,8 @@ window.renderFrame=async(p)=>{
   // kameran räknas från vilobilden så att rekylen syns som rörelse
   const L=p.len0||len,base=p.base||{mnx,mxx,mxy,cz};
   r.localClippingEnabled=false;r.clippingPlanes=p.clipBack&&p.view!=='side'?[new THREE.Plane(new THREE.Vector3(1,0,0),-(base.mnx+p.clipBack*L))]:[]; // version 6: skär bort kolven (spikgeväret)
-  if(p.view==='side'){const md=Math.max(...b.getSize(new THREE.Vector3()).toArray());cam.fov=30;cam.position.set(0,0,md*2.6);cam.up.set(0,1,0);cam.lookAt(0,0,0);}
+  if(p.view==='side'){let vb=b;if(p.sidePose){vb=new THREE.Box3();body.updateMatrixWorld(true);body.traverseVisible(o=>{if(o.isMesh)vb.expandByObject(o)});inner.position.sub(vb.getCenter(new THREE.Vector3()));pv.updateMatrixWorld(true);} // version 8: med sidePose räknas bara synliga delar
+    const md=Math.max(...vb.getSize(new THREE.Vector3()).toArray());cam.fov=30;cam.position.set(0,0,md*2.6);cam.up.set(0,1,0);cam.lookAt(0,0,0);}
   else{const [bk,up,sd,fw,dr]=p.cam;cam.fov=p.fov||40;cam.position.set(base.mnx-bk*L,base.mxy+up*L,base.cz+sd*L);cam.up.set(0,1,0);cam.lookAt(base.mxx+fw*L,base.mxy+up*L-dr*L*fw,base.cz+sd*L);}
   cam.near=L*0.01;cam.far=L*50;cam.updateProjectionMatrix();cam.updateMatrixWorld(true);
   // mynningen: punkterna längst fram längs kamerans blickriktning (eller delen som heter p.nozzle)

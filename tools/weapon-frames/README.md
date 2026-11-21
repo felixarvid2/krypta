@@ -79,3 +79,26 @@ python3 pack.py pick ../../ knives,hammer,musket      # knivarnas upplockningsbi
 ```
 `render-static.mjs` hittar `assets/3d-models` även när `retrofps` är en symlänk (den provar också `$PWD/../../../assets`).
 
+
+Version 8: harpungeväret (`harpoon`), bumerangen (`boomerang`) och prismat (`prism`).
+Harpungeväret är Guns&Explosives `Shotgun` med KayKit `spear_A` (CC0) som harpun längs pipan, en linrulle och en lina av
+enkla former (`parts`). Nytt i `static.html` är `partPose` per bildruta, `{delnamn: {hide, show, move, rot, scale, emissive}}`,
+som döljer, flyttar eller tänder namngivna delar efter att bilden centrerats (så att utsnittet står still), och `hidden` på
+en del som bara syns där en ruta visar den. Skjutrutorna döljer harpunen och `pack.py` ritar repet från mynningen mot
+`AIM` (`ROPE`). Skjutvapen kan nu också ha fler lägen med `extra` (som närstridens `melee.extra`): harpunens `reload` är
+fem rutor där geväret lutas och harpunen glider tillbaka i pipan. I `js/weapons.js` blir det
+`states: {idle:[0], fire:[1..5], reload:[6..10]}` och `dur: {fire, reload}`.
+Bumerangen har ingen modell (`"model": "none"`, en osynlig ruta `base` ger måttet): bumerangen och en handskklädd hand med
+ärm är enkla former. Den hålls i närstridsläget; skjutrutorna är kastet (armen tar sats, bumerangen släpps och försvinner,
+`partPose: {boom: {hide: true}}`) och läget `empty` (`melee.extra`) är handen utan bumerang medan den är i luften:
+`states: {idle:[0], fire:[1..4], empty:[5]}`. `sidePose` döljer handen och `sideYaw` vrider sidovyn till upplockningsbilden.
+Prismat är Guns&Explosives `Suomi_KP` (trummagasinet dolt med `hide`) med en stor kristall (`"prim": "oct"`, utdragen med
+`stretch`) i en mässingsklo vid mynningen och kristallceller i stället för magasinet; skjutrutorna tänder kristallen
+(`emissive`, `scale`) och `pack.py` ritar en ljusblixt med regnbågsstrålar vid mynningen (`FLASH`).
+
+```bash
+node render-static.mjs fp harpoon,prism,boomerang
+node render-static.mjs side harpoon,prism,boomerang
+python3 pack.py xframes ../../ harpoon,prism,boomerang   # övriga poster i js/weapons.js lämnas orörda
+python3 pack.py pick ../../ harpoon,prism,boomerang      # upplockningsbilderna pick_harpoon/_prism/_boomerang
+```
