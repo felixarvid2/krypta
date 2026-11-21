@@ -3646,7 +3646,7 @@ function showStats() {
   rows.push({ label: 'ÖVERLEVNAD', head: true, color: '#ffd24a' }, { label: 'BÄSTA VÅG', text: String(p.survivalBest || 0) }, ...(p.survivalTop || []).slice(0, 5).map((s, i) => ({ label: `${i + 1}. VÅG ${s.wave}`, text: s.d })));
   rows.push({ label: 'BOSSAR', head: true, color: '#ffd24a' }, ...BOSS_IDS.map(id => ({ label: BOSSES[id].name, text: `BESEGRAD ${(p.bossWins || {})[id] || 0} GÅNGER · BÄSTA TID ${(p.bossTimes || {})[id] ? fmtT(p.bossTimes[id]) : '–'}` })));
   if (p.rushBest) rows.push({ label: 'BOSSRUSH', text: 'BÄSTA TID ' + fmtT(p.rushBest) });
-  rows.push({ label: 'REKORD PER LÄGE', head: true, color: '#ffd24a' }, { label: 'LABYRINTEN', text: p.mazeBest ? 'BÄSTA TID ' + fmtT(p.mazeBest) + ` · ${p.mazesWon || 0} GÅNGER UTE` : '–' }, { label: 'AVGRUNDEN', text: p.abyssBest ? `DJUPAST ${p.abyssBest} · ${p.abyssRuns || 0} RUNDOR` : '–' }, { label: 'HÖGSTA NIVÅ', text: String(p.bestLevel || 1) }, { label: 'BOSSJAKTEN', text: p.huntBest ? 'BÄSTA TID ' + fmtT(p.huntBest) : '–' },
+  rows.push({ label: 'REKORD PER LÄGE', head: true, color: '#ffd24a' }, { label: 'LABYRINTEN', text: p.mazeBest ? 'BÄSTA TID ' + fmtT(p.mazeBest) + ` · ${p.mazesWon || 0} GÅNGER UTE` : '–' }, { label: 'AVGRUNDEN', text: p.abyssBest ? `DJUPAST ${p.abyssBest} · ${p.abyssRuns || 0} RUNDOR` : '–' }, ...(p.abyssDailyTop || []).slice(0, 5).map((x, i) => ({ label: `DAGENS AVGRUND ${i + 1}.`, text: `${x.d} · DJUP ${x.depth} · NIVÅ ${x.lvl}` })), { label: 'HÖGSTA NIVÅ', text: String(p.bestLevel || 1) }, { label: 'BOSSJAKTEN', text: p.huntBest ? 'BÄSTA TID ' + fmtT(p.huntBest) : '–' },
     ...Object.entries(p.cmodeBest || {}).map(([k, v]) => ({ label: cmodeNames(k) || k, text: `VÅNING ${v}${(p.cmodeWins || {})[k] ? ' · VUNNEN' : ''}` })));
   rows.push({ label: 'SMYG, LAMPA OCH EKONOMI', head: true, color: '#a0a0ff' }, { label: 'OSEDDA DÖDANDEN', text: `${p.stealthKills || 0} (BÄSTA RUNDA ${p.bestStealth || 0})` }, { label: 'LAMPAN TÄND', text: `${p.lampToggles || 0} GÅNGER` },
     { label: 'HOS SPELAREN', text: `${p.gambles || 0} SPEL · ${p.gambleWins || 0} VINSTER` }, { label: 'BANKEN', text: `${p.bankDeposits || 0} INSÄTTNINGAR` }, { label: 'KRÖNIKAN', text: `${pagesFound().length} AV ${CHRONICLE.length} SIDOR` },
@@ -3657,7 +3657,7 @@ function showStats() {
   CardUI.list('STATISTIK', 'DITT KRYPTA I SIFFROR', rows, () => refreshTitle());
 }
 // ---------- Version 6: svagheter i bestiariet ----------
-const WEAK = { S: 'HAGEL KROSSAR BEN', K: 'HÅLL AVSTÅND OCH SIDLEDES', V: 'BACKA OCH SKJUT', I: 'SPIKAR OCH HAGEL', L: 'ELD', N: 'DÖDA FÖRST', O: 'DÖDA FÖRST', R: 'LYKTAN AVSLÖJAR DEN', W: 'LÅT DEN KROCKA', U: 'ELD BRÄNNER NÄTEN', X: 'HAGEL', Y: 'TRÄFFA I SPRÅNGET', '!': 'SKJUT PÅ AVSTÅND', '@': 'ANFALL BAKIFRÅN', '^': 'ELD', '+': 'EXPLOSIONER', Q: 'SKJUT KISTOR SOM RÖR SIG',
+const WEAK = { 'Ë': 'HAMMARE OCH SPRÄNGMEDEL', 'Í': 'SNABBA VAPEN – DEN HOPPAR', 'Ï': 'HÅLL AVSTÅND FRÅN HAKEN', 'Ó': 'GÅ UR VATTNET', 'Ú': 'EN TRÄFF BRYTER SÅNGEN', 'Û': 'BAKIFRÅN ELLER SPRÄNGMEDEL', 'Ā': 'LAMPAN AVSLÖJAR DEN', 'Ă': 'SKJUT INNAN HON TELEPORTERAR', S: 'HAGEL KROSSAR BEN', K: 'HÅLL AVSTÅND OCH SIDLEDES', V: 'BACKA OCH SKJUT', I: 'SPIKAR OCH HAGEL', L: 'ELD', N: 'DÖDA FÖRST', O: 'DÖDA FÖRST', R: 'LYKTAN AVSLÖJAR DEN', W: 'LÅT DEN KROCKA', U: 'ELD BRÄNNER NÄTEN', X: 'HAGEL', Y: 'TRÄFFA I SPRÅNGET', '!': 'SKJUT PÅ AVSTÅND', '@': 'ANFALL BAKIFRÅN', '^': 'ELD', '+': 'EXPLOSIONER', Q: 'SKJUT KISTOR SOM RÖR SIG',
   'Å': 'BRÄNN LIKEN', 'Ä': 'DÖDA FÖRST', 'Ö': 'EXPLOSIONER OCH YXA', 'É': 'SAMLA DEM I EN DÖRR', 'Ü': 'HÅLL AVSTÅND', 'Ñ': 'DÖDA FÖRST – HAN VÄCKER DE DÖDA', 'Æ': 'IS OCH BLIXT', 'Þ': 'FLYTTA DIG NÄR MARKEN GLÖDER', 'Ð': 'ANFALL BAKIFRÅN', 'Ý': 'BÅGE PÅ AVSTÅND' };
 // ---------- Version 6: fotoläget har filter ----------
 const PHOTO_FILTERS = ['', 'svartvit', 'sepia', 'nattseende'];
@@ -5886,6 +5886,7 @@ function endRun(win) {
   if (r.survival) { const wv = r.survival.wave; profile.survivalBest = Math.max(profile.survivalBest || 0, wv); profile.survivalTop = (profile.survivalTop || []).concat({ wave: wv, d: new Date().toISOString().slice(0, 10) }).sort((a, b) => b.wave - a.wave).slice(0, 10); r.cause = r.cause || 'ÖVERLEVNAD'; }
   profile.bestLevel = Math.max(profile.bestLevel || 0, r.lvl || 1);
   if (r.abyss) { profile.abyssBest = Math.max(profile.abyssBest || 0, r.depth); stat('abyssRuns'); }
+  if (r.abyssDaily) { const d = new Date().toISOString().slice(0, 10); profile.abyssDailyTop = (profile.abyssDailyTop || []).concat({ d, depth: r.depth, lvl: r.lvl || 1 }).sort((a, b) => b.depth - a.depth).slice(0, 10); profile.abyssToday = { d, depth: Math.max(r.depth, profile.abyssToday && profile.abyssToday.d === d ? profile.abyssToday.depth : 0) }; }
   if (r.stealthKills) profile.bestStealth = Math.max(profile.bestStealth || 0, r.stealthKills);
   if (win && r.bossrush && !r.hunt) profile.rushBest = Math.min(profile.rushBest || 1e9, Math.round(r.time));
   if (r.cmode) for (const k of new Set([r.cmode, ...r.cmode.split('+')])) { profile.cmodeBest = Object.assign({}, profile.cmodeBest, { [k]: Math.max((profile.cmodeBest || {})[k] || 0, r.depth) }); if (win) profile.cmodeWins = Object.assign({}, profile.cmodeWins, { [k]: 1 }); }
@@ -7071,9 +7072,9 @@ function abyssScale() { // fienderna blir starkare för varje våning
   if (n > 1 && n % 5 === 0) say(`AVGRUND ${n}: FIENDERNA BLIR STARKARE`, 2.5);
   profile.abyssBest = Math.max(profile.abyssBest || 0, n); play('abyss_descend', 0.7);
 }
-function beginAbyss() {
+function beginAbyss(daily) {
   document.getElementById('title').hidden = true; canvas.focus(); ensureAudio(); practice = null;
-  newRun(RNG.randomSeed(), false); run.abyss = true; run.cmode = ''; P.hp = maxHp();
+  newRun(daily ? RNG.hash('krypta-avgrund-' + new Date().toISOString().slice(0, 10)) : RNG.randomSeed(), false); run.abyss = true; run.abyssDaily = !!daily; run.cmode = ''; P.hp = maxHp();
   loadFloor(1); say('AVGRUNDEN – HUR DJUPT KOMMER DU?', 3); lockPointer();
   openUI(() => draftUI(drawCards(3 + meta('choice')), { title: 'AVGRUNDEN', subtitle: 'VÄLJ ETT STARTKORT', skipLabel: 'INGET KORT' }, card => { gainCard(card); closeUI(); }));
 }
@@ -7082,7 +7083,7 @@ function abyssNext() { // efter en bossvåning i Avgrunden
   openUI(() => draftUI(drawCards(3, { luck: 1 }), { title: `AVGRUND ${run.depth} KLARAD`, subtitle: 'VÄLJ ETT KORT OCH FORTSÄTT NEDÅT', skipLabel: 'INGET KORT' }, card => { if (card) gainCard(card); closeUI(); loadFloor(run.depth + 1); lockPointer(); }));
 }
 // ---------- Version 8: Lägret – ett nav att gå runt i mellan rundorna ----------
-const HUB_MODES = [['new', 'NY RUNDA'], ['daily', 'DAGENS RUNDA'], ['abyss', 'AVGRUNDEN'], ['maze', 'LABYRINTEN'], ['hunt', 'BOSSJAKTEN'], ['continue', 'FORTSÄTT RUNDAN']];
+const HUB_MODES = [['new', 'NY RUNDA'], ['daily', 'DAGENS RUNDA'], ['abyss', 'AVGRUNDEN'], ['abyssdaily', 'DAGENS AVGRUND'], ['maze', 'LABYRINTEN'], ['hunt', 'BOSSJAKTEN'], ['continue', 'FORTSÄTT RUNDAN']];
 let hubWatch = 0;
 function hubLevel() {
   const Wd = 27, Hd = 19, m = [];
@@ -7106,7 +7107,7 @@ function beginHub() {
 }
 function hubEnter(mode) { // portalerna i lägret
   clearInterval(hubWatch); run.hub = false;
-  const go = () => { if (mode === 'abyss') beginAbyss(); else if (mode === 'maze') beginMaze(); else if (mode === 'hunt') beginBossHunt(); else begin(mode); };
+  const go = () => { if (mode === 'abyssdaily') beginAbyss(true); else if (mode === 'abyss') beginAbyss(); else if (mode === 'maze') beginMaze(); else if (mode === 'hunt') beginBossHunt(); else begin(mode); };
   if (mode !== 'continue' && store.get(runKey(), null)) { openUI(() => CardUI.choice({ title: 'NY RUNDA?', subtitle: 'DU HAR EN PÅGÅENDE RUNDA. EN NY RUNDA SKRIVER ÖVER DEN.', cancel: 1, options: [{ label: 'STARTA NY', text: 'DEN GAMLA FÖRSVINNER' }, { label: 'AVBRYT', text: '' }] }, i => { if (i === 0) go(); else { closeUI(); run.hub = true; beginHub(); } })); return; }
   go();
 }
@@ -7167,6 +7168,7 @@ document.getElementById('monthly').addEventListener('click', () => startMode('mo
 document.getElementById('titlesbtn').addEventListener('click', () => showTitles());
 document.getElementById('hubbtn').addEventListener('click', () => { if (!document.getElementById('start').disabled) beginHub(); });
 document.getElementById('abyssbtn').addEventListener('click', () => { if (!document.getElementById('start').disabled) beginAbyss(); });
+document.getElementById('abyssdaily').addEventListener('click', () => { if (!document.getElementById('start').disabled) beginAbyss(true); });
 if (params.has('fro')) document.getElementById('seed').value = params.get('fro').slice(0, 16); // delad länk med frö
 addEventListener('keydown', e => { // siffertangenterna väljer klass på startskärmen
   if (state !== 'title' || CardUI.isOpen() || document.activeElement?.tagName === 'INPUT' || !/^Digit[0-9]$/.test(e.code)) return;
