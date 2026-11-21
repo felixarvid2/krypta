@@ -1306,6 +1306,28 @@ Version 11 lägger till två nya biomer med egna mekaniker:
   - illusionSight, mirrorShards, fungusHeal, whipReach
 - Tre nya prestationer. Nyheterna och handboken är uppdaterade.
 
+**Lugnare gränssnitt**
+
+Förebilderna är Doom, Quake, Wolfenstein 3D och Ultrakill: bilden ska vara ren, och informationen ska ligga där man vet att den finns.
+- **Statuslisten:** fem lika fält (hälsa, skydd, ammo, vapen, våning), med en stor siffra och en liten etikett under.
+  - Vapenrutorna, dödsräknaren och kortantalet är borta från listen; de finns i målet, pausen och kortlistan.
+  - Granater, nycklar och vapennivå ligger på en rad under vapnets namn.
+- **Meddelanden:** ett i taget, och det förra bleknar under det.
+  - De väntar medan titelkortet visas och läggs under bossens livmätare.
+  - Samma meddelande visas inte två gånger.
+- **Titelkortet:** bara namn och undertitel, plus högst en rad om händelse eller förbannelse.
+  - Bossens entré visas inte samtidigt som våningens titelkort.
+- **Minikartan och målet:**
+  - Minikartan är mindre och genomskinligare.
+  - Målet syns tydligt när det ändras och bleknar sedan.
+  - Medan en boss eller väktare syns visas livmätaren i stället för målet.
+- **Pausen:** en lugn panel med rundans uppgifter och två rader tangenter. Hela tangentlistan finns i handboken.
+- **Våningsstatistiken och dödsskärmen:** raka tabeller utan överlapp. Tipset och tangenterna ligger längst ned.
+- **Startskärmen:** NY RUNDA och DAGENS RUNDA först, sedan LÄGRET, KAMPANJEN och FLER LÄGEN.
+  - Svårighet, klass, följeslagare, utmaningar och sparplats samlas under ANPASSA RUNDAN, med en sammanfattning bredvid.
+  - Fröet ligger under FLER LÄGEN, och känslighet och synfält finns i inställningarna.
+- **Kortvalet:** FÖRE → EFTER visas bara när kortet ändrar något man redan har.
+
 ## Version 10: Nya invånare
 
 Version 10 fyller de tidiga biomerna, som man ser oftast, med nytt liv:

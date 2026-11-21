@@ -4,6 +4,7 @@
 // och en boss på sista våningen. Döden avslutar rundan; själar ger upplåsningar till nästa.
 (() => {
 const W = 320, H = 200, HUD_H = 34, VH = H - HUD_H, HORIZON = VH >> 1;
+const HUD_CELLS = [0, 60, 112, 198, 266]; // statuslistens fält: hälsa, skydd, ammo, vapen, våning
 let BASE_PLANE = 0.75; // sätts från synfältet (FOV) i inställningarna
 const applyFov = () => { BASE_PLANE = Math.tan(clamp(settings.fov, 60, 100) * Math.PI / 360); };
 const FLOORS = 5; // vanliga våningar per varv; våning FLOORS + 1 är bossen
@@ -200,6 +201,7 @@ function showNews() {
     { label: 'SEX NYA FIENDER', text: 'SPORLINGAR SOM SPRICKER I SPORER, MYCELBESTAR SOM LÄKER SIG I SPORER, SVAMPSHAMANER, SPEGELRIDDARE MED SKÖLD, ILLUSIONISTER MED FALSKA KOPIOR OCH GLASSKÄRVOR SOM SPLITTRAS.' },
     { label: 'TVÅ NYA BOSSAR', text: 'MYCELMODERN SOM LÅTER MYCELET VÄXA UNDER DIG OCH SPEGELKUNGEN SOM DELAR SIG I SPEGELBILDER. NU FINNS FJORTON BOSSAR.' },
     { label: 'MER', text: '24 NYA KORT, TVÅ NYA SET, ÅTTA NYA KORTEGENSKAPER, TRE PRESTATIONER OCH NY MUSIK FÖR BÅDA BIOMERNA OCH BOSSARNA.' },
+    { label: 'LUGNARE GRÄNSSNITT', text: 'STATUSLISTEN HAR EN STOR SIFFRA PER FÄLT SOM I DE KLASSISKA SPELEN. ETT MEDDELANDE I TAGET, MINDRE KARTA, TYSTARE MÅL, EN LUGN PAUS OCH STATISTIK UTAN ÖVERLAPP. STARTSKÄRMEN SAMLAR KLASS OCH SVÅRIGHET UNDER ANPASSA RUNDAN.' },
     { label: 'VERSION 10 – NYA INVÅNARE', head: true, color: '#ffd0a0' },
     { label: 'SEX NYA FIENDER', text: 'FÅNGVAKTARE, GRÄVARE, LIKGRÄVARE, ROTVÄTTEN, ARMBORSTSKYTTAR OCH PADDJÄTTAR I DE TIDIGA BIOMERNA.' },
     { label: 'LEGENDARISKA VAPEN', text: 'SEX VARIANTER AV GAMLA VAPEN. HITTAS SÄLLAN HOS ELITER OCH VÄKTARE ELLER KÖPS VID LEGENDALTARET.' },
@@ -805,7 +807,7 @@ function recomputeMods() {
 const up = k => UP.has(k) && !!run && WEAPONS[P.weapon].id === run.pact;
 
 const plain = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '');
-function say(t, d = 2.5) { msgs.unshift({ text: plain(t), t: d }); if (msgs.length > 3) msgs.length = 3; if (settings.tts && t && d >= 2.5 && state !== 'title') speak(t); }
+function say(t, d = 2.5) { const pt = plain(t); if (msgs.length && msgs[0].text === pt) { msgs[0].t = Math.max(msgs[0].t, d); return; } msgs.unshift({ text: pt, t: d }); if (msgs.length > 3) msgs.length = 3; if (settings.tts && t && d >= 2.5 && state !== 'title') speak(t); }
 
 // ---------- Runda och våningar ----------
 const dailySeed = () => { const d = new Date(); return RNG.hash(`krypta-${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`); };
@@ -1826,43 +1828,43 @@ function drawHUD() {
     if (hb.enraged) txt('RASANDE', x + w + 4, y - 1, tmr % 0.5 < 0.25 ? '#ff4030' : '#a02010');
     txt(hb.d.name, (W - textW(hb.d.name)) / 2, y + 7, '#ffd24a');
   }
-  if (levelBanner > 0 && state === 'play') {
+  if (levelBanner > 0 && bossBanner <= 0 && state === 'play') {
     const a = Math.min(1, levelBanner, (3 - levelBanner) * 3), sub = lvl.hub ? 'MELLAN RUNDORNA' : run.abyss ? `AVGRUND ${run.depth} · ${BIOME_NAME[lvl.biome] || ''}` : (cycleOf(run.depth) ? `VARV ${cycleOf(run.depth) + 1} · ` : '') + `VÅNING ${run.depth} · ${BIOME_NAME[lvl.biome] || ''}`;
     ctx.font = '16px "PressStart2P"'; const w = ctx.measureText(plain(lvl.name)).width;
     if (w < W - 8) txt(lvl.name, (W - w) / 2, 46, '#e8d9b0', 2, true, a); else txt(lvl.name, (W - textW(lvl.name)) / 2, 50, '#e8d9b0', 1, true, a);
     txt(sub, (W - textW(sub)) / 2, 66, '#c9a87a', 1, true, a);
-    if (floorEvent) { const ev = EVENTS[floorEvent].name + ' – ' + EVENTS[floorEvent].text; txt(ev, (W - textW(ev)) / 2, 78, '#ff7060', 1, true, a); }
-    if (run.floorCurse) { const t = 'FÖRBANNAD VÅNING: +60 GULD OM DU KLARAR DEN'; txt(t, (W - textW(t)) / 2, 90, '#c080ff', 1, true, a); }
-    if (!run.practice && profile.bestDepth > 1) { const t = run.depth > profile.bestDepth ? 'DJUPARE ÄN NÅGONSIN!' : `DJUPMÄTARE: ${run.depth} AV DITT REKORD ${profile.bestDepth}`; txt(t, (W - textW(t)) / 2, 102, run.depth > profile.bestDepth ? '#9fe0a0' : '#8a7a60', 1, true, a * 0.9); }
-    if (run.route && run.route[run.depth] > 1) { const t = riskText(lvl.biome); txt(t, (W - textW(t)) / 2, 114, '#ffb060', 1, true, a); }
+    if (floorEvent) { wrapText(EVENTS[floorEvent].name + ' – ' + EVENTS[floorEvent].text, 36).slice(0, 2).forEach((ev, k) => txt(ev, (W - textW(ev)) / 2, 78 + k * 10, '#ff7060', 1, true, a)); }
+    else if (run.floorCurse) { const t = 'FÖRBANNAD: +60 GULD OM DU KLARAR DEN'; txt(t, (W - textW(t)) / 2, 78, '#c080ff', 1, true, a); }
+    else if (!run.practice && run.depth > profile.bestDepth && profile.bestDepth > 1) { const t = 'DJUPARE ÄN NÅGONSIN!'; txt(t, (W - textW(t)) / 2, 78, '#9fe0a0', 1, true, a); }
   }
   if (bossBanner > 0 && !boss && guardianE && guardianE.d.title) { const s = guardianE.d.title; txt(s, (W - textW(s)) / 2, 60, '#d080ff', 1, true, Math.min(1, bossBanner)); }
   if (bossBanner > 0 && boss && boss.d.title) { const t = boss.d.title; txt(t, (W - textW(t)) / 2, 72, '#e8d9b0', 1, true, Math.min(1, bossBanner)); }
   if (bossBanner > 0 && boss) { const s = boss.d.name; ctx.font = '16px "PressStart2P"'; const w = ctx.measureText(plain(s)).width; txt(s, (W - w) / 2, 50, '#ff5030', 2, true, Math.min(1, bossBanner)); }
-  // nedre listen
-  g.fillStyle = '#1b1410'; g.fillRect(0, y0, W, HUD_H);
-  g.fillStyle = '#5a4630'; g.fillRect(0, y0, W, 1);
-  g.fillStyle = '#3a2c1e'; g.fillRect(0, y0 + 1, W, 1);
-  for (const sx of [58, 114, 202, 264]) { g.fillStyle = '#3a2c1e'; g.fillRect(sx, y0 + 4, 1, HUD_H - 8); }
+  // nedre listen: som de klassiska statuslisterna – en stor siffra per fält och en liten etikett under
+  g.fillStyle = '#15100c'; g.fillRect(0, y0, W, HUD_H);
+  g.fillStyle = '#4a3828'; g.fillRect(0, y0, W, 1);
+  for (const sx of HUD_CELLS.slice(1)) { g.fillStyle = '#2a2018'; g.fillRect(sx, y0 + 6, 1, HUD_H - 12); }
   g.textBaseline = 'top';
-  const wp = WEAPONS[P.weapon];
-  txt('HÄLSA', 6, y0 + 5, '#c9a87a'); txt(String(Math.max(0, Math.ceil(P.hp))), 6, y0 + 16, P.hp > maxHp() * 0.3 ? '#e8d9b0' : (tmr % 0.6 < 0.3 ? '#ff4d3d' : '#a02a20'), 2);
-  if (mod('shield') > 0) { g.fillStyle = '#20344a'; g.fillRect(6, y0 + 31, 48, 2); g.fillStyle = '#7fc0ff'; g.fillRect(6, y0 + 31, 48 * P.shield / mod('shield'), 2); }
-  txt('RUSTN', 64, y0 + 5, '#c9a87a'); txt(String(Math.ceil(P.armor)), 64, y0 + 16, P.armor > 0 ? '#9fc4ff' : '#5a4630', 2);
-  const mag = wp.melee ? '--' : wp.staff ? Math.floor(P.mags[P.weapon]) : P.mags[P.weapon], res = wp.melee || wp.staff ? '--' : P.ammo[wp.ammo];
-  txt(AMMO[wp.ammo].name, 120, y0 + 5, '#c9a87a');
-  const low = !wp.melee && mag <= Math.ceil(effMag(P.weapon) * 0.25);
-  txt(String(mag), 120, y0 + 16, mag === 0 ? (tmr % 0.5 < 0.25 ? '#ff4d3d' : '#7a2a20') : low ? '#ffb040' : '#e8d9b0', 2);
-  txt('/' + res, 122 + String(mag).length * 16, y0 + 22, '#a89070');
-  txt(wShort(wp), 208, y0 + 5, legendOf(wp.id) ? '#ffd24a' : '#c9a87a');
-  if (run.pact) txt('EDEN', 208, y0 + 15, '#ff7050', 1, false);
-  else for (let i = 0; i < WEAPONS.length; i++) { g.fillStyle = P.has[i] ? (i === P.weapon ? '#ffd24a' : '#8a7550') : '#3a2c1e'; g.fillRect(208 + i * 4, y0 + 16, 3, 6); }
-  txt(`${kills}/${totalEnemies}`, 208, y0 + 25, '#e8d9b0');
-  txt(boss ? 'BOSS' : `VÅN ${run.depth}`, 270, y0 + 5, '#c9a87a');
-  txt(`${run.gold}G`, 270, y0 + 15, '#ffd24a');
-  txt(`${run.owned.length} KORT`.slice(0, 6), 270, y0 + 25, '#b9a0e8');
+  const wp = WEAPONS[P.weapon], cx = i => (HUD_CELLS[i] + (HUD_CELLS[i + 1] || W)) / 2;
+  const big = (s, x, col) => txt(s, Math.round(x - textW(s)), y0 + 7, col, 2), lab = (s, x, col = '#7a6448') => txt(s, Math.round(x - textW(s) / 2), y0 + 25, col);
+  // hälsa
+  big(String(Math.max(0, Math.ceil(P.hp))), cx(0), P.hp > maxHp() * 0.3 ? '#e8d9b0' : (tmr % 0.6 < 0.3 ? '#ff4d3d' : '#a02a20')); lab('HÄLSA', cx(0));
+  // rustning
+  big(String(Math.ceil(P.armor)), cx(1), P.armor > 0 ? '#9fc4ff' : '#4a3a28'); lab('SKYDD', cx(1));
+  // ammunition: magasinet stort, reserven liten bredvid
+  { const mag = wp.melee ? '–' : wp.staff ? String(Math.floor(P.mags[P.weapon])) : String(P.mags[P.weapon]), res = wp.melee || wp.staff || wp.ammo === 'none' ? '' : '/' + P.ammo[wp.ammo];
+    const low = !wp.melee && +mag <= Math.ceil(effMag(P.weapon) * 0.25), w = textW(mag) * 2 + textW(res), x = Math.round(cx(2) - w / 2);
+    txt(mag, x, y0 + 7, mag === '0' ? (tmr % 0.5 < 0.25 ? '#ff4d3d' : '#7a2a20') : low ? '#ffb040' : '#e8d9b0', 2);
+    if (res) txt(res, x + textW(mag) * 2 + 1, y0 + 13, P.ammo[wp.ammo] === 0 ? (tmr % 0.6 < 0.3 ? '#ff4d3d' : '#7a2a20') : '#8a7558');
+    lab(wp.ammo === 'none' ? 'NÄRSTRID' : AMMO[wp.ammo].name, cx(2)); }
+  // vapnet: namnet, och under det granater, nycklar och vapennivå i en rad
+  { const nm = wShort(wp); txt(nm, Math.round(cx(3) - textW(nm) / 2), y0 + 11, legendOf(wp.id) ? '#ffd24a' : '#e8d9b0');
+    const bits = []; if (run.pact) bits.push(['EDEN', '#ff7050']); bits.push([`G${P.grenades}`, P.grenades ? '#a8e080' : '#4a3a28']); if (P.keys) bits.push([`N${P.keys}`, '#ffd24a']); { const lv = wlvl(wp.id); if (lv) bits.push(['★'.repeat(lv), '#ffd24a']); }
+    let bw = bits.reduce((a, [t]) => a + textW(t), 0) + (bits.length - 1) * 6, bx = Math.round(cx(3) - bw / 2); for (const [t, c] of bits) { txt(t, bx, y0 + 25, c); bx += textW(t) + 6; } }
+  // våningen och guldet
+  { const f = boss ? 'BOSS' : `VÅN ${run.depth}`, gtx = `${run.gold}G`; txt(f, Math.round(cx(4) - textW(f) / 2), y0 + 11, '#c9a87a'); txt(gtx, Math.round(cx(4) - textW(gtx) / 2), y0 + 25, '#ffd24a'); }
   if (settings.bigHud) { let yy = 6; msgs.forEach((m, i) => { const a = Math.min(1, m.t * 2); if (i === 0) for (const ln of wrapText(m.text, 19).slice(0, 2)) { g.fillStyle = `rgba(0,0,0,${0.55 * a})`; g.fillRect((W - textW(ln) * 2) / 2 - 3, yy - 2, textW(ln) * 2 + 6, 19); txt(ln, (W - textW(ln) * 2) / 2, yy, '#ffe9a8', 2, true, a); yy += 19; } else { txt(m.text, (W - textW(m.text)) / 2, yy, '#c9b080', 1, true, a); yy += 11; } }); }
-  else msgs.forEach((m, i) => { const w = textW(m.text); txt(m.text, (W - w) / 2, 6 + i * 11, i ? '#c9b080' : '#ffe9a8', 1, true, Math.min(1, m.t * 2)); });
+  else if (levelBanner <= 0.5 && bossBanner <= 0.5 && state === 'play') msgs.slice(0, 2).forEach((m, i) => { const lines = wrapText(m.text, 26).slice(0, i ? 1 : 2), a = Math.min(1, m.t * 2) * (i ? 0.55 : 1); lines.forEach((ln, k) => txt(ln, Math.round((W - textW(ln)) / 2), (hb ? 40 : 5) + (i ? 22 : k * 10), i ? '#b8a078' : '#ffe9a8', 1, true, a)); }); // ett meddelande i taget, det förra bleknar under
   if (state === 'play' && WS.state === 'reload' && !WEAPONS[P.weapon].shellReload) { // omladdningsmätare med det aktiva fältet
     const k = clamp(WS.t / (WEAPONS[P.weapon].reload * reloadMul()), 0, 1), bw = 44, bx = (W - bw) / 2, by = HORIZON + 10;
     g.fillStyle = '#000a'; g.fillRect(bx - 1, by - 1, bw + 2, 5);
@@ -1911,26 +1913,23 @@ function drawHUD() {
   if (settings.fps) { fpsN++; if (tmr - fpsT >= 1 || tmr < fpsT) { fpsShow = fpsN; fpsN = 0; fpsT = tmr; } txt(fpsShow + ' FPS', 4, 4, '#9fe060', 1, true, 0.8); }
   if (showMap === 2) drawMap(false); else if (showMap === 1 && state === 'play') drawMap(true);
 }
-let hpShown = 100;
+let hpShown = 100, objLast = '', objT = 0;
 function drawHudExtras(g) { // uthållighet, granater, nycklar, mål, pilar och mer
   const y0 = VH, wp = WEAPONS[P.weapon];
   // fördröjd hälsostapel och uthållighet
   hpShown = hpShown > P.hp ? Math.max(P.hp, hpShown - maxHp() * 0.4 / 60) : P.hp;
-  g.fillStyle = '#2a1410'; g.fillRect(6, y0 + 34, 48, 2); g.fillStyle = '#f0e0c0'; g.fillRect(6, y0 + 34, 48 * clamp(hpShown / maxHp(), 0, 1), 2); g.fillStyle = '#d04030'; g.fillRect(6, y0 + 34, 48 * clamp(P.hp / maxHp(), 0, 1), 2);
+  g.fillStyle = '#2a1410'; g.fillRect(8, y0 + 3, 44, 2); g.fillStyle = '#f0e0c0'; g.fillRect(8, y0 + 3, 44 * clamp(hpShown / maxHp(), 0, 1), 2); g.fillStyle = '#c03828'; g.fillRect(8, y0 + 3, 44 * clamp(P.hp / maxHp(), 0, 1), 2);
+  if (mod('shield') > 0) { g.fillStyle = '#20344a'; g.fillRect(64, y0 + 3, 44, 2); g.fillStyle = '#7fc0ff'; g.fillRect(64, y0 + 3, 44 * P.shield / mod('shield'), 2); }
   if (P.stam < STAM_MAX() - 0.01) { const w = 40, x = (W - w) / 2, y = VH - 6; g.fillStyle = '#000a'; g.fillRect(x - 1, y - 1, w + 2, 4); g.fillStyle = P.stam < 0.3 ? '#c06020' : '#d8c060'; g.fillRect(x, y, w * P.stam / STAM_MAX(), 2); }
   // granater, nycklar, smideslevel
-  txt(`G${P.grenades}`, 176, y0 + 25, P.grenades ? '#c0ff90' : '#5a4630');
   drawPotionHud(g); drawRuneHud(g);
-  if (P.keys) txt(`N${P.keys}`, 176, y0 + 15, '#ffd24a');
-  const lv = wlvl(wp.id); if (lv) txt('★'.repeat(lv), 208 + textW(wShort(wp)) + 3, y0 + 5, '#ffd24a');
   if (WS.throwT >= 0) { const k = Math.min(1, WS.throwT); g.fillStyle = '#000a'; g.fillRect(W / 2 - 16, HORIZON + 18, 32, 3); g.fillStyle = '#c0ff90'; g.fillRect(W / 2 - 16, HORIZON + 18, 32 * k, 3); }
-  if (P.ammo[wp.ammo] === 0 && tmr % 0.6 < 0.3) txt('/0', 122 + String(P.mags[P.weapon]).length * 16, y0 + 22, '#ff4d3d'); // reserven är slut
   // hagelspridningen i siktet
   if (wp.pellets > 1 && settings.xstyle !== 'punkt') { const r = Math.round((wp.spread + WS.spread * 0.5 + (wp.hip || 0) * (1 - WS.aim)) * (1 - WS.aim * 0.6) / (1 + mod('accuracy')) / Math.atan(plane) * W / 2); g.strokeStyle = 'rgba(255,255,255,0.25)'; g.beginPath(); g.arc(W / 2 + 0.5, HORIZON + 0.5, Math.max(4, r), 0, TAU); g.stroke(); }
   if (HUD_THEMES[settings.hudTheme]) { g.save(); g.globalCompositeOperation = 'color'; g.fillStyle = HUD_THEMES[settings.hudTheme]; g.fillRect(0, y0, W, HUD_H); g.restore(); } // HUD-tema
   // mål och timer
-  const oy = showMap === 1 ? 4 + 21 * (settings.mapScale || 3) + 4 : 4; // under minikartan, till höger
-  if (settings.objective !== false && showMap !== 2 && levelBanner <= 0 && bossBanner <= 0) { const obj = objective(); if (obj) txt(obj, W - 4 - textW(obj), oy, '#e8d9b0', 1, true, 0.75); }
+  const oy = showMap === 1 ? 4 + (2 * Math.round(24 / (settings.mapScale || 3)) + 1) * (settings.mapScale || 3) + 5 : 4; // under minikartan, till höger
+  if (settings.objective !== false && showMap !== 2 && levelBanner <= 0 && bossBanner <= 0 && !(boss && !boss.dead) && !(guardianE && !guardianE.dead && !guardianE.dying)) { const obj = objective(); if (obj) { if (obj !== objLast) { objLast = obj; objT = tmr; } const a = tmr - objT < 4 ? 0.9 : 0.4; txt(obj, W - 4 - textW(obj), oy, '#e8d9b0', 1, true, a); } } // målet syns tydligt när det ändras och bleknar sedan
   if (settings.timer) { const t = fmtTime(levelTime); txt(t, W - 4 - textW(t), oy + 10, '#c9a87a', 1, true, 0.8); }
   if (challenge) { const t = challenge.wave ? `VÅG ${challenge.wave}/${challenge.max} · ${challenge.alive.filter(e => !e.dead).length} KVAR` : 'GÖR DIG REDO'; txt(t, (W - textW(t)) / 2, 34, '#ff9050'); }
   // pilar vid kanten mot väktare, eliter och bytet utanför bilden
@@ -1957,7 +1956,7 @@ function drawHudExtras(g) { // uthållighet, granater, nycklar, mål, pilar och 
   if (P.slowT > 0 && settings.noFlash !== true) { const gr = g.createRadialGradient(W / 2, HORIZON, VH * 0.4, W / 2, HORIZON, W * 0.6); gr.addColorStop(0, 'rgba(120,180,255,0)'); gr.addColorStop(1, 'rgba(120,180,255,0.28)'); g.fillStyle = gr; g.fillRect(0, 0, W, VH); }
   if (P.poisonT > 0) { const gr = g.createRadialGradient(W / 2, HORIZON, VH * 0.4, W / 2, HORIZON, W * 0.6); gr.addColorStop(0, 'rgba(90,255,90,0)'); gr.addColorStop(1, 'rgba(90,255,90,0.2)'); g.fillStyle = gr; g.fillRect(0, 0, W, VH); }
   // klassens färg
-  if (run.cls && CLASSES[run.cls]) { g.fillStyle = CLASSES[run.cls].color; g.fillRect(0, y0 + 2, 2, HUD_H - 4); }
+  if (run.cls && CLASSES[run.cls]) { g.fillStyle = CLASSES[run.cls].color; g.globalAlpha = 0.6; g.fillRect(0, y0 + 2, 1, HUD_H - 4); g.globalAlpha = 1; }
   if (cardBanner) { cardBanner.t -= 1 / 60; const a = Math.min(1, cardBanner.t * 2); const t = 'NYTT KORT: ' + cardBanner.name; g.globalAlpha = a; g.fillStyle = 'rgba(0,0,0,0.5)'; g.fillRect((W - textW(t)) / 2 - 4, VH - 29, textW(t) + 8, 13); g.strokeStyle = cardBanner.color; g.strokeRect((W - textW(t)) / 2 - 3.5, VH - 28.5, textW(t) + 7, 12); g.globalAlpha = 1; txt(t, (W - textW(t)) / 2, VH - 26, cardBanner.color, 1, true, a); if (cardBanner.t <= 0) cardBanner = null; } // ram i kortets raritetsfärg
 }
 let cardBanner = null;
@@ -1983,7 +1982,7 @@ function txt(s, x, y, col, scale = 1, shadow = true, alpha = 1) {
 }
 function drawMap(mini) {
   if (mini && settings.mapRotate) { // minikartan roterar med spelaren
-    const s = settings.mapScale || 3, r = Math.round(30 / s), size = (2 * r + 1) * s, cx = W - 4 - size / 2, cy = 4 + size / 2;
+    const s = settings.mapScale || 3, r = Math.round(24 / s), size = (2 * r + 1) * s, cx = W - 4 - size / 2, cy = 4 + size / 2;
     ctx.save(); ctx.beginPath(); ctx.rect(W - 4 - size - 2, 2, size + 4, size + 4); ctx.clip();
     ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(W - 4 - size - 2, 2, size + 4, size + 4);
     ctx.translate(cx, cy); ctx.rotate(-P.a - Math.PI / 2); ctx.translate(-(P.x * s), -(P.y * s));
@@ -1995,11 +1994,11 @@ function drawMap(mini) {
 function drawMapBox(mini) { // automap: bara rutor man har sett. mini = liten karta i hörnet runt spelaren
   let s, ox, oy, x0 = 0, y0 = 0, x1 = mw, y1 = mh;
   if (mini) {
-    s = settings.mapScale || 3; const r = Math.round(30 / s);
+    s = settings.mapScale || 3; const r = Math.round(24 / s);
     x0 = clamp((P.x | 0) - r, 0, Math.max(0, mw - 2 * r - 1)); y0 = clamp((P.y | 0) - r, 0, Math.max(0, mh - 2 * r - 1));
     x1 = Math.min(mw, x0 + 2 * r + 1); y1 = Math.min(mh, y0 + 2 * r + 1);
     ox = W - 4 - (x1 - x0) * s - x0 * s; oy = 4 - y0 * s;
-    ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(ox + x0 * s - 2, oy + y0 * s - 2, (x1 - x0) * s + 4, (y1 - y0) * s + 4);
+    ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(ox + x0 * s - 2, oy + y0 * s - 2, (x1 - x0) * s + 4, (y1 - y0) * s + 4);
   } else {
     s = clamp(Math.floor(Math.min((W - 10) / mw, (VH - 10) / mh)), 2, 5); ox = (W - mw * s) / 2 | 0; oy = (VH - mh * s) / 2 | 0;
     ctx.fillStyle = 'rgba(0,0,0,0.72)'; ctx.fillRect(ox - 3, oy - 3, mw * s + 6, mh * s + 6);
@@ -3693,8 +3692,8 @@ function drawAbilityHud(g) {
   if (P.bubbleT > 0) { g.strokeStyle = `rgba(130,190,255,${0.3 + 0.2 * Math.sin(tmr * 8)})`; g.lineWidth = 2; g.beginPath(); g.arc(W / 2, HORIZON, 70, 0, TAU); g.stroke(); g.lineWidth = 1; }
 }
 function drawRuneHud(g) { // runorna på vapnet syns i listen
-  const rs = curRunes(); let x = 256;
-  for (const r of rs) { const im = hudImg['rune_' + r]; if (im) g.drawImage(im, x, VH + 4, 8, 8); else { g.fillStyle = RUNES[r].col; g.fillRect(x + 1, VH + 5, 6, 6); } x -= 9; }
+  const rs = curRunes(); let x = HUD_CELLS[4] - 10;
+  for (const r of rs) { const im = hudImg['rune_' + r]; if (im) g.drawImage(im, x, VH + 2, 7, 7); else { g.fillStyle = RUNES[r].col; g.fillRect(x + 1, VH + 3, 5, 5); } x -= 8; }
 }
 // ---------- Version 6: överlevnadsläget ----------
 function beginSurvival() {
@@ -4838,7 +4837,7 @@ function stepSound() { // fotsteg låter olika på gräs, grus, trä och sten
 }
 function update(dt) {
   tmr += dt;
-  for (const m of msgs) m.t -= dt;
+  if (state === 'play' && levelBanner <= 0.5 && bossBanner <= 0.5) for (const m of msgs) m.t -= dt; // meddelandena väntar medan titelkortet visas
   while (msgs.length && msgs[msgs.length - 1].t <= 0) msgs.pop();
   P.hurt = Math.max(0, P.hurt - dt); P.pick = Math.max(0, P.pick - dt * 2); P.flash = Math.max(0, P.flash - dt); P.shake = Math.max(0, P.shake - dt * 3);
   // rekyl återhämtar sig mot ursprungligt sikte
@@ -6123,11 +6122,20 @@ function frameStep(t) {
     else if (state === 'dead' && P.deadT > 1.2) drawRunOver(false);
     else if (state === 'runover') drawRunOver(true);
     if (state === 'pause' && pauseMap) drawMap(false);
-    else if (state === 'pause') overlay('PAUS', (isTouch()
-    ? ['TRYCK FÖR ATT FORTSÄTTA', `FRÖ ${seedText(run.seed)}  VÅNING ${run.depth}`, `KORT ${run.owned.length}`, `SVÅRIGHET ${DIFF[settings.diff].name}`]
-    : ['KLICKA FÖR ATT FORTSÄTTA', `FRÖ ${seedText(run.seed)}  VÅNING ${run.depth}`, `KORT ${run.owned.length}  (C = VISA)`, `SVÅRIGHET ${DIFF[settings.diff].name}`, 'ENTER = MENY  I = INSTÄLLNINGAR  G = GE UPP  M = KARTA', 'SPACE HOPP · CTRL DUCKA · Z RUSA · F GRANAT · V SPARK', 'X INSPEKTERA · B MARKÖR · K FOTO · F9 SKÄRMBILD']).concat(bonusLines(), pauseExtras()), '#202040');
+    else if (state === 'pause') drawPause();
     if (state === 'stats') drawStats();
   }
+}
+function drawPause() { // pausen: rubrik, några rader om rundan och tangenterna längst ned
+  ctx.fillStyle = 'rgba(8,6,10,0.95)'; ctx.fillRect(0, 0, W, H);
+  ctx.font = '16px "PressStart2P"'; ctx.textBaseline = 'top'; const w = ctx.measureText('PAUS').width; txt('PAUS', (W - w) / 2, 12, '#ffe9a8', 2);
+  const go = isTouch() ? 'TRYCK FÖR ATT FORTSÄTTA' : 'KLICKA ELLER ESC FÖR ATT FORTSÄTTA'; txt(go, (W - textW(go)) / 2, 32, '#c9a87a', 1, true, 0.6 + 0.4 * Math.abs(Math.sin(tmr * 2)));
+  const rows = [['VÅNING', `${run.depth} · ${BIOME_NAME[lvl.biome] || ''}`], ['KLASS', run.cls && CLASSES[run.cls] ? CLASSES[run.cls].name + (run.asc ? ` · UPPST. ${run.asc}` : '') : '–'], ['SVÅRIGHET', DIFF[settings.diff].name], ['KORT', String(run.owned.length)], ['FRÖ', seedText(run.seed)], ['SJÄLAR', `${profile.souls} · REKORD VÅNING ${profile.bestDepth}`]];
+  rows.forEach(([k, v], i) => { const y = 50 + i * 11; txt(k, 48, y, '#8a7558'); txt(v.length > 21 ? v.slice(0, 20) + '…' : v, 136, y, '#e8d9b0'); });
+  let y = 50 + rows.length * 11 + 6; ctx.fillStyle = '#3a2c1e'; ctx.fillRect(48, y - 4, W - 96, 1);
+  const more = bonusLines().concat(pauseExtras().filter(l => !/^KLASS:|^SJÄLAR /.test(l)));
+  for (const l of more) { for (const ln of wrapText(l, 36).slice(0, 2)) { if (y > H - 34) break; txt(ln, (W - textW(ln)) / 2, y, /^FEL/.test(ln) ? '#ff7060' : '#b8a078'); y += 10; } }
+  if (!isTouch()) { const k1 = 'ENTER MENY · I INSTÄLLNINGAR', k2 = 'M KARTA · C KORTEN · G GE UPP'; ctx.fillStyle = '#3a2c1e'; ctx.fillRect(48, H - 26, W - 96, 1); txt(k1, (W - textW(k1)) / 2, H - 21, '#8a7558'); txt(k2, (W - textW(k2)) / 2, H - 11, '#8a7558'); }
 }
 function pauseExtras() { // uppstigning, klass, uppdrag och händelselogg
   const out = [];
@@ -6156,28 +6164,30 @@ function overlay(t1, lines, col) {
 }
 function drawStats() {
   const s = stats;
-  ctx.fillStyle = '#100a08e0'; ctx.fillRect(0, 0, W, VH);
-  const head = `${s.name} KLARAD`; txt(head, (W - textW(head)) / 2, 14, '#ffd24a');
-  const rows = [['FIENDER', `${s.kills}/${s.totalEnemies}${s.stealth ? ` (${s.stealth} OSEDDA)` : ''}`], ['HEMLIGHETER', `${s.secrets}/${s.totalSecrets}`], ['UTFORSKAT', `${s.explored}%`], ['TRÄFFSÄKERHET', `${s.acc}%`], ['SKADA TAGEN', String(s.taken)], ['TID', fmtTime(s.time) + (s.rec ? (s.time < s.rec ? ' NYTT REKORD!' : ` (REKORD ${fmtTime(s.rec)})`) : '')], ['BONUS', `+${s.bonus}`], ['GULD', String(run.gold)]];
-  rows.forEach(([k, v], i) => { const y = 30 + i * 11; txt(k, 60, y, '#c9a87a'); txt(v, 260 - textW(v), y, '#e8d9b0'); });
-  if (s.extra) s.extra.forEach((e, i) => txt(e, (W - textW(e)) / 2, 120 + i * 9, '#9fe060'));
+  ctx.fillStyle = '#0c0806fa'; ctx.fillRect(0, 0, W, H);
+  const head = `${s.name} KLARAD`; txt(head, (W - textW(head)) / 2, 8, '#ffd24a');
   // varvets väg: biomerna i ordning med den nuvarande markerad
   const c0 = cycleOf(run.depth) * (FLOORS + 1);
   for (let i = 1; i <= FLOORS + 1; i++) { const d = c0 + i, bx = W / 2 - 51 + (i - 1) * 17, cur = d === run.depth;
-    ctx.fillStyle = d < run.depth ? '#6a5a40' : cur ? '#ffd24a' : '#3a2c1e'; ctx.fillRect(bx, 18, 14, 6);
-    if (isBossDepth(d)) { ctx.fillStyle = '#c03020'; ctx.fillRect(bx + 5, 19, 4, 4); } }
-  { const nd = run.depth + 1, t = 'NÄSTA: ' + (isBossDepth(nd) ? 'BOSSEN' : BIOME_NAME[biomeFor(nd)] || ''); txt(t, (W - textW(t)) / 2, 26, '#c9a87a', 1, true, 0.8); }
-  { const est = Math.round((run.kills * 0.6 + (run.depth - 1) * 6 + (run.guardians || 0) * 5 + (run.bosses || 0) * 15) * diff().souls), t = `SJÄLAR HITTILLS: ~${est}`; txt(t, (W - textW(t)) / 2, 112, '#c0a0ff', 1, true, 0.9); }
-  if (!isTouch()) { const t = `D = SVÅRIGHET: ${DIFF[settings.diff].name}`; txt(t, (W - textW(t)) / 2, 160, '#8a7550', 1, true, 0.8); }
-  if (s.tip) { const t = 'TIPS: ' + s.tip; txt(t, (W - textW(t)) / 2, 152, '#8a7550'); }
-  const f = isTouch() ? 'TRYCK FÖR ATT VÄLJA KORT' : 'KLICKA FÖR ATT VÄLJA KORT'; if (tmr % 1 < 0.7) txt(f, (W - textW(f)) / 2, 140, '#ffe9a8');
+    ctx.fillStyle = d < run.depth ? '#6a5a40' : cur ? '#ffd24a' : '#3a2c1e'; ctx.fillRect(bx, 20, 14, 4);
+    if (isBossDepth(d)) { ctx.fillStyle = '#c03020'; ctx.fillRect(bx + 5, 20, 4, 4); } }
+  { const nd = run.depth + 1, t = 'NÄSTA: ' + (isBossDepth(nd) ? 'BOSSEN' : BIOME_NAME[biomeFor(nd)] || ''); txt(t, (W - textW(t)) / 2, 28, '#8a7558'); }
+  const est = Math.round((run.kills * 0.6 + (run.depth - 1) * 6 + (run.guardians || 0) * 5 + (run.bosses || 0) * 15) * diff().souls);
+  const rows = [['FIENDER', `${s.kills}/${s.totalEnemies}${s.stealth ? ` (${s.stealth} OSEDDA)` : ''}`], ['HEMLIGHETER', `${s.secrets}/${s.totalSecrets}`], ['UTFORSKAT', `${s.explored}%`], ['TRÄFFSÄKERHET', `${s.acc}%`], ['SKADA TAGEN', String(s.taken)], ['TID', fmtTime(s.time) + (s.rec ? (s.time < s.rec ? ' REKORD!' : ` (${fmtTime(s.rec)})`) : '')], ['BONUS', `+${s.bonus}`], ['GULD', String(run.gold)], ['SJÄLAR', `~${est}`]];
+  rows.forEach(([k, v], i) => { const y = 42 + i * 10; txt(k, 56, y, '#8a7558'); txt(v, 264 - textW(v), y, k === 'SJÄLAR' ? '#c0a0ff' : '#e8d9b0'); });
+  let y = 42 + rows.length * 10 + 4;
+  if (s.extra && s.extra.length) { const ex = s.extra.slice(0, 4), line1 = ex.slice(0, 2).join(' · '), line2 = ex.slice(2).join(' · ');
+    for (const l of [line1, line2]) if (l) { txt(l, (W - textW(l)) / 2, y, '#9fe060'); y += 10; } }
+  const f = isTouch() ? 'TRYCK FÖR ATT VÄLJA KORT' : 'KLICKA FÖR ATT VÄLJA KORT'; txt(f, (W - textW(f)) / 2, H - 34, '#ffe9a8', 1, true, 0.55 + 0.45 * Math.abs(Math.sin(tmr * 2.5)));
+  const tip = s.tip ? 'TIPS: ' + s.tip : !isTouch() ? `D = SVÅRIGHET: ${DIFF[settings.diff].name}` : '';
+  if (tip) wrapText(tip, 38).slice(0, 2).forEach((ln, i) => txt(ln, (W - textW(ln)) / 2, H - 21 + i * 10, '#6a5a44'));
 }
 const DEATH_TIPS = { 'LAVA': 'HOPPA ÖVER LAVAN ELLER GÅ RUNT', 'SPIKFÄLLA': 'SPIKARNA KLICKAR INNAN DE SKJUTER UPP', 'GIFTGAS': 'GASEN PYSER MED JÄMNA MELLANRUM', 'GAV UPP': 'SJÄLAALTARET GÖR NÄSTA RUNDA LÄTTARE',
   'BOMBSKELETT': 'SKJUT BOMBSKELETTEN PÅ AVSTÅND', 'SPINDEL': 'BRÄNN NÄTEN MED BLOSS ELLER GRANATER', 'HELVETESHUND': 'HUNDARNA SNUBBLAR OM DU TRÄFFAR DEM I SPRÅNGET', 'VAMPYR': 'VAMPYREN ÄR SNABB – BACKA OCH SKJUT',
   'ORKKRIGARE': 'LÅT ORKKRIGAREN KROCKA I VÄGGEN', 'BENMAGIKER': 'DÖDA MAGIKERN INNAN DEN VÄCKER FLER' };
 function drawRunOver(win) {
   const r = run;
-  ctx.fillStyle = win ? '#0c1a0ce8' : '#1a0606e8'; ctx.fillRect(0, 0, W, VH);
+  ctx.fillStyle = win ? '#0a140afa' : '#160606fa'; ctx.fillRect(0, 0, W, H);
   ctx.font = '16px "PressStart2P"'; const t1 = win ? 'SEGER!' : 'RUNDAN ÄR SLUT'; const w = ctx.measureText(plain(t1)).width;
   txt(t1, (W - w) / 2, 10, win ? '#9fe0a0' : '#ff5040', 2);
   const rows = [['VÅNING', win ? (r.loop ? `VARV ${r.loop + 1} KLARAT` : 'BOSSEN BESEGRAD') : r.depth > FLOORS + 1 ? `${r.depth} (VARV ${cycleOf(r.depth) + 1})` : `${r.depth} AV ${FLOORS + 1}`], ['FIENDER', String(r.kills) + (r.stealthKills ? ` (${r.stealthKills} OSEDDA)` : '')], ['KORT', String(r.owned.length)], ['GULD', String(r.gold)], ['TID', fmtTime(r.time)], ['POÄNG', String(score)], ['SJÄLAR', `+${r.souls || 0}`], ['FRÖ', seedText(r.seed)]];
@@ -6188,9 +6198,10 @@ function drawRunOver(win) {
   if (soulsShown < (r.souls || 0) && Math.floor(P.deadT * 25) % 3 === 0) play('coin', 0.15, 1.6);
   for (const row of rows) if (row[0] === 'SJÄLAR') row[1] = `+${soulsShown}`;
   if (!win && r.cause) rows.unshift(['DÖDAD AV', r.cause]);
-  const worst = Object.entries(r.dmgBy || {}).sort((a, b) => b[1] - a[1])[0]; if (worst) rows.splice(r.cause && !win ? 1 : 0, 0, ['MEST SKADA AV', `${worst[0]} (${Math.round(worst[1])})`]);
+  const worst = Object.entries(r.dmgBy || {}).sort((a, b) => b[1] - a[1])[0]; if (worst && !(r.cause && worst[0] === r.cause)) rows.splice(r.cause && !win ? 1 : 0, 0, ['SKADAD AV', worst[0]]);
   if (r.records && r.records.length) rows.push(['NYTT REKORD', r.records[Math.floor(P.deadT / 2) % r.records.length]]);
-  rows.forEach(([k, v], i) => { const y = 28 + i * 10; txt(k, 30, y, '#c9a87a'); txt(v, 190 - textW(v), y, k === 'SJÄLAR' ? '#c0a0ff' : k === 'DÖDAD AV' ? '#ff7060' : '#e8d9b0'); });
+  const keep = rows.filter(([k]) => !['KORT', 'POÄNG', 'FRÖ', 'FAVORITVAPEN'].includes(k)).slice(0, 10); // de viktigaste raderna, resten finns i statistiken
+  keep.forEach(([k, v], i) => { const y = 32 + i * 10, room = 190 - 24 - textW(k) - 8; let vv = String(v); while (vv.length > 2 && textW(vv) > room) vv = vv.slice(0, -2) + '…'; txt(k, 24, y, '#8a7558'); txt(vv, 190 - textW(vv), y, k === 'SJÄLAR' ? '#c0a0ff' : k === 'DÖDAD AV' ? '#ff7060' : '#e8d9b0'); });
   if (r.graph && r.graph.length > 1) { // graf över hälsa och guld per våning
     const gx = 200, gy = 32, gw = 110, gh = 50, n = r.graph.length, mg = Math.max(1, ...r.graph.map(p => p.gold));
     ctx.fillStyle = '#0008'; ctx.fillRect(gx, gy, gw, gh); txt('HP', gx + 2, gy + 2, '#ff6050'); txt('GULD', gx + 26, gy + 2, '#ffd24a');
@@ -6202,9 +6213,9 @@ function drawRunOver(win) {
   if (tal.length && Math.floor(P.deadT / 4) % 3 === 2) { txt(`NIVÅ ${r.lvl || 1}:`, 200, 90, '#c9a87a'); tal.slice(-6).forEach((n, i) => txt(n.slice(0, 15), 200, 100 + i * 8, '#c0a0ff', 1, true, 0.9)); } // talangerna
   else if (log.length && Math.floor(P.deadT / 4) % 2 === 1) { txt('TIDSLINJE:', 200, 90, '#c9a87a'); log.forEach((n, i) => txt(n.slice(0, 15), 200, 100 + i * 8, '#a0d0e8', 1, true, 0.9)); } // rundans tidslinje
   else if (names.length) { txt('KORT:', 200, 90, '#c9a87a'); names.forEach((n, i) => txt(n.slice(0, 14), 200, 100 + i * 8, '#b9a0e8', 1, true, 0.9)); }
-  if (!win && r.cause) { const t = 'TIPS: ' + (DEATH_TIPS[r.cause] || 'VARJE RUNDA LÄR DIG NÅGOT'); txt(t, (W - textW(t)) / 2, 130, '#8a7550'); }
-  const keysTxt = isTouch() ? '' : 'ENTER NY · R SAMMA FRÖ · C FRÖ · L LÄNK · M KARTA'; if (keysTxt) txt(keysTxt, (W - textW(keysTxt)) / 2, 138, '#8a7550');
-  const f = isTouch() ? 'TRYCK FÖR MENYN' : 'KLICKA FÖR MENYN'; if (tmr % 1 < 0.7) txt(f, (W - textW(f)) / 2, 150, '#ffe9a8');
+  if (!win && r.cause) wrapText('TIPS: ' + (DEATH_TIPS[r.cause] || 'VARJE RUNDA LÄR DIG NÅGOT'), 38).slice(0, 2).forEach((t, i) => txt(t, (W - textW(t)) / 2, 142 + i * 10, '#8a7558'));
+  const f = isTouch() ? 'TRYCK FÖR MENYN' : 'KLICKA FÖR MENYN'; txt(f, (W - textW(f)) / 2, H - 30, '#ffe9a8', 1, true, 0.55 + 0.45 * Math.abs(Math.sin(tmr * 2.5)));
+  const keysTxt = isTouch() ? '' : 'ENTER NY · R SAMMA FRÖ · M KARTA'; if (keysTxt) txt(keysTxt, (W - textW(keysTxt)) / 2, H - 16, '#6a5a44');
 }
 
 // ---------- Indata ----------
@@ -6690,7 +6701,7 @@ function setupTouch() {
 
 // ---------- Startskärm och upplåsningar ----------
 function setupSliders() {
-  const sens = document.getElementById('sens'), fov = document.getElementById('fov');
+  const sens = document.getElementById('sens'), fov = document.getElementById('fov'); if (!sens || !fov) return; // reglagen finns i inställningarna
   const show = () => { document.getElementById('sensv').textContent = settings.sens.toFixed(1); document.getElementById('fovv').textContent = settings.fov + '°'; };
   sens.value = settings.sens; fov.value = settings.fov; show();
   sens.oninput = () => { settings.sens = +sens.value; saveSettings(); show(); };
@@ -6722,9 +6733,12 @@ function refreshTitle() {
   const slotBox = document.getElementById('slots'); if (slotBox) { slotBox.textContent = ''; slotBox.hidden = (profile.runs || 0) < 1; // tre sparplatser
     for (let i = 0; i < 3; i++) { const sv = store.get('run' + (i ? '.' + i : ''), null), b = document.createElement('button'); b.type = 'button'; b.textContent = `PLATS ${i + 1}: ${sv ? 'VÅNING ' + sv.run.depth + (sv.run.cls && CLASSES[sv.run.cls] ? ' · ' + CLASSES[sv.run.cls].name : '') : 'TOM'}`;
       b.setAttribute('aria-pressed', String((settings.slot || 0) === i)); b.onclick = () => { settings.slot = i; saveSettings(); refreshTitle(); document.getElementById('status').textContent = `SPARPLATS ${i + 1} VALD`; }; slotBox.appendChild(b); } }
+  { const lab = (id, box) => { const l = document.getElementById(id), b = document.getElementById(box); if (l && b) l.hidden = b.hidden; }; lab('petlabel', 'pets'); lab('cmlabel', 'cmodes'); lab('slotlabel', 'slots');
+    const sum = document.getElementById('setupsum'), c = CLASSES[settings.cls || 'vandrare'] || CLASSES.vandrare; // sammanfattning av rundans val bredvid ANPASSA-knappen
+    if (sum) sum.textContent = [DIFF[settings.diff].name + (settings.diff === 3 && settings.asc ? ' ' + settings.asc : ''), c.name, settings.pet && PETS[settings.pet] ? PETS[settings.pet].name : '', settings.cmode ? cmodeNames(settings.cmode) : ''].filter(Boolean).join(' · '); }
   const tl = document.getElementById('ptitle'); if (tl) { const t = TITLES.find(x => x[0] === profile.title && titleOpen(x[0])); tl.textContent = t && t[0] ? '« ' + t[1] + ' »' : ''; tl.hidden = !(t && t[0]); }
   const locked = window.Cards ? Cards.ALL.filter(c => c.unlock && !profile.unlocked.includes(c.id)).length : 0;
-  document.getElementById('souls').textContent = `SJÄLAR: ${profile.souls}  ·  LÅSTA KORT: ${locked}`;
+  document.getElementById('souls').textContent = `SJÄLAR ${profile.souls}`; { const ub = document.getElementById('unlocks'); if (ub) ub.textContent = locked ? `LÅS UPP KORT (${locked})` : 'LÅS UPP KORT'; }
   const lr = (profile.history || [])[0];
   document.getElementById('best').textContent = profile.runs ? `RUNDOR ${profile.runs} · SEGRAR ${profile.wins} · BÄSTA VÅNING ${profile.bestDepth} · REKORD ${profile.bestScore}` + (lr ? ` · SENAST: VÅNING ${lr.depth}${lr.win ? ', SEGER' : lr.cause ? ', ' + lr.cause : ''}` : '') : '';
 }
@@ -8211,9 +8225,9 @@ document.getElementById('mazebtn').addEventListener('click', () => { if (!docume
 document.getElementById('huntbtn').addEventListener('click', () => { if (!document.getElementById('start').disabled) beginBossHunt(); });
 document.getElementById('monthly').addEventListener('click', () => startMode('monthly'));
 document.getElementById('titlesbtn').addEventListener('click', () => showTitles());
-for (const [b, box] of [['moremodesbtn', 'moremodes'], ['collbtn', 'collections']]) document.getElementById(b).addEventListener('click', () => { // fällbara rader på startskärmen
+for (const [b, box] of [['moremodesbtn', 'moremodes'], ['collbtn', 'collections'], ['setupbtn', 'setup']]) document.getElementById(b).addEventListener('click', () => { // fällbara rader på startskärmen
   const el = document.getElementById(box), open = el.hidden; el.hidden = !open; const btn = document.getElementById(b); btn.setAttribute('aria-expanded', String(open)); btn.textContent = btn.textContent.replace(/[+−]$/, open ? '−' : '+'); settings['open_' + box] = open; saveSettings(); });
-for (const box of ['moremodes', 'collections']) if (settings['open_' + box]) { document.getElementById(box).hidden = false; const b = document.getElementById(box === 'moremodes' ? 'moremodesbtn' : 'collbtn'); b.setAttribute('aria-expanded', 'true'); b.textContent = b.textContent.replace(/\+$/, '−'); }
+for (const box of ['moremodes', 'collections', 'setup']) if (settings['open_' + box]) { document.getElementById(box).hidden = false; const b = document.getElementById({ moremodes: 'moremodesbtn', collections: 'collbtn', setup: 'setupbtn' }[box]); b.setAttribute('aria-expanded', 'true'); b.textContent = b.textContent.replace(/\+$/, '−'); }
 document.getElementById('campaignbtn').addEventListener('click', () => { if (!document.getElementById('start').disabled) showCampaign(); });
 document.getElementById('hubbtn').addEventListener('click', () => { if (!document.getElementById('start').disabled) beginHub(); });
 document.getElementById('abyssbtn').addEventListener('click', () => { if (!document.getElementById('start').disabled) beginAbyss(); });

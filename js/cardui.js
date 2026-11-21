@@ -240,7 +240,7 @@ function draft(cards, opts, onPick) {
   // "FÖRE → EFTER" för talen kortet ändrar, och vilken aktiv förmåga ett nytt förmågekort ersätter
   function compare(card) {
     const C = window.Cards;
-    const lines = curMods && C.preview ? C.preview(card, curMods, ownedList) : [];
+    const lines = (curMods && C.preview ? C.preview(card, curMods, ownedList) : []).filter(l => l.before !== 0); // bara när kortet ändrar något du redan har – annars säger kortets text samma sak
     const swap = card.active && nowActive && nowActive.id !== card.id ? nowActive : null;
     if (!lines.length && !swap) return null;
     const box = cmpBox(lines, 'FÖRE → EFTER', 4);
