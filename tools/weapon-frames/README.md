@@ -79,3 +79,46 @@ python3 pack.py pick ../../ knives,hammer,musket      # knivarnas upplockningsbi
 ```
 `render-static.mjs` hittar `assets/3d-models` även när `retrofps` är en symlänk (den provar också `$PWD/../../../assets`).
 
+
+Version 8: harpungeväret (`harpoon`), bumerangen (`boomerang`) och prismat (`prism`).
+Harpungeväret är Guns&Explosives `Shotgun` med KayKit `spear_A` (CC0) som harpun längs pipan, en linrulle och en lina av
+enkla former (`parts`). Nytt i `static.html` är `partPose` per bildruta, `{delnamn: {hide, show, move, rot, scale, emissive}}`,
+som döljer, flyttar eller tänder namngivna delar efter att bilden centrerats (så att utsnittet står still), och `hidden` på
+en del som bara syns där en ruta visar den. Skjutrutorna döljer harpunen och `pack.py` ritar repet från mynningen mot
+`AIM` (`ROPE`). Skjutvapen kan nu också ha fler lägen med `extra` (som närstridens `melee.extra`): harpunens `reload` är
+fem rutor där geväret lutas och harpunen glider tillbaka i pipan. I `js/weapons.js` blir det
+`states: {idle:[0], fire:[1..5], reload:[6..10]}` och `dur: {fire, reload}`.
+Bumerangen har ingen modell (`"model": "none"`, en osynlig ruta `base` ger måttet): bumerangen och en handskklädd hand med
+ärm är enkla former. Den hålls i närstridsläget; skjutrutorna är kastet (armen tar sats, bumerangen släpps och försvinner,
+`partPose: {boom: {hide: true}}`) och läget `empty` (`melee.extra`) är handen utan bumerang medan den är i luften:
+`states: {idle:[0], fire:[1..4], empty:[5]}`. `sidePose` döljer handen och `sideYaw` vrider sidovyn till upplockningsbilden.
+Prismat är Guns&Explosives `Suomi_KP` (trummagasinet dolt med `hide`) med en stor kristall (`"prim": "oct"`, utdragen med
+`stretch`) i en mässingsklo vid mynningen och kristallceller i stället för magasinet; skjutrutorna tänder kristallen
+(`emissive`, `scale`) och `pack.py` ritar en ljusblixt med regnbågsstrålar vid mynningen (`FLASH`).
+
+```bash
+node render-static.mjs fp harpoon,prism,boomerang
+node render-static.mjs side harpoon,prism,boomerang
+python3 pack.py xframes ../../ harpoon,prism,boomerang   # övriga poster i js/weapons.js lämnas orörda
+python3 pack.py pick ../../ harpoon,prism,boomerang      # upplockningsbilderna pick_harpoon/_prism/_boomerang
+```
+
+Version 9: sågbladskastaren (`sawlauncher`), vindbössan (`windgun`) och spjutet (`spear`).
+Sågbladskastaren är Guns&Explosives `GreaseGun` (mässingstonad) med en liggande sågklinga ovanpå (två åttakantiga
+`cyl` vridna 22,5° mot varandra ger tänderna, `name: saw`), en mässingskåpa och en skena. Skjutrutorna döljer klingan och
+`pack.py` ritar klingan som snurrar iväg mot `AIM` (`SAWFLY`); läget `reload` (`extra`) sänker ned en ny klinga ovanifrån:
+`states: {idle:[0], fire:[1..5], reload:[6..9]}`, `dur: {fire, reload}`.
+Vindbössan är Guns&Explosives `Luger` (mässingstonad) med ett mässingsrör, en utsvängd tratt (`cyl` med olika radier,
+`open`) och en blåsbälg av lädersektioner (`name: bellows`) som trycks ihop i skjutrutorna (`partPose scale`); `pack.py` ritar
+luftstöten vid trattmynningen (`GUST`): `states: {idle:[0], fire:[1..5]}`.
+Spjutet är KayKit `spear_A` (CC0) i bumerangens hand (`model: none`, närstrid). `fire` är en stöt framåt, `throw`
+(`melee.extra`) är kastet (armen tar sats, spjutet släpps och döljs) och `empty` är den tomma handen när spjutet ligger
+på marken: `states: {idle:[0], fire:[1..4], throw:[5..8], empty:[9]}`, `dur: {fire, throw, empty}`. `pack.py` tar nu
+även läget `throw` (före `empty`).
+
+```bash
+node render-static.mjs fp sawlauncher,windgun,spear
+node render-static.mjs side sawlauncher,windgun,spear
+python3 pack.py xframes ../../ sawlauncher,windgun,spear   # övriga poster i js/weapons.js lämnas orörda
+python3 pack.py pick ../../ sawlauncher,windgun,spear      # pick_sawlauncher/_windgun/_spear
+```

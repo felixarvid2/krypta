@@ -1445,5 +1445,1713 @@
     "kick": 0.18
    }
   ]
+ },
+ "harpoon": {
+  "model": "Guns&Explosives/Guns&Explosives/Shotgun/Shotgun.fbx",
+  "tex": "Guns&Explosives/Guns&Explosives/Shotgun/Shotgun_Base_Color.png",
+  "rot": [
+   0,
+   -90,
+   0
+  ],
+  "parts": [
+   {
+    "model": "KayKit_FantasyWeaponsBits_1.0_FREE/KayKit_FantasyWeaponsBits_1.0_FREE/Assets/fbx/spear_A.fbx",
+    "tex": "KayKit_FantasyWeaponsBits_1.0_FREE/KayKit_FantasyWeaponsBits_1.0_FREE/Textures/weapons_bits_texture.png",
+    "rot": [
+     0,
+     0,
+     -90
+    ],
+    "scale": 0.78,
+    "pos": [
+     0.36,
+     0.05,
+     0
+    ],
+    "name": "spear"
+   },
+   {
+    "prim": "cyl",
+    "size": [
+     1,
+     1,
+     0.7
+    ],
+    "rot": [
+     90,
+     0,
+     0
+    ],
+    "scale": 0.11,
+    "pos": [
+     0.02,
+     -0.055,
+     0.045
+    ],
+    "color": "#b89a66",
+    "seg": 12,
+    "name": "reel"
+   },
+   {
+    "prim": "cyl",
+    "size": [
+     1,
+     1,
+     0.15
+    ],
+    "rot": [
+     90,
+     0,
+     0
+    ],
+    "scale": 0.14,
+    "pos": [
+     0.02,
+     -0.055,
+     0.075
+    ],
+    "color": "#5a4a3a",
+    "seg": 12
+   },
+   {
+    "prim": "cyl",
+    "size": [
+     0.04,
+     0.04,
+     1
+    ],
+    "rot": [
+     0,
+     0,
+     -90
+    ],
+    "scale": 0.3,
+    "pos": [
+     -0.13,
+     0.02,
+     0.035
+    ],
+    "color": "#c8a874",
+    "seg": 5,
+    "name": "line"
+   }
+  ],
+  "nozzle": "spear",
+  "cam": [
+   0.16,
+   0.15,
+   -0.13,
+   0.8,
+   0.29
+  ],
+  "dur": 0.45,
+  "pitch": 2.5,
+  "back": 0.12,
+  "fire": [
+   {
+    "kick": 1.0,
+    "dy": 0.004,
+    "partPose": {
+     "spear": {
+      "hide": true
+     }
+    }
+   },
+   {
+    "kick": 1.2,
+    "dy": 0.002,
+    "partPose": {
+     "spear": {
+      "hide": true
+     }
+    }
+   },
+   {
+    "kick": 0.8,
+    "partPose": {
+     "spear": {
+      "hide": true
+     }
+    }
+   },
+   {
+    "kick": 0.45,
+    "partPose": {
+     "spear": {
+      "hide": true
+     }
+    }
+   },
+   {
+    "kick": 0.2,
+    "partPose": {
+     "spear": {
+      "hide": true
+     }
+    }
+   }
+  ],
+  "extra": {
+   "reload": [
+    {
+     "kick": 0.3,
+     "roll": -12,
+     "dy": -0.03,
+     "partPose": {
+      "spear": {
+       "hide": true
+      }
+     }
+    },
+    {
+     "kick": 0.3,
+     "roll": -18,
+     "dy": -0.04,
+     "partPose": {
+      "spear": {
+       "move": [
+        -0.75,
+        0.0,
+        0
+       ]
+      }
+     }
+    },
+    {
+     "kick": 0.3,
+     "roll": -18,
+     "dy": -0.04,
+     "partPose": {
+      "spear": {
+       "move": [
+        -0.45,
+        0.0,
+        0
+       ]
+      }
+     }
+    },
+    {
+     "kick": 0.25,
+     "roll": -14,
+     "dy": -0.03,
+     "partPose": {
+      "spear": {
+       "move": [
+        -0.15,
+        0.0,
+        0
+       ]
+      }
+     }
+    },
+    {
+     "kick": 0.1,
+     "roll": -6,
+     "dy": -0.01
+    }
+   ]
+  },
+  "durs": {
+   "reload": 0.9
+  }
+ },
+ "prism": {
+  "model": "Guns&Explosives/Guns&Explosives/Suomi_KP/Suomi_KP.fbx",
+  "tex": "Guns&Explosives/Guns&Explosives/Suomi_KP/Suomi_KP_Base_Color.png",
+  "rot": [
+   0,
+   -90,
+   0
+  ],
+  "tint": "#b8b0d0",
+  "parts": [
+   {
+    "prim": "oct",
+    "size": [
+     1
+    ],
+    "stretch": [
+     2.4,
+     1,
+     1
+    ],
+    "color": "#9a86ff",
+    "emissive": "#3c2c96",
+    "scale": 0.24,
+    "pos": [
+     0.64,
+     0.05,
+     0
+    ],
+    "name": "crystal"
+   },
+   {
+    "prim": "cyl",
+    "size": [
+     1,
+     1,
+     0.45
+    ],
+    "rot": [
+     0,
+     0,
+     -90
+    ],
+    "scale": 0.075,
+    "pos": [
+     0.5,
+     0.05,
+     0
+    ],
+    "color": "#c9a24a",
+    "seg": 10
+   },
+   {
+    "prim": "box",
+    "size": [
+     1,
+     0.18,
+     0.18
+    ],
+    "rot": [
+     0,
+     0,
+     -28
+    ],
+    "scale": 0.1,
+    "pos": [
+     0.54,
+     0.085,
+     0
+    ],
+    "color": "#d8b45a"
+   },
+   {
+    "prim": "box",
+    "size": [
+     1,
+     0.18,
+     0.18
+    ],
+    "rot": [
+     0,
+     0,
+     28
+    ],
+    "scale": 0.1,
+    "pos": [
+     0.54,
+     0.015,
+     0
+    ],
+    "color": "#d8b45a"
+   },
+   {
+    "prim": "box",
+    "size": [
+     1,
+     0.18,
+     0.18
+    ],
+    "rot": [
+     0,
+     28,
+     0
+    ],
+    "scale": 0.1,
+    "pos": [
+     0.54,
+     0.05,
+     0.03
+    ],
+    "color": "#d8b45a"
+   },
+   {
+    "prim": "oct",
+    "size": [
+     1
+    ],
+    "color": "#8ae8ff",
+    "emissive": "#1e6a88",
+    "scale": 0.07,
+    "pos": [
+     0.0,
+     0.085,
+     0
+    ],
+    "name": "core"
+   },
+   {
+    "prim": "oct",
+    "size": [
+     1
+    ],
+    "stretch": [
+     1,
+     1.8,
+     1
+    ],
+    "color": "#b49cff",
+    "emissive": "#30207a",
+    "scale": 0.06,
+    "pos": [
+     -0.1,
+     0.08,
+     0.012
+    ],
+    "name": "core"
+   },
+   {
+    "prim": "oct",
+    "size": [
+     1
+    ],
+    "stretch": [
+     1,
+     1.9,
+     1
+    ],
+    "color": "#8ae8ff",
+    "emissive": "#1e6a88",
+    "scale": 0.1,
+    "pos": [
+     -0.02,
+     -0.07,
+     0
+    ],
+    "name": "core"
+   },
+   {
+    "prim": "cyl",
+    "size": [
+     1,
+     1,
+     0.3
+    ],
+    "scale": 0.06,
+    "pos": [
+     -0.02,
+     -0.02,
+     0
+    ],
+    "color": "#c9a24a",
+    "seg": 8
+   }
+  ],
+  "nozzle": "crystal",
+  "cam": [
+   0.3,
+   0.2,
+   -0.1,
+   0.8,
+   0.32
+  ],
+  "dur": 0.35,
+  "pitch": 2,
+  "back": 0.06,
+  "fire": [
+   {
+    "kick": 0.5,
+    "partPose": {
+     "crystal": {
+      "emissive": "#ffffff",
+      "scale": 1.35
+     },
+     "core": {
+      "emissive": "#d0f8ff"
+     }
+    }
+   },
+   {
+    "kick": 0.75,
+    "partPose": {
+     "crystal": {
+      "emissive": "#b0e8ff",
+      "scale": 1.2
+     },
+     "core": {
+      "emissive": "#a0e0ff"
+     }
+    }
+   },
+   {
+    "kick": 0.45,
+    "partPose": {
+     "crystal": {
+      "emissive": "#7060e0",
+      "scale": 1.08
+     }
+    }
+   },
+   {
+    "kick": 0.15
+   }
+  ],
+  "hide": "^Magazine$"
+ },
+ "boomerang": {
+  "model": "none",
+  "base": [
+   1,
+   0.1,
+   0.1
+  ],
+  "dur": 0.4,
+  "sideYaw": 90,
+  "sidePose": {
+   "hand": {
+    "hide": true
+   }
+  },
+  "nozzle": "boom",
+  "parts": [
+   {
+    "prim": "box",
+    "size": [
+     0.25,
+     4,
+     1
+    ],
+    "scale": 0.5,
+    "pos": [
+     0,
+     0,
+     0
+    ],
+    "color": "#a0612c",
+    "name": "boom"
+   },
+   {
+    "prim": "cyl",
+    "size": [
+     1,
+     1,
+     0.5
+    ],
+    "rot": [
+     0,
+     0,
+     90
+    ],
+    "scale": 0.13,
+    "pos": [
+     0,
+     0.25,
+     0
+    ],
+    "color": "#a0612c",
+    "seg": 12,
+    "name": "boom"
+   },
+   {
+    "prim": "box",
+    "size": [
+     0.25,
+     4,
+     1
+    ],
+    "rot": [
+     110,
+     0,
+     0
+    ],
+    "scale": 0.5,
+    "pos": [
+     0,
+     0.165,
+     0.235
+    ],
+    "color": "#a0612c",
+    "name": "boom"
+   },
+   {
+    "prim": "box",
+    "size": [
+     0.35,
+     0.3,
+     1.06
+    ],
+    "scale": 0.135,
+    "pos": [
+     0,
+     0.14,
+     0
+    ],
+    "color": "#e8d8a8",
+    "name": "boom"
+   },
+   {
+    "prim": "box",
+    "size": [
+     0.35,
+     0.3,
+     1.06
+    ],
+    "rot": [
+     110,
+     0,
+     0
+    ],
+    "scale": 0.135,
+    "pos": [
+     0,
+     0.12,
+     0.37
+    ],
+    "color": "#e8d8a8",
+    "name": "boom"
+   },
+   {
+    "prim": "box",
+    "size": [
+     0.35,
+     0.15,
+     1.06
+    ],
+    "rot": [
+     110,
+     0,
+     0
+    ],
+    "scale": 0.135,
+    "pos": [
+     0,
+     0.1,
+     0.42
+    ],
+    "color": "#8a2a20",
+    "name": "boom"
+   },
+   {
+    "prim": "box",
+    "size": [
+     1,
+     0.6,
+     1.1
+    ],
+    "scale": 0.08,
+    "pos": [
+     -0.048,
+     -0.03,
+     0.0
+    ],
+    "color": "#7a5236",
+    "name": "hand"
+   },
+   {
+    "prim": "box",
+    "size": [
+     1,
+     0.6,
+     1.1
+    ],
+    "scale": 0.08,
+    "pos": [
+     -0.048,
+     -0.0828,
+     0.0
+    ],
+    "color": "#7a5236",
+    "name": "hand"
+   },
+   {
+    "prim": "box",
+    "size": [
+     1,
+     0.6,
+     1.1
+    ],
+    "scale": 0.08,
+    "pos": [
+     -0.048,
+     -0.1356,
+     0.0
+    ],
+    "color": "#7a5236",
+    "name": "hand"
+   },
+   {
+    "prim": "box",
+    "size": [
+     1,
+     0.6,
+     1.1
+    ],
+    "scale": 0.08,
+    "pos": [
+     -0.048,
+     -0.1884,
+     0.0
+    ],
+    "color": "#7a5236",
+    "name": "hand"
+   },
+   {
+    "prim": "box",
+    "size": [
+     0.8,
+     2.2,
+     1
+    ],
+    "scale": 0.224,
+    "pos": [
+     0.0,
+     -0.11,
+     0.104
+    ],
+    "color": "#6a4630",
+    "name": "hand"
+   },
+   {
+    "prim": "box",
+    "size": [
+     1,
+     0.7,
+     1.6
+    ],
+    "scale": 0.112,
+    "pos": [
+     -0.056,
+     0.01,
+     0.04
+    ],
+    "color": "#8a6040",
+    "name": "hand"
+   },
+   {
+    "prim": "cyl",
+    "size": [
+     1,
+     1,
+     1.2
+    ],
+    "scale": 0.192,
+    "pos": [
+     0.0,
+     -0.318,
+     0.144
+    ],
+    "color": "#4a3020",
+    "name": "hand",
+    "seg": 10
+   },
+   {
+    "prim": "cyl",
+    "size": [
+     1,
+     1,
+     4
+    ],
+    "rot": [
+     -22,
+     0,
+     0
+    ],
+    "scale": 0.672,
+    "pos": [
+     0.0,
+     -0.67,
+     0.272
+    ],
+    "color": "#2e3c5e",
+    "name": "hand",
+    "seg": 10
+   }
+  ],
+  "melee": {
+   "grip": 0.42,
+   "idle": {
+    "hand": [
+     1.6,
+     -0.5,
+     0.5
+    ],
+    "ang": [
+     -10,
+     0,
+     0
+    ]
+   },
+   "fire": [
+    {
+     "hand": [
+      1.5,
+      -0.42,
+      0.62
+     ],
+     "ang": [
+      -38,
+      0,
+      8
+     ]
+    },
+    {
+     "hand": [
+      1.6,
+      -0.38,
+      0.42
+     ],
+     "ang": [
+      8,
+      0,
+      -6
+     ]
+    },
+    {
+     "hand": [
+      1.75,
+      -0.42,
+      0.18
+     ],
+     "ang": [
+      35,
+      0,
+      -10
+     ],
+     "partPose": {
+      "boom": {
+       "hide": true
+      }
+     }
+    },
+    {
+     "hand": [
+      1.7,
+      -0.58,
+      0.3
+     ],
+     "ang": [
+      18,
+      0,
+      -4
+     ],
+     "partPose": {
+      "boom": {
+       "hide": true
+      }
+     }
+    }
+   ],
+   "extra": {
+    "empty": [
+     {
+      "hand": [
+       1.45,
+       -0.5,
+       0.42
+      ],
+      "ang": [
+       -6,
+       0,
+       0
+      ],
+      "partPose": {
+       "boom": {
+        "hide": true
+       }
+      }
+     }
+    ]
+   }
+  },
+  "durs": {
+   "empty": 0.5
+  }
+ },
+ "sawlauncher": {
+  "model": "Guns&Explosives/Guns&Explosives/GreaseGun/Grease_Gun.fbx",
+  "tex": "Guns&Explosives/Guns&Explosives/GreaseGun/Grease_Gun_Base_Color.png",
+  "rot": [
+   0,
+   -90,
+   0
+  ],
+  "tint": "#e0c090",
+  "parts": [
+   {
+    "prim": "cyl",
+    "size": [
+     1,
+     1,
+     0.05
+    ],
+    "seg": 8,
+    "scale": 0.405,
+    "pos": [
+     0.36,
+     0.17,
+     0
+    ],
+    "color": "#c8ccd6",
+    "name": "saw"
+   },
+   {
+    "prim": "cyl",
+    "size": [
+     1,
+     1,
+     0.05
+    ],
+    "seg": 8,
+    "rot": [
+     0,
+     22.5,
+     0
+    ],
+    "scale": 0.405,
+    "pos": [
+     0.36,
+     0.17,
+     0
+    ],
+    "color": "#9aa2b0",
+    "name": "saw"
+   },
+   {
+    "prim": "cyl",
+    "size": [
+     1,
+     1,
+     0.12
+    ],
+    "seg": 12,
+    "scale": 0.12,
+    "pos": [
+     0.36,
+     0.175,
+     0
+    ],
+    "color": "#c9963e",
+    "name": "saw"
+   },
+   {
+    "prim": "box",
+    "size": [
+     1,
+     0.25,
+     1.25
+    ],
+    "scale": 0.17,
+    "pos": [
+     0.2,
+     0.18,
+     0
+    ],
+    "color": "#b8893a"
+   },
+   {
+    "prim": "box",
+    "size": [
+     2.2,
+     0.3,
+     0.35
+    ],
+    "scale": 0.2,
+    "pos": [
+     0.32,
+     0.13,
+     0
+    ],
+    "color": "#4a3c30"
+   },
+   {
+    "prim": "cyl",
+    "size": [
+     1,
+     1,
+     0.5
+    ],
+    "rot": [
+     90,
+     0,
+     0
+    ],
+    "scale": 0.07,
+    "pos": [
+     0.2,
+     0.13,
+     0.06
+    ],
+    "color": "#e8d8a8"
+   }
+  ],
+  "nozzle": "saw",
+  "cam": [
+   0.25,
+   0.25,
+   -0.3,
+   0.8,
+   0.4
+  ],
+  "dur": 0.5,
+  "pitch": 2,
+  "back": 0.08,
+  "fire": [
+   {
+    "kick": 0.6,
+    "partPose": {
+     "saw": {
+      "move": [
+       0.25,
+       0,
+       0
+      ]
+     }
+    }
+   },
+   {
+    "kick": 1.0,
+    "partPose": {
+     "saw": {
+      "hide": true
+     }
+    }
+   },
+   {
+    "kick": 0.7,
+    "partPose": {
+     "saw": {
+      "hide": true
+     }
+    }
+   },
+   {
+    "kick": 0.35,
+    "partPose": {
+     "saw": {
+      "hide": true
+     }
+    }
+   },
+   {
+    "kick": 0.12,
+    "partPose": {
+     "saw": {
+      "hide": true
+     }
+    }
+   }
+  ],
+  "extra": {
+   "reload": [
+    {
+     "kick": 0.2,
+     "roll": -10,
+     "dy": -0.02,
+     "partPose": {
+      "saw": {
+       "hide": true
+      }
+     }
+    },
+    {
+     "kick": 0.2,
+     "roll": -14,
+     "dy": -0.03,
+     "partPose": {
+      "saw": {
+       "move": [
+        0,
+        0.14,
+        0
+       ]
+      }
+     }
+    },
+    {
+     "kick": 0.2,
+     "roll": -12,
+     "dy": -0.02,
+     "partPose": {
+      "saw": {
+       "move": [
+        0,
+        0.06,
+        0
+       ]
+      }
+     }
+    },
+    {
+     "kick": 0.1,
+     "roll": -5,
+     "partPose": {
+      "saw": {
+       "move": [
+        0,
+        0.015,
+        0
+       ]
+      }
+     }
+    }
+   ]
+  },
+  "durs": {
+   "reload": 0.8
+  }
+ },
+ "windgun": {
+  "model": "Guns&Explosives/Guns&Explosives/Luger/Luger.fbx",
+  "tex": "Guns&Explosives/Guns&Explosives/Luger/Luger_Base_Color.png",
+  "rot": [
+   0,
+   90,
+   0
+  ],
+  "tint": "#e8c070",
+  "parts": [
+   {
+    "prim": "cyl",
+    "size": [
+     1,
+     0.3,
+     1.0
+    ],
+    "open": true,
+    "seg": 16,
+    "rot": [
+     0,
+     0,
+     -90
+    ],
+    "scale": 0.35,
+    "pos": [
+     0.86,
+     0.18,
+     0
+    ],
+    "color": "#d8a840",
+    "name": "horn"
+   },
+   {
+    "prim": "torus",
+    "size": [
+     1,
+     0.07
+    ],
+    "seg": 18,
+    "rot": [
+     0,
+     90,
+     0
+    ],
+    "scale": 0.364,
+    "pos": [
+     1.1,
+     0.18,
+     0
+    ],
+    "color": "#f4d070",
+    "name": "horn"
+   },
+   {
+    "prim": "cyl",
+    "size": [
+     1,
+     1,
+     7
+    ],
+    "rot": [
+     0,
+     0,
+     -90
+    ],
+    "scale": 0.62,
+    "pos": [
+     0.42,
+     0.18,
+     0
+    ],
+    "color": "#c08a30"
+   },
+   {
+    "prim": "cyl",
+    "size": [
+     1,
+     1,
+     0.6
+    ],
+    "rot": [
+     0,
+     0,
+     -90
+    ],
+    "scale": 0.1,
+    "pos": [
+     0.62,
+     0.18,
+     0
+    ],
+    "color": "#f0c860"
+   },
+   {
+    "prim": "cyl",
+    "size": [
+     1,
+     1,
+     0.6
+    ],
+    "rot": [
+     0,
+     0,
+     -90
+    ],
+    "scale": 0.1,
+    "pos": [
+     0.3,
+     0.18,
+     0
+    ],
+    "color": "#f0c860"
+   },
+   {
+    "prim": "cyl",
+    "size": [
+     1,
+     1,
+     0.4
+    ],
+    "rot": [
+     90,
+     0,
+     0
+    ],
+    "scale": 0.09,
+    "pos": [
+     0.1,
+     0.42,
+     0.02
+    ],
+    "color": "#efe6c8",
+    "name": "gauge"
+   },
+   {
+    "prim": "box",
+    "size": [
+     0.5,
+     1,
+     1
+    ],
+    "scale": 0.16,
+    "pos": [
+     -0.12,
+     0.3,
+     0
+    ],
+    "color": "#6a4428",
+    "name": "bellows"
+   },
+   {
+    "prim": "box",
+    "size": [
+     0.12,
+     1.15,
+     1.15
+    ],
+    "scale": 0.18,
+    "pos": [
+     -0.155,
+     0.3,
+     0
+    ],
+    "color": "#d0a040",
+    "name": "bellows"
+   },
+   {
+    "prim": "box",
+    "size": [
+     0.5,
+     1,
+     1
+    ],
+    "scale": 0.16,
+    "pos": [
+     -0.04999999999999999,
+     0.3,
+     0
+    ],
+    "color": "#4a2e1c",
+    "name": "bellows"
+   },
+   {
+    "prim": "box",
+    "size": [
+     0.12,
+     1.15,
+     1.15
+    ],
+    "scale": 0.18,
+    "pos": [
+     -0.08499999999999999,
+     0.3,
+     0
+    ],
+    "color": "#d0a040",
+    "name": "bellows"
+   },
+   {
+    "prim": "box",
+    "size": [
+     0.5,
+     1,
+     1
+    ],
+    "scale": 0.16,
+    "pos": [
+     0.020000000000000018,
+     0.3,
+     0
+    ],
+    "color": "#6a4428",
+    "name": "bellows"
+   },
+   {
+    "prim": "box",
+    "size": [
+     0.12,
+     1.15,
+     1.15
+    ],
+    "scale": 0.18,
+    "pos": [
+     -0.014999999999999986,
+     0.3,
+     0
+    ],
+    "color": "#d0a040",
+    "name": "bellows"
+   },
+   {
+    "prim": "box",
+    "size": [
+     0.5,
+     1,
+     1
+    ],
+    "scale": 0.16,
+    "pos": [
+     0.09000000000000002,
+     0.3,
+     0
+    ],
+    "color": "#4a2e1c",
+    "name": "bellows"
+   },
+   {
+    "prim": "box",
+    "size": [
+     0.12,
+     1.15,
+     1.15
+    ],
+    "scale": 0.18,
+    "pos": [
+     0.05500000000000002,
+     0.3,
+     0
+    ],
+    "color": "#d0a040",
+    "name": "bellows"
+   },
+   {
+    "prim": "box",
+    "size": [
+     0.5,
+     1,
+     1
+    ],
+    "scale": 0.16,
+    "pos": [
+     0.16000000000000003,
+     0.3,
+     0
+    ],
+    "color": "#6a4428",
+    "name": "bellows"
+   },
+   {
+    "prim": "box",
+    "size": [
+     0.12,
+     1.15,
+     1.15
+    ],
+    "scale": 0.18,
+    "pos": [
+     0.12500000000000003,
+     0.3,
+     0
+    ],
+    "color": "#d0a040",
+    "name": "bellows"
+   }
+  ],
+  "nozzle": "horn",
+  "nozzleFront": true,
+  "cam": [
+   0.35,
+   0.35,
+   -0.25,
+   0.8,
+   0.5
+  ],
+  "dur": 0.4,
+  "pitch": 2.5,
+  "back": 0.07,
+  "fire": [
+   {
+    "kick": 0.5,
+    "partPose": {
+     "bellows": {
+      "scale": 0.8
+     }
+    }
+   },
+   {
+    "kick": 0.9,
+    "partPose": {
+     "bellows": {
+      "scale": 0.7
+     }
+    }
+   },
+   {
+    "kick": 0.6,
+    "partPose": {
+     "bellows": {
+      "scale": 0.8
+     }
+    }
+   },
+   {
+    "kick": 0.3,
+    "partPose": {
+     "bellows": {
+      "scale": 0.9
+     }
+    }
+   },
+   {
+    "kick": 0.1
+   }
+  ]
+ },
+ "spear": {
+  "model": "none",
+  "base": [
+   1,
+   0.1,
+   0.1
+  ],
+  "dur": 0.4,
+  "sideYaw": 90,
+  "sidePose": {
+   "hand": {
+    "hide": true
+   }
+  },
+  "nozzle": "spear",
+  "nozzleFront": true,
+  "parts": [
+   {
+    "model": "KayKit_FantasyWeaponsBits_1.0_FREE/KayKit_FantasyWeaponsBits_1.0_FREE/Assets/fbx/spear_A.fbx",
+    "tex": "KayKit_FantasyWeaponsBits_1.0_FREE/KayKit_FantasyWeaponsBits_1.0_FREE/Textures/weapons_bits_texture.png",
+    "scale": 1.7,
+    "pos": [
+     0,
+     0.32,
+     0
+    ],
+    "name": "spear"
+   },
+   {
+    "prim": "box",
+    "size": [
+     1,
+     0.6,
+     1.1
+    ],
+    "scale": 0.08,
+    "pos": [
+     -0.048,
+     -0.03,
+     0.0
+    ],
+    "color": "#7a5236",
+    "name": "hand"
+   },
+   {
+    "prim": "box",
+    "size": [
+     1,
+     0.6,
+     1.1
+    ],
+    "scale": 0.08,
+    "pos": [
+     -0.048,
+     -0.0828,
+     0.0
+    ],
+    "color": "#7a5236",
+    "name": "hand"
+   },
+   {
+    "prim": "box",
+    "size": [
+     1,
+     0.6,
+     1.1
+    ],
+    "scale": 0.08,
+    "pos": [
+     -0.048,
+     -0.1356,
+     0.0
+    ],
+    "color": "#7a5236",
+    "name": "hand"
+   },
+   {
+    "prim": "box",
+    "size": [
+     1,
+     0.6,
+     1.1
+    ],
+    "scale": 0.08,
+    "pos": [
+     -0.048,
+     -0.1884,
+     0.0
+    ],
+    "color": "#7a5236",
+    "name": "hand"
+   },
+   {
+    "prim": "box",
+    "size": [
+     0.8,
+     2.2,
+     1
+    ],
+    "scale": 0.224,
+    "pos": [
+     0.0,
+     -0.11,
+     0.104
+    ],
+    "color": "#6a4630",
+    "name": "hand"
+   },
+   {
+    "prim": "box",
+    "size": [
+     1,
+     0.7,
+     1.6
+    ],
+    "scale": 0.112,
+    "pos": [
+     -0.056,
+     0.01,
+     0.04
+    ],
+    "color": "#8a6040",
+    "name": "hand"
+   },
+   {
+    "prim": "cyl",
+    "size": [
+     1,
+     1,
+     1.2
+    ],
+    "scale": 0.192,
+    "pos": [
+     0.0,
+     -0.318,
+     0.144
+    ],
+    "color": "#4a3020",
+    "name": "hand",
+    "seg": 10
+   },
+   {
+    "prim": "cyl",
+    "size": [
+     1,
+     1,
+     4
+    ],
+    "rot": [
+     -22,
+     0,
+     0
+    ],
+    "scale": 0.672,
+    "pos": [
+     0.0,
+     -0.67,
+     0.272
+    ],
+    "color": "#2e3c5e",
+    "name": "hand",
+    "seg": 10
+   }
+  ],
+  "melee": {
+   "grip": 0.42,
+   "idle": {
+    "hand": [
+     0.4,
+     -0.14,
+     0.2
+    ],
+    "ang": [
+     -5,
+     10,
+     -68
+    ]
+   },
+   "fire": [
+    {
+     "hand": [
+      0.33,
+      -0.16,
+      0.22
+     ],
+     "ang": [
+      -5,
+      10,
+      -64
+     ]
+    },
+    {
+     "hand": [
+      0.6,
+      -0.1,
+      0.15
+     ],
+     "ang": [
+      -5,
+      10,
+      -76
+     ]
+    },
+    {
+     "hand": [
+      0.65,
+      -0.1,
+      0.14
+     ],
+     "ang": [
+      -5,
+      10,
+      -77
+     ]
+    },
+    {
+     "hand": [
+      0.48,
+      -0.13,
+      0.18
+     ],
+     "ang": [
+      -5,
+      10,
+      -71
+     ]
+    }
+   ],
+   "extra": {
+    "throw": [
+     {
+      "hand": [
+       0.33,
+       -0.04,
+       0.3
+      ],
+      "ang": [
+       -15,
+       10,
+       -48
+      ]
+     },
+     {
+      "hand": [
+       0.29,
+       0.0,
+       0.34
+      ],
+      "ang": [
+       -20,
+       10,
+       -38
+      ]
+     },
+     {
+      "hand": [
+       0.6,
+       -0.1,
+       0.16
+      ],
+      "ang": [
+       -5,
+       10,
+       -78
+      ],
+      "partPose": {
+       "spear": {
+        "hide": true
+       }
+      }
+     },
+     {
+      "hand": [
+       0.45,
+       -0.14,
+       0.2
+      ],
+      "ang": [
+       10,
+       10,
+       -45
+      ],
+      "partPose": {
+       "spear": {
+        "hide": true
+       }
+      }
+     }
+    ],
+    "empty": [
+     {
+      "hand": [
+       0.38,
+       -0.12,
+       0.22
+      ],
+      "ang": [
+       -6,
+       10,
+       -30
+      ],
+      "partPose": {
+       "spear": {
+        "hide": true
+       }
+      }
+     }
+    ]
+   }
+  },
+  "durs": {
+   "throw": 0.5,
+   "empty": 0.5
+  }
  }
 }

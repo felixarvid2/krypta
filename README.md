@@ -1261,6 +1261,180 @@ Version 7 lägger till 200 förbättringar:
 
 Kombinerade utmaningar multiplicerar själarna. Sparplatsen väljs på startskärmen, och `?fro=XXXX` i adressen fyller i ett delat frö.
 
+## Version 10: Nya invånare
+
+Version 10 fyller de tidiga biomerna, som man ser oftast, med nytt liv:
+- **Bilder:** ritas med `tools/props8/make.py`.
+- **Ljud och musik:** byggs med `tools/sounds/make8.sh`.
+- **Bangeneratorn:** har fått nya fiender i de gamla biomerna och legendaltaret.
+
+**Sex nya fiender i de gamla biomerna**
+- **Fångvaktaren (kryptan):** kastar en kedja som binder dig.
+- **Grävaren (grottorna):** gräver under marken och bryter upp under dig.
+- **Likgrävaren (kyrkogården):** väcker döda kroppar till skelett.
+- **Rotvättet (skogen):** låter rötter skjuta upp där du står.
+- **Armborstskytten (borggården):** skjuter långt och söker skydd.
+- **Paddjätten (träsket):** drar dig med tungan och hoppar.
+
+**Legendariska vapen**
+- Sex varianter av befintliga vapen, med egna bilder och ljud:
+  - **Drakbössan:** sätter fyr.
+  - **Frostgeväret:** fryser.
+  - **Själapistolen:** läker.
+  - **Åskstaven:** blixtar.
+  - **Blodyxan:** livsstöld och raseri.
+  - **Månbågen:** märker fienden så att den tar mer skada.
+- Hittas sällan hos eliter och väktare, eller köps vid legendaltaret (Œ) för guld eller själar.
+
+**Följeslagare**
+- Eldflugan, stengolemen och ugglan är nya, och själaaltarets FLOCKEN har sex nivåer.
+- Alla sex följeslagare har nu egna bilder, även korpen, lyktan och vargvalpen som tidigare lånade andra fienders bilder.
+
+**Banbyggaren**
+- Rita egna banor på ett rutnät av 32 × 24 rutor (FLER LÄGEN → BANBYGGAREN). Det går med mus eller finger.
+- Det finns väggar, dörrar, start och utgång, nio fiender, föremål och faror, och man väljer vilken biom banan ska se ut som.
+- PROVSPELA kontrollerar först att utgången går att nå. När man når utgången kommer man tillbaka till byggaren.
+- DELA LÄNK kopierar en länk med banan inbakad (`?bana=…`), så att andra kan spela den.
+
+**Mer**
+- Startskärmen är städad: de vanligaste valen syns direkt, resten ligger under FLER LÄGEN och SAMLINGAR.
+- Egen musik i Lägret och en fanfar när ett kampanjkapitel börjar.
+- Två prestationer för legendariska vapen.
+
+## Version 9: Klocktornet och Molnborgen
+
+Version 9 lägger till två biomer, tre vapen, sex fiender och två bossar, så att det finns tolv bossar totalt:
+- **Bilder:** ritas med `tools/props7/make.py` och `tools/weapon-frames`.
+- **Ljud och musik:** byggs med `tools/sounds/make7.sh`.
+- **Kort:** byggs med `tools/card-art/make.py` (`make.py . v9`).
+- **Bangeneratorn:** har fått biomerna Klocktornet och Molnborgen, två arenor och två väktare.
+
+**Klocktornet**
+- Sågklingor åker fram och tillbaka i spår i golvet.
+- Tidsbubblor saktar in allt inuti dem: dig, fienderna och skotten.
+- Urverk ger ljus, och ett klockspel (Ň) stannar urverken en stund.
+
+**Molnborgen**
+- Flytande öar över ett tomrum. Faller du hamnar du på senaste säkra plats och tar skada.
+- Vindrutor knuffar dig, och vindbyar kommer med jämna mellanrum.
+- Åskan slår ned där marken glöder, men blixtstänger drar till sig den.
+- Molnkistor kan öppnas.
+
+**Tre nya vapen**
+- **Sågbladskastaren:** klingor som studsar mot väggar och går igenom fiender. Ammon är kugghjul.
+- **Vindbössan:** laddas av sig själv. Den knuffar fiender in i väggar eller ut i tomrummet och blåser tillbaka skott.
+- **Spjutet:** stöter med vänsterklick och kastas med högerklick. Gå över spjutet för att plocka upp det.
+
+**Sex nya fiender**
+- Urverkssoldat, som lindas upp igen en gång efter döden.
+- Kuggspindel.
+- Tidsväktare, som lägger tidsbubblor.
+- Harpya, som dyker ned.
+- Stormkallare, som kallar på blixtar.
+- Molnjätte, som blåser bort dig.
+
+**Två nya bossar**
+- **Urmakaren:** sågklingor, tidsbubblor och urverkssoldater. Han kan vrida tillbaka tiden och få tillbaka hälsa.
+- **Stormfågeln:** dyker, kallar ned åskstormar, skickar harpyor och blåser dig mot kanten.
+
+**Kampanjen**
+- Sex kapitel i fast ordning:
+  1. Kryptan
+  2. De dödas marker
+  3. Is och eld
+  4. Sanden
+  5. Djupet
+  6. Himlen
+- Varje kapitel har en kort berättelse, två våningar i bestämda biomer och en bestämd boss.
+- Senare kapitel börjar med fler vapen, mer guld och fler talangval.
+- Kapitlen nås med knappen KAMPANJEN eller från en portal i Lägret.
+- När hela kampanjen är klar öppnas Krönikans slut.
+
+**Krönikans slut**
+- När alla krönikesidor är hittade öppnas en portal i Lägret till den hemliga slutbossen, Den förste munken.
+- Han strider i tre faser med krafter från Faraonen, Kristalldrottningen och Stormfågeln, och kan dessutom vrida tillbaka tiden som Urmakaren.
+- Segern ger 150 själar, en prestation och titeln DEN SISTE MUNKEN.
+
+**Mer**
+- Klassen Spjutbäraren.
+- Skjutbanan i Lägret: provdockor som visar skada per sekund.
+- Fyra nya elitegenskaper: tidsbunden, åskande, prismatisk och stormvind.
+- Vapenmästaren i Lägret, där vapen med 100 dödanden kan väljas som startvapen.
+- Fjädrar ger dubbelhopp en våning.
+- 6 prestationer, 4 krönikesidor och nya kort.
+
+## Version 8: Avgrunden
+
+Version 8 gör spelet större med två biomer, ett talangsystem, ett nytt läge och mycket nytt innehåll:
+- **Bilder:** ritas med `tools/props6/make.py` och `tools/weapon-frames`.
+- **Ljud och musik:** byggs med `tools/sounds/make6.sh`.
+- **Kort:** byggs med `tools/card-art/make.py` (`make.py . v8`).
+- **Bangeneratorn:** har fått biomerna Kristallgrottorna och Den sjunkna staden, två nya bossarenor och två nya väktare.
+
+**Erfarenhet och talanger**
+- Dödanden, kunskapsböcker (Ģ) och talangaltare (Ġ) ger erfarenhet. Varje ny nivå ger ett val av tre talanger.
+- Det finns 30 talanger i tre grenar: Krigaren, Skuggan och Mystikern. Några kräver en annan talang först, och många har flera rangar.
+- Talangskärmen (`CardUI.talents`):
+  - 1–3 väljer en talang, R slår om och T visar hela trädet.
+  - Pausmenyn visar dina talanger.
+
+**Två nya biomer**
+- **Kristallgrottorna:**
+  - Glödande kristaller och kristallådror ger färgat ljus, och kristallspikar skadar.
+  - Brytande kristaller (Ė) delar varje skott, även prismans strålar, i tre.
+- **Den sjunkna staden:**
+  - I djupt vatten (Đ) simmar du långsamt och kan inte hoppa.
+  - En luftmätare töms under vattnet, och luftbubblor (Ĝ) fyller på.
+  - Tidvattenrutor (Ĕ) blir djupa med jämna mellanrum.
+  - Vrakkistor kan innehålla skatter, eller vara en mimic.
+
+**Tre nya vapen** (med pakter och fyra uppgraderingar vardera)
+- **Harpunen:** drar fienden till dig. Träffar den en vägg drar den dig dit.
+- **Bumerangen:** flyger ut, träffar och kommer tillbaka.
+- **Prisman:** en kristallstråle som studsar mot väggar.
+
+**Åtta nya fiender**
+- Kristallgolem, som slår sönder marken.
+- Skärvirrbloss, som skjuter skärvor och hoppar undan.
+- Drunknad sjöman, med en båtshake som drar.
+- Ål, som bara finns i djupt vatten.
+- Siren, vars sång drar dig mot henne.
+- Jättekrabba, med ett skal som skyddar framifrån.
+- Skuggjägare, som bara syns i ljus.
+- Häxa, som förhäxar dig och teleporterar sig.
+
+**Två nya bossar**
+- **Kristalldrottningen:** skärvsalvor, studsande strålar och en spegelsköld som skickar tillbaka skotten.
+- **Leviatan:** dyker i bassängen och kommer upp någon annanstans, sprutar vatten, skickar vågor och kallar på ålar.
+
+**Avgrunden**
+- Ett nytt läge med oändlig nedstigning genom slumpade biomer.
+- Varje våning är svårare än den förra, och det kommer en boss var sjätte våning.
+- Djupaste våningen sparas som rekord.
+
+**Lägret**
+- Ett gångbart nav mellan rundorna (knappen LÄGRET).
+- Portaler leder till Ny runda, Dagens runda, Avgrunden, Dagens avgrund, Labyrinten, Bossjakten och Fortsätt.
+- Figurerna ger själaaltaret, kortarkivet med bestiarium och statistik, upplåsningar, övning och krönikan.
+- Det står en staty för varje boss du har besegrat.
+
+**Mer**
+- Dagens avgrund: samma frö för alla en dag, med topplista.
+- Våningshändelserna Visdomens natt, Resonans (kristall) och Stormflod (sjunken stad).
+- Själaaltaret: Visdomen, Ödets tärning och Förberedelsen.
+- Handkontrollen styr alla menyer.
+- Förstagångstips för de nya systemen.
+- Kartografen säljer kartor och hemligheter.
+- Den nya klassen Dykaren.
+- 24 nya kort och två nya set: Djupets väg och Prismans väg.
+- 10 nya prestationer och nya dagliga uppdrag.
+- Statistik för Avgrunden och nivåer.
+
+**Rättelser**
+- Kastknivarna drog två knivar per kast.
+- Kvicksanden sänkte aldrig kameran.
+- Laddhinten visades för närstridsvapen.
+
 ## Assets som används
 
 | Vad | Källa |
@@ -1306,6 +1480,16 @@ Kombinerade utmaningar multiplicerar själarna. Sparplatsen väljs på startskä
 | Version 7: mumie, schakalkrigare, ficktjuv, skarabé, dubbelgångare, Faraonen, NPC:er, Gravkammarens texturer, rekvisita, föremål, partiklar och ikoner | `tools/props5/make.py`. Faraonen bygger på TinyRPG *Demon* och dubbelgångaren på Warped *cyberpunk-detective* (Legacy Collection, Ansimuz, CC0); mumien, schakalen, ficktjuven och NPC:erna på *Pixel Crawler 2.11* (Anokolisa); ytor från Kenney *retro-textures-fantasy* och *Classic64* (CC0); resten ritas i skriptet |
 | Version 7: 47 ljud och musiken för Gravkammaren, Faraonen, smyg och labyrinten | `tools/sounds/make5.sh`: Kenney *impact-sounds*, *rpg-audio*, *casino-audio* och *voiceover-pack* (CC0), 400 Sounds Pack (CC0); musiken och rösterna syntetiseras i skriptet |
 | Version 7: 35 nya kortbilder | `tools/card-art/make.py` ur `assets/ashfall-ai/flux` och effektbilder; pakternas vapen ritas i skriptet |
+| Version 8: harpun, bumerang, prisma | harpunen ur KayKit *Fantasy Weapons Bits* (`spear_A`, CC0), prisman byggd på *Guns&Explosives*, bumerangen och handen byggda av enkla former i `tools/weapon-frames` |
+| Version 8: åtta fiender, Kristalldrottningen, Leviatan, kristall- och ruintexturer, vatten, props, partiklar, ikoner och 30 talangikoner | `tools/props6/make.py`. Sjömannen, häxan och kartografen bygger på *Pixel Crawler 2.11* (Anokolisa), sirenen på Gothicvania *Dancing Girl*, skuggjägaren på *WereWolf* och Kristalldrottningen på TinyRPG *Witch* (Legacy Collection, Ansimuz, CC0); ytor från Kenney *retro-textures-fantasy* och *Classic64* (CC0); golemen, ålen, krabban, Leviatan och resten ritas i skriptet |
+| Version 8: 45 ljud och musiken för Kristallgrottorna, Den sjunkna staden, två bossar och Avgrunden | `tools/sounds/make6.sh`: Kenney *impact-sounds*, *rpg-audio* och *voiceover-pack* (CC0), 400 Sounds Pack (CC0); musiken och rösterna syntetiseras i skriptet |
+| Version 8: 39 nya kortbilder | `tools/card-art/make.py . v8` ur `assets/ashfall-ai/flux` och `assets/ashfall-ai/meshy/icons`; pakternas vapen ritas i skriptet |
+| Version 9: sågbladskastare, vindbössa, spjut | sågbladskastaren och vindbössan byggda på *Guns&Explosives* (GreaseGun, Luger), spjutet ur KayKit *Fantasy Weapons Bits* (`spear_A`, CC0), renderade med `tools/weapon-frames` |
+| Version 9: sex fiender, Urmakaren, Stormfågeln, mässings-, kugg-, moln- och stormtexturer, props, partiklar och ikoner | `tools/props7/make.py`. Urverkssoldaten och stormkallaren bygger på *Pixel Crawler 2.11* (Anokolisa); ytor från Kenney *retro-textures-fantasy* och *Classic64* (CC0); tidsväktaren, kuggspindeln, harpyan, molnjätten, bossarna och resten ritas i skriptet |
+| Version 9: 38 ljud och musiken för Klocktornet, Molnborgen, Urmakaren och Stormfågeln | `tools/sounds/make7.sh`: Kenney *impact-sounds* och *rpg-audio* (CC0), 400 Sounds Pack; musiken syntetiseras i skriptet |
+| Version 9: 39 nya kortbilder | `tools/card-art/make.py . v9` ur `assets/ashfall-ai` och Kenney *particle-pack* (CC0); pakternas vapen ritas i skriptet |
+| Version 10: sex fiender, sex följeslagare, legendaltaret, legendariska vapen, partiklar och ikoner | `tools/props8/make.py`. Fångvaktaren, likgrävaren och armborstskytten bygger på *Pixel Crawler 2.11* (Anokolisa); de legendariska vapnen är omfärgningar av spelets egna vapenbilder; resten ritas i skriptet |
+| Version 10: 27 ljud, Lägrets musik och kapitelfanfaren | `tools/sounds/make8.sh`: 400 Sounds Pack och Kenney *impact-sounds* och *rpg-audio* (CC0); musiken syntetiseras i skriptet |
 | Typsnitt | Press Start 2P (OFL) |
 
 Se licensfilerna i respektive källpaket.

@@ -6,6 +6,7 @@
 //   "melee": {"idle":{"hand":[x,y,z],"ang":[x,y,z]}, "fire":[...]}  närstridsvapen som svingas (yxan)
 //   version 6: "melee.extra": {"draw":[...]} fler lägen (bågen), "durs": {"draw":0.5} deras längd, pose.glow/pose.bow per bildruta,
 //   "tex": "./tex/..." en egen textur i tools/weapon-frames
+//   version 8: "sidePose" döljer delar i sidovyn (bumerangens hand); "extra": {"reload":[{kick..,partPose..},...]} fler lägen även för skjutvapen (harpunens omladdning), "durs" deras längd
 import {chromium} from 'playwright-core';import http from 'http';import fs from 'fs';import path from 'path';
 const A=[new URL('../../../assets/3d-models/',import.meta.url).pathname,path.resolve(process.env.PWD||'.','../../../assets/3d-models')+'/']
   .find(p=>fs.existsSync(p))||new URL('../../../assets/3d-models/',import.meta.url).pathname; // modellerna ligger i assets/3d-models bredvid retrofps/ (node följer symlänkar, därför även $PWD)
@@ -19,7 +20,7 @@ const metaF=out+'/meta.json',meta=fs.existsSync(metaF)?JSON.parse(fs.readFileSyn
 const save=(f,r)=>fs.writeFileSync(f,Buffer.from(r.png.split(',')[1],'base64'));
 for(const n of names){const T=t=>t?(t.startsWith('./')?t.slice(1):'/A/'+t):null; // './tex/..' = egen textur i tools/weapon-frames
   const d={...DEFS[n],model:'/A/'+DEFS[n].model,tex:T(DEFS[n].tex)};if(d.bow)d.bow={...d.bow,arrowModel:'/A/'+d.bow.arrowModel,arrowTex:T(d.bow.arrowTex)};
-  if(mode==='side'){const r=await pg.evaluate(p=>window.renderFrame(p),{...d,melee:null,view:'side'});save(`side_${n}.png`,r);console.log(n,JSON.stringify(r.size));continue;}
+  if(mode==='side'){const r=await pg.evaluate(p=>window.renderFrame(p),{...d,melee:null,view:'side',partPose:d.sidePose});save(`side_${n}.png`,r);console.log(n,JSON.stringify(r.size));continue;}
   if(d.melee){
     const fr=(st,pose,i)=>pg.evaluate(p=>window.renderFrame(p),{...d,melee:{...d.melee,...pose}}).then(r=>{const f=`${out}/${n}_${st}_${i}.png`;save(f,r);return {f,muzzle:r.muzzle}});
     meta[n]={idle:[await fr('idle',d.melee.idle,0)],fire:[],fire_dur:d.dur||0.5,native:true};
@@ -30,8 +31,10 @@ for(const n of names){const T=t=>t?(t.startsWith('./')?t.slice(1):'/A/'+t):null;
   }
   const r0=await pg.evaluate(p=>window.renderFrame(p),{...d,kick:0});
   const fr=(st,kf,i)=>pg.evaluate(p=>window.renderFrame(p),{...d,...kf,len0:r0.len,base:r0.base}).then(r=>{const f=`${out}/${n}_${st}_${i}.png`;save(f,r);return {f,muzzle:r.muzzle}});
-  meta[n]={idle:[await fr('idle',{kick:0},0)],fire:[],fire_dur:d.dur||0.5};
+  meta[n]={idle:[await fr('idle',{kick:0,...(d.idlePose?{partPose:d.idlePose}:{})},0)],fire:[],fire_dur:d.dur||0.5};
   const ks=d.fire||[0.6,1,0.85,0.6,0.38,0.2,0.08].map(kick=>({kick}));for(let i=0;i<ks.length;i++)meta[n].fire.push(await fr('fire',ks[i],i));
+  for(const [st,es] of Object.entries(d.extra||{})){meta[n][st]=[];for(let i=0;i<es.length;i++)meta[n][st].push(await fr(st,es[i],i));} // version 8
+  if(d.durs)meta[n].durs=d.durs;
   console.log(n,'klar',JSON.stringify(meta[n].idle[0].muzzle));
 }
 fs.writeFileSync(metaF,JSON.stringify(meta,null,1));await b.close();srv.close();
