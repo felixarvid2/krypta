@@ -4783,11 +4783,18 @@ function pollGamepad(dt) {
   const dz = v => Math.abs(v) < 0.15 ? 0 : (v - Math.sign(v) * 0.15) / 0.85, b = i => !!(g.buttons[i] && g.buttons[i].pressed), edge = i => b(i) && !gp.prev[i];
   const lx = dz(g.axes[0] || 0), ly = dz(g.axes[1] || 0), rx = dz(g.axes[2] || 0), ry = dz(g.axes[3] || 0);
   if (lx || ly || rx || b(7)) gp.active = true;
+  if (window.CardUI && CardUI.isOpen()) { // menyer: styrkors/spak flyttar fokus, A väljer, B backar, X slår om, Y visar trädet
+    const key = c => window.dispatchEvent(new KeyboardEvent('keydown', { code: c, key: c, bubbles: true, cancelable: true }));
+    const dir = b(12) || ly < -0.6 ? 'ArrowUp' : b(13) || ly > 0.6 ? 'ArrowDown' : b(14) || lx < -0.6 ? 'ArrowLeft' : b(15) || lx > 0.6 ? 'ArrowRight' : '';
+    gp.navT = (gp.navT || 0) - dt; if (!dir) gp.navT = 0; else if (gp.navT <= 0) { gp.navT = gp.navDir === dir ? 0.16 : 0.35; gp.navDir = dir; key(dir); }
+    if (edge(0)) key('Enter'); if (edge(1)) key('Escape'); if (edge(2)) key('KeyR'); if (edge(3)) key('KeyT');
+    gp.prev = g.buttons.map(x => x.pressed); gp.pad = g; return { f: 0, s: 0 };
+  }
   if (state === 'play') {
     P.a += rx * Math.abs(rx) * 3.2 * dt * settings.sens * (1 - WS.aim * 0.45); P.pitch = clamp(P.pitch, -20, 20);
     const fire = (g.buttons[7] && g.buttons[7].value > 0.4) || false; if (fire !== !!gp.fire) { mouseDown = fire; gp.fire = fire; }
     aimDown = (g.buttons[6] && g.buttons[6].value > 0.4) || (aimDown && !gp.active);
-    if (edge(gpb('jump'))) jump(); if (edge(gpb('use'))) useKey(); if (edge(gpb('swap')) || edge(15)) cycleWeapon(1); if (edge(gpb('lamp'))) toggleLamp(); if (edge(gpb('stone'))) throwStone(); if (edge(gpb('dash'))) dash(0, 0); if (edge(gpb('reload'))) reloadKey(); if (edge(gpb('potion'))) { if (P.potions && P.potions.length) drinkPotion(); else inspect(); } if (edge(gpb('ability'))) useAbility();
+    if (edge(gpb('jump'))) jump(); if (edge(gpb('use'))) useKey(); if (edge(gpb('swap'))) cycleWeapon(1); if (edge(gpb('lamp'))) toggleLamp(); if (edge(gpb('stone'))) throwStone(); if (edge(gpb('dash'))) dash(0, 0); if (edge(gpb('reload'))) reloadKey(); if (edge(gpb('potion'))) { if (P.potions && P.potions.length) drinkPotion(); else inspect(); } if (edge(gpb('ability'))) useAbility();
     if (edge(gpb('grenade'))) grenadeStart(); if (!b(gpb('grenade')) && gp.prev[gpb('grenade')]) grenadeThrow();
     if (edge(8)) { showMap = (showMap + 1) % 3; settings.map = showMap; saveSettings(); }
     gp.crouch = b(gpb('crouch')); gp.run = b(10) || Math.hypot(lx, ly) > 0.95;
@@ -6231,7 +6238,7 @@ function layoutEdit(onDone) {
     if (k === 'done') { layoutOn = false; ui.classList.remove('layout'); bar.remove(); ui.removeEventListener('pointerdown', down, true); ui.removeEventListener('pointermove', move, true); ui.removeEventListener('pointerup', up, true); applyTouchLayout(); onDone(); } };
 }
 // ---------- Version 6: byt knappar på handkontrollen ----------
-const GP_ACTS = [['jump', 'HOPPA', 0], ['crouch', 'DUCKA', 1], ['use', 'ANVÄND', 2], ['swap', 'BYT VAPEN', 3], ['dash', 'RUSA', 4], ['grenade', 'GRANAT', 5], ['reload', 'LADDA OM', 12], ['potion', 'DRYCK', 13], ['ability', 'FÖRMÅGA', 11], ['lamp', 'LAMPA', 14], ['stone', 'KASTA STEN', 10]];
+const GP_ACTS = [['jump', 'HOPPA', 0], ['crouch', 'DUCKA', 1], ['use', 'ANVÄND', 2], ['swap', 'BYT VAPEN', 3], ['dash', 'RUSA', 4], ['grenade', 'GRANAT', 5], ['reload', 'LADDA OM', 12], ['potion', 'DRYCK', 13], ['ability', 'FÖRMÅGA', 11], ['lamp', 'LAMPA', 14], ['stone', 'KASTA STEN', 15]];
 const gpb = act => { const m = settings.padMap || {}; return m[act] ?? GP_ACTS.find(a => a[0] === act)[2]; };
 function openPadMap(onClose) {
   CardUI.panel('HANDKONTROLLEN', 'KLICKA PÅ EN HANDLING OCH TRYCK SEDAN PÅ EN KNAPP PÅ HANDKONTROLLEN.', c => {
