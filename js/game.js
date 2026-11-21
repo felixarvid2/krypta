@@ -169,6 +169,7 @@ const ACH = [
   ['void20', 'AVGRUNDSKASTAREN', 'KNUFFA 20 FIENDER I TOMRUMMET', p => (p.voidKills || 0) >= 20, p => [p.voidKills || 0, 20]],
   ['spear50', 'SPJUTKASTAREN', 'DÖDA 50 FIENDER MED SPJUTET', p => ((p.wkills || {}).spear || 0) >= 50, p => [(p.wkills || {}).spear || 0, 50]],
   ['saw100', 'SÅGVERKET', 'DÖDA 100 FIENDER MED SÅGBLADSKASTAREN', p => ((p.wkills || {}).sawlauncher || 0) >= 100, p => [(p.wkills || {}).sawlauncher || 0, 100]],
+  ['finale', 'KRÖNIKANS SLUT', 'BESEGRA DEN FÖRSTE MUNKEN', p => (p.finaleWon || 0) >= 1],
   ['allbosses12', 'ALLA TOLV', 'BESEGRA ALLA TOLV BOSSAR', p => BOSS_IDS.every(id => (p.bossWins || {})[id]), p => [BOSS_IDS.filter(id => (p.bossWins || {})[id]).length, BOSS_IDS.length]],
 ];
 function checkAch() {
@@ -385,6 +386,7 @@ const BOSSES = {
   ogre: { title: 'SKOGENS SLAKTARE', name: 'OGERN', hp: 420, speed: 1.3, size: 2.6, dmg: 26, range: 3.0, arena: 'forest', phaseMsg: ['OGERN KALLAR PÅ SINA SÖNER', 'OGERN BLIR RASANDE!'] },
   frost: { title: 'VINTERNS HJÄRTA', name: 'ISDRAKEN', hp: 330, speed: 1.0, size: 2.4, dmg: 18, range: 2.2, arena: 'frost', phaseMsg: ['ISDRAKEN KALLAR PÅ STORMEN', 'ISDRAKEN BLIR KALLARE ÄN DÖDEN!'] },
   flame: { title: 'VULKANENS HJÄRTA', name: 'ELDKUNGEN', hp: 360, speed: 1.05, size: 3.0, dmg: 19, range: 2.3, arena: 'volcano', phaseMsg: ['ELDKUNGEN TÄNDER MARKEN', 'ELDKUNGEN RASAR – ALLT BRINNER!'] },
+  monk: { secret: true, title: 'KRÖNIKANS SLUT', name: 'DEN FÖRSTE MUNKEN', hp: 760, speed: 1.1, size: 3.8, dmg: 18, range: 2.2, arena: 'hall', phaseMsg: ['MUNKEN BÄR KRISTALLENS ANSIKTE', 'MUNKEN KALLAR PÅ STORMEN – DET SISTA KAPITLET!'] },
   clockmaker: { title: 'TIDENS HERRE', name: 'URMAKAREN', hp: 440, speed: 0.9, size: 3.8, dmg: 16, range: 2.0, arena: 'clock', phaseMsg: ['URMAKAREN DRAR UPP URVERKET', 'URMAKAREN RASAR – TIDEN SPRICKER!'] },
   thunderbird: { title: 'STORMENS VINGAR', name: 'STORMFÅGELN', hp: 460, speed: 1.6, size: 4.0, dmg: 20, range: 2.4, arena: 'sky', phaseMsg: ['STORMFÅGELN KALLAR PÅ ÅSKAN', 'STORMFÅGELN RASAR – HIMLEN BRINNER!'] },
   crystalqueen: { title: 'SPEGLARNAS HÄRSKARINNA', name: 'KRISTALLDROTTNINGEN', hp: 420, speed: 1.1, size: 4.2, dmg: 16, range: 2.0, arena: 'crystal', phaseMsg: ['DROTTNINGEN SPLITTRAS – SKÄRVORNA VAKNAR', 'DROTTNINGEN BRINNER AV LJUS!'] },
@@ -392,7 +394,7 @@ const BOSSES = {
   pharaoh: { title: 'SANDENS HERRE', name: 'FARAONEN', hp: 380, speed: 1.0, size: 3.8, dmg: 18, range: 2.2, arena: 'tomb', phaseMsg: ['FARAONEN VÄCKER SINA TJÄNARE', 'FARAONEN RASAR – SANDEN STIGER!'] },
   ghost: { title: 'DEN SOM ALDRIG SOVER', name: 'VÅLNADEN', hp: 260, speed: 1.6, size: 2.3, dmg: 14, range: 1.4, arena: 'swamp', phaseMsg: ['VÅLNADEN VÄCKER DE DÖDA', 'VÅLNADENS SKRIK FYLLER LUFTEN!'] },
 };
-const BOSS_IDS = Object.keys(BOSSES);
+const BOSS_IDS = Object.keys(BOSSES).filter(id => !BOSSES[id].secret); // den hemliga slutbossen är inte med i rotationen
 // föremål i rummen: bild (prop_<img>.png), antal rutor, höjd, blockerar, ljus, hur de används
 const PROP_DEFS = {
   c: { img: 'candles', n: 3, size: 0.78, anim: 7, light: 0.75 },
@@ -535,6 +537,7 @@ async function loadAll(setStatus) {
   bossFx.pharaoh = {}; // faraonen: valfria bilder
   for (const a of ['idle', 'attack', 'cast', 'hurt', 'death']) { try { const img = await load(`${A}gfx/boss_pharaoh_${a}.png`); bossFx.pharaoh[a] = strip(img, Math.max(1, Math.round(img.width / img.height))); } catch (e) { /* saknas */ } }
   if (!bossFx.pharaoh.idle) delete bossFx.pharaoh; else { bossFx.pharaoh.attack = bossFx.pharaoh.attack || bossFx.pharaoh.idle; bossFx.pharaoh.cast = bossFx.pharaoh.cast || bossFx.pharaoh.idle; }
+  bossFx.monk = bossFx.pharaoh || bossFx.crystalqueen; // den förste munken lånar faraonens gestalt (tonad violett)
   bossFx.flame = {}; // eldkungen: valfria bilder (rutornas bredd = bildens höjd om inget annat anges)
   for (const a of ['idle', 'attack', 'cast', 'hurt', 'death']) { try { const img = await load(`${A}gfx/boss_flame_${a}.png`); bossFx.flame[a] = strip(img, Math.max(1, Math.round(img.width / (BOSS_FW.flame || img.height)))); } catch (e) { /* saknas */ } }
   if (!bossFx.flame.idle) delete bossFx.flame; else { bossFx.flame.attack = bossFx.flame.attack || bossFx.flame.idle; bossFx.flame.cast = bossFx.flame.cast || bossFx.flame.idle; }
@@ -1234,7 +1237,7 @@ function setMusic(on) { // bossmusik under bosstrider, annars biomens musik
   if (!on && musicLoop) { try { musicLoop.s.stop(); } catch (e) { /* redan stoppad */ } musicLoop = null; }
 }
 let musicLoop = null;
-function playMusic() { if (!window.Music) return; if (settings.music === false) { Music.stop(1); return; } const b = boss || guardianE; Music.play(state === 'title' || !lvl ? 'title' : lvl.secret && !musicSnd ? 'secret' : musicSnd ? (b && b.id === 'frost' ? 'boss2' : b && b.id === 'flame' ? 'boss3' : b && b.id === 'pharaoh' ? 'boss4' : b && b.id === 'crystalqueen' ? 'boss5' : b && b.id === 'leviathan' ? 'boss6' : b && b.id === 'clockmaker' ? 'boss7' : b && b.id === 'thunderbird' ? 'boss8' : 'boss') : lvl.biome || 'dungeon'); }
+function playMusic() { if (!window.Music) return; if (settings.music === false) { Music.stop(1); return; } const b = boss || guardianE; Music.play(state === 'title' || !lvl ? 'title' : lvl.secret && !musicSnd ? 'secret' : musicSnd ? (b && b.id === 'frost' ? 'boss2' : b && b.id === 'flame' ? 'boss3' : b && b.id === 'pharaoh' ? 'boss4' : b && b.id === 'crystalqueen' ? 'boss5' : b && b.id === 'leviathan' ? 'boss6' : b && b.id === 'monk' ? 'boss8' : b && b.id === 'clockmaker' ? 'boss7' : b && b.id === 'thunderbird' ? 'boss8' : 'boss') : lvl.biome || 'dungeon'); }
 function applyMixer() { if (window.Music) Music.setVolumes({ music: settings.music === false ? 0 : settings.musicVol ?? 0.6, sfx: settings.sfxVol ?? 1, amb: settings.ambVol ?? 0.8 }); }
 let intensity = 0;
 function updateAudioMood(dt) { // musiken intensivare i strid, dov ljudbild vid låg hälsa
@@ -1410,7 +1413,7 @@ function render() {
         const moving = Math.hypot(o.mvx || 0, o.mvy || 0) > 0.002; // springer: titta åt rörelsen, annars mot spelaren
         const flip = moving ? (o.mvx * plX + o.mvy * plY) < 0 : (o.x - P.x) * plX + (o.y - P.y) * plY > 0;
         drawSprite(bossFrame(o), o.x, o.y, o.d.size, o.dying ? -o.dying * 0.3 : 0, flip, null, o.flash > 0 ? o.flash : 0, 0.75, false,
-          o.dying ? [255, 120, 60] : o.stun > 0 ? [160, 200, 255] : o.id === 'ghost' ? [190, 220, 255] : null, o.id === 'ghost' ? 0.2 : 0);
+          o.dying ? [255, 120, 60] : o.stun > 0 ? [160, 200, 255] : o.id === 'ghost' ? [190, 220, 255] : o.id === 'monk' ? [190, 140, 255] : null, o.id === 'ghost' ? 0.2 : 0);
         continue;
       }
       if (!o.dead && o.state === 'attack') o.flip = (o.x - P.x) * plX + (o.y - P.y) * plY > 0; // vänd mot mitten när den anfaller
@@ -1601,6 +1604,7 @@ function bossFrame(b) {
     case 'beast': return b.state === 'breath' ? loop(f.breath, 8) : b.state === 'burn' || b.state === 'sink' ? at(f.burn, b.t * 6) : loop(f.idle, 7);
     case 'nightmare': return b.state === 'charge' || b.state === 'circle' ? loop(f.run, 10) : loop(f.idle, b.state === 'windup' ? 14 : 6);
     case 'ogre': return b.state === 'smash' || b.state === 'throw' ? at(f.attack, b.t / 1.1 * 7) : Math.hypot(b.mvx || 0, b.mvy || 0) > 0.002 ? loop(f.walk, 8) : loop(f.idle, 5);
+    case 'monk': return b.dying && f.death ? at(f.death, b.dying * 6) : b.flash > 0.06 && f.hurt && b.state === 'idle' ? loop(f.hurt, 12) : ['beam', 'volley', 'dive', 'gears', 'spit'].includes(b.state) ? loop(f.attack, 9) : b.state === 'idle' ? loop(f.idle, 6) : loop(f.cast, 9);
     case 'clockmaker': return b.dying && f.death ? at(f.death, b.dying * 6) : b.flash > 0.06 && f.hurt && b.state === 'idle' ? loop(f.hurt, 12) : b.state === 'gears' ? loop(f.attack, 9) : b.state === 'bubble' || b.state === 'special' ? loop(f.cast, 9) : loop(f.idle, 6);
     case 'thunderbird': return b.dying && f.death ? at(f.death, b.dying * 6) : b.state === 'dive' ? loop(f.dive, 10) : b.flash > 0.06 && f.hurt && b.state === 'idle' ? loop(f.hurt, 12) : b.state === 'storm' || b.state === 'special' ? loop(f.cast, 9) : loop(f.idle, 8);
     case 'crystalqueen': return b.dying && f.death ? at(f.death, b.dying * 6) : b.flash > 0.06 && f.hurt && b.state === 'idle' ? loop(f.hurt, 12) : b.state === 'volley' || b.state === 'beam' ? loop(f.attack, 9) : b.state === 'special' ? loop(f.cast, 9) : loop(f.idle, 6);
@@ -4217,7 +4221,7 @@ const runKey = () => 'run' + (settings.slot ? '.' + settings.slot : '');
 const TITLES = [
   ['', 'INGEN TITEL', () => true], ['vandrare', 'VANDRAREN', p => p.runs >= 1], ['djupdykare', 'DJUPDYKAREN', p => p.bestDepth >= 6], ['segrare', 'SEGRAREN', p => p.wins >= 1],
   ['skugga', 'SKUGGAN', p => (p.stealthKills || 0) >= 25], ['kronikor', 'KRÖNIKÖREN', p => (p.pages || []).length >= 20], ['bossjagare', 'BOSSJÄGAREN', p => Object.keys(p.bossWins || {}).length >= 4],
-  ['spelare', 'SPELAREN', p => (p.gambleWins || 0) >= 10], ['rik', 'GULDKUNGEN', p => (p.bankDeposits || 0) >= 5], ['ododlig', 'DEN ODÖDLIGE', p => (p.survivalBest || 0) >= 25], ['faraon', 'FARAONENS ARVTAGARE', p => !!(p.bossWins || {}).pharaoh],
+  ['spelare', 'SPELAREN', p => (p.gambleWins || 0) >= 10], ['rik', 'GULDKUNGEN', p => (p.bankDeposits || 0) >= 5], ['ododlig', 'DEN ODÖDLIGE', p => (p.survivalBest || 0) >= 25], ['faraon', 'FARAONENS ARVTAGARE', p => !!(p.bossWins || {}).pharaoh], ['munk', 'DEN SISTE MUNKEN', p => (p.finaleWon || 0) >= 1],
 ];
 const titleOpen = id => { const t = TITLES.find(x => x[0] === id); try { return !!t && t[2](profile); } catch (e) { return false; } };
 // ---------- Version 7: kombinerade utmaningslägen ----------
@@ -5844,6 +5848,7 @@ function enterPortal(p) {
   if (p.kind === 'gold') { enterGoldRoom(); return; }
   if (p.kind === 'floor' && p.biome) { run.biomeChoice = Object.assign({}, run.biomeChoice, { [run.depth + 1]: p.biome }); run.route = Object.assign({}, run.route, { [run.depth + 1]: BIOME_RISK[p.biome] || 1 }); play('route_choice', 0.7); logEvent('VÄG: ' + BIOME_NAME[p.biome]); }
   if (p.kind === 'floor') { if (floorQuest && floorQuest.kind === 'time' && levelTime <= floorQuest.limit) { run.gold += 50; say('TIDSUTMANINGEN KLARAD: +50 GULD', 3); } floorDone(); return; }
+  if (run.finale) { finaleWon(); return; }
   if (run.abyss) { abyssNext(); return; }
   if (run.hunt) { bossHuntPick(); return; }
   if (run.bossrush) { bossRushNext(); return; }
@@ -7151,7 +7156,7 @@ function abyssNext() { // efter en bossvåning i Avgrunden
   openUI(() => draftUI(drawCards(3, { luck: 1 }), { title: `AVGRUND ${run.depth} KLARAD`, subtitle: 'VÄLJ ETT KORT OCH FORTSÄTT NEDÅT', skipLabel: 'INGET KORT' }, card => { if (card) gainCard(card); closeUI(); loadFloor(run.depth + 1); lockPointer(); }));
 }
 // ---------- Version 8: Lägret – ett nav att gå runt i mellan rundorna ----------
-const HUB_MODES = [['new', 'NY RUNDA'], ['daily', 'DAGENS RUNDA'], ['abyss', 'AVGRUNDEN'], ['abyssdaily', 'DAGENS AVGRUND'], ['maze', 'LABYRINTEN'], ['hunt', 'BOSSJAKTEN'], ['continue', 'FORTSÄTT RUNDAN']];
+const HUB_MODES = [['finale', 'KRÖNIKANS SLUT'], ['new', 'NY RUNDA'], ['daily', 'DAGENS RUNDA'], ['abyss', 'AVGRUNDEN'], ['abyssdaily', 'DAGENS AVGRUND'], ['maze', 'LABYRINTEN'], ['hunt', 'BOSSJAKTEN'], ['continue', 'FORTSÄTT RUNDAN']];
 let hubWatch = 0;
 function hubLevel() {
   const Wd = 27, Hd = 19, m = [];
@@ -7168,14 +7173,14 @@ function beginHub() {
   document.getElementById('title').hidden = true; canvas.focus(); ensureAudio();
   practice = { hub: true }; newRun(RNG.randomSeed(), false); run.hub = true; run.cmode = ''; practice = null; P.hp = maxHp();
   startLevel(hubLevel()); levelBanner = 2.5; run.depth = 0;
-  const modes = HUB_MODES.filter(([id]) => id !== 'continue' || store.get(runKey(), null));
+  const modes = HUB_MODES.filter(([id]) => (id !== 'continue' || store.get(runKey(), null)) && (id !== 'finale' || pagesFound().length >= CHRONICLE.length || profile.finaleOpen));
   modes.forEach(([id], i) => { const x = 13.5 + (i - (modes.length - 1) / 2) * 3.6; spawnPortal(x, 3.2, 'mode'); const p = portals[portals.length - 1]; p.mode = id; p.armed = true; });
   msgs.length = 0; say('LÄGRET – GÅ IN I EN PORTAL FÖR ATT BÖRJA', 3); lockPointer();
   clearInterval(hubWatch); hubWatch = setInterval(() => { if (!run || !run.hub) { clearInterval(hubWatch); return; } if (state === 'ui' && !CardUI.isOpen()) { closeUI('play'); document.getElementById('title').hidden = true; } }, 200);
 }
 function hubEnter(mode) { // portalerna i lägret
   clearInterval(hubWatch); run.hub = false;
-  const go = () => { if (mode === 'abyssdaily') beginAbyss(true); else if (mode === 'abyss') beginAbyss(); else if (mode === 'maze') beginMaze(); else if (mode === 'hunt') beginBossHunt(); else begin(mode); };
+  const go = () => { if (mode === 'finale') beginFinale(); else if (mode === 'abyssdaily') beginAbyss(true); else if (mode === 'abyss') beginAbyss(); else if (mode === 'maze') beginMaze(); else if (mode === 'hunt') beginBossHunt(); else begin(mode); };
   if (mode !== 'continue' && store.get(runKey(), null)) { openUI(() => CardUI.choice({ title: 'NY RUNDA?', subtitle: 'DU HAR EN PÅGÅENDE RUNDA. EN NY RUNDA SKRIVER ÖVER DEN.', cancel: 1, options: [{ label: 'STARTA NY', text: 'DEN GAMLA FÖRSVINNER' }, { label: 'AVBRYT', text: '' }] }, i => { closeUI(); if (i === 0) go(); else { run.hub = true; beginHub(); } })); return; }
   go();
 }
@@ -7201,6 +7206,23 @@ function giveStartWeapon() { // valt startvapen från vapenmästaren
   const id = settings.startWeapon; if (!id || cmode('pistol') || run.practice || ((profile.wkills || {})[id] || 0) < START_WEAPON_KILLS) return;
   const i = weaponIndex(id); if (i < 0) return; P.has[i] = true; P.mags[i] = effMag(i); const w = WEAPONS[i]; if (AMMO[w.ammo] && w.ammo !== 'none') P.ammo[w.ammo] = Math.min(AMMO[w.ammo].max, (P.ammo[w.ammo] || 0) + Math.round(AMMO[w.ammo].max * 0.3));
 }
+// ---------- Version 9: krönikans slut – den hemliga slutbossen ----------
+Object.assign(BOSS_AI, {
+  monk(b, dt, dist, ang, ph) { // den förste munken bär de andra bossarnas krafter: faraonen, kristalldrottningen och stormfågeln
+    if (b.monkPh !== ph) { b.monkPh = ph; b.state = 'idle'; b.t = 0; b.cd = 1.2; }
+    (ph === 1 ? BOSS_AI.pharaoh : ph === 2 ? BOSS_AI.crystalqueen : BOSS_AI.thunderbird)(b, dt, dist, ang, ph);
+  },
+});
+Object.assign(BOSS_SPECIAL, { monk(b, dt, dist, ang, ph) { (ph === 1 ? BOSS_SPECIAL.pharaoh : ph === 2 ? BOSS_SPECIAL.crystalqueen : BOSS_SPECIAL.clockmaker)(b, dt, dist, ang, ph); } });
+TAUNTS.monk = ['VI GRÄVDE FÖR DJUPT', 'JAG BAD OM EVIGHETEN', 'KRÖNIKAN SLUTAR MED MIG'];
+function beginFinale() {
+  document.getElementById('title').hidden = true; canvas.focus(); ensureAudio(); practice = null;
+  newRun(RNG.randomSeed(), false); run.finale = true; run.cmode = ''; P.hp = maxHp();
+  for (let i = 1; i < WEAPONS.length; i++) { P.has[i] = true; P.mags[i] = effMag(i); } for (const k in AMMO) if (k !== 'none' && k !== 'mana') P.ammo[k] = Math.round(AMMO[k].max * 0.6); P.grenades = 4;
+  const L = Gen.boss(RNG.hash(run.seed + ':munken'), { arena: 'hall', boss: 'monk' }); L.bossId = 'monk'; L.name = 'KRÖNIKANS SLUT'; run.depth = FLOORS + 1; startLevel(L); lockPointer();
+  say('DEN SISTA SIDAN. DEN FÖRSTA MUNKEN VÄNTAR.', 4);
+}
+function finaleWon() { profile.finaleWon = (profile.finaleWon || 0) + 1; profile.souls += 150; saveProfile(); say('KRÖNIKAN ÄR SLUT. +150 SJÄLAR', 4); setTimeout(() => endRun(true), 1500); }
 function hubHint(p, d) { if (d < 2.5 && p.kind === 'mode') { const m = HUB_MODES.find(x => x[0] === p.mode); hint = 'PORTAL → ' + (m ? m[1] : p.mode); return true; } return false; }
 // ---------- Version 9: sågbladskastaren, vindbössan och spjutet ----------
 function sawFire(wp, base) {

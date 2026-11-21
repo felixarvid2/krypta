@@ -1297,6 +1297,11 @@ Version 9 lägger till två biomer, tre vapen, sex fiender och två bossar, så 
 - **Urmakaren:** sågklingor, tidsbubblor och urverkssoldater. Han kan vrida tillbaka tiden och få tillbaka hälsa.
 - **Stormfågeln:** dyker, kallar ned åskstormar, skickar harpyor och blåser dig mot kanten.
 
+**Krönikans slut**
+- När alla krönikesidor är hittade öppnas en portal i Lägret till den hemliga slutbossen, Den förste munken.
+- Han strider i tre faser med krafter från Faraonen, Kristalldrottningen och Stormfågeln, och kan dessutom vrida tillbaka tiden som Urmakaren.
+- Segern ger 150 själar, en prestation och titeln DEN SISTE MUNKEN.
+
 **Mer**
 - Klassen Spjutbäraren.
 - Vapenmästaren i Lägret, där vapen med 100 dödanden kan väljas som startvapen.
