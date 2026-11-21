@@ -33,11 +33,18 @@ tabellen V8. Föremålen med genomskinlig bakgrund läggs på samma mörklila vi
 bumerangen och prismat ritas som siluetter här; uppgraderingarna är oanvända effektbilder ur
 assets/ashfall-ai/flux/vfx med vapnet som bricka i hörnet (tabellen V8_UPGRADES).
 
+Version 9: 24 nya kort (urverk, tid, vind, storm och höjd) – de sista medaljongerna i assets/ashfall-ai/flux som
+inte ser moderna ut, bossen drowned_engine och två färdighetsikoner (tabellen V9_ASH); resten ritas här som
+föremål med partiklar ur Kenneys particle-pack (tabellen V9_DRAWN). Pakterna för sågbladskastaren, vindbössan och
+spjutet ritas som siluetter; uppgraderingarna är oanvända effektbilder ur vfx eller partiklar med vapnet som bricka
+i hörnet (tabellen V9_UPGRADES). near_dupes() jämför de nya bilderna med alla befintliga kortbilder.
+
 Kör från repo-roten: python3 retrofps/tools/card-art/make.py .          (alla)
                      python3 retrofps/tools/card-art/make.py . v5       (bara version 5)
                      python3 retrofps/tools/card-art/make.py . v6       (bara version 6)
                      python3 retrofps/tools/card-art/make.py . v7       (bara version 7)
                      python3 retrofps/tools/card-art/make.py . v8       (bara version 8)
+                     python3 retrofps/tools/card-art/make.py . v9       (bara version 9)
 """
 import os
 import sys
@@ -637,6 +644,436 @@ def main_v8():
     return n
 
 
+# ---------- version 9: Klocktornet och Molnborgen ----------
+# De sista medaljongerna i assets/ashfall-ai/flux som inte ser moderna ut (blixtsprickan, blixtarna, gnistskuren,
+# den bevingade kängan, skölden som vänder pilarna), bossen drowned_engine (ett urverk i vatten) och två
+# färdighetsikoner i meshy/icons (en huvklädd gestalt i dimma och en ljusstråle ur himlen). Resten är
+# föremål som ritas här (kugghjul, timglas, stoppur, pendel, vindflöjel, fjäder, moln, stege ...) med
+# partiklar ur Kenneys particle-pack (assets/effects/particle-pack, vitt på svart, färgas och läggs med
+# "screen") på samma mörklila vinjett. Varje partikelbild används bara en gång.
+PARTS = os.path.join(ROOT, 'assets/effects/particle-pack/PNG (Black background)')
+V9_ASH = {  # kort-id: (sort, bild, andel/beskärning) – som V8
+    'askledaren': ('ash', 'aspects/fissure', 0.92), 'askfangaren': ('ash', 'aspects/ricochet', 0.92),
+    'tryckvagen': ('ash', 'aspects/swarm', 0.92), 'svalvingarna': ('ash', 'stats/moveSpeed', 0.92),
+    'urmakarens_hjarta': ('ash', 'bosses/drowned_engine', 0),
+    'stormhuvan': ('skill', 'skill_holo_decoy', SKILL_CROP), 'stormens_skuld': ('skill', 'skill_orbital_strike', SKILL_CROP),
+}
+# kort-id: (ritfunktion, storlek, förskjutning y, [(partikel, storlek, dx, dy, färg, vridning)])
+V9_DRAWN = {
+    'kuggfickan': ('gears', 0.82, 0, [('star_09', 0.9, 0, 0, (255, 190, 90), 0)]),
+    'sandglaset': ('hourglass', 0.8, 0, [('magic_02', 0.95, 0, 0, (255, 205, 110), 0)]),
+    'vindflojeln': ('vane', 0.84, 0.02, [('smoke_04', 0.9, -0.1, -0.12, (120, 200, 230), 0)]),
+    'fjaderfallet': ('feather', 0.8, -0.06, [('smoke_07', 0.7, 0, 0.3, (200, 205, 220), 0)]),
+    'vaggsmallen': ('wall', 0.86, 0, [('star_08', 0.8, 0.02, -0.04, (255, 150, 60), 0)]),
+    'stoppuret': ('stopwatch', 0.8, 0.02, [('magic_01', 0.98, 0, 0.02, (110, 220, 240), 0)]),
+    'molnmyntet': ('cloudcoin', 0.76, -0.04, [('smoke_08', 0.62, 0.18, 0.3, (210, 215, 230), 0)]),
+    'urnyckeln': ('windkey', 0.84, 0, [('light_02', 0.9, 0, 0, (110, 230, 140), 0)]),
+    'klattrarrepet': ('rope', 0.84, 0, [('dirt_02', 0.9, 0, 0.18, (150, 120, 90), 0)]),
+    'massingsringen': ('gearring', 0.8, 0, [('circle_03', 0.95, 0, 0, (255, 200, 100), 0)]),
+    'pendelvikten': ('pendulum', 0.86, -0.02, [('slash_04', 0.9, 0, 0.26, (255, 200, 110), 0)]),
+    'guldmolnet': ('goldcloud', 0.86, 0, [('smoke_09', 0.9, 0, -0.1, (255, 200, 90), 0)]),
+    'trasiga_klockan': ('brokenclock', 0.8, 0, [('spark_04', 1.0, 0, 0, (255, 70, 50), 0)]),
+    'tidsvaktarens_sigill': ('sigil', 0.8, 0, [('light_01', 1.0, 0, 0, (90, 200, 255), 0)]),
+    'virvelstenen': ('spiralstone', 0.74, 0.04, [('smoke_10', 1.0, 0, 0, (90, 210, 230), 0)]),
+    'himlastegen': ('ladder', 0.9, 0.02, [('light_03', 0.9, 0, -0.26, (255, 225, 160), 0)]),
+    'stormfagelns_fjader': ('stormfeather', 0.86, 0, [('smoke_05', 1.0, 0, -0.18, (70, 80, 120), 0), ('spark_05', 0.9, -0.16, 0, (170, 205, 255), 0)]),
+}
+V9_PACTS = {'pakt_sagblad': 'sawlauncher', 'pakt_vindbossa': 'windgun', 'pakt_spjut': 'spear'}
+V9_UPGRADES = {  # kort-id: (vapen, 'vfx:<bild i ashfall vfx>' eller 'part:<partikel>', färgton eller None, vridning)
+    'trebladet': ('sawlauncher', 'part:scratch_01', (235, 225, 200), 0), 'studsklingan': ('sawlauncher', 'vfx:warn_ring_0', None, 0),
+    'blodklingan': ('sawlauncher', 'vfx:splat_1', (210, 30, 26), 0), 'aterklingan': ('sawlauncher', 'part:twirl_01', (255, 205, 120), 0),
+    'virvelvinden': ('windgun', 'part:twirl_03', (170, 230, 255), 0), 'murslaget': ('windgun', 'vfx:rock_debris', None, 0),
+    'nordanvinden': ('windgun', 'vfx:frost_burst_0', None, 0), 'stormfronten': ('windgun', 'vfx:steam_0', (200, 230, 255), 0),
+    'genomkastet': ('spear', 'part:trace_02', (255, 220, 150), 90), 'aterkallelsen': ('spear', 'part:twirl_02', (255, 215, 130), 0),
+    'utfallet': ('spear', 'part:muzzle_02', (255, 200, 140), -90), 'askspjutet': ('spear', 'part:spark_06', (190, 215, 255), 0),
+}
+
+BRASS, DBRASS, STEEL, WOOD = (176, 132, 64, 255), (122, 86, 40, 255), (140, 144, 156, 255), (112, 72, 40, 255)
+
+
+def gear_pts(cx, cy, ro, ri, n, rot=0.0):
+    pts = []
+    for k in range(n):
+        for t, r in ((0.0, ri), (0.12, ro), (0.38, ro), (0.5, ri), (0.75, ri)):
+            a = rot + (k + t) * 2 * np.pi / n
+            pts.append((cx + r * np.cos(a), cy + r * np.sin(a)))
+    return pts
+
+
+def gear(d, cx, cy, ro, ri, n, fill, hub, rot=0.0, hole=0.0):
+    poly(d, gear_pts(cx, cy, ro, ri, n, rot), fill)
+    h = ri * 0.62
+    d.ellipse((cx - h, cy - h, cx + h, cy + h), fill=hub, outline=INK, width=5)
+    for k in range(4):  # ekrar
+        a = rot + k * np.pi / 2 + np.pi / 4
+        d.line((cx, cy, cx + h * np.cos(a), cy + h * np.sin(a)), fill=fill, width=int(ri * 0.16))
+    c = ri * 0.2 if not hole else hole
+    d.ellipse((cx - c, cy - c, cx + c, cy + c), fill=fill if not hole else (0, 0, 0, 0), outline=INK, width=5)
+
+
+def lighter(c, k=1.35):
+    return tuple(min(255, int(v * k)) for v in c[:3]) + (255,)
+
+
+def cloud(d, blobs, fill, w=7):
+    for x, y, r in blobs:  # konturen först, sedan fyllningen: en sammanhängande sky
+        d.ellipse((x - r - w, y - r - w, x + r + w, y + r + w), fill=INK)
+    for x, y, r in blobs:
+        d.ellipse((x - r, y - r, x + r, y + r), fill=fill)
+    for x, y, r in blobs[:3]:
+        d.arc((x - r * 0.8, y - r * 0.8, x + r * 0.8, y + r * 0.8), 200, 290, fill=lighter(fill, 1.12), width=6)
+
+
+def feather(d, col, vane, quill, n=14):
+    """Fjäder längs en böjd linje (400x400, spetsen uppe)."""
+    spine = [(200 + 40 * np.sin(t * 1.4), 380 - 340 * t) for t in np.linspace(0, 1, 40)]
+    left, right = [], []
+    for i, (x, y) in enumerate(spine):
+        t = i / (len(spine) - 1)
+        if t < 0.18:
+            continue
+        w = 70 * np.sin(np.pi * min(1, (t - 0.18) / 0.82)) ** 0.7 + 4
+        left.append((x - w, y + w * 0.35))
+        right.append((x + w, y + w * 0.35))
+    poly(d, left + right[::-1], vane)
+    for i in range(1, n):  # strålar
+        k = int(len(spine) * (0.22 + 0.74 * i / n))
+        x, y = spine[k]
+        w = 60 * np.sin(np.pi * i / n) ** 0.7
+        for s in (-1, 1):
+            d.line((x, y, x + s * w, y + w * 0.5), fill=col, width=3)
+    for gx, gy in ((-1, 0.55), (1, 0.4)):  # två hack i fanet
+        k = int(len(spine) * gy)
+        x, y = spine[k]
+        d.polygon([(x + gx * 8, y), (x + gx * 72, y + 10), (x + gx * 60, y + 30)], fill=(0, 0, 0, 0))
+    d.line(spine, fill=INK, width=10, joint='curve')
+    d.line(spine, fill=quill, width=5, joint='curve')
+
+
+def art(kind):
+    im = Image.new('RGBA', (400, 400))
+    d = ImageDraw.Draw(im)
+    if kind == 'gears':
+        gear(d, 150, 236, 128, 104, 14, BRASS, DBRASS, 0.1)
+        gear(d, 296, 120, 82, 64, 10, STEEL, (92, 96, 108, 255), 0.3)
+        gear(d, 310, 300, 60, 46, 8, (184, 104, 60, 255), (120, 62, 34, 255), 0.2)
+    elif kind == 'hourglass':
+        glass = (170, 210, 230, 150)
+        poly(d, [(110, 70), (290, 70), (290, 110), (222, 196), (222, 204), (290, 290), (290, 330), (110, 330), (110, 290), (178, 204), (178, 196), (110, 110)], glass)
+        d.polygon([(132, 112), (268, 112), (214, 182), (186, 182)], fill=(236, 196, 110, 255))      # sand uppe
+        d.polygon([(200, 230), (276, 318), (124, 318)], fill=(236, 196, 110, 255))                  # sand nere
+        d.line((200, 184, 200, 300), fill=(250, 220, 140, 255), width=4)                            # rinnande sand
+        d.line((124, 96, 140, 120), fill=(240, 250, 255, 255), width=5)
+        for y in (40, 330):                                                                          # plattor
+            rrect(d, (78, y, 322, y + 34), 8, WOOD)
+            d.line((90, y + 9, 310, y + 9), fill=(160, 110, 62, 255), width=4)
+        for x in (96, 304):                                                                          # stolpar
+            rrect(d, (x - 9, 70, x + 9, 334), 6, (150, 104, 54, 255))
+    elif kind == 'vane':
+        rrect(d, (192, 150, 208, 392), 6, (70, 70, 78, 255))                                         # stång
+        for a, b in (((120, 250), (280, 250)),):                                                    # väderstreck
+            d.line((a, b), fill=INK, width=12)
+            d.line((a, b), fill=(90, 92, 102, 255), width=6)
+        for x in (112, 288):
+            d.ellipse((x - 12, 238, x + 12, 262), fill=BRASS, outline=INK, width=4)
+        d.line((40, 150, 330, 150), fill=INK, width=14)                                             # pilen
+        d.line((40, 150, 330, 150), fill=(110, 112, 122, 255), width=7)
+        poly(d, [(318, 122), (386, 150), (318, 178)], BRASS)
+        poly(d, [(20, 108), (90, 140), (90, 160), (20, 192), (44, 150)], BRASS)
+        poly(d, [(176, 120), (140, 58), (166, 74), (160, 40), (186, 78), (196, 56), (202, 96)], (90, 52, 30, 255))        # tuppens stjärt
+        poly(d, [(168, 140), (176, 110), (206, 96), (228, 70), (232, 46), (252, 40), (266, 52), (284, 60), (268, 68),
+                 (262, 92), (250, 118), (232, 140)], (130, 80, 40, 255))                                                # tuppen
+        d.polygon([(236, 44), (240, 26), (248, 36), (254, 22), (258, 40)], fill=(210, 50, 36, 255))                   # kam
+        d.polygon([(262, 70), (270, 84), (256, 80)], fill=(210, 50, 36, 255))                                          # slör
+        d.ellipse((248, 48, 258, 58), fill=(250, 230, 150, 255))
+        d.ellipse((186, 138, 214, 166), fill=BRASS, outline=INK, width=4)
+    elif kind == 'feather':
+        feather(d, (170, 160, 150, 255), (236, 232, 222, 255), (200, 170, 120, 255))
+        im = im.rotate(-28, resample=Image.BICUBIC, expand=True)
+    elif kind == 'stormfeather':
+        feather(d, (40, 50, 80, 255), (70, 86, 130, 255), (230, 200, 110, 255), 16)
+        d.line([(170, 120), (204, 180), (182, 190), (226, 270)], fill=(220, 236, 255, 255), width=7)  # blixt i fanet
+        im = im.rotate(-22, resample=Image.BICUBIC, expand=True)
+    elif kind == 'wall':
+        for row in range(5):
+            y = 40 + row * 64
+            off = 0 if row % 2 else -60
+            for col in range(4):
+                x = off + col * 120 + 20
+                c = (150 + (row * 13 + col * 29) % 30, 88 + (row * 7 + col * 11) % 20, 62, 255)
+                rrect(d, (max(10, x), y, min(390, x + 112), y + 56), 6, c)
+        d.line([(200, 170), (160, 120), (176, 90), (138, 44)], fill=INK, width=8)                       # sprickor
+        d.line([(200, 170), (262, 150), (286, 104), (340, 92)], fill=INK, width=8)
+        d.line([(200, 170), (220, 236), (190, 290), (210, 340)], fill=INK, width=8)
+        d.line([(200, 170), (140, 210), (90, 204), (50, 250)], fill=INK, width=8)
+        d.polygon([(170, 150), (222, 140), (236, 196), (184, 206)], fill=(40, 24, 18, 255))           # hål
+    elif kind == 'stopwatch':
+        d.ellipse((176, 10, 224, 58), fill=(0, 0, 0, 0), outline=INK, width=16)                       # ögla
+        d.ellipse((176, 10, 224, 58), outline=BRASS, width=8)
+        rrect(d, (180, 50, 220, 84), 6, DBRASS)                                                        # krona
+        rrect(d, (270, 60, 300, 90), 6, DBRASS)                                                        # knapp
+        d.ellipse((60, 80, 340, 360), fill=BRASS, outline=INK, width=8)
+        d.ellipse((84, 104, 316, 336), fill=(236, 226, 200, 255), outline=INK, width=6)
+        for k in range(12):
+            a = k * np.pi / 6
+            r0 = 96 if k % 3 else 84
+            d.line((200 + r0 * np.cos(a), 220 + r0 * np.sin(a), 200 + 110 * np.cos(a), 220 + 110 * np.sin(a)), fill=INK, width=6 if k % 3 == 0 else 3)
+        d.line((200, 220, 200, 128), fill=(200, 40, 30, 255), width=6)                                 # visare
+        d.line((200, 220, 262, 248), fill=INK, width=9)
+        d.ellipse((188, 208, 212, 232), fill=DBRASS, outline=INK, width=4)
+        d.arc((90, 110, 310, 330), 200, 250, fill=(255, 255, 255, 255), width=6)
+    elif kind == 'cloudcoin':
+        d.ellipse((40, 40, 360, 360), fill=(214, 168, 60, 255), outline=INK, width=8)
+        d.ellipse((70, 70, 330, 330), outline=(150, 110, 36, 255), width=8)
+        for k in range(40):                                                                             # räfflad kant
+            a = k * np.pi / 20
+            d.line((200 + 150 * np.cos(a), 200 + 150 * np.sin(a), 200 + 158 * np.cos(a), 200 + 158 * np.sin(a)), fill=(150, 110, 36, 255), width=4)
+        cloud(d, [(160, 210, 50), (230, 196, 62), (284, 222, 38), (120, 236, 34), (200, 240, 46)], (250, 226, 140, 255), 5)
+        d.line((112, 280, 290, 280), fill=(150, 110, 36, 255), width=6)
+    elif kind == 'windkey':
+        for cx in (130, 270):                                                                           # vingarna
+            d.ellipse((cx - 78, 40, cx + 78, 180), fill=BRASS, outline=INK, width=8)
+            d.ellipse((cx - 30, 86, cx + 30, 136), fill=(0, 0, 0, 0), outline=INK, width=6)
+        rrect(d, (168, 80, 232, 150), 10, DBRASS)
+        rrect(d, (184, 140, 216, 360), 8, BRASS)                                                        # skaft
+        d.line((194, 150, 194, 350), fill=lighter(BRASS), width=4)
+        rrect(d, (172, 340, 228, 396), 6, DBRASS)                                                       # fyrkanthylsa
+        d.rectangle((188, 356, 212, 380), fill=(30, 22, 14, 255))
+        im = im.rotate(-34, resample=Image.BICUBIC, expand=True)
+    elif kind == 'rope':
+        rope = (196, 156, 96, 255)
+        for i, r in enumerate((150, 122, 94, 66)):                                                     # rullen
+            box = (200 - r, 250 - r * 0.55, 200 + r, 250 + r * 0.55)
+            d.ellipse(box, outline=INK, width=26)
+            d.ellipse(box, outline=rope, width=16)
+            d.arc(box, 190, 250, fill=lighter(rope), width=5)
+        d.line([(310, 230), (334, 160), (318, 96)], fill=INK, width=24, joint='curve')                 # linan upp till kroken
+        d.line([(310, 230), (334, 160), (318, 96)], fill=rope, width=14, joint='curve')
+        rrect(d, (308, 30, 328, 104), 6, STEEL)                                                         # änterhake
+        for pts in ([(318, 44), (280, 30), (266, 2)], [(318, 44), (356, 30), (370, 2)], [(318, 40), (318, 0)]):
+            d.line(pts, fill=INK, width=18, joint='curve')
+            d.line(pts, fill=STEEL, width=9, joint='curve')
+        d.ellipse((306, 92, 330, 116), fill=STEEL, outline=INK, width=4)
+    elif kind == 'gearring':
+        gear(d, 200, 210, 170, 146, 18, BRASS, DBRASS, 0.0, hole=100)
+        d.ellipse((96, 106, 304, 314), fill=(0, 0, 0, 0))
+        d.ellipse((96, 106, 304, 314), outline=INK, width=8)
+        d.arc((120, 130, 280, 290), 200, 300, fill=lighter(BRASS), width=6)
+        poly(d, [(200, 12), (232, 40), (200, 70), (168, 40)], (90, 170, 230, 255))                       # sten
+        d.line((190, 30, 200, 22), fill=(230, 250, 255, 255), width=4)
+    elif kind == 'pendulum':
+        gear(d, 200, 40, 34, 26, 8, DBRASS, BRASS)
+        rrect(d, (192, 40, 208, 260), 6, BRASS)                                                         # stången
+        d.ellipse((120, 230, 280, 390), fill=BRASS, outline=INK, width=8)                               # lodet
+        d.ellipse((146, 256, 254, 364), outline=DBRASS, width=6)
+        d.arc((136, 246, 264, 374), 200, 270, fill=lighter(BRASS, 1.5), width=8)
+        im = im.rotate(16, resample=Image.BICUBIC, expand=True, center=(200, 40))
+    elif kind == 'goldcloud':
+        for x, y in ((120, 300), (200, 340), (280, 296), (160, 372), (246, 380)):                      # mynt som regnar
+            d.ellipse((x - 22, y - 14, x + 22, y + 14), fill=(230, 180, 60, 255), outline=INK, width=4)
+            d.line((x - 10, y - 4, x + 6, y - 6), fill=(255, 236, 150, 255), width=3)
+        cloud(d, [(150, 170, 74), (240, 150, 86), (310, 196, 56), (90, 206, 50), (200, 216, 64)], (232, 234, 244, 255))
+    elif kind == 'brokenclock':
+        d.ellipse((40, 40, 360, 360), fill=(96, 56, 30, 255), outline=INK, width=8)                     # träram
+        d.ellipse((72, 72, 328, 328), fill=(226, 214, 186, 255), outline=INK, width=6)
+        for k in range(12):
+            a = k * np.pi / 6
+            d.line((200 + 100 * np.cos(a), 200 + 100 * np.sin(a), 200 + 122 * np.cos(a), 200 + 122 * np.sin(a)), fill=INK, width=7 if k % 3 == 0 else 4)
+        d.line([(200, 200), (176, 130), (190, 96)], fill=INK, width=10)                                 # böjd visare
+        d.line((200, 200, 276, 236), fill=INK, width=12)
+        d.ellipse((186, 186, 214, 214), fill=DBRASS, outline=INK, width=4)
+        d.polygon([(236, 72), (300, 96), (262, 150), (230, 120)], fill=(30, 18, 12, 255))               # bortslagen bit
+        for pts in ([(230, 120), (200, 150), (150, 160), (110, 230)], [(262, 150), (280, 210), (322, 236)]):
+            d.line(pts, fill=INK, width=6)
+    elif kind == 'sigil':
+        hexa = [(200 + 170 * np.cos(a), 200 + 170 * np.sin(a)) for a in np.arange(6) * np.pi / 3 + np.pi / 6]
+        poly(d, hexa, (150, 156, 170, 255), w=8)
+        hexi = [(200 + 140 * np.cos(a), 200 + 140 * np.sin(a)) for a in np.arange(6) * np.pi / 3 + np.pi / 6]
+        poly(d, hexi, (40, 50, 90, 255))
+        for x, y in hexa:
+            d.ellipse((x - 12, y - 12, x + 12, y + 12), fill=BRASS, outline=INK, width=4)
+        poly(d, [(150, 110), (250, 110), (210, 196), (250, 290), (150, 290), (190, 196)], (226, 190, 100, 255))  # timglas
+        d.polygon([(166, 120), (234, 120), (200, 180)], fill=(110, 220, 255, 255))
+        d.polygon([(200, 220), (236, 280), (164, 280)], fill=(110, 220, 255, 255))
+        d.arc((70, 70, 330, 330), 120, 240, fill=(110, 220, 255, 255), width=5)
+        d.arc((70, 70, 330, 330), -60, 60, fill=(110, 220, 255, 255), width=5)
+    elif kind == 'spiralstone':
+        rock = [(60, 220), (80, 120), (160, 60), (260, 66), (340, 130), (352, 236), (300, 330), (190, 352), (96, 310)]
+        poly(d, rock, (118, 122, 130, 255), w=8)
+        d.line([(84, 130), (160, 70), (250, 74)], fill=(170, 174, 182, 255), width=6)
+        spiral = [(206 + 9 * t * np.cos(t * 1.0), 208 + 9 * t * np.sin(t * 1.0)) for t in np.linspace(0.6, 13.5, 120)]
+        d.line(spiral, fill=INK, width=14, joint='curve')
+        d.line(spiral, fill=(120, 230, 240, 255), width=7, joint='curve')
+    elif kind == 'ladder':
+        cloud(d, [(200, 70, 70), (120, 96, 50), (284, 92, 56), (160, 120, 44), (246, 122, 46)], (236, 238, 248, 255))
+        for a, b in (((110, 396), (170, 130)), ((290, 396), (230, 130))):                             # bommar
+            d.line((a, b), fill=INK, width=22)
+            d.line((a, b), fill=(150, 100, 56, 255), width=12)
+        for k in range(7):                                                                              # pinnar
+            t = k / 7
+            y = 380 - t * 236
+            xl, xr = 110 + 60 * (396 - y) / 266, 290 - 60 * (396 - y) / 266
+            d.line((xl, y, xr, y), fill=INK, width=14 - k)
+            d.line((xl, y, xr, y), fill=(196, 146, 86, 255), width=7 - k // 2)
+        cloud(d, [(200, 120, 40), (150, 132, 32), (250, 134, 30)], (244, 246, 252, 255), 5)
+    return im
+
+
+def draw_sawlauncher():
+    """Sågbladskastaren: kolv, mässingskropp med kugghjul och en cirkelsågsklinga laddad längst fram."""
+    im = Image.new('RGBA', (440, 440))
+    d = ImageDraw.Draw(im)
+    poly(d, [(6, 214), (110, 196), (150, 200), (150, 232), (104, 236), (16, 264)], (118, 72, 38, 255))    # kolv
+    d.line((26, 216, 104, 202), fill=(168, 112, 62, 255), width=5)
+    poly(d, [(150, 228), (180, 228), (168, 296), (138, 296)], (86, 54, 32, 255))                       # handtag
+    rrect(d, (140, 190, 300, 236), 10, BRASS)                                                         # kropp
+    d.line((152, 200, 292, 200), fill=(226, 190, 110, 255), width=5)
+    gear(d, 200, 214, 34, 26, 9, DBRASS, (90, 62, 30, 255), 0.2)                                      # kugghjul i sidan
+    rrect(d, (290, 204, 330, 222), 4, (70, 70, 78, 255))                                              # axel
+    teeth = []
+    for k in range(18):                                                                               # sågklingan: sneda tänder
+        a0 = k * 2 * np.pi / 18
+        teeth += [(360 + 66 * np.cos(a0), 212 + 66 * np.sin(a0)), (360 + 84 * np.cos(a0 + 0.08), 212 + 84 * np.sin(a0 + 0.08))]
+    poly(d, teeth, (200, 204, 214, 255), w=5)
+    d.ellipse((316, 168, 404, 256), outline=(150, 154, 166, 255), width=6)
+    d.ellipse((346, 198, 374, 226), fill=(70, 70, 78, 255), outline=INK, width=4)
+    d.arc((304, 156, 416, 268), 200, 260, fill=(250, 250, 255, 255), width=5)
+    im = im.crop(im.getbbox())
+    return im.rotate(18, resample=Image.BICUBIC, expand=True)
+
+
+def draw_windgun():
+    """Vindbössan: en blåsbälg av läder bak, mässingsrör med en vid tratt och virvlar ur mynningen."""
+    im = Image.new('RGBA', (440, 440))
+    d = ImageDraw.Draw(im)
+    poly(d, [(6, 218), (70, 200), (70, 244), (14, 262)], (118, 72, 38, 255))                           # kolv
+    for k in range(5):                                                                                # bälgen
+        x = 70 + k * 18
+        poly(d, [(x, 176 - (k % 2) * 10), (x + 18, 176 - ((k + 1) % 2) * 10), (x + 18, 268 + ((k + 1) % 2) * 10), (x, 268 + (k % 2) * 10)], (120, 70, 40, 255) if k % 2 else (150, 92, 52, 255), w=4)
+    rrect(d, (66, 170, 80, 274), 4, WOOD)
+    rrect(d, (156, 170, 170, 274), 4, WOOD)
+    poly(d, [(170, 252), (200, 252), (190, 316), (160, 316)], (86, 54, 32, 255))                      # handtag
+    rrect(d, (168, 204, 320, 240), 8, BRASS)                                                          # rör
+    d.line((176, 212, 312, 212), fill=(230, 196, 120, 255), width=5)
+    for x in (220, 280):
+        d.line((x, 200, x, 244), fill=DBRASS, width=7)
+    poly(d, [(316, 206), (392, 160), (406, 168), (406, 276), (392, 284), (316, 238)], (196, 150, 72, 255))  # tratt
+    d.ellipse((384, 160, 420, 284), fill=(60, 40, 22, 255), outline=INK, width=6)
+    for k, r in enumerate((26, 44)):                                                                  # virvlar
+        d.arc((404 - r, 222 - r, 404 + r + 30, 222 + r), -70, 70, fill=(200, 240, 255, 255), width=6 - k)
+    im = im.crop(im.getbbox())
+    im = im.resize((im.width, int(im.height * 1.2)), Image.BICUBIC)
+    return im.rotate(20, resample=Image.BICUBIC, expand=True)
+
+
+def draw_spear():
+    """Spjutet: långt träskaft, lindning, ett bladformat stålhuvud och en röd tofs."""
+    im = Image.new('RGBA', (120, 460))
+    d = ImageDraw.Draw(im)
+    rrect(d, (48, 110, 72, 452), 10, (122, 80, 44, 255))                                             # skaft
+    d.line((56, 130, 56, 440), fill=(166, 116, 66, 255), width=4)
+    for y in (118, 134, 150):                                                                        # lindning
+        d.line((48, y, 72, y + 8), fill=(60, 34, 20, 255), width=6)
+    rrect(d, (44, 98, 76, 120), 6, (150, 108, 52, 255))                                              # holk
+    poly(d, [(60, 4), (92, 60), (78, 100), (42, 100), (28, 60)], (190, 194, 206, 255))                 # bladet
+    d.line((60, 12, 60, 96), fill=(240, 242, 248, 255), width=5)
+    for dx in (-1, 1):                                                                               # tofs
+        d.line((60, 128, 60 + dx * 26, 190), fill=INK, width=10)
+        d.line((60, 128, 60 + dx * 26, 190), fill=(200, 40, 34, 255), width=5)
+    return im.rotate(-50, resample=Image.BICUBIC, expand=True)
+
+
+GUNS.update({'sawlauncher': draw_sawlauncher, 'windgun': draw_windgun, 'spear': draw_spear})
+
+
+def particle(name, size, tint, rot=0):
+    im = Image.open(os.path.join(PARTS, name + '.png')).convert('L')
+    if rot:
+        im = im.rotate(rot, resample=Image.BICUBIC, expand=True)
+    im = im.crop(im.point(lambda v: 255 if v > 12 else 0).getbbox() or (0, 0, im.width, im.height))
+    im = Image.merge('RGB', [im.point(lambda v, c=c: v * c // 255) for c in tint])
+    k = size / max(im.size)
+    return im.resize((max(1, int(im.width * k)), max(1, int(im.height * k))), Image.LANCZOS)
+
+
+def drawn_card(cid, kind, size, dy, parts):
+    big = purple_bg()
+    for name, sc, px, py, tint, rot in parts:
+        big = screen(big, particle(name, int(S * 4 * sc), tint, rot), S * 2 + px * S * 4, S * 2 + py * S * 4)
+    g = art(kind)
+    g = shade(g.crop(g.getbbox()))
+    k = S * 4 * size / max(g.size)
+    g = g.resize((max(1, int(g.width * k)), max(1, int(g.height * k))), Image.LANCZOS)
+    pos = ((S * 4 - g.width) // 2, int((S * 4 - g.height) / 2 + dy * S * 4))
+    add_glow(big, g, pos, (0, 0, 0), 12)
+    big.alpha_composite(g, pos)
+    save(big, cid)
+
+
+def v9_upgrade(cid, w, src, tint, rot):
+    kind, name = src.split(':')
+    big = purple_bg()
+    fx = vfx(name, int(S * 4 * 0.86), tint) if kind == 'vfx' else particle(name, int(S * 4 * 0.86), tint, rot)
+    big = screen(big, fx, S * 2, S * 2 - 10)
+    g = gun(w, int(S * 4 * 0.42))
+    pos = (S * 4 - g.width - 10, S * 4 - g.height - 12)
+    add_glow(big, g, pos, (0, 0, 0), 10)
+    add_glow(big, g, pos, (255, 200, 90), 4)
+    big.alpha_composite(g, pos)
+    save(big, cid)
+
+
+def sig(f):
+    """Gråskalesignatur 32x32 (normaliserad), tålig mot omfärgning, ljusare/mörkare och omskalning."""
+    a = np.asarray(Image.open(f).convert('L').resize((32, 32), Image.BILINEAR)).astype(np.float32)
+    return (a - a.mean()) / (a.std() + 1e-6)
+
+
+def near_dupes(new_ids, limit=0.1):
+    """Jämför varje ny bild med ALLA andra kortbilder i assets/cards och avbryter om någon är samma bild
+    (omfärgad, skalad eller nästan lika). Olika kort ligger över 0,11 (närmast: ankarlinan ~ kedjeharpunen);
+    samma bild med annan färg eller ljusstyrka ligger under 0,03."""
+    files = sorted(f for f in os.listdir(OUT) if f.endswith('.png') and f != 'back.png')
+    sigs = {f[:-4]: sig(os.path.join(OUT, f)) for f in files}
+    worst = (9.0, '', '')
+    for cid in new_ids:
+        for other, s in sigs.items():
+            if other == cid:
+                continue
+            dist = float(np.abs(sigs[cid] - s).mean())
+            if dist < worst[0]:
+                worst = (dist, cid, other)
+            assert dist > limit, (cid, 'liknar', other, round(dist, 3))
+    print('%d nya bilder mot %d kortbilder, närmaste par: %s ~ %s (%.2f)' % (len(new_ids), len(sigs), worst[1], worst[2], worst[0]))
+
+
+def main_v9():
+    old_ash = {'ash:' + s for s, _ in V7.values()} | {k + ':' + s for k, s, _ in V8.values()}
+    srcs = [k + ':' + s for k, s, _ in V9_ASH.values()]
+    assert len(srcs) == len(set(srcs)) and not old_ash & set(srcs), 'varje bild används bara en gång'
+    assert len(V9_ASH) + len(V9_DRAWN) == 24 and not set(V9_ASH) & set(V9_DRAWN)
+    parts = [p[0] for _, _, _, ps in V9_DRAWN.values() for p in ps] + [s[5:] for _, s, _, _ in V9_UPGRADES.values() if s.startswith('part:')]
+    assert len(parts) == len(set(parts)), 'varje partikelbild används bara en gång'
+    fx = [s[4:] for _, s, _, _ in V9_UPGRADES.values() if s.startswith('vfx:')]
+    old_fx = {s for _, s, _ in V6_UPGRADES.values()} | {n for ls in V6_ACTIVES.values() for n, *_ in ls} | {s for _, s, _ in V7_UPGRADES.values()} | {s for _, s, _ in V8_UPGRADES.values()}
+    assert len(V9_UPGRADES) == 12 and len(fx) == len(set(fx)) and not old_fx & set(fx), 'varje effektbild används bara en gång'
+    n = 0
+    for cid, (kind, src, arg) in V9_ASH.items():
+        save(ash_card(src, arg) if kind == 'ash' else meshy_card(kind, src, arg), cid)
+        n += 1
+    for cid, (kind, size, dy, ps) in V9_DRAWN.items():
+        drawn_card(cid, kind, size, dy, ps)
+        n += 1
+    for cid, w in V9_PACTS.items():
+        pact(cid, w)
+        n += 1
+    for cid, (w, src, tint, rot) in V9_UPGRADES.items():
+        v9_upgrade(cid, w, src, tint, rot)
+        n += 1
+    near_dupes(list(V9_ASH) + list(V9_DRAWN) + list(V9_PACTS) + list(V9_UPGRADES))
+    return n
+
+
 def main():
     assert len(CARDS) == len(set(CARDS)) == 50, len(CARDS)
     srcs = list(V5.values()) + [s for _, s in V5_UPGRADES.values()]
@@ -650,6 +1087,9 @@ def main():
         return
     if ONLY == 'v8':
         print(main_v8(), 'kortbilder ->', OUT)
+        return
+    if ONLY == 'v9':
+        print(main_v9(), 'kortbilder ->', OUT)
         return
     n = 0
     if not ONLY_V5:
@@ -669,6 +1109,7 @@ def main():
         n += main_v6()
         n += main_v7()
         n += main_v8()
+        n += main_v9()
     print(n, 'kortbilder ->', OUT)
 
 

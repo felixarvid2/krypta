@@ -46,6 +46,9 @@
     <button class="d" id="b-pact8">DRAFT: HARPUN, BUMERANG OCH PRISMA</button>
     <button class="d" id="b-draft8">DRAFT: KRISTALL, HAV OCH AVGRUND</button>
     <button class="d" id="b-codex8">KORTARKIV: VERSION 8</button>
+    <button class="d" id="b-pact9">DRAFT: SÅGBLAD, VINDBÖSSA OCH SPJUT</button>
+    <button class="d" id="b-draft9">DRAFT: URVERK, STORM OCH HÖJD</button>
+    <button class="d" id="b-codex9">KORTARKIV: VERSION 9</button>
   </div>
   <div id="log">Tangenter 1-9, pilar, Enter och Esc fungerar i fönstren. Spelkänslig tangent-test: tryck på tangenter medan ett fönster är öppet och se om de loggas nedan.</div>
 </main>
@@ -218,6 +221,22 @@
   $('b-pact8').onclick = pact8;
   $('b-draft8').onclick = draft8;
   $('b-codex8').onclick = codex8;
+  // version 9: Klocktornet och Molnborgen – pakter för sågbladskastaren, vindbössan och spjutet, kort om urverk, tid, vind, storm och höjd
+  const pact9 = () => CardUI.draft(['pakt_sagblad', 'pakt_vindbossa', 'pakt_spjut'].map(Cards.byId), { title: 'SVÄR EN ED', owned: state.owned }, c => {
+    if (!c) { stat(); return; }
+    state.owned.push(c.id); log('svor ' + c.name); stat();
+    // efter eden: vapnets fyra uppgraderingar (i spelet dras de tätt efter pakten)
+    const ups = Cards.ALL.filter(x => x.weapon === c.pact);
+    CardUI.draft(ups, { title: Cards.WEAPON_NAME[c.pact] + ': VÄLJ ETT KORT', owned: state.owned, seen: new Set(seen), mods: Cards.computeMods(state.owned) }, u => { if (u) { state.owned.push(u.id); log('valde ' + u.name); } stat(); });
+  });
+  const draft9 = () => { // spelaren har två kort ur URVERKETS VÄG och ett ur STORMENS VÄG
+    const own = state.owned.concat(['kuggfickan', 'stoppuret', 'askledaren']);
+    CardUI.draft(['massingsringen', 'stormhuvan', 'himlastegen', 'stormfagelns_fjader'].map(Cards.byId), { title: 'VÄLJ ETT KORT', owned: own, seen: new Set(seen), mods: Cards.computeMods(own) }, c => { if (c) { state.owned.push(c.id); log('valde ' + c.name); } stat(); });
+  };
+  const codex9 = () => CardUI.codex(Cards.ALL.filter(c => !c.weapon), { seen: new Set(Cards.ALL.map(c => c.id)), owned: new Set(state.owned.concat(['kuggfickan', 'urmakarens_hjarta', 'pakt_sagblad'])), unlocked: new Set(Cards.ALL.map(c => c.id)) }, () => log('stängde arkivet'), { query: 'MOLNBORGEN' });
+  $('b-pact9').onclick = pact9;
+  $('b-draft9').onclick = draft9;
+  $('b-codex9').onclick = codex9;
   const auto = q.get('auto');
   if (auto === 'draft') draft(3); else if (auto === 'draft5') draft(5); else if (auto === 'shop') shop(); else if (auto === 'souls') souls(); else if (auto === 'deck') CardUI.deck(state.owned);
   else if (auto === 'legend') CardUI.draft(['tomhetsstenen', 'gravvaktaren', 'ouroboros', 'askkungen', 'vaktarbanan'].map(Cards.byId), { title: 'LEGENDARISKA TESTKORT' }, () => {})
@@ -240,9 +259,12 @@
   else if (auto === 'pact8') pact8();
   else if (auto === 'draft8') draft8();
   else if (auto === 'codex8') codex8();
+  else if (auto === 'pact9') pact9();
+  else if (auto === 'draft9') draft9();
+  else if (auto === 'codex9') codex9();
   else if (auto === 'codex5') CardUI.codex(Cards.ALL.filter(c => !c.weapon), { seen: new Set(Cards.ALL.map(c => c.id)), owned: new Set(state.owned.concat(['slipstenen+'])), unlocked: new Set(Cards.ALL.map(c => c.id)), picks: { slipstenen: 7, glodkol: 1, lakebladet: 3 } }, () => log('stängde arkivet'));
   else if (auto === 'toast') { CardUI.toast(Cards.byId('forbannade_kronan')); CardUI.toast(Cards.byId('ouroboros')); }
-  window.__demo = { state, draw, seen, draftX, deck5, draft5x, alk, stats, draft6, deck6, refine6, codex6, draft7, pact7, shop7, deck7, codex7, talents8, pact8, draft8, codex8, T8, t8 };
+  window.__demo = { state, draw, seen, draftX, deck5, draft5x, alk, stats, draft6, deck6, refine6, codex6, draft7, pact7, shop7, deck7, codex7, talents8, pact8, draft8, codex8, pact9, draft9, codex9, T8, t8 };
 })();
 </script>
 </body>
