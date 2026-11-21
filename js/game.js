@@ -701,6 +701,7 @@ function recomputeMods() {
   M = window.Cards && run ? Cards.computeMods(run.owned) : {};
   const cls = run && CLASSES[run.cls]; if (cls) for (const [k, v] of Object.entries(cls.mods)) M[k] = (M[k] || 0) + v; // klassens bonusar
   if (run && meta('luck')) M.luck = (M.luck || 0) + meta('luck') * 0.05;
+  if (run && meta('wisdom')) M.xpMul = (M.xpMul || 0) + meta('wisdom') * 0.1;
   talentMods(M);
   UP = new Set(window.Cards && run ? run.owned.map(id => Cards.byId(id)).filter(c => c && c.wup).map(c => c.wup) : []);
 }
@@ -735,6 +736,7 @@ function newRun(seed, daily) {
   resetPlayer(); recomputeMods(); if (settings.pet && PETS[settings.pet] && petOpen(settings.pet)) run.pet = settings.pet; applyClassStart();
   if (cmode('onehit')) { P.hp = 1; P.armor = 0; }
   if (cmode('dark')) P.battery += 120; // mörkerläget: extra batteri
+  run.talentRerolls = 1 + meta('talentroll'); if (meta('startlvl') && !run.practice) { run.lvl = 2; run.talentQ = 1; }
   if (meta('stones')) P.stones += 2 * meta('stones');
   if (meta('mastery')) run.wxp = Object.fromEntries(WEAPONS.map(w => [w.id, MASTERY[1]])); // vapenvana från start
   if (meta('startrune')) { run.wrunes = run.wrunes || {}; run.wrunes.pistol = (run.wrunes.pistol || []).concat(RUNE_IDS[(Math.random() * RUNE_IDS.length) | 0]).slice(-runeSlots()); }
@@ -4404,6 +4406,9 @@ const META = [
   { id: 'lamp', name: 'LYKTMAKAREN', text: '+40 SEKUNDERS BATTERI I FICKLAMPAN PER NIVÅ', max: 2, cost: [30, 60] },
   { id: 'stones', name: 'STENSAMLAREN', text: '+2 KASTSTENAR VID START PER NIVÅ', max: 2, cost: [20, 40] },
   { id: 'mastery', name: 'VAPENSKOLAN', text: 'ALLA VAPEN BÖRJAR PÅ VANA NIVÅ 2', max: 1, cost: [90] },
+  { id: 'wisdom', name: 'VISDOMEN', text: '+10 % ERFARENHET PER NIVÅ', max: 2, cost: [30, 60] },
+  { id: 'talentroll', name: 'ÖDETS TÄRNING', text: '+1 OMSLAG AV TALANGVAL PER RUNDA', max: 2, cost: [40, 80] },
+  { id: 'startlvl', name: 'FÖRBEREDELSEN', text: 'BÖRJA RUNDAN PÅ NIVÅ 2 MED ETT TALANGVAL', max: 1, cost: [100] },
 ];
 const meta = id => (profile.meta && profile.meta[id]) || 0;
 function openAltar() {
