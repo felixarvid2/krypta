@@ -8986,9 +8986,16 @@ function arenaLock(a, lock) {
 }
 function arenaSpawnWave(a) {
   a.wave++; a.alive = []; const n = Math.round(3 + run.depth * 0.5 + a.wave);
-  for (let i = 0; i < n; i++) { let spot = null;
-    for (let k = 0; k < 30 && !spot; k++) { const x = rnd(a.x0 + 0.5, a.x1 + 0.5), y = rnd(a.y0 + 0.5, a.y1 + 0.5); if (freeSpot(x, y, 0.35) && Math.hypot(x - P.x, y - P.y) > 2.5) spot = [x, y]; }
-    if (!spot) continue; const t = arenaPool[(Math.random() * arenaPool.length) | 0], e = makeEnemy(t, spot[0], spot[1]); e.alert = true; e.minion = true; e.arena = true; ents.push(e); totalEnemies++; a.alive.push(e); spawnPuff(spot[0], spot[1], 8);
+  // egen BFS från spelarens ruta inom arenan: fiender ska inte hamna i slutna fickor spelaren inte når
+  const reach = new Uint8Array(mw * mh), px = P.x | 0, py = P.y | 0, q = [];
+  if (px >= 0 && py >= 0 && px < mw && py < mh) { reach[py * mw + px] = 1; q.push(px, py); }
+  for (let h = 0; h < q.length; h += 2) { const cx = q[h], cy = q[h + 1];
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = cx + dx, ny = cy + dy;
+      if (nx < a.x0 || nx > a.x1 || ny < a.y0 || ny > a.y1 || reach[ny * mw + nx] || !walkableForEnemy(nx, ny)) continue; reach[ny * mw + nx] = 1; q.push(nx, ny); } }
+  let placed = 0;
+  for (let pass = 0; pass < 2 && !placed; pass++) for (let i = 0; i < n; i++) { let spot = null; // pass 1: reserv utan nåbarhetskrav om inget gick att placera
+    for (let k = 0; k < 60 && !spot; k++) { const x = rnd(a.x0 + 0.5, a.x1 + 0.5), y = rnd(a.y0 + 0.5, a.y1 + 0.5); if (freeSpot(x, y, 0.35) && Math.hypot(x - P.x, y - P.y) > 2.5 && (pass || reach[(y | 0) * mw + (x | 0)])) spot = [x, y]; }
+    if (!spot) continue; placed++; const t = arenaPool[(Math.random() * arenaPool.length) | 0], e = makeEnemy(t, spot[0], spot[1]); e.alert = true; e.minion = true; e.arena = true; ents.push(e); totalEnemies++; a.alive.push(e); spawnPuff(spot[0], spot[1], 8);
     for (let j = 0; j < 6; j++) particles.push({ x: spot[0], y: spot[1], z: j * 0.15, vx: 0, vy: 0, vz: 0.5, life: 0.5, maxLife: 0.5, img: fx.hit[1], size: 0.1, add: true, tint: [255, 120, 80] }); }
   play('arena_wave', 0.8); say(`VÅG ${a.wave} AV ${a.waves}`, 1.5); styleAdd(4, '');
 }
