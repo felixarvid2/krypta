@@ -1261,6 +1261,89 @@ Version 7 lägger till 200 förbättringar:
 
 Kombinerade utmaningar multiplicerar själarna. Sparplatsen väljs på startskärmen, och `?fro=XXXX` i adressen fyller i ett delat frö.
 
+## Version 16: Trädgården och Drömriket
+
+- **Den döda trädgården (`garden`):** utomhus, med häckar (Ɵ), murar (Ơ), fontäner (Ƨ) som läker en gång och stenstatyer (ƨ). Taggrankor (ƥ) river och saktar ned, och de brinner bort av eldkastaren, brinnande mark och eld.
+- **Drömriket (`dream`):**
+  - Drömväggar (Ƣ) och glidande väggar (ƣ, `level.shifts`) som är uppe 2 s och nere 2 s. De stänger aldrig på någon.
+  - Falska dörrar (Ʃ) som väcker en drömätare.
+  - Drömlyktor (ƪ).
+  - Sömnens dimma (Ʀ): fiender längre bort än 4 rutor blir nästan osynliga, och du blir dåsig.
+- **Vapen:**
+  - **Trädgårdssaxen (Ʊ):** två snabba klipp. Högerklick kastar saxen, som kommer tillbaka.
+  - **Drömstaven (Ʋ, ammo drömflaskor Ƴ):** en långsam stjärna som saktar ned allt den passerar och smäller i sömn (bedövar).
+- **Fiender:**
+  - Stenängeln (ƫ) rör sig bara när du inte tittar på den.
+  - Taggrankan (Ƭ) är rotad men når långt.
+  - Trädgårdsdrängen (ƭ).
+  - Drömätaren (Ʈ) äter ljus och släcker lampan.
+  - Speglingen (Ư) skjuter när du skjuter och rör sig spegelvänt.
+  - Sömngångaren (ư) går inte att smyga förbi och spricker i sömnpulver.
+- **Bossar:**
+  - **Trädgårdsmästaren:** saxhugg, frön och rankor, och väcker statyer.
+  - **Jon Blund:** sömnsand och språng. Han släcker ljuset och väcker dina spegelbilder.
+
+## Version 15: Katedralen och Bikupan
+
+- **Blodkatedralen (`cathedral`):**
+  - Ljusstråk (ƍ) välsignar dig, vilket ger +30 % skada en stund.
+  - Blodfuntar (Ə) läker fiender inom 4 rutor. Slå sönder dem med E.
+  - Klockor (Ɛ) bedövar fiender inom 6 rutor men väcker resten av våningen.
+  - Kyrkbänkar (Ǝ).
+- **Bikupan (`hive`):** honung (Ɩ) som klibbar fast. Larvsäckar (Ɨ) kläcks när du kommer nära, men går att krossa med E innan dess.
+- **Vapen:**
+  - **Rökelsekaret (ƛ):** ett varv runt dig som träffar allt omkring, och röken läker dig lite.
+  - **Bikastaren (Ɲ, ammo bikupor ƞ):** bin som söker upp fiender och sticker dem tre gånger.
+- **Fiender:**
+  - Korgossen (Ƒ) läker och skyddar fiender omkring sig.
+  - Botgöraren (ƒ) blir snabbare ju mer skadad den är.
+  - Keruben (Ɯ) skriker så att siktet hoppar.
+  - Arbetsbiet (Ƙ).
+  - Gaddkrigaren (ƙ) rusar med gadden och förgiftar.
+  - Larven (ƚ) spottar syra.
+- **Bossar:**
+  - **Kardinalen:** heligt ljus slår ned, eldringar, blodmässa och en kör.
+  - **Bidrottningen:** rusning, honungspölar, svärmar och ägg.
+
+## Version 14: Arenorna
+
+- **Arenarum (`level.arenas`):** när du går in fälls gallren ned i dörröppningarna och två eller tre vågor av våningens fiender kommer. När den sista är död går gallren upp, och en belöning (ett kortval, guld och hälsa eller ammo) ligger i mitten.
+- **Nya rumstyper** i de gamla biomerna, från bangeneratorn.
+- **Sex fiender i de mellersta biomerna:**
+  - Snöfantomen (Ƅ, frost): nästan osynlig tills den är nära.
+  - Lavaormen (ƅ, vulkan): dyker ned och bryter upp och spottar lava.
+  - Skarabéprästen (Ɔ, gravkammaren): väcker skarabéer och lägger en sandförbannelse.
+  - Kristallspindeln (Ƈ, kristall): nät som saktar ned.
+  - Marulken (ƈ, sjunkna staden): lockar med ljus och drar ned dig.
+  - Vindanden (Ɖ, molnborgen): blåser dig mot kanten och tar nästan ingen skada innan den fäster sig.
+
+## Version 13: Biblioteket och Gjuteriet
+
+- **Det förbjudna biblioteket (`library`):**
+  - Bokhyllor (ũ) i rader och pulpeter (Ű), där en bok ger kartan, läkning, raseri eller kunskap.
+  - Kandelabrar (ű).
+  - Bläck (Ŭ) som gör dig halvblind och långsam.
+- **Gjuteriet (`foundry`):**
+  - Rullband (Ÿ, `level.belts`) som för med sig dig, fiender och föremål. Texturen vrids efter riktningen och animeras.
+  - Smält metall (Ź).
+  - Ångventiler (ź) som väser innan de blåser.
+  - Stansar (Ż) som slår ned var tredje sekund.
+- **Vapen:**
+  - **Runboken (ƀ, ammo bläck Ƃ):** målsökande runor. Högerklick ger en virvel av sidor som fångar skott.
+  - **Ångkanonen (Ɓ, bränsle):** en kon av skållande ånga som knuffar och blåser bort skott.
+- **Fiender:**
+  - Flygande bok (Ų).
+  - Bläckslem (ų): delar sig och lämnar bläck.
+  - Arkivariespöke (Ŵ): blinkar och väcker böcker.
+  - Smältgolem (Ž): lämnar brinnande metall.
+  - Ångautomat (ž): sprutar ånga.
+  - Gnistdrönare (ſ): exploderar.
+- **Bossar:**
+  - **Bibliotekarien:** runor, bläck, språng mellan hyllorna och en storm av sidor.
+  - **Smideskolossen:** markslag med chockvågor, smält metall ur ugnen, rusning och eld runt sig.
+
+Nya bossar kommer med i turordningen först när bangeneratorn kan bygga deras arena.
+
 ## Version 12: Blodets rytm
 
 Version 12 gör om stridens grundloop. Den jämfördes först med tolv moderna boomer shooters: vad belönar de, vad driver spelaren framåt och vad saknade Krypta?
