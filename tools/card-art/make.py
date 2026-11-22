@@ -72,6 +72,10 @@ falllucka, käglor, giftpil, hög hatt, piska, solidol, ormens fjäder ...) med 
 Pakterna för käglekastaren och blåsröret ritas som siluetter; uppgraderingarna är oanvänd rök med vapnet som bricka i hörnet
 (V18_UPGRADES).
 
+Version 19: 24 nya kort (gruvan, vagnar, malm, stjärnor och meteorer). Stänken och röken tog slut i version 18, så både motiven
+(gruvhjälm, karbidlampa, sextant, astrolabium, komet ...) och bakgrunderna (strålar, ringar och stjärnor) ritas här (V19_DRAWN).
+Pakterna för hackan och stjärnlansen ritas som siluetter; uppgraderingarna har egna ritade motiv med vapnet i hörnet (V19_UPGRADES).
+
 Kör från repo-roten: python3 retrofps/tools/card-art/make.py .          (alla)
                      python3 retrofps/tools/card-art/make.py . v5       (bara version 5)
                      python3 retrofps/tools/card-art/make.py . v6       (bara version 6)
@@ -84,7 +88,9 @@ Kör från repo-roten: python3 retrofps/tools/card-art/make.py .          (alla)
                      python3 retrofps/tools/card-art/make.py . v16      (bara version 16)
                      python3 retrofps/tools/card-art/make.py . v17      (bara version 17)
                      python3 retrofps/tools/card-art/make.py . v18      (bara version 18)
+                     python3 retrofps/tools/card-art/make.py . v19      (bara version 19)
 """
+import math
 import os
 import sys
 import numpy as np
@@ -3443,6 +3449,269 @@ def main_v18():
     return n
 
 
+# ---------- version 19: Gruvan och Observatoriet ----------
+# Stänken och röken tog slut i version 18, så alla 24 motiv OCH bakgrunderna ritas här: bakom motivet ligger en ritad gloria
+# (strålar, ringar eller stjärnor i kortets egen färg) på den mörklila vinjetten (V19_DRAWN). Pakternas vapen (hackan och
+# stjärnlansen) ritas som siluetter; uppgraderingarna har ett eget ritat motiv med vapnet som bricka i hörnet (V19_UPGRADES).
+V19_DRAWN = {  # kort-id: (ritfunktion, storlek, förskjutning y, (gloriatyp, färg))
+    'gruvhjalmen': ('helmet', 0.84, 0.02, ('rays', (255, 220, 140))),
+    'laderforkladet': ('apron', 0.84, 0, ('ring', (200, 120, 70))),
+    'slagrutan': ('dowsing', 0.86, 0, ('stars', (120, 200, 255))),
+    'hackskaftet': ('pickhandle', 0.88, 0, ('rays', (200, 160, 110))),
+    'linsputsen': ('lens', 0.8, 0, ('ring', (180, 200, 255))),
+    'kupolkartan': ('domemap', 0.86, 0, ('stars', (150, 130, 255))),
+    'manstovlarna': ('moonboots', 0.84, 0, ('ring', (220, 220, 255))),
+    'okularet': ('eyepiece', 0.8, 0, ('rays', (170, 150, 255))),
+    'karbidlampan': ('carbide', 0.84, 0, ('rays', (255, 240, 170))),
+    'sextanten': ('sextant', 0.88, 0, ('stars', (255, 210, 120))),
+    'rallarens_spade': ('shovel', 0.9, 0, ('ring', (170, 140, 100))),
+    'dynamitbaltet': ('dynbelt', 0.88, 0, ('rays', (255, 110, 70))),
+    'guldvaskarens_panna': ('goldpan', 0.86, 0, ('stars', (255, 210, 80))),
+    'brytjarnet': ('crowbar', 0.9, 0, ('ring', (160, 170, 190))),
+    'slipade_glaset': ('prismglass', 0.8, 0, ('rays', (200, 240, 255))),
+    'planisfaren': ('planisphere', 0.86, 0, ('stars', (110, 160, 255))),
+    'svartkrutet': ('powderhorn', 0.86, 0, ('ring', (150, 60, 160))),
+    'formannens_visselpipa': ('whistle', 0.84, 0, ('rays', (255, 190, 90))),
+    'astrolabiet': ('astrolabe', 0.86, 0, ('stars', (255, 220, 150))),
+    'moderlodet': ('nugget', 0.82, 0, ('rays', (255, 200, 60))),
+    'kometsvansen': ('comet', 0.9, 0, ('stars', (160, 220, 255))),
+    'fallande_stjarnan': ('fallstar', 0.86, 0, ('ring', (170, 70, 150))),
+    'bergets_hjarta': ('mountainheart', 0.86, 0, ('rays', (255, 120, 80))),
+    'himlavalvet': ('firmament', 0.9, 0, ('stars', (200, 170, 255))),
+}
+V19_PACTS = {'pakt_hacka': 'pickaxe', 'pakt_stjarnlans': 'starlance'}
+V19_UPGRADES = {  # kort-id: (vapen, ritfunktion, gloriafärg)
+    'diamantspetsen': ('pickaxe', 'diamond', (170, 230, 255)), 'bergskakaren': ('pickaxe', 'quake', (230, 170, 110)),
+    'malmnasan': ('pickaxe', 'orelump', (255, 210, 90)), 'latta_skaftet': ('pickaxe', 'feather19', (210, 230, 200)),
+    'genomlysningen': ('starlance', 'wallbeam', (210, 190, 255)), 'trippelstjarnan': ('starlance', 'threestars', (255, 230, 150)),
+    'snabbladdningen': ('starlance', 'hourglass19', (150, 220, 255)), 'supernovan': ('starlance', 'nova', (255, 170, 90)),
+}
+IRON19, DARK19, GOLD19, BLUE19, LILAC19, CREAM19 = (130, 134, 146, 255), (44, 40, 52, 255), (232, 184, 64, 255), (60, 90, 170, 255), (170, 140, 240, 255), (236, 226, 200, 255)
+
+
+def star19(d, cx, cy, r, col, w=4):
+    pts = []
+    for i in range(10):
+        a = -math.pi / 2 + i * math.pi / 5
+        rr = r if i % 2 == 0 else r * 0.45
+        pts.append((cx + math.cos(a) * rr, cy + math.sin(a) * rr))
+    poly(d, pts, col, w)
+
+
+def halo19(kind, col):
+    """En ritad gloria bakom motivet: strålar, ringar eller stjärnor (i stället för stänk och rök)."""
+    im = Image.new('RGBA', (S * 4, S * 4))
+    d = ImageDraw.Draw(im)
+    c = S * 2
+    if kind == 'rays':
+        for i in range(16):
+            a = i * math.pi / 8
+            w = 0.09 if i % 2 == 0 else 0.05
+            d.polygon([(c, c), (c + math.cos(a - w) * 200, c + math.sin(a - w) * 200), (c + math.cos(a + w) * 200, c + math.sin(a + w) * 200)], fill=col + (70 if i % 2 == 0 else 40,))
+    elif kind == 'ring':
+        for r, al in ((170, 40), (135, 70), (100, 50)):
+            d.ellipse((c - r, c - r, c + r, c + r), outline=col + (al,), width=14)
+    else:
+        rnd19 = [(0.18, 0.2, 9), (0.8, 0.16, 7), (0.12, 0.72, 6), (0.86, 0.78, 10), (0.5, 0.08, 5), (0.3, 0.9, 7), (0.92, 0.45, 5), (0.06, 0.45, 8), (0.66, 0.92, 6)]
+        for x, y, r in rnd19:
+            star19(d, x * S * 4, y * S * 4, r * 2.2, col + (200,), 0)
+        d.ellipse((c - 150, c - 150, c + 150, c + 150), fill=col + (34,))
+    return im.filter(ImageFilter.GaussianBlur(2))
+
+
+def art19(kind):
+    im = Image.new('RGBA', (400, 400))
+    d = ImageDraw.Draw(im)
+    if kind == 'helmet':
+        d.pieslice((70, 100, 330, 360), 180, 360, fill=(220, 170, 50, 255), outline=INK, width=6)
+        rrect(d, (50, 220, 350, 250), 10, (190, 140, 40, 255))
+        rrect(d, (170, 120, 230, 180), 12, IRON19)
+        d.ellipse((180, 130, 220, 170), fill=(255, 250, 200, 255), outline=INK, width=4)
+    elif kind == 'apron':
+        poly(d, [(130, 40), (270, 40), (280, 130), (340, 370), (60, 370), (120, 130)], (110, 70, 40, 255))
+        d.line((130, 40, 80, 10), fill=INK, width=8); d.line((270, 40, 320, 10), fill=INK, width=8)
+        rrect(d, (150, 200, 250, 280), 8, (90, 56, 30, 255))
+    elif kind == 'dowsing':
+        d.line((200, 380, 200, 200), fill=WOOD, width=22); d.line((200, 200, 80, 40), fill=WOOD, width=18); d.line((200, 200, 320, 40), fill=WOOD, width=18)
+        d.line((200, 380, 200, 200), fill=INK, width=4); star19(d, 200, 120, 30, (140, 220, 255, 255))
+    elif kind == 'pickhandle':
+        d.line((80, 360, 300, 80), fill=WOOD, width=30); d.line((80, 360, 300, 80), fill=INK, width=4)
+        for k in range(4): rrect(d, (90 + k * 30, 300 - k * 38, 130 + k * 30, 320 - k * 38), 4, (70, 40, 20, 255), 3)
+    elif kind == 'lens':
+        d.ellipse((80, 80, 320, 320), fill=(170, 200, 240, 200), outline=BRASS, width=26)
+        d.ellipse((80, 80, 320, 320), outline=INK, width=6); d.arc((120, 120, 260, 260), 200, 280, fill=(255, 255, 255, 255), width=12)
+        d.line((300, 300, 380, 380), fill=BRASS, width=26)
+    elif kind == 'domemap':
+        d.pieslice((40, 80, 360, 400), 180, 360, fill=(30, 40, 90, 255), outline=INK, width=6)
+        rrect(d, (40, 236, 360, 270), 6, BRASS)
+        for x, y in ((120, 180), (200, 120), (280, 170), (160, 210)): star19(d, x, y, 16, (255, 230, 150, 255), 3)
+        d.line((120, 180, 200, 120, 280, 170), fill=(255, 230, 150, 255), width=3)
+    elif kind == 'moonboots':
+        for x in (60, 210):
+            poly(d, [(x, 80), (x + 90, 80), (x + 100, 280), (x + 130, 300), (x + 130, 350), (x - 10, 350), (x, 280)], (200, 200, 220, 255))
+            rrect(d, (x - 14, 340, x + 136, 372), 12, (90, 90, 110, 255))
+            d.line((x + 10, 140, x + 90, 140), fill=BLUE19, width=10)
+    elif kind == 'eyepiece':
+        rrect(d, (150, 40, 250, 260), 20, BRASS); rrect(d, (130, 250, 270, 330), 16, DBRASS)
+        d.ellipse((165, 55, 235, 125), fill=(40, 30, 80, 255), outline=INK, width=5); star19(d, 200, 90, 16, (255, 240, 200, 255), 2)
+    elif kind == 'carbide':
+        rrect(d, (140, 160, 260, 360), 18, BRASS); rrect(d, (170, 110, 230, 170), 8, DBRASS)
+        poly(d, [(200, 30), (230, 100), (200, 115), (170, 100)], (255, 220, 120, 255), 4)
+        d.arc((240, 200, 330, 300), 270, 90, fill=INK, width=10)
+    elif kind == 'sextant':
+        d.pieslice((60, 60, 340, 340), 50, 130, fill=BRASS, outline=INK, width=6)
+        d.line((200, 200, 200, 30), fill=DBRASS, width=14); d.line((200, 200, 120, 330), fill=INK, width=8)
+        d.ellipse((180, 180, 220, 220), fill=BRASS, outline=INK, width=4); rrect(d, (220, 60, 330, 100), 10, IRON19)
+    elif kind == 'shovel':
+        d.line((200, 30, 200, 250), fill=WOOD, width=26); rrect(d, (160, 20, 240, 50), 10, WOOD)
+        poly(d, [(130, 240), (270, 240), (270, 320), (200, 390), (130, 320)], IRON19)
+    elif kind == 'dynbelt':
+        rrect(d, (20, 220, 380, 270), 14, (100, 66, 36, 255))
+        for k in range(5): rrect(d, (50 + k * 64, 110, 96 + k * 64, 260), 10, (210, 50, 40, 255)); d.line((73 + k * 64, 110, 73 + k * 64 + 10 * (k - 2), 60), fill=INK, width=5)
+    elif kind == 'goldpan':
+        d.ellipse((40, 140, 360, 340), fill=(110, 110, 120, 255), outline=INK, width=6); d.ellipse((90, 180, 310, 300), fill=(70, 90, 110, 255), outline=INK, width=4)
+        for x, y in ((150, 230), (200, 250), (240, 220), (180, 210), (260, 260)): d.ellipse((x - 14, y - 10, x + 14, y + 10), fill=GOLD19, outline=INK, width=3)
+    elif kind == 'crowbar':
+        d.line((90, 370, 280, 70), fill=IRON19, width=26); d.line((90, 370, 280, 70), fill=INK, width=4)
+        d.arc((240, 20, 340, 120), 180, 360, fill=IRON19, width=26); d.line((80, 360, 40, 380), fill=IRON19, width=26)
+    elif kind == 'prismglass':
+        poly(d, [(200, 40), (340, 330), (60, 330)], (200, 230, 255, 200))
+        for k, col in enumerate(((255, 80, 80, 255), (255, 220, 80, 255), (90, 220, 120, 255), (90, 140, 255, 255))): d.line((250, 220 + k * 18, 390, 250 + k * 34), fill=col, width=10)
+        d.line((10, 200, 140, 210), fill=(255, 255, 255, 255), width=10)
+    elif kind == 'planisphere':
+        d.ellipse((40, 40, 360, 360), fill=(26, 32, 80, 255), outline=BRASS, width=20); d.ellipse((40, 40, 360, 360), outline=INK, width=6)
+        d.ellipse((110, 90, 290, 270), outline=(200, 200, 255, 255), width=4)
+        for x, y in ((150, 150), (230, 130), (260, 220), (170, 250), (200, 190)): star19(d, x, y, 12, (255, 240, 180, 255), 2)
+    elif kind == 'powderhorn':
+        d.arc((60, 60, 360, 360), 120, 300, fill=(220, 200, 160, 255), width=60); d.arc((60, 60, 360, 360), 120, 300, fill=INK, width=6)
+        rrect(d, (220, 60, 300, 110), 10, BRASS); poly(d, [(60, 250), (110, 270), (90, 320)], (40, 30, 30, 255))
+    elif kind == 'whistle':
+        rrect(d, (60, 160, 300, 260), 40, BRASS); rrect(d, (290, 180, 370, 240), 14, DBRASS)
+        d.rectangle((100, 190, 160, 230), fill=DARK19); d.line((70, 170, 20, 100), fill=INK, width=8); d.ellipse((5, 70, 45, 110), outline=INK, width=8)
+    elif kind == 'astrolabe':
+        d.ellipse((50, 50, 350, 350), fill=BRASS, outline=INK, width=6); d.ellipse((90, 90, 310, 310), fill=DBRASS, outline=INK, width=4)
+        d.ellipse((130, 110, 270, 250), outline=CREAM19, width=6); d.line((80, 200, 320, 200), fill=INK, width=6); d.line((200, 200, 290, 110), fill=CREAM19, width=8)
+        rrect(d, (175, 10, 225, 60), 14, BRASS)
+    elif kind == 'nugget':
+        poly(d, [(110, 140), (190, 80), (300, 110), (340, 220), (280, 320), (150, 330), (70, 240)], GOLD19)
+        poly(d, [(160, 150), (220, 120), (250, 170), (200, 200)], (255, 236, 140, 255), 3)
+    elif kind == 'comet':
+        d.polygon([(300, 100), (20, 360), (60, 380)], fill=(160, 220, 255, 120)); d.polygon([(300, 100), (60, 300), (120, 360)], fill=(220, 240, 255, 150))
+        d.ellipse((260, 60, 350, 150), fill=(240, 250, 255, 255), outline=INK, width=6)
+    elif kind == 'fallstar':
+        for k in range(3): d.line((60 + k * 30, 40, 220 + k * 30, 230), fill=(170, 70, 150, 160), width=10)
+        star19(d, 260, 270, 90, (200, 120, 220, 255))
+    elif kind == 'mountainheart':
+        poly(d, [(20, 360), (150, 110), (210, 190), (260, 120), (380, 360)], (90, 84, 96, 255))
+        poly(d, [(200, 330), (150, 270), (160, 230), (200, 245), (240, 230), (250, 270)], (220, 50, 50, 255), 4)
+    elif kind == 'firmament':
+        d.pieslice((20, 60, 380, 420), 180, 360, fill=(30, 26, 80, 255), outline=INK, width=6)
+        d.arc((70, 110, 330, 370), 180, 360, fill=LILAC19, width=8)
+        for x, y, r in ((90, 220, 14), (150, 140, 20), (230, 110, 16), (300, 180, 22), (200, 200, 12)): star19(d, x, y, r, (255, 240, 190, 255), 3)
+    elif kind == 'diamond':
+        poly(d, [(200, 40), (330, 150), (200, 370), (70, 150)], (180, 230, 255, 255)); poly(d, [(120, 150), (280, 150), (200, 370)], (140, 200, 240, 255), 4)
+    elif kind == 'quake':
+        rrect(d, (20, 260, 380, 300), 6, (110, 90, 70, 255))
+        d.line((200, 260, 170, 200, 220, 150, 180, 80), fill=INK, width=10)
+        for k in (1, 2): d.arc((200 - k * 80, 230 - k * 40, 200 + k * 80, 290 + k * 40), 200, 340, fill=(230, 170, 110, 255), width=10)
+    elif kind == 'orelump':
+        poly(d, [(80, 220), (160, 120), (300, 140), (340, 260), (230, 340), (110, 320)], (110, 100, 96, 255))
+        for x, y in ((170, 180), (250, 200), (200, 270), (280, 280)): poly(d, [(x, y - 22), (x + 18, y), (x, y + 22), (x - 18, y)], GOLD19, 3)
+    elif kind == 'feather19':
+        d.ellipse((150, 30, 250, 370), fill=(230, 240, 220, 255), outline=INK, width=6); d.line((200, 40, 200, 390), fill=INK, width=6)
+        for y in (110, 170, 230, 290): d.line((200, y, 160, y - 30), fill=INK, width=3); d.line((200, y, 240, y - 30), fill=INK, width=3)
+    elif kind == 'wallbeam':
+        for y in (60, 140, 220, 300): rrect(d, (150, y, 250, y + 70), 4, (120, 110, 100, 255), 4)
+        d.line((10, 200, 390, 200), fill=(220, 200, 255, 230), width=26); d.line((10, 200, 390, 200), fill=(255, 255, 255, 255), width=8)
+    elif kind == 'threestars':
+        star19(d, 200, 120, 70, (255, 230, 150, 255)); star19(d, 100, 280, 55, (255, 210, 130, 255)); star19(d, 300, 280, 55, (255, 210, 130, 255))
+    elif kind == 'hourglass19':
+        poly(d, [(110, 50), (290, 50), (210, 200), (290, 350), (110, 350), (190, 200)], (180, 220, 255, 200))
+        rrect(d, (90, 30, 310, 60), 8, BRASS); rrect(d, (90, 340, 310, 370), 8, BRASS); poly(d, [(150, 340), (250, 340), (200, 280)], (255, 230, 150, 255), 3)
+    elif kind == 'nova':
+        for i in range(12):
+            a = i * math.pi / 6
+            d.polygon([(200 + math.cos(a - 0.15) * 60, 200 + math.sin(a - 0.15) * 60), (200 + math.cos(a) * 190, 200 + math.sin(a) * 190), (200 + math.cos(a + 0.15) * 60, 200 + math.sin(a + 0.15) * 60)], fill=(255, 170, 90, 255))
+        d.ellipse((130, 130, 270, 270), fill=(255, 240, 200, 255), outline=INK, width=6)
+    else:
+        raise ValueError(kind)
+    return im
+
+
+def draw_pickaxe():
+    """Hackan: ett träskaft med ett böjt järnhuvud."""
+    im = Image.new('RGBA', (520, 420))
+    d = ImageDraw.Draw(im)
+    d.line((80, 400, 300, 90), fill=WOOD, width=34)
+    d.line((80, 400, 300, 90), fill=INK, width=5)
+    d.arc((120, 20, 480, 260), 200, 340, fill=STEEL, width=46)
+    d.arc((120, 20, 480, 260), 200, 340, fill=INK, width=6)
+    rrect(d, (270, 60, 330, 120), 8, DBRASS)
+    return im.crop(im.getbbox()).rotate(4, resample=Image.BICUBIC, expand=True)
+
+
+def draw_starlance():
+    """Stjärnlansen: en lång mässingslans med en stjärna i spetsen."""
+    im = Image.new('RGBA', (600, 200))
+    d = ImageDraw.Draw(im)
+    rrect(d, (10, 86, 430, 114), 12, BRASS)
+    for x in (80, 200, 320): rrect(d, (x - 10, 78, x + 10, 122), 4, DBRASS)
+    poly(d, [(430, 70), (500, 100), (430, 130)], (90, 100, 170, 255))
+    star19(d, 540, 100, 50, (240, 230, 255, 255))
+    return im.crop(im.getbbox()).rotate(8, resample=Image.BICUBIC, expand=True)
+
+
+GUNS.update({'pickaxe': draw_pickaxe, 'starlance': draw_starlance})
+
+
+def drawn_card19(cid, kind, size, dy, halo):
+    big = purple_bg()
+    big.alpha_composite(halo19(*halo))
+    g = art19(kind)
+    g = shade(g.crop(g.getbbox()))
+    k = S * 4 * size / max(g.size)
+    g = g.resize((max(1, int(g.width * k)), max(1, int(g.height * k))), Image.LANCZOS)
+    pos = ((S * 4 - g.width) // 2, int((S * 4 - g.height) / 2 + dy * S * 4))
+    add_glow(big, g, pos, (0, 0, 0), 12)
+    big.alpha_composite(g, pos)
+    save(big, cid)
+
+
+def v19_upgrade(cid, w, kind, col):
+    big = purple_bg()
+    big.alpha_composite(halo19('ring', col))
+    g = art19(kind)
+    g = shade(g.crop(g.getbbox()))
+    k = S * 4 * 0.72 / max(g.size)
+    g = g.resize((max(1, int(g.width * k)), max(1, int(g.height * k))), Image.LANCZOS)
+    big.alpha_composite(g, ((S * 4 - g.width) // 2, (S * 4 - g.height) // 2 - 14))
+    b = gun(w, int(S * 4 * 0.42))
+    pos = (S * 4 - b.width - 10, S * 4 - b.height - 12)
+    add_glow(big, b, pos, (0, 0, 0), 10)
+    add_glow(big, b, pos, (255, 200, 90), 4)
+    big.alpha_composite(b, pos)
+    save(big, cid)
+
+
+def main_v19():
+    assert len(V19_DRAWN) == 24 and len(V19_UPGRADES) == 8
+    kinds = [k for k, _, _, _ in V19_DRAWN.values()] + [k for _, k, _ in V19_UPGRADES.values()]
+    assert len(kinds) == len(set(kinds)), 'varje motiv ritas bara en gång'
+    n = 0
+    for cid, (kind, size, dy, halo) in V19_DRAWN.items():
+        drawn_card19(cid, kind, size, dy, halo)
+        n += 1
+    for cid, w in V19_PACTS.items():
+        pact(cid, w)
+        n += 1
+    for cid, (w, kind, col) in V19_UPGRADES.items():
+        v19_upgrade(cid, w, kind, col)
+        n += 1
+    near_dupes(list(V19_DRAWN) + list(V19_PACTS) + list(V19_UPGRADES))
+    return n
+
+
+
 
 def main():
     assert len(CARDS) == len(set(CARDS)) == 50, len(CARDS)
@@ -3479,6 +3748,9 @@ def main():
     if ONLY == 'v18':
         print(main_v18(), 'kortbilder ->', OUT)
         return
+    if ONLY == 'v19':
+        print(main_v19(), 'kortbilder ->', OUT)
+        return
     n = 0
     if not ONLY_V5:
         for cid in CARDS:
@@ -3504,6 +3776,7 @@ def main():
         n += main_v16()
         n += main_v17()
         n += main_v18()
+        n += main_v19()
     print(n, 'kortbilder ->', OUT)
 
 

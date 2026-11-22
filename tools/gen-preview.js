@@ -1,17 +1,17 @@
 'use strict';
 // Skriver ut en genererad bana som ASCII: node tools/gen-preview.js <biom> [seed] [djup] [flaggor]
 //   biom: dungeon | caves | graveyard | forest | courtyard | swamp | frost | volcano | tomb | crystal | sunken | clock | sky | fungus | mirror
-//         | library | foundry | cathedral | hive | garden | dream | ship | lab | circus | jungle
+//         | library | foundry | cathedral | hive | garden | dream | ship | lab | circus | jungle | mine | observatory
 //         | boss | boss:hall | boss:graveyard | boss:cave | boss:forest | boss:swamp | boss:frost | boss:volcano | boss:tomb | boss:crystal
 //         | boss:sunken | boss:clock | boss:sky | boss:fungus | boss:mirror | boss:library | boss:foundry | boss:cathedral | boss:hive
-//         | boss:garden | boss:dream | boss:ship | boss:lab | boss:circus | boss:jungle | random
+//         | boss:garden | boss:dream | boss:ship | boss:lab | boss:circus | boss:jungle | boss:mine | boss:observatory | random
 //         (eller --biome=clock, --biome=fungus, --biome=library, --biome=foundry)
 //   flaggor: --biome=swamp  --shop  --weapon=g (eller --weapon=axe, --weapon=harpoon, --weapon=Â, --weapon=spear, --weapon=Į, --weapon=whip, --weapon=Ŕ,
-//            --weapon=runebook, --weapon=Ɓ, --weapon=censer, --weapon=Ɲ, --weapon=shears, --weapon=Ʋ, --weapon=chaincannon, --weapon=Ǭ, --weapon=pinthrower, --weapon=Ȏ)
+//            --weapon=runebook, --weapon=Ɓ, --weapon=censer, --weapon=Ɲ, --weapon=shears, --weapon=Ʋ, --weapon=chaincannon, --weapon=Ǭ, --weapon=pinthrower, --weapon=Ȏ, --weapon=pickaxe, --weapon=Ȫ)
 //            --guardian=demon (vaktare på vanliga våningar, även frost/flame/pharaoh/crystalqueen/leviathan/clockmaker/thunderbird/mycelmother/mirrorking
-//            /librarian/colossus/cardinal/queenbee/gardener/sandman/captain/alchemist/ringmaster/serpent)
+//            /librarian/colossus/cardinal/queenbee/gardener/sandman/captain/alchemist/ringmaster/serpent/foreman/starseer)
 //            --boss=ghost (bossens tema i arenan, även crystalqueen/leviathan/clockmaker/thunderbird/mycelmother/mirrorking/librarian/colossus
-//            /cardinal/queenbee/gardener/sandman/captain/alchemist/ringmaster/serpent)
+//            /cardinal/queenbee/gardener/sandman/captain/alchemist/ringmaster/serpent/foreman/starseer)
 //            --secret (hemlig skattvåning, Gen.secret; biomen väljer utseendet, standard dungeon)
 //            --maze (labyrint, Gen.maze; biomen väljer utseendet, standard dungeon)
 //            --beams (visa ljusschakten som ~ och rullstenens bana som =)
@@ -65,6 +65,9 @@
 //          node tools/gen-preview.js --biome=circus 7 3 --rooms --guardian=ringmaster   (version 18: tältduk Ǯ, burar ǯ, fallluckor Ǳ, strålkastare ǲ, hjul ǳ Ǵ)
 //          node tools/gen-preview.js --biome=jungle 7 3 --rooms --sky --guardian=serpent   (gläntor och stigar under himlen, tät djungel Ȁ, pirayavatten Ȃ, idoler Ȅ ȅ)
 //          node tools/gen-preview.js boss:circus 3 --boss=ringmaster    /    node tools/gen-preview.js boss:jungle 3 --boss=serpent    /    node tools/gen-preview.js jungle 1 --stats --n=100
+//          node tools/gen-preview.js --biome=mine 7 3 --rooms --guardian=foreman   (version 19: timmer Ȑ, malmådror ȑ, räls Ȗ med vagnbanor, gas ȗ, ras Ș)
+//          node tools/gen-preview.js --biome=observatory 7 4 --rooms --guardian=starseer   (mässing ȓ, kupolspringor Ț, stjärnkartegolv ș, stjärnportar Ƞ)
+//          node tools/gen-preview.js boss:mine 3 --boss=foreman    /    node tools/gen-preview.js boss:observatory 3 --boss=starseer    /    node tools/gen-preview.js mine 1 --stats --n=100
 const fs = require('fs');
 const path = require('path');
 global.window = global;
@@ -168,8 +171,15 @@ const LEGEND = [
   '  ȅ pilidol (högst 4, ingen dörr/öppning inom 3 rutor i fri rak linje)  Ȇ giftblomma  ȇ tikifackla (ljus, blockerar)      föremål: Ǿ kägellåda  ȏ pilkoger',
   'cirkusen: manegen, burgången, artistlogen, nöjesfältet (inomhus); djungeltemplet: tempelsal, offeraltare, den rasade trappan, gläntor och flodbäddar',
   '  djungeltemplet har rullstensfällor ¹ i ~50 % av banorna (--beams visar banan)',
+  'version 19: väggar Ȑ timrad stoll  ȑ malmåder  Ȓ förmannens vägg  ȓ mässingspanel  Ȕ stjärnkarta  ȕ stjärnskådarens vägg',
+  'vapen: ȩ hackan  Ȫ stjärnlansen      nya fiender: ȡ gruvarbetare  Ȣ kolgolem (högst 2, djup 2+)  ȣ mullvadsman  Ȥ gnistlykta',
+  '  ȥ stjärnfödd  Ȧ astronom  ȧ urverksuggla  Ȩ tomrumsväktare (högst 2, djup 2+)',
+  'golvrutor (Ȗ ȗ Ș Ț Ƞ aldrig enda vägen): Ȗ räls (level.carts: vagnbanor)  ȗ gasficka  Ș knakande tak  Ț kupolspringa  Ƞ stjärnport (par, level.starports)',
+  '  ș stjärnkartegolv (låg tyngdkraft, får ligga på vägen)',
+  'rekvisita: ț gruvvagn i vila  Ȝ dynamitlåda  ȝ karbidlampa (ljus)  Ȟ orrery  ȟ teleskop      föremål: ȫ stjärnstoftsflaska',
+  'gruvan: lastplatsen, schaktet, malmgrottan, sprängkammaren, den rasade stollen; observatoriet: stora kupolen, planetariet, teleskopgalleriet, kartrummet',
 ];
-const OLD_EN = 'SKVILNORW', NEW_EN = 'UXY!@^+ÅÄÖÉÜÑÆÞÐÝÃÕÊÎÔËÍÏÓÚÛĀĂĳĴĵĶķĸ' + 'ŌōŎŏŐő' + 'ŗŘřŚśŜ' + 'ŲųŴŽžſ' + 'ƄƅƆƇƈƉ' + 'ƑƒƜƘƙƚ' + 'ƫƬƭƮƯư' + 'ǕǖǗǘǙǚǣǤǥǦǧǨ' + 'ǷǸǹǺǻǼȈȉȊȋȌȍ';
+const OLD_EN = 'SKVILNORW', NEW_EN = 'UXY!@^+ÅÄÖÉÜÑÆÞÐÝÃÕÊÎÔËÍÏÓÚÛĀĂĳĴĵĶķĸ' + 'ŌōŎŏŐő' + 'ŗŘřŚśŜ' + 'ŲųŴŽžſ' + 'ƄƅƆƇƈƉ' + 'ƑƒƜƘƙƚ' + 'ƫƬƭƮƯư' + 'ǕǖǗǘǙǚǣǤǥǦǧǨ' + 'ǷǸǹǺǻǼȈȉȊȋȌȍ' + 'ȡȢȣȤȥȦȧȨ';
 const FEAT = { anvil: '(', fortune: ')', prisoner: '[', challenge: '?', offering: ';', lever: '/', locked: ']', cracked: '{', arrows: '<', gas: '>', lava: '_', water: '-', ice: ':', webs: '"',
   alchemist: '£', priest: '€', petcage: '©', potions: '¥', icicles: 'Ç',
   campfire: '¶', questboard: '®', runes: 'ª', meat: 'ð', firejets: '°', crumble: '¬', pendulums: '±', plates: '¨', secretstairs: '÷', poisonbarrels: 'µ', frostbarrels: 'ß',
@@ -195,7 +205,10 @@ const FEAT = { anvil: '(', fortune: ')', prisoner: '[', challenge: '?', offering
   tents: 'Ǯ', cages: 'ǯ', junglestone: 'ǿ', junglewalls: 'Ȁ', trapdoors: 'Ǳ', spotlights: 'ǲ', piranhas: 'Ȃ', vines: 'ȃ', knifewheels: 'ǳ', prizewheels: 'Ǵ', // version 18
   balloons: 'ǵ', marquees: 'Ƕ', goldidols: 'Ȅ', dartidols: 'ȅ', poisonflowers: 'Ȇ', tikitorches: 'ȇ', pincrates: 'Ǿ', dartquivers: 'ȏ',
   clowns: 'Ƿ', jugglers: 'Ǹ', stiltwalkers: 'ǹ', knifethrowers: 'Ǻ', lions: 'ǻ', marionettes: 'Ǽ', lizardmen: 'Ȉ', blowgunners: 'ȉ', monkeys: 'Ȋ', jaguars: 'ȋ',
-  mosquitoes: 'Ȍ', templeguardians: 'ȍ' };
+  mosquitoes: 'Ȍ', templeguardians: 'ȍ',
+  timbers: 'Ȑ', oreveins: 'ȑ', brasswalls: 'ȓ', starcharts: 'Ȕ', rails: 'Ȗ', gaspockets: 'ȗ', caveins: 'Ș', starmaps: 'ș', domeslits: 'Ț', minecarts: 'ț', // version 19
+  dynamite: 'Ȝ', carbidelamps: 'ȝ', orreries: 'Ȟ', telescopes: 'ȟ', starportals: 'Ƞ', stardust: 'ȫ', miners: 'ȡ', coalgolems: 'Ȣ', molemen: 'ȣ', sparkwisps: 'Ȥ',
+  starspawns: 'ȥ', astronomers: 'Ȧ', clockowls: 'ȧ', voidwatchers: 'Ȩ' };
 const arrow = b => (b.dx > 0 ? '>' : b.dx < 0 ? '<' : b.dy > 0 ? 'v' : '^');
 const makeLevel = (seed, d, shop) => (flag('secret') ? Gen.secret(seed, { biome: biome === 'random' ? undefined : biome, depth: d })
   : flag('maze') ? Gen.maze(seed, { biome: biome === 'random' ? undefined : biome, depth: d })
@@ -237,6 +250,8 @@ for (let k = 0; k < n; k++) {
   if (lv.beams && lv.beams.length) console.log('ljusschakt: ' + lv.beams.map(b => b.x + ',' + b.y).join(' '));
   if (lv.saws && lv.saws.length) console.log('sågspår: ' + lv.saws.map(s => `${s.x0},${s.y0}-${s.x1},${s.y1}`).join('  '));
   if (lv.teleports && lv.teleports.length) console.log('teleporterpar: ' + lv.teleports.map((t, i) => `${i + 1}: ${t.a.x},${t.a.y} <-> ${t.b.x},${t.b.y}`).join('  '));
+  if (lv.carts && lv.carts.length) console.log('vagnbanor: ' + lv.carts.map((c, i) => `${i + 1}: ${c.loop ? 'slinga' : 'fram och tillbaka'} ${c.path.length} rutor från ${c.path[0].x},${c.path[0].y}, fart ${c.speed}, fas ${c.ph}`).join('  ')); // (version 19)
+  if (lv.starports && lv.starports.length) console.log('stjärnportpar: ' + lv.starports.map((p, i) => `${i + 1}: ${p[0].x},${p[0].y} <-> ${p[1].x},${p[1].y}`).join('  '));
   if (lv.belts && lv.belts.length) { // rullbanden som raka band: start, riktning och längd
     const at = new Map(lv.belts.map(b => [b.y * W + b.x, b])), runs = [];
     for (const b of lv.belts) { const p = at.get((b.y - b.dy) * W + b.x - b.dx); if (p && p.dx === b.dx && p.dy === b.dy) continue; let len = 0; for (let q = b; q && q.dx === b.dx && q.dy === b.dy; q = at.get((q.y + q.dy) * W + q.x + q.dx)) len++; runs.push(`${b.x},${b.y}${arrow(b)}${len}`); }
@@ -269,7 +284,7 @@ for (let k = 0; k < n; k++) {
     let s = '';
     for (let x = 0; x < W; x++) {
       const c = lv.map[y][x];
-      if (show) { s += (c >= '0' && c <= '9') || '#%~&=Ø¦Ò¤ÈÌÙĄĆĈĊČĎĹĺĻļĽľŝŞşŠšŢũŪūŵŶŷƊƋƌƓƔƕƟƠơƢƣƤǒǓǔǠǡǢǮǯǰǿȀȁ'.includes(c) ? '#' : (show[y] ? show[y][x] : '?'); continue; }
+      if (show) { s += (c >= '0' && c <= '9') || '#%~&=Ø¦Ò¤ÈÌÙĄĆĈĊČĎĹĺĻļĽľŝŞşŠšŢũŪūŵŶŷƊƋƌƓƔƕƟƠơƢƣƤǒǓǔǠǡǢǮǯǰǿȀȁȐȑȒȓȔȕ'.includes(c) ? '#' : (show[y] ? show[y][x] : '?'); continue; }
       if (mark[y * W + x] && (c === '.' || mark[y * W + x] === '~' || mark[y * W + x] === '+' || mark[y * W + x] === '!' || c === 'ń' || c === 'ť' || c === 'Ÿ' || c === 'ƣ')) { s += mark[y * W + x]; continue; }
       if (c !== '.') { s += c; continue; }
       const fi = lv.floorMask ? +lv.floorMask[y][x] : 0;
@@ -279,7 +294,7 @@ for (let k = 0; k < n; k++) {
   }
   if (flag('rooms')) {
     // per rum: typ, rumstyp, ruta, antal fiender och rekvisita (räknat via rumsmasken när den finns)
-    const ENEMY = 'SKVILNORWEQ' + NEW_EN, PROPS = 'ckjquvwyzeiFHJT()[?;/£€©¶®µß÷²³çÿýĖĘĚĞĠŅņŇňŒŦŧŰűŻż' + 'ƎƏƐƗƧƨƩƪ' + 'ǎǐǑǝǞǟ' + 'ǳǴǵǶȄȅȆȇ';
+    const ENEMY = 'SKVILNORWEQ' + NEW_EN, PROPS = 'ckjquvwyzeiFHJT()[?;/£€©¶®µß÷²³çÿýĖĘĚĞĠŅņŇňŒŦŧŰűŻż' + 'ƎƏƐƗƧƨƩƪ' + 'ǎǐǑǝǞǟ' + 'ǳǴǵǶȄȅȆȇ' + 'țȜȝȞȟ';
     lv.rooms.forEach((r, i) => {
       let en = 0, pr = 0, items = '';
       for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -287,7 +302,7 @@ for (let k = 0; k < n; k++) {
         if (!inside) continue;
         const c = lv.map[y][x];
         if (ENEMY.includes(c)) en++; else if (PROPS.includes(c)) pr++;
-        if ("ZhaA$CMwy,'}¥ªðþ¼½ĢŊŋŨƂƞƳǫǭǾȏ".includes(c) || (Gen.WEAPONS && Gen.WEAPONS[c])) items += c;
+        if ("ZhaA$CMwy,'}¥ªðþ¼½ĢŊŋŨƂƞƳǫǭǾȏȫ".includes(c) || (Gen.WEAPONS && Gen.WEAPONS[c])) items += c;
       }
       console.log(`  ${String(i).padStart(2)} ${String.fromCharCode(48 + i)} ${r.type.padEnd(9)} ${(r.arch || '').padEnd(12)} ${(r.tag || r.shape || '').padEnd(9)} ${r.x},${r.y} ${r.w}x${r.h}  fiender ${en}  rekvisita ${pr}  ${items}` + (r.guardian ? '  vaktare ' + r.guardian : '') + (r.lock ? '  lås ' + r.lock : ''));
     });

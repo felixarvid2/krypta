@@ -1261,6 +1261,40 @@ Version 7 lägger till 200 förbättringar:
 
 Kombinerade utmaningar multiplicerar själarna. Sparplatsen väljs på startskärmen, och `?fro=XXXX` i adressen fyller i ett delat frö.
 
+## Version 19: Gruvan och Observatoriet
+
+- **Den övergivna gruvan (`mine`):** inomhus, med timrade stollar (Ȑ) och malmådror (ȑ) som väggar, och gruvjord och plankgolv på golvet.
+  - Räls (Ȗ) är gångbar. Gruvvagnar rullar längs rälsen (`level.carts`, en sluten slinga eller en sträcka fram och tillbaka). Träffas du av en vagn tar du 15 skada och knuffas i färdriktningen. Fiender som träffas tar 40 skada. Rälsens bild väljs efter grannrutorna: vågrät, lodrät eller korsning.
+  - Gasfickor (ȗ) ger 1 skada i sekunden. Eld eller en explosion på rutan ger en explosion med radie 2, och elden sprider sig till gasen intill.
+  - Knakande tak (Ș): står du kvar under det i 0,8 s rasar det. Du tar 12 skada, hamnar på en fri grannruta, och rutan blir en stenbumling.
+  - En gruvvagn i vila (ț) kan du puffa med E. Den rullar då sex rutor rakt fram och gör 60 skada på fiender i vägen.
+  - Dynamitlådor (Ȝ) smäller av skott, eld och explosioner, med radie 3 och 50 skada. Karbidlampor (ȝ) lyser.
+  - Ett skott i en malmåder ger 1 guld första gången. Hackan bryter ut åderns malm för 3 guld, och åderns ruta blir en vanlig stollvägg.
+- **Stjärnobservatoriet (`observatory`):** inomhus högt upp, med mässingspaneler (ȓ, bilden `wall_brass2`) och stjärnkartor (Ȕ).
+  - Stjärnkartegolvet (ș) har låg tyngdkraft: hoppen blir dubbelt så höga och långa.
+  - Kupolspringor (Ț): var 5–8 s faller en meteor på en springruta nära dig. En ring varnar 1 s innan, och nedslaget gör 20 skada i radie 1,2, även på fiender.
+  - Stjärnportar (Ƞ) går i par (`level.starports`) som spegelpalatsets teleportrar.
+  - Planetariet (Ȟ) visar utgången och hemligheterna på kartan. Teleskopet (ȟ) visar alla fiender på kartan i 20 s. Båda går att använda en gång.
+  - Observatoriet är en sen biom och kommer aldrig först i en omgång eller i Avgrundens sexvåningsvarv. Gruvan kan komma först.
+- **Vapen:**
+  - **Hackan (ȩ):** tunga närstridsslag (45 skada) som också slår sönder stenbumlingar, knakande tak och malmådror. Den behöver ingen ammo.
+  - **Stjärnlansen (Ȫ, ammo stjärnstoftsflaskor ȫ):** håll inne avtryckaren 0,2–1,2 s och släpp. Då går en stjärnstråle genom alla fiender i en linje och gör 25–90 skada efter laddningen.
+  - Båda har pakter med fyra uppgraderingar var.
+- **Fiender i gruvan:**
+  - Gruvarbetaren (ȡ) slåss med hackan och kastar ibland en dynamitstav, som landar där ringen lyser.
+  - Kolgolemen (Ȣ) gör 25 % mer skada när den står i eld och exploderar i glöd när den dör. Högst två per bana.
+  - Mullvadsmannen (ȣ) gräver ned sig och kommer upp bredvid dig.
+  - Gnistlyktan (Ȥ) flyger, tänder gasfickor och exploderar svagt intill dig.
+- **Fiender i observatoriet:**
+  - Den stjärnfödda (ȥ) flyger och skjuter stjärnskott som delar sig i tre.
+  - Astronomen (Ȧ) håller avstånd och kallar ned små meteorer där du står.
+  - Urverksugglan (ȧ) dyker mot dig och reflekterar ungefär vart femte skott.
+  - Tomrumsväktaren (Ȩ) är ett svävande öga. Dess stråle av stjärnkyla gör dig långsam i 2 s. Högst två per bana.
+- **Bossar:**
+  - **Gruvförmannen:** slår med släggan, kastar dynamit, släpper gruvvagnar mot dig och får taket att rasa.
+  - **Stjärnskådaren:** skjuter stjärnbilder, låter meteorer regna, öppnar gravitationsbrunnar som drar dig till sig och teleporterar mellan stjärnportarna. Hon kallar också fram stjärnfödda.
+- **Kort:** 24 nya kort, åtta nya kortnycklar och två set: GRUVANS VÄG och OBSERVATORIETS VÄG. Kortbilderna ritas i `tools/card-art/make.py` (`v19`).
+
 ## Version 18: Cirkusen och Djungeltemplet
 
 - **Den övergivna cirkusen (`circus`):** inomhus under randiga tält, med tältduk (Ǯ) och djurburar (ǯ) som väggar och sågspån och manegens röda matta på golvet.

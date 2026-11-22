@@ -192,6 +192,15 @@ const MOD_KEYS = {
   poisonResist: 'Andel mindre gift: giftpilar, giftblommor och giftmoln förgiftar dig kortare tid',
   idolLuck: 'Andel tur med idoler och lyckohjul: mer guld ur guldidolen, färre i bakhållet och bättre snurr',
   vineWalk: 'Andel mindre inbromsning i lianer',
+  // version 19: Gruvan och Observatoriet – gruvvagnar, explosioner, malm, hackan, stjärnlansen, meteorer, låg tyngdkraft och teleskop
+  cartResist: 'Andel mindre skada och knuff från gruvvagnar',
+  blastResist: 'Andel mindre skada av explosioner: gasfickor, dynamit, gnistlyktor och kolgolemer',
+  oreLuck: 'Chans till dubbelt guld ur malmådror',
+  pickDmg: 'Andel extra skada med hackan',
+  lanceCharge: 'Andel snabbare laddning av stjärnlansen',
+  meteorSense: 'Andel längre varning för meteorer, och mindre skada av dem',
+  lowGrav: 'Andel högre och längre hopp på stjärnkartegolvet (lägre tyngdkraft)',
+  starSight: 'Andel längre tid som teleskopet visar alla fiender',
 };
 const KEYS = Object.keys(MOD_KEYS);
 
@@ -831,6 +840,46 @@ const DEFS = [
   // legendariska
   ['manegens_krona', 'MANEGENS KRONA', 'legendarisk', { showtime: 0.3, pinDmg: 0.3, knifeResist: 0.3, trapdoorSense: 0.3 }, 1, '+30 % SKADA I RAMPLJUSET\n+30 % SKADA MED KÄGLOR\n30 % MINDRE SKADA AV KNIVAR\n30 % LÄNGRE LUCKVARNING', { unlock: 50 }],
   ['ormens_fjader', 'ORMENS FJÄDER', 'legendarisk', { dartDmg: 0.3, poisonResist: 0.3, idolLuck: 0.3, vineWalk: 0.3 }, 1, '+30 % SKADA MED GIFTPILAR\n30 % MINDRE GIFT\n+30 % TUR MED IDOLER\n30 % LÄTTARE I LIANER', { unlock: 50 }],
+  // ---- version 19: pakter och uppgraderingar för hackan och stjärnlansen ----
+  ['pakt_hacka', 'GRUVFOGDENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nHACKAN BEHÖVER INGEN AMMO\n4 UNIKA UPPGRADERINGAR\nBARA HACKA RESTEN AV RUNDAN', { pact: 'pickaxe', bad: 1 }],
+  ['pakt_stjarnlans', 'STJÄRNTYDARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR STJÄRNSTOFT\n4 UNIKA UPPGRADERINGAR\nBARA STJÄRNLANS RESTEN AV RUNDAN', { pact: 'starlance', bad: 1 }],
+  ['diamantspetsen', 'DIAMANTSPETSEN', 'sallsynt', {}, 1, 'HACKAN HAR 25 %\nHÖGRE KRITCHANS', { weapon: 'pickaxe', wup: 'px_crit' }],
+  ['bergskakaren', 'BERGSKAKAREN', 'legendarisk', {}, 1, 'SLAGET SKAKAR\nALLA FIENDER RUNT DIG', { weapon: 'pickaxe', wup: 'px_quake' }],
+  ['malmnasan', 'MALMNÄSAN', 'sallsynt', {}, 1, 'DUBBELT GULD UR MALM\nGULD UR STENBUMLINGAR', { weapon: 'pickaxe', wup: 'px_ore' }],
+  ['latta_skaftet', 'LÄTTA SKAFTET', 'ovanlig', {}, 1, 'SNABBARE SLAG', { weapon: 'pickaxe', wup: 'px_fast' }],
+  ['genomlysningen', 'GENOMLYSNINGEN', 'legendarisk', {}, 1, 'STRÅLEN GÅR\nGENOM VÄGGAR', { weapon: 'starlance', wup: 'sl_pierce' }],
+  ['trippelstjarnan', 'TRIPPELSTJÄRNAN', 'sallsynt', {}, 1, 'TVÅ EXTRA STRÅLAR\nÅT SIDORNA', { weapon: 'starlance', wup: 'sl_split' }],
+  ['snabbladdningen', 'SNABBLADDNINGEN', 'ovanlig', {}, 1, 'SNABBARE LADDNING\nOCH OMLADDNING', { weapon: 'starlance', wup: 'sl_quick' }],
+  ['supernovan', 'SUPERNOVAN', 'sallsynt', {}, 1, '+30 % SKADA VID\nFULL LADDNING', { weapon: 'starlance', wup: 'sl_power' }],
+  // ---- version 19: gruvvagnar, explosioner, malm, hackan, stjärnlansen, meteorer, låg tyngdkraft och teleskop (Gruvan och Observatoriet) ----
+  // vanliga
+  ['gruvhjalmen', 'GRUVHJÄLMEN', 'vanlig', { cartResist: 0.2 }, 3, '20 % MINDRE SKADA\nAV GRUVVAGNAR'],
+  ['laderforkladet', 'LÄDERFÖRKLÄDET', 'vanlig', { blastResist: 0.2 }, 3, '20 % MINDRE SKADA\nAV EXPLOSIONER'],
+  ['slagrutan', 'SLAGRUTAN', 'vanlig', { oreLuck: 0.15 }, 3, '15 % CHANS TILL DUBBELT\nGULD UR MALM'],
+  ['hackskaftet', 'HACKSKAFTET', 'vanlig', { pickDmg: 0.12 }, 3, '+12 % SKADA MED HACKAN'],
+  ['linsputsen', 'LINSPUTSEN', 'vanlig', { lanceCharge: 0.15 }, 3, '15 % SNABBARE LADDNING\nAV STJÄRNLANSEN'],
+  ['kupolkartan', 'KUPOLKARTAN', 'vanlig', { meteorSense: 0.2 }, 3, '20 % LÄNGRE VARNING\nFÖR METEORER'],
+  ['manstovlarna', 'MÅNSTÖVLARNA', 'vanlig', { lowGrav: 0.2 }, 3, '20 % HÖGRE HOPP PÅ\nSTJÄRNKARTEGOLV'],
+  ['okularet', 'OKULARET', 'vanlig', { starSight: 0.25 }, 3, '25 % LÄNGRE TID MED\nTELESKOPET'],
+  ['karbidlampan', 'KARBIDLAMPAN', 'vanlig', { oreLuck: 0.08, cartResist: 0.12 }, 2, '8 % CHANS TILL DUBBELT\nGULD UR MALM\n12 % MINDRE SKADA\nAV GRUVVAGNAR', { unlock: 10 }],
+  ['sextanten', 'SEXTANTEN', 'vanlig', { meteorSense: 0.12, starSight: 0.12 }, 3, '12 % LÄNGRE VARNING\nFÖR METEORER\n12 % LÄNGRE TID MED\nTELESKOPET', { unlock: 10 }],
+  // ovanliga
+  ['rallarens_spade', 'RALLARENS SPADE', 'ovanlig', { cartResist: 0.35, meleeResist: 0.05 }, 2, '35 % MINDRE SKADA\nAV GRUVVAGNAR\n5 % MINDRE NÄRSTRIDSSKADA'],
+  ['dynamitbaltet', 'DYNAMITBÄLTET', 'ovanlig', { blastResist: 0.3, dmg: 0.04 }, 2, '30 % MINDRE SKADA\nAV EXPLOSIONER\n+4 % SKADA', { unlock: 15 }],
+  ['guldvaskarens_panna', 'GULDVASKARENS PANNA', 'ovanlig', { oreLuck: 0.25, goldMul: 0.05 }, 2, '25 % CHANS TILL DUBBELT\nGULD UR MALM\n+5 % GULD', { unlock: 15 }],
+  ['brytjarnet', 'BRYTJÄRNET', 'ovanlig', { pickDmg: 0.2, critChance: 0.03 }, 2, '+20 % SKADA MED HACKAN\n+3 % KRITCHANS'],
+  ['slipade_glaset', 'DET SLIPADE GLASET', 'ovanlig', { lanceCharge: 0.25, dmg: 0.04 }, 2, '25 % SNABBARE LADDNING\nAV STJÄRNLANSEN\n+4 % SKADA'],
+  ['planisfaren', 'PLANISFÄREN', 'ovanlig', { lowGrav: 0.3, meteorSense: 0.15 }, 2, '30 % HÖGRE HOPP PÅ\nSTJÄRNKARTEGOLV\n15 % LÄNGRE VARNING\nFÖR METEORER'],
+  ['svartkrutet', 'SVARTKRUTET', 'ovanlig', { pickDmg: 0.3, blastResist: -0.3 }, 1, '+30 % SKADA MED HACKAN\n-30 % SPRÄNGSKYDD', { curse: true, bad: 1 }],
+  // sällsynta
+  ['formannens_visselpipa', 'FÖRMANNENS VISSELPIPA', 'sallsynt', { cartResist: 0.25, blastResist: 0.25, goldMul: 0.05 }, 1, '25 % MINDRE SKADA\nAV GRUVVAGNAR\n25 % MINDRE SKADA\nAV EXPLOSIONER\n+5 % GULD', { unlock: 25 }],
+  ['astrolabiet', 'ASTROLABIET', 'sallsynt', { meteorSense: 0.25, starSight: 0.25, lowGrav: 0.15 }, 1, '25 % LÄNGRE VARNING\nFÖR METEORER\n25 % LÄNGRE TELESKOPTID\n15 % HÖGRE HOPP', { unlock: 30 }],
+  ['moderlodet', 'MODERLODET', 'sallsynt', { oreLuck: 0.4, goldMul: 0.1 }, 1, '40 % CHANS TILL DUBBELT\nGULD UR MALM\n+10 % GULD', { unlock: 25 }],
+  ['kometsvansen', 'KOMETSVANSEN', 'sallsynt', { lanceCharge: 0.35, critChance: 0.04 }, 1, '35 % SNABBARE LADDNING\nAV STJÄRNLANSEN\n+4 % KRITCHANS', { unlock: 30 }],
+  ['fallande_stjarnan', 'DEN FALLANDE STJÄRNAN', 'sallsynt', { lanceCharge: 0.4, meteorSense: -0.3 }, 1, '40 % SNABBARE LADDNING\nAV STJÄRNLANSEN\n-30 % METEORVARNING', { curse: true, bad: 1 }],
+  // legendariska
+  ['bergets_hjarta', 'BERGETS HJÄRTA', 'legendarisk', { cartResist: 0.3, blastResist: 0.3, oreLuck: 0.3, pickDmg: 0.3 }, 1, '30 % MINDRE SKADA AV VAGNAR\n30 % SPRÄNGSKYDD\n30 % TUR MED MALM\n+30 % SKADA MED HACKAN', { unlock: 50 }],
+  ['himlavalvet', 'HIMLAVALVET', 'legendarisk', { meteorSense: 0.3, lowGrav: 0.3, starSight: 0.3, lanceCharge: 0.3 }, 1, '30 % LÄNGRE METEORVARNING\n30 % HÖGRE HOPP\n30 % LÄNGRE TELESKOPTID\n30 % SNABBARE LANSLADDNING', { unlock: 50 }],
 ];
 
 // ---------- Set och synergier ----------
@@ -870,6 +919,9 @@ const SETS = {
   skeppet: { name: 'SKEPPETS VÄG',    text: '25 % MER GREPP PÅ SKÖLJT DÄCK\n+25 % SKADA MED KANONER\n+20 % SKADA MED KEDJEKULOR', mods: { deckGrip: 0.25, cannonDmg: 0.25, chainDmg: 0.2 } },
   // version 18: CIRKUSENS VÄG (Cirkusen: rampljus, fallluckor och knivar) och TEMPLETS VÄG (Djungeltemplet: gift, idoler och lianer)
   cirkusen: { name: 'CIRKUSENS VÄG', text: '+25 % SKADA I RAMPLJUSET\n25 % LÄNGRE VARNING FÖR FALLLUCKOR\n20 % MINDRE SKADA AV KNIVAR', mods: { showtime: 0.25, trapdoorSense: 0.25, knifeResist: 0.2 } },
+  // version 19: GRUVANS VÄG (Gruvan: vagnar, explosioner och malm) och OBSERVATORIETS VÄG (Observatoriet: meteorer, låg tyngdkraft och teleskop)
+  gruvan: { name: 'GRUVANS VÄG', text: '25 % MINDRE SKADA AV GRUVVAGNAR\n25 % MINDRE SKADA AV EXPLOSIONER\n20 % CHANS TILL DUBBELT MALMGULD', mods: { cartResist: 0.25, blastResist: 0.25, oreLuck: 0.2 } },
+  observatoriet: { name: 'OBSERVATORIETS VÄG', text: '25 % LÄNGRE VARNING FÖR METEORER\n25 % HÖGRE HOPP PÅ STJÄRNKARTAN\n+25 % TID MED TELESKOPET', mods: { meteorSense: 0.25, lowGrav: 0.25, starSight: 0.25 } },
   templet: { name: 'TEMPLETS VÄG', text: '25 % MINDRE GIFT\n+25 % TUR MED IDOLER OCH LYCKOHJUL\n25 % MINDRE INBROMSNING I LIANER', mods: { poisonResist: 0.25, idolLuck: 0.25, vineWalk: 0.25 } },
   laboratoriet: { name: 'LABORATORIETS VÄG', text: '25 % MINDRE SKADA AV SYRA\n+25 % TUR MED TRANSMUTATION\n20 % CHANS TILL STARK BRYGD', mods: { acidResist: 0.25, transmuteLuck: 0.25, brewLuck: 0.2 } },
   drommen: { name: 'DRÖMMENS VÄG',    text: '+25 % SIKT I SÖMNENS DIMMA\n25 % MINDRE EFFEKT AV SÖMN\n+20 % SKADA MED DRÖMSTAVEN', mods: { mistSight: 0.25, sleepResist: 0.25, dreamDmg: 0.2 } },
@@ -886,7 +938,8 @@ const SYN = { eld: 'ELD', krit: 'KRIT', gift: 'GIFT', frost: 'FROST', blixt: 'BL
   kyrka: 'KATEDRALEN', helig: 'HELIGT LJUS', klocka: 'KLOCKOR', bi: 'BIN', honung: 'HONUNG', vax: 'VAX',
   tradgard: 'TRÄDGÅRDEN', ros: 'ROSOR', torne: 'TÖRNE', staty: 'STATYER', drom: 'DRÖMMAR', somn: 'SÖMN', mardrom: 'MARDRÖMMAR',
   skepp: 'SKEPPET', kanon: 'KANONER', pirat: 'PIRATER', syra: 'SYRA', flaska: 'FLASKOR', transmut: 'TRANSMUTATION', tesla: 'TESLASPOLAR',
-  cirkus: 'CIRKUSEN', rampljus: 'RAMPLJUSET', kniv: 'KNIVAR', kagla: 'KÄGLOR', pil: 'GIFTPILAR', idol: 'IDOLER', djungel: 'DJUNGELN' };
+  cirkus: 'CIRKUSEN', rampljus: 'RAMPLJUSET', kniv: 'KNIVAR', kagla: 'KÄGLOR', pil: 'GIFTPILAR', idol: 'IDOLER', djungel: 'DJUNGELN',
+  gruva: 'GRUVAN', vagn: 'GRUVVAGNAR', malm: 'MALM', stjarna: 'STJÄRNOR', meteor: 'METEORER' };
 // set och syn för alla kort samlas här: id: [set eller '', syn-taggar...]
 const TAGS = {
   // eld och explosioner
@@ -1004,6 +1057,12 @@ const TAGS = {
   ladervasten: ['', 'kniv'], kagelkulan: ['', 'kagla', 'cirkus'], pilspetsen: ['', 'pil', 'gift'], macheten: ['', 'djungel'], clownnasan: ['', 'cirkus', 'rampljus'], myggnatet: ['', 'djungel', 'gift'],
   jonglorens_handskar: ['', 'kagla', 'cirkus'], curaren: ['', 'pil', 'gift'], knivtavlan: ['', 'kniv', 'cirkus'], tempelkartan: ['', 'idol', 'guld'], falska_bottnen: ['', 'kagla', 'cirkus'],
   lejontamjarens_piska: ['', 'kniv', 'cirkus'], jaguartanden: ['', 'pil', 'djungel', 'krit'], ormgiftet: ['', 'pil', 'gift', 'idol'],
+  // version 19: GRUVANS VÄG (Gruvan) och OBSERVATORIETS VÄG (Observatoriet); gruvan, vagnar, malm, stjärnor och meteorer
+  gruvhjalmen: ['gruvan', 'gruva', 'vagn'], laderforkladet: ['gruvan', 'gruva'], karbidlampan: ['gruvan', 'gruva', 'malm', 'vagn'], formannens_visselpipa: ['gruvan', 'gruva', 'vagn', 'guld'], bergets_hjarta: ['gruvan', 'gruva', 'malm', 'vagn'],
+  kupolkartan: ['observatoriet', 'meteor', 'stjarna'], manstovlarna: ['observatoriet', 'stjarna'], sextanten: ['observatoriet', 'meteor', 'stjarna'], astrolabiet: ['observatoriet', 'stjarna', 'meteor'], himlavalvet: ['observatoriet', 'stjarna', 'meteor'],
+  slagrutan: ['', 'malm', 'guld'], hackskaftet: ['', 'malm', 'gruva'], linsputsen: ['', 'stjarna'], okularet: ['', 'stjarna'], rallarens_spade: ['', 'vagn', 'gruva'], dynamitbaltet: ['', 'gruva'],
+  guldvaskarens_panna: ['', 'malm', 'guld'], brytjarnet: ['', 'malm', 'krit'], slipade_glaset: ['', 'stjarna'], planisfaren: ['', 'stjarna', 'meteor'], svartkrutet: ['', 'malm', 'gruva'],
+  moderlodet: ['', 'malm', 'guld'], kometsvansen: ['', 'stjarna', 'meteor', 'krit'], fallande_stjarnan: ['', 'stjarna', 'meteor'],
 };
 
 const ALL = DEFS.map(([id, name, rarity, mods, max, text, extra]) => {
@@ -1138,6 +1197,8 @@ const FMT = {
   acidResist: ['p', 'SKYDD MOT SYRA'], transmuteLuck: ['p', 'TUR MED TRANSMUTATION'], teslaResist: ['p', 'SKYDD MOT TESLASPOLAR'], brewLuck: ['p', 'CHANS TILL STARK BRYGD'],
   showtime: ['p', 'SKADA I RAMPLJUSET'], trapdoorSense: ['p', 'VARNING FÖR FALLLUCKOR'], knifeResist: ['p', 'SKYDD MOT KNIVAR'], pinDmg: ['p', 'SKADA MED KÄGLOR'],
   dartDmg: ['p', 'SKADA MED GIFTPILAR'], poisonResist: ['p', 'SKYDD MOT GIFT'], idolLuck: ['p', 'TUR MED IDOLER'], vineWalk: ['p', 'LÄTTARE I LIANER'],
+  cartResist: ['p', 'SKYDD MOT GRUVVAGNAR'], blastResist: ['p', 'SPRÄNGSKYDD'], oreLuck: ['p', 'TUR MED MALM'], pickDmg: ['p', 'SKADA MED HACKAN'],
+  lanceCharge: ['p', 'SNABBARE LANSLADDNING'], meteorSense: ['p', 'METEORVARNING'], lowGrav: ['p', 'HÖGRE HOPP PÅ STJÄRNKARTAN'], starSight: ['p', 'TID MED TELESKOPET'],
 };
 const INVERT = { damageTaken: true };
 const num = v => String(Math.round(v * 100) / 100).replace('.', ',');
@@ -1283,7 +1344,7 @@ function preview(card, mods, ownedIds) {
 // ---------- Dragning ----------
 // Vikten skiftar mot sällsyntare med djup (våning, 0..) och luck (summan av luck-modden, 0.1 per kort).
 const CURSE_WEIGHT = 0.8; // förbannade kort dyker upp ibland
-const PACT_WEIGHT = 0.4, UPGRADE_WEIGHT = 15; // trettiosex pakter (vikten sänkt så att alla pakter tillsammans syns lika ofta som de fjorton förut; version 13: 0,53 -> 0,49, version 15: 0,49 -> 0,46, version 16: 0,46 -> 0,43, version 17: 0,43 -> 0,4, version 18: oförändrad 0,4 med trettiosex pakter); uppgraderingarna väger lite mer sedan korthögen växt (version 11: 8 -> 9, version 13: 9 -> 10, version 15: 10 -> 11, version 16: 11 -> 12, version 17: 12 -> 13, version 18: 13 -> 15): en pakt i ungefär var fjärde dragning; efter pakten kommer uppgraderingarna tätt
+const PACT_WEIGHT = 0.42, UPGRADE_WEIGHT = 17; // version 19: trettioåtta pakter (0,4 -> 0,42 så att pakterna syns lika ofta när korthögen vuxit), uppgraderingarna 15 -> 17 // trettiosex pakter (vikten sänkt så att alla pakter tillsammans syns lika ofta som de fjorton förut; version 13: 0,53 -> 0,49, version 15: 0,49 -> 0,46, version 16: 0,46 -> 0,43, version 17: 0,43 -> 0,4, version 18: oförändrad 0,4 med trettiosex pakter); uppgraderingarna väger lite mer sedan korthögen växt (version 11: 8 -> 9, version 13: 9 -> 10, version 15: 10 -> 11, version 16: 11 -> 12, version 17: 12 -> 13, version 18: 13 -> 15): en pakt i ungefär var fjärde dragning; efter pakten kommer uppgraderingarna tätt
 function rarityWeight(rarity, depth, luck) {
   const t = Math.max(0, (depth || 0) * 0.25 + (luck || 0) * 2.5); // 0 = början av rundan
   const base = RARITY[rarity].weight;
@@ -1345,7 +1406,7 @@ const WEAPON_NAME = { pistol: 'PISTOL', shotgun: 'HAGELGEVÄR', rifle: 'GEVÄR',
   knives: 'KASTKNIVAR', hammer: 'STRIDSHAMMARE', musket: 'MUSKÖT', harpoon: 'HARPUN', boomerang: 'BUMERANG', prism: 'PRISMA',
   sawlauncher: 'SÅGBLAD', windgun: 'VINDBÖSSA', spear: 'SPJUT', sporelauncher: 'SPORKASTARE', mirrorshield: 'SPEGELSKÖLD', whip: 'PISKA',
   runebook: 'RUNBOK', steamcannon: 'ÅNGKANON', censer: 'RÖKELSEKAR', hivelauncher: 'BIKASTARE',
-  shears: 'TRÄDGÅRDSSAX', dreamstaff: 'DRÖMSTAV', chaincannon: 'KEDJEKANON', acidsprayer: 'SYRASPRUTA', pinthrower: 'KÄGLEKASTARE', blowgun: 'BLÅSRÖR' };
+  shears: 'TRÄDGÅRDSSAX', dreamstaff: 'DRÖMSTAV', chaincannon: 'KEDJEKANON', acidsprayer: 'SYRASPRUTA', pinthrower: 'KÄGLEKASTARE', blowgun: 'BLÅSRÖR', pickaxe: 'HACKA', starlance: 'STJÄRNLANS' };
 // etikett ovanför kortets namn: förbannelse, pakt, aktiv förmåga ('AKTIV · 8 S'), vilket vapen uppgraderingen hör till eller sammansmält
 const activeTag = card => 'AKTIV · ' + num(card.cd || 0) + ' S';
 function tag(card) {
