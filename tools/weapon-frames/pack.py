@@ -28,6 +28,9 @@
 # Version 17: kedjekulekanonen (chaincannon, extra läget reload; kedjekulan som snurrar iväg mot siktet och krutröken vid
 #   mynningen ritas in i skjutrutorna, CHAINFLY) och syrasprutan (acidsprayer, fyra skakrutor som går runt som eldkastarens;
 #   ett grönt syrastänk vid munstycket ritas in, ACIDFX). Källor: enkla former i static.html, delarna i tools/props14/fp_defs.py.
+# Version 18: käglekastaren (pinthrower, närstrid med bumerangens hand; tre jonglörkäglor som snurrar iväg mot siktet ritas in i
+#   skjutrutorna, PINFLY) och blåsröret (blowgun, extra läget reload; andningspuffen och giftpilen mot siktet ritas in, DARTFLY).
+#   Källor: enkla former i static.html, delarna i tools/props15/fp_defs.py.
 import json, re, sys
 import numpy as np
 from PIL import Image
@@ -40,10 +43,10 @@ TARGET={'pistol':(84,178,24),'shotgun':(112,196,40),'rifle':(112,184,42),'smg':(
         'flamer':(104,226,34),'launcher':(100,188,30),'nailgun':(96,210,22),'musket':(128,196,40),
         'harpoon':(124,198,40),'prism':(118,196,40),'sawlauncher':(118,198,34),'windgun':(118,206,26),
         'sporelauncher':(120,204,30),'steamcannon':(122,206,30),'hivelauncher':(114,204,14),
-        'chaincannon':(118,204,22),'acidsprayer':(110,206,16)}  # höjd i px, mittpunkt x, hur mycket som skärs av nedtill
+        'chaincannon':(118,204,22),'acidsprayer':(110,206,16),'blowgun':(96,210,20)}  # höjd i px, mittpunkt x, hur mycket som skärs av nedtill
 HARD={'axe','flamer','launcher','nailgun','staff','bow','knives','hammer','musket','harpoon','boomerang','prism','sawlauncher','windgun','spear',
       'sporelauncher','mirrorshield','whip','runebook','steamcannon','censer','hivelauncher','shears','dreamstaff',
-      'chaincannon','acidsprayer'}   # version 5 och 6: hel eller ingen täckning per pixel
+      'chaincannon','acidsprayer','pinthrower','blowgun'}   # version 5 och 6: hel eller ingen täckning per pixel
 MUZZLE_IDLE={'bow'}
 PICK={'nailgun':(48,'w'),'staff':(48,'w',-90),'bow':(46,'w',90,'string'),'axe':(44,'w',90),'flamer':(54,'w'),'launcher':(46,'w'),
       'knives':(24,'h',0,'fan'),'hammer':(44,'w',90),'musket':(60,'w'),'harpoon':(58,'w'),'boomerang':(22,'w'),'prism':(54,'w'),
@@ -70,6 +73,8 @@ SNIP={'shears':[None,(0,9),None,(1,9),None,None]}             # version 16: blä
 STARFLY={'dreamstaff':[(0,0.0),(1,0.3),(2,0.65),(3,0.95)]}     # version 16: drömstjärnan (steg, andel av sträckan mot siktet)
 CHAINFLY={'chaincannon':[(0,None),(1,0.22),(2,0.5),(3,0.78),(4,0.97)]}   # version 17: kedjekulan (steg, andel av sträckan mot siktet, None = ingen)
 ACIDFX={'acidsprayer':[0,1,2,3]}                                # version 17: syrastänket vid munstycket (steg; rutorna går runt)
+PINFLY={'pinthrower':[None,None,0.2,0.55,0.9]}                  # version 18: käglorna (andel av sträckan mot siktet, None = inga)
+DARTFLY={'blowgun':[(0,0.35),(1,0.75),(2,None)]}                # version 18: blåsrörets puff och pil (steg, andel av sträckan mot siktet)
 AIM=(176,50)                                        # dit harpunen flyger (strax ovanför och till höger om siktet)
 WAIM=(112,80)                                       # version 11: dit piskans snärt når (till vänster om siktet, där bågen slår)
 OUTC=(37,19,26)
@@ -407,6 +412,39 @@ def acid_draw(d,mx,my,k,X0,Y0,i):
         d.line([(x,y-1),(x,y+1)],fill=G[1]+(255,)); d.point((x,y+2),fill=G[0]+(255,))
 
 
+def pin_draw(d,mx,my,f,X0,Y0,i):
+    """Version 18: käglekastaren: tre jonglörkäglor (vit kropp, röda band, röd knopp) som snurrar iväg i en solfjäder mot siktet
+    och krymper med avståndet."""
+    ax,ay=AIM[0]-X0,AIM[1]-Y0
+    for j,(ox,oy) in enumerate(((-14,6),(0,-6),(14,4))):
+        px=mx+(ax+ox*(0.4+f)-mx)*f; py=my+(ay+oy*(0.4+f)-my)*f-np.sin(f*np.pi)*14; s=max(0.45,1.3-f*0.85); a=f*9+j*2.1
+        u=(np.cos(a),np.sin(a))
+        P=lambda t:(px+u[0]*t*s,py+u[1]*t*s)
+        bx,by=P(-3); r=4.2*s
+        d.ellipse((bx-r-1,by-r-1,bx+r+1,by+r+1),fill=OUTC+(255,))
+        d.line([P(-1),P(7)],fill=OUTC+(255,),width=max(2,int(4*s)))
+        d.ellipse((bx-r,by-r,bx+r,by+r),fill=(240,234,222,255))
+        d.line([P(-1),P(6)],fill=(216,208,192,255),width=max(1,int(2.4*s)))
+        d.line([(bx-u[1]*r,by+u[0]*r),(bx+u[1]*r,by-u[0]*r)],fill=(196,40,32,255),width=max(1,int(2*s)))
+        kx,ky=P(7.5); k=max(1.2,1.8*s); d.ellipse((kx-k,ky-k,kx+k,ky+k),fill=(196,40,32,255))
+        d.point((bx-r*0.4,by-r*0.4),fill=(255,255,255,255))
+
+
+def dart_draw(d,mx,my,st,X0,Y0,i):
+    """Version 18: blåsröret: en liten vit andningspuff vid mynningen och giftpilen (grön spets, röd tofs) på väg mot siktet."""
+    k,f=st; ax,ay=AIM[0]-X0,AIM[1]-Y0
+    r=3+k*2
+    for bx,by,br in ((mx,my-1,r),(mx+3,my-3-k,r*0.7),(mx-3,my-2-k,r*0.6)):
+        d.ellipse((bx-br-1,by-br-1,bx+br+1,by+br+1),fill=OUTC+(255,)); d.ellipse((bx-br,by-br,bx+br,by+br),fill=(214,214,206,255))
+        d.ellipse((bx-br*0.6,by-br*0.7,bx+br*0.2,by),fill=(244,244,238,255))
+    if f is None: return
+    px,py=mx+(ax-mx)*f,my+(ay-my)*f; dx,dy=ax-mx,ay-my; L=max(1.0,np.hypot(dx,dy)); u=(dx/L,dy/L); ln=10*(1-f*0.5)
+    tx,ty=px-u[0]*ln,py-u[1]*ln
+    d.line([(tx,ty),(px,py)],fill=OUTC+(255,),width=3); d.line([(tx,ty),(px,py)],fill=(220,210,170,255),width=1)
+    d.ellipse((px-1.5,py-1.5,px+1.5,py+1.5),fill=(120,220,60,255))
+    d.ellipse((tx-2.5,ty-2.5,tx+2.5,ty+2.5),fill=OUTC+(255,)); d.ellipse((tx-1.6,ty-1.6,tx+1.6,ty+1.6),fill=(200,40,30,255))
+
+
 def fan_pick(im):
     """Upplockningsbilden för kastknivarna: tre knivar i en solfjäder kring handtagen (bladen uppåt)."""
     W,H=im.size; S=H*3; c=Image.new('RGBA',(S,S)); px,py=S//2,S//2+H//2
@@ -504,6 +542,10 @@ for w,st in d.items():
         atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(CHAINFLY[w]),lambda m,st:(min(m[0],AIM[0])-24,min(m[1],AIM[1])-26,max(m[0],AIM[0])+24,m[1]+8),chain_draw)
     if w in ACIDFX:
         atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(ACIDFX[w]),lambda m,k:(m[0]-14,m[1]-14,m[0]+12,m[1]+18),acid_draw)
+    if w in PINFLY:   # version 18
+        atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(PINFLY[w]),lambda m,f:(min(m[0],AIM[0])-24,min(m[1],AIM[1])-30,max(m[0],AIM[0])+24,m[1]+8),pin_draw)
+    if w in DARTFLY:
+        atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(DARTFLY[w]),lambda m,st:(min(m[0],AIM[0])-10,min(m[1],AIM[1])-10,max(m[0],AIM[0])+10,m[1]+8),dart_draw)
     atlas.save(OUT+f'assets/gfx/fp_{w}.png',optimize=True)
     if w in MUZZLE_IDLE: mz=[mz[0] if i in states['fire'] else m for i,m in enumerate(mz)]   # bågen: utan pil räknas mynningen från vilobilden
     out[w]={'x':x,'y':y,'w':fw,'h':fh,'states':states,'muzzle':mz,'dur':{'fire':round(st['fire_dur'],3),**{k:round(v,3) for k,v in st.get('durs',{}).items()}}}

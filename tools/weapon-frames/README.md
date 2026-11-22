@@ -231,3 +231,22 @@ cd retrofps/tools/weapon-frames
 node render-static.mjs fp chaincannon,acidsprayer
 python3 pack.py xframes ../../ chaincannon,acidsprayer   # övriga poster i js/weapons.js lämnas orörda
 ```
+
+Version 18: käglekastaren (`pinthrower`) och blåsröret (`blowgun`).
+Båda saknar modell (`"model": "none"`, `base: [1,0.1,0.1]`) och är byggda av enkla former; delarna står i
+`tools/props15/fp_defs.py`. Käglekastaren är en jonglörkägla (vit kropp, röda band och en röd knopp, `name: pin`) som hålls i
+halsen av bumerangens handskklädda hand med ärm, i närstridsläget. `fire` är kastet: armen tar sats, svingar framåt, käglan
+släpps (döljs) och en ny kommer upp i handen underifrån; `pack.py` ritar tre käglor som snurrar iväg i en solfjäder mot `AIM`
+(`PINFLY`): `states: {idle:[0], fire:[1..5]}`, `dur: {fire}`.
+Blåsröret är ett långt bamburör med noder, röda trådlindningar, ett snidat munstycke av trä, en fjädertofs och en benring längst
+fram (`name: muzzle`). `fire` är tre små rutor och `pack.py` ritar andningspuffen och giftpilen mot `AIM` (`DARTFLY`); `reload`
+(`extra`) lutar röret och för ned en ny pil (`name: dart`, `hidden` utom i de rutorna) i munstycket:
+`states: {idle:[0], fire:[1..3], reload:[4..7]}`, `dur: {fire, reload}`. Upplockningsbilderna `pick_pinthrower.png` och
+`pick_blowgun.png` ritas i `tools/props15/make.py`.
+
+```bash
+python3 tools/props15/fp_defs.py /tmp/defs18.json   # ger posterna pinthrower och blowgun (läggs sist i static-defs.json, json indent 1)
+cd retrofps/tools/weapon-frames
+node render-static.mjs fp pinthrower,blowgun
+python3 pack.py xframes ../../ pinthrower,blowgun   # övriga poster i js/weapons.js lämnas orörda
+```
