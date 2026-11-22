@@ -434,7 +434,7 @@ const ENEMY_DEFS = {
   'ƙ': { name: 'GADDKRIGARE', sheet: 'stingerknight', move: 'movement', hp: 18, speed: 1.3, melee: true, dmg: 14, range: 1.1, cd: 1.3, size: 1.2, growl: 'stingerknight', score: 380, atkFps: 10, hitAt: 0.55, ai: 'stingerknight', float: true, tip: 'RUSAR MED GADDEN – SIDSTEG NÄR DEN TAR SATS' },
   'ƚ': { name: 'LARV', sheet: 'larva', move: 'movement', hp: 6, speed: 0.6, melee: false, dmg: 6, range: 8, cd: 99, size: 0.75, growl: 'larva', score: 110, atkFps: 10, hitAt: 0.5, ai: 'larva', tip: 'SPOTTAR SYRA – HÅLL DIG I RÖRELSE' },
   'Ƅ': { name: 'SNÖFANTOM', sheet: 'snowwraith', move: 'movement', hp: 9, speed: 1.6, melee: true, dmg: 10, range: 1.0, cd: 1.2, size: 1.05, growl: 'snowwraith', score: 260, atkFps: 10, hitAt: 0.5, ai: 'snowwraith', frostBite: true, float: true, tip: 'SYNS KNAPPT I SNÖN – LYSSNA EFTER YLANDET' },
-  'ƅ': { name: 'LAVAORM', sheet: 'lavaworm', move: 'movement', hp: 14, speed: 1.0, melee: false, dmg: 9, range: 9, cd: 99, size: 1.2, growl: 'lavaworm', score: 320, atkFps: 10, hitAt: 0.5, ai: 'lavaworm', tip: 'DYKER I MARKEN – SKJUT NÄR DEN ÄR UPPE' },
+  'ƅ': { name: 'LAVAORM', sheet: 'lavaworm', move: 'movement', hp: 14, speed: 1.0, melee: false, dmg: 9, range: 9, cd: 99, size: 1.2, growl: 'lavaworm_growl', score: 320, atkFps: 10, hitAt: 0.5, ai: 'lavaworm', tip: 'DYKER I MARKEN – SKJUT NÄR DEN ÄR UPPE' },
   'Ɔ': { name: 'SKARABÉPRÄST', sheet: 'scarabpriest', move: 'movement', hp: 10, speed: 1.0, melee: false, dmg: 7, range: 10, cd: 2.8, size: 1.05, growl: 'scarabpriest', score: 300, atkFps: 10, hitAt: 0.5, ai: 'scarabpriest', kite: 5, tip: 'VÄCKER SKARABÉER – DÖDA PRÄSTEN FÖRST' },
   'Ƈ': { name: 'KRISTALLSPINDEL', sheet: 'crystalspider', move: 'movement', hp: 7, speed: 1.8, melee: false, dmg: 6, range: 10, cd: 99, size: 0.85, growl: 'crystalspider', score: 220, atkFps: 12, hitAt: 0.5, ai: 'crystalspider', kite: 4, crystal: true, tip: 'NÄTET SAKTAR NED – HOPPA ÖVER SKOTTEN' },
   'ƈ': { name: 'MARULK', sheet: 'anglerfish', move: 'movement', hp: 16, speed: 1.6, melee: true, dmg: 12, range: 1.1, cd: 1.3, size: 1.15, growl: 'anglerfish', score: 320, atkFps: 10, hitAt: 0.5, ai: 'anglerfish', float: true, tip: 'LJUSET LOCKAR – HÅLL DIG BORTA FRÅN DJUPET' },
@@ -756,7 +756,7 @@ const SOUNDS = ['shot', 'boom', 'pickup', 'health', 'hurt', 'splat', 'weapon', '
   'mycelmother_roar', 'mycelmother_spores', 'mirrorking_laugh', 'mirrorking_shatter', 'mirrorking_split', 'bounce', 'teleport', 'spore_confuse', 'shroom_hum', 'mirror_hum',
   'rune_fire', 'rune_hit', 'page_ward', 'steam_fire', 'steam_hiss', 'grimoire', 'grimoire_bite', 'inkslime', 'ink_splash', 'archivist', 'archivist_blink', 'moltengolem', 'molten_drip', 'steambot', 'steam_burst', 'sparkdrone', 'drone_zap', 'drone_pop',
   'librarian_laugh', 'librarian_cast', 'librarian_pages', 'colossus_roar', 'colossus_slam', 'colossus_furnace', 'press_slam', 'belt_loop', 'vent_burst', 'lectern_read', 'ink_pickup', 'library_hum', 'foundry_hum',
-  'snowwraith', 'snowwraith_freeze', 'lavaworm', 'lavaworm_emerge', 'lava_spit', 'scarabpriest', 'scarab_curse', 'crystalspider', 'web_shot', 'web_break', 'anglerfish', 'angler_lure', 'angler_bite', 'windspirit', 'wind_howl', 'arena_lock', 'arena_wave', 'arena_clear',
+  'snowwraith', 'snowwraith_freeze', 'lavaworm_growl', 'lavaworm_emerge', 'lava_spit', 'scarabpriest', 'scarab_curse', 'crystalspider', 'web_shot', 'web_break', 'anglerfish', 'angler_lure', 'angler_bite', 'windspirit', 'wind_howl', 'arena_lock', 'arena_wave', 'arena_clear',
   'censer_swing', 'censer_hit', 'hive_fire', 'bee_buzz', 'bee_sting', 'choirboy', 'flagellant', 'cherub', 'cherub_shriek', 'workerbee', 'stingerknight', 'larva', 'larva_spit', 'larva_hatch', 'larva_squish',
   'cardinal_chant', 'cardinal_laugh', 'queenbee_buzz', 'honey_splash', 'bless', 'bell_ring', 'font_break', 'cathedral_hum', 'hive_hum'];
 async function loadSounds() {
@@ -8742,7 +8742,7 @@ const AI_V14 = {
       return true; }
     e.hidden = false; const lt = 2.8 - e.phT;
     if ((lt > 0.6 && e.spit === 0) || (lt > 1.6 && e.spit === 1)) { e.spit++; e.state = 'attack'; e.t = 0; const a = Math.atan2(P.y - e.y, P.x - e.x); for (const s of [-0.15, 0, 0.15]) shootFireball(e, a + s, 6, e.d.dmg, false, 'magma'); play('lava_spit', 0.7, 1, { x: e.x, y: e.y }); }
-    if (e.phT <= 0) { e.up = false; e.hidden = true; e.phT = rnd(2.5, 4); spawnPuff(e.x, e.y, 6); play('lavaworm', 0.5, 1, { x: e.x, y: e.y }); }
+    if (e.phT <= 0) { e.up = false; e.hidden = true; e.phT = rnd(2.5, 4); spawnPuff(e.x, e.y, 6); play('lavaworm_growl', 0.5, 1, { x: e.x, y: e.y }); }
     if (e.state === 'move') e.state = 'idle';
     return true;
   },
