@@ -782,7 +782,7 @@ const SOUNDS = ['shot', 'boom', 'pickup', 'health', 'hurt', 'splat', 'weapon', '
   'librarian_laugh', 'librarian_cast', 'librarian_pages', 'colossus_roar', 'colossus_slam', 'colossus_furnace', 'press_slam', 'belt_loop', 'vent_burst', 'lectern_read', 'ink_pickup', 'library_hum', 'foundry_hum',
   'snowwraith', 'snowwraith_freeze', 'lavaworm_growl', 'lavaworm_emerge', 'lava_spit', 'scarabpriest', 'scarab_curse', 'crystalspider', 'web_shot', 'web_break', 'anglerfish', 'angler_lure', 'angler_bite', 'windspirit', 'wind_howl', 'arena_lock', 'arena_wave', 'arena_clear',
   'censer_swing', 'censer_hit', 'hive_fire', 'bee_buzz', 'bee_sting', 'choirboy', 'flagellant', 'cherub', 'cherub_shriek', 'workerbee', 'stingerknight', 'larva', 'larva_spit', 'larva_hatch', 'larva_squish',
-  'cardinal_chant', 'cardinal_laugh', 'queenbee_buzz', 'honey_splash', 'bless', 'bell_ring', 'font_break', 'cathedral_hum', 'hive_hum',
+  'cardinal_chant', 'cardinal_laugh', 'queenbee_buzz', 'honey_splash', 'bless_beam', 'bell_ring', 'font_break', 'cathedral_hum', 'hive_hum',
   'shears_snip', 'shears_hit', 'shears_throw', 'shears_catch', 'dream_fire', 'dream_burst', 'dream_pickup', 'angel_scrape', 'thornvine', 'gardener', 'dreameater', 'doppelganger', 'doppel_fire', 'sleepwalker', 'sleep_puff',
   'gardener_laugh', 'gardener_seeds', 'sandman_laugh', 'sandman_sand', 'wall_shift', 'thorn_burn', 'mist_whisper', 'fountain_drink', 'falsedoor_open', 'garden_hum', 'dream_hum'];
 async function loadSounds() {
@@ -8864,7 +8864,7 @@ function setupV15() { honeyPuddles = []; P.blessT = 0; P.honeyT = 0; for (const 
 function updateV15(dt) {
   const c = cellUnder();
   // ljusstråket välsignar
-  if (c === 'ƍ' && P.jz < 0.3) { if (!(P.blessT > tmr)) { play('bless', 0.6); spawnText(P.x + Math.cos(P.a), P.y + Math.sin(P.a), 'VÄLSIGNAD', '#ffe9a8'); firstHint('bless', 'LJUSSTRÅKEN VÄLSIGNAR DIG: MER SKADA EN STUND.'); } P.blessT = tmr + 6 * (1 + mod('blessDur')); }
+  if (c === 'ƍ' && P.jz < 0.3) { if (!(P.blessT > tmr)) { play('bless_beam', 0.6); spawnText(P.x + Math.cos(P.a), P.y + Math.sin(P.a), 'VÄLSIGNAD', '#ffe9a8'); firstHint('bless', 'LJUSSTRÅKEN VÄLSIGNAR DIG: MER SKADA EN STUND.'); } P.blessT = tmr + 6 * (1 + mod('blessDur')); }
   // honung klibbar
   for (const h of honeyPuddles) h.t -= dt; honeyPuddles = honeyPuddles.filter(h => h.t > 0);
   if (honeyAt(P.x, P.y) && P.jz < 0.1) { if (!(P.honeyT > 0.2)) firstHint('honey', 'HONUNGEN KLIBBAR – HOPPA ÖVER DEN.'); P.honeyT = 0.35; } P.honeyT = Math.max(0, (P.honeyT || 0) - dt);
