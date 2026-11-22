@@ -10169,7 +10169,7 @@ Object.assign(BOSS_AI, {
     if (dist > 4) bossMove(b, ang, b.d.speed * fast * dt); else bossMove(b, ang + Math.PI / 2, b.d.speed * dt * 0.7);
   },
   serpent(b, dt, dist, ang, ph) { // dyker ned i marken och kommer upp under dig
-    const fast = ph === 3 ? 1.25 : 1;
+    const fast = ph === 3 ? 1.25 : 1, reach = b.d.range / BOSSES.serpent.range; // väktaren (range * 0.8) sveper kortare
     if (b.state === 'dive') { b.hidden = true; const sp = 4.2 * fast * dt; bossMove(b, ang, Math.min(sp, Math.max(0, dist - 0.3)));
       if (!settings.lowfx && Math.random() < dt * 14) particles.push({ x: b.x + rnd(-0.5, 0.5), y: b.y + rnd(-0.5, 0.5), z: 0.02, vx: rnd(-0.4, 0.4), vy: rnd(-0.4, 0.4), vz: rnd(0.8, 1.6), life: 0.6, maxLife: 0.6, img: fx.parts.dirt ? fx.parts.dirt[0] : fx.hit[1], size: 0.08, grav: true, tint: fx.parts.dirt ? null : [120, 90, 60] });
       if (b.t > 1.3 && !b.emerge) { b.emerge = { x: P.x, y: P.y, t: tmr + 0.7 }; play('serpent_hiss', 0.5); bossWarn(b, 'MARKEN RÖR SIG UNDER DIG!'); }
@@ -10179,11 +10179,11 @@ Object.assign(BOSS_AI, {
     if (b.state === 'emerge') { if (b.t > 0.8) { b.state = 'idle'; b.t = 0; b.cd = 0.7; } return; }
     if (b.state === 'spit') { if (!b.didHit && b.t > 0.35) { b.didHit = true; const n = ph >= 2 ? 3 : 2; for (let i = 0; i < n; i++) lobShot(b, P.x + P.vx * 0.5 + (i ? rnd(-2, 2) : 0), P.y + P.vy * 0.5 + (i ? rnd(-2, 2) : 0), { dmg: b.d.dmg * 0.45, r: 1.3, T: 0.9 + i * 0.15, kind: 'flask', fx: 'poison' }); play('serpent_hiss', 0.45, 1.2); }
       if (b.t > 0.8) { b.state = 'idle'; b.t = 0; b.cd = rnd(0.9, 1.3) / fast; } return; }
-    if (b.state === 'tail') { if (!b.didHit && b.t > 0.45) { b.didHit = true; play('whoosh', 0.9, 0.6); P.shake = Math.max(P.shake, 1); if (dist < 3.8) { run.cause = b.d.name; hurtPlayer(b.d.dmg, b.x, b.y, 'melee'); for (let i = 0; i < 8; i++) tryMove(P, Math.cos(ang) * 0.13, Math.sin(ang) * 0.13, 0.24); } }
+    if (b.state === 'tail') { if (!b.didHit && b.t > 0.45) { b.didHit = true; play('whoosh', 0.9, 0.6); P.shake = Math.max(P.shake, 1); if (dist < 3.8 * reach) { run.cause = b.d.name; hurtPlayer(b.d.dmg, b.x, b.y, 'melee'); for (let i = 0; i < 8; i++) tryMove(P, Math.cos(ang) * 0.13, Math.sin(ang) * 0.13, 0.24); } }
       if (b.t > 0.9) { b.state = 'idle'; b.t = 0; b.cd = 0.8 / fast; } return; }
     b.cd -= dt;
     if (b.cd <= 0) { b.t = 0; b.didHit = false; const los = hasLOS(b.x, b.y, P.x, P.y), r = Math.random();
-      if (los && dist < 3.6 && r < 0.6) { b.state = 'tail'; bossWarn(b, 'ORMEN SVEPER MED SVANSEN!'); }
+      if (los && dist < 3.6 * reach && r < 0.6) { b.state = 'tail'; bossWarn(b, 'ORMEN SVEPER MED SVANSEN!'); }
       else if ((b.diveCd || 0) < tmr && r < 0.55) { b.state = 'dive'; b.diveCd = tmr + 6; play('serpent_hiss', 0.45, 0.8); spawnPuff(b.x, b.y, 10); }
       else if (los) b.state = 'spit'; else { b.state = 'dive'; b.diveCd = tmr + 6; }
       return; }
