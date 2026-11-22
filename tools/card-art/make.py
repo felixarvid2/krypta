@@ -56,6 +56,12 @@ bin ...) med de sista oanvända partiklarna samt två nya källor: Kenneys splat
 (rökelserök), tabellen V15_DRAWN. Pakterna för rökelsekaret och bikastaren ritas som siluetter; uppgraderingarna är oanvända
 effektbilder ur vfx eller partiklar med vapnet som bricka i hörnet (V15_UPGRADES).
 
+Version 16: 24 nya kort (trädgård, rosor, törne, statyer, drömmar, sömn och mardrömmar) – bara bossarna vine_matriarch och warden
+i assets/ashfall-ai passar (tabellen V16_SRC); resten ritas här (rosor, stenänglar, fontäner, näckrosor, vallmo, månar, stjärnor,
+masker, Jon Blunds paraply ...). Kenneys partiklar är slut, så bakom motiven ligger oanvända stänk ur splat-pack och rök ur
+smoke-particles (V16_DRAWN). Pakterna för trädgårdssaxen och drömstaven ritas som siluetter; uppgraderingarna är de sista
+oanvända effektbilderna ur vfx med vapnet som bricka i hörnet (V16_UPGRADES). Kvar i vfx efter detta: bara atlas och explosion_2.
+
 Kör från repo-roten: python3 retrofps/tools/card-art/make.py .          (alla)
                      python3 retrofps/tools/card-art/make.py . v5       (bara version 5)
                      python3 retrofps/tools/card-art/make.py . v6       (bara version 6)
@@ -65,6 +71,7 @@ Kör från repo-roten: python3 retrofps/tools/card-art/make.py .          (alla)
                      python3 retrofps/tools/card-art/make.py . v11      (bara version 11)
                      python3 retrofps/tools/card-art/make.py . v13      (bara version 13)
                      python3 retrofps/tools/card-art/make.py . v15      (bara version 15)
+                     python3 retrofps/tools/card-art/make.py . v16      (bara version 16)
 """
 import os
 import sys
@@ -2358,6 +2365,478 @@ def main_v15():
     return n
 
 
+# ---------- version 16: Den döda trädgården och Drömriket ----------
+# Bara två oanvända bilder i assets/ashfall-ai passar: bossarna vine_matriarch (en kvinna av rankor med en blomma) och warden
+# (en trädväktare av bark) – tabellen V16_SRC. Resten ritas här (rosor, törne, stenänglar, fontäner, näckrosor, vallmo, månen,
+# stjärnor, masker, Jon Blunds paraply ...) på samma mörklila vinjett. Partiklarna ur Kenneys particle-pack är slut, så bakom
+# motiven ligger stänk ur splat-pack och rök och ljusblixtar ur smoke-particles som inget tidigare kort använt (V16_DRAWN).
+# Varje källbild används bara en gång. Pakternas vapen (trädgårdssaxen och drömstaven) ritas som siluetter; uppgraderingarna
+# är de sista oanvända effektbilderna ur vfx med vapnet som bricka i hörnet (V16_UPGRADES; v16_upgrade klarar också stänk och rök).
+V16_SRC = {  # kort-id: (sort, bild, andel/beskärning) – som V15
+    'rankornas_moder': ('ash', 'bosses/vine_matriarch', 0), 'barkhuden': ('ash', 'bosses/warden', 0),
+}
+# kort-id: (ritfunktion, storlek, förskjutning y, [(källa, storlek, dx, dy, färg, vridning)]) – källorna som i V15_DRAWN
+V16_DRAWN = {
+    'rosenhandsken': ('roseglove', 0.84, 0, [('splat:splat07', 0.9, 0.04, 0.16, (150, 20, 40), 0)]),
+    'stenblicken': ('weepangel', 0.84, 0.02, [('smoke:White puff/whitePuff05', 0.95, 0, 0.04, (190, 186, 204), 0)]),
+    'grensaxen': ('pruner', 0.86, 0, [('splat:splat10', 0.85, -0.04, 0.12, (70, 140, 50), 0)]),
+    'somnsanden': ('sandpouch', 0.82, 0.04, [('smoke:Flash/flash04', 0.95, 0, -0.04, (255, 220, 150), 0)]),
+    'dimlyktan': ('mistlantern', 0.84, 0, [('smoke:White puff/whitePuff14', 0.95, 0, 0.1, (196, 170, 236), 0)]),
+    'fontanmyntet': ('fountaincoin', 0.8, 0, [('splat:splat11', 0.95, 0, 0.12, (60, 120, 210), 0)]),
+    'dromnyckeln': ('eyekey', 0.86, 0, [('smoke:Flash/flash06', 0.95, 0, 0, (200, 160, 255), 0)]),
+    'tuppfjadern': ('roosterfeather', 0.86, 0, [('smoke:Flash/flash01', 0.95, 0, 0, (255, 190, 120), 0)]),
+    'rosenvattnet': ('rosewater', 0.84, 0, [('splat:splat08', 0.9, 0, 0.18, (230, 110, 150), 0)]),
+    'nattljuset': ('moonlight', 0.84, 0, [('smoke:Black smoke/blackSmoke03', 0.95, 0, 0.06, (120, 140, 220), 0)]),
+    'stenangelns_tar': ('angeltear', 0.86, 0, [('smoke:White puff/whitePuff22', 0.95, 0, 0, (200, 200, 216), 0)]),
+    'rosensaxen': ('bloodrose', 0.86, 0, [('splat:splat04', 0.95, 0, 0.1, (150, 10, 24), 0)]),
+    'stjarnstoftet': ('stardust', 0.82, 0.02, [('smoke:Flash/flash08', 0.95, 0, -0.06, (230, 210, 255), 0)]),
+    'vakarstenen': ('eyestone', 0.8, 0.04, [('smoke:Flash/flash03', 0.95, 0, 0, (255, 236, 170), 0)]),
+    'nackrosen': ('waterlily', 0.86, 0.04, [('splat:splat12', 0.95, 0, 0.1, (40, 120, 150), 0)]),
+    'valmon': ('poppies', 0.86, 0, [('smoke:Black smoke/blackSmoke15', 0.95, 0, 0.1, (170, 40, 60), 0)]),
+    'marmorhjartat': ('marbleheart', 0.8, 0, [('splat:splat30', 0.9, 0, 0.12, (170, 166, 184), 0)]),
+    'mastersaxen': ('topiary', 0.86, 0, [('splat:splat15', 0.95, 0, 0.24, (60, 120, 40), 0)]),
+    'ariadnes_trad': ('threadmaze', 0.86, 0, [('smoke:White puff/whitePuff16', 0.95, 0, 0, (190, 160, 230), 0)]),
+    'mardromsmasken': ('nightmaremask', 0.84, 0, [('smoke:Black smoke/blackSmoke19', 0.95, 0, 0, (140, 40, 120), 0)]),
+    'svarta_rosen': ('blackrose', 0.88, 0, [('splat:splat23', 0.95, 0, 0.14, (120, 8, 24), 0),
+                                           ('smoke:Black smoke/blackSmoke10', 0.7, 0.2, -0.24, (110, 90, 130), 0)]),
+    'jon_blunds_paraply': ('dreamumbrella', 0.88, 0, [('smoke:Flash/flash00', 0.95, 0, -0.1, (210, 190, 255), 0),
+                                                       ('smoke:White puff/whitePuff09', 0.6, -0.2, 0.28, (170, 150, 220), 0)]),
+}
+V16_PACTS = {'pakt_tradgardssax': 'shears', 'pakt_dromstav': 'dreamstaff'}
+V16_UPGRADES = {  # kort-id: (vapen, 'vfx:<bild>' (eller 'splat:'/'smoke:' som i V16_DRAWN), färgton eller None, vridning)
+    'treklippet': ('shears', 'vfx:ash_flake', (226, 236, 230), 0), 'blodklippet': ('shears', 'vfx:scorch_0', (230, 40, 50), 0),
+    'saxkastet': ('shears', 'vfx:green_flame', None, 0), 'snabbklippet': ('shears', 'vfx:explosion_1', (200, 250, 180), 0),
+    'trogheten': ('dreamstaff', 'vfx:frost_ground_0', (190, 150, 255), 0), 'stjarnregnet': ('dreamstaff', 'vfx:ice_shard_0', (236, 210, 255), 0),
+    'djupsomnen': ('dreamstaff', 'vfx:spore_cloud_0', (170, 160, 255), 0), 'stjarnfallet': ('dreamstaff', 'vfx:fire_core_1', (255, 240, 190), 0),
+}
+
+LEAF, ROSE, MARBLE, NIGHT, MOON, DREAM, STEEL = (70, 130, 50, 255), (196, 24, 44, 255), (224, 222, 230, 255), (40, 36, 80, 255), (250, 236, 170, 255), (150, 100, 220, 255), (176, 182, 196, 255)
+
+
+def star(d, cx, cy, r, col, n=5, rot=-np.pi / 2, w=4):
+    pts = [(cx + (r if k % 2 == 0 else r * 0.45) * np.cos(rot + k * np.pi / n), cy + (r if k % 2 == 0 else r * 0.45) * np.sin(rot + k * np.pi / n)) for k in range(2 * n)]
+    poly(d, pts, col, w)
+
+
+def crescent(d, cx, cy, r, col, w=6):
+    """Månskära: skivan (cx, cy, r) minus en förskjuten skiva, som en polygon (ytterbågen och sedan innerbågen tillbaka)."""
+    c1x, c1y, r1 = cx + 0.45 * r, cy - 0.2 * r, 0.82 * r
+    phi = np.arctan2(c1y - cy, c1x - cx)
+    outer = [(cx + r * np.cos(t), cy + r * np.sin(t)) for t in phi + np.pi + np.linspace(-np.pi, np.pi, 240)]
+    outer = [p for p in outer if np.hypot(p[0] - c1x, p[1] - c1y) > r1]
+    inner = [(c1x + r1 * np.cos(t), c1y + r1 * np.sin(t)) for t in phi + np.pi + np.linspace(np.pi, -np.pi, 240)]
+    inner = [p for p in inner if np.hypot(p[0] - cx, p[1] - cy) < r]
+    poly(d, outer + inner, col, w)
+
+
+def rose(d, cx, cy, r, col, edge=None):
+    """Rosenblomma ovanifrån-snett: yttre kronblad, sedan allt tätare inre virvlar."""
+    for k in range(5):
+        a = -np.pi / 2 + k * 2 * np.pi / 5
+        x, y = cx + r * 0.55 * np.cos(a), cy + r * 0.5 * np.sin(a)
+        d.ellipse((x - r * 0.6, y - r * 0.5, x + r * 0.6, y + r * 0.5), fill=col, outline=INK, width=5)
+    d.ellipse((cx - r * 0.7, cy - r * 0.6, cx + r * 0.7, cy + r * 0.6), fill=lighter(col, 0.85), outline=INK, width=5)
+    for k, s in enumerate((0.55, 0.38, 0.22)):
+        d.arc((cx - r * s, cy - r * s * 0.9, cx + r * s, cy + r * s * 0.9), 200 + 40 * k, 520 + 40 * k, fill=INK, width=5)
+        d.arc((cx - r * s + 4, cy - r * s * 0.9 + 4, cx + r * s - 4, cy + r * s * 0.9 - 4), 210 + 40 * k, 380 + 40 * k, fill=edge or lighter(col, 1.4), width=3)
+
+
+def thorn_stem(d, pts, col=(60, 100, 40, 255), w=18, thorns=6):
+    d.line(pts, fill=INK, width=w + 10, joint='curve')
+    d.line(pts, fill=col, width=w, joint='curve')
+    for k in range(1, thorns + 1):
+        i = int((len(pts) - 2) * k / (thorns + 1))
+        (x0, y0), (x1, y1) = pts[i], pts[i + 1]
+        dx, dy = x1 - x0, y1 - y0
+        L = max(1e-6, np.hypot(dx, dy))
+        nx, ny = -dy / L * (1 if k % 2 else -1), dx / L * (1 if k % 2 else -1)
+        tip = (x0 + nx * (w + 16) - dx / L * 10, y0 + ny * (w + 16) - dy / L * 10)
+        poly(d, [(x0 + nx * w * 0.4 + dx / L * 9, y0 + ny * w * 0.4 + dy / L * 9), tip, (x0 + nx * w * 0.4 - dx / L * 9, y0 + ny * w * 0.4 - dy / L * 9)], (200, 180, 140, 255), 3)
+
+
+def leaf(d, cx, cy, L, ang, col=LEAF):
+    ux, uy = np.cos(ang), np.sin(ang)
+    px, py = -uy, ux
+    pts = [(cx + ux * L * t + px * L * 0.32 * np.sin(np.pi * t), cy + uy * L * t + py * L * 0.32 * np.sin(np.pi * t)) for t in np.linspace(0, 1, 12)]
+    pts += [(cx + ux * L * t - px * L * 0.32 * np.sin(np.pi * t), cy + uy * L * t - py * L * 0.32 * np.sin(np.pi * t)) for t in np.linspace(1, 0, 12)]
+    poly(d, pts, col, 4)
+    d.line((cx, cy, cx + ux * L * 0.9, cy + uy * L * 0.9), fill=lighter(col, 1.3), width=3)
+
+
+def eye(d, cx, cy, w, h, iris=(150, 100, 220, 255)):
+    d.chord((cx - w, cy - h, cx + w, cy + h), 180, 360, fill=(240, 236, 226, 255), outline=INK, width=6)
+    d.chord((cx - w, cy - h, cx + w, cy + h), 0, 180, fill=(240, 236, 226, 255), outline=INK, width=6)
+    d.ellipse((cx - h * 0.7, cy - h * 0.7, cx + h * 0.7, cy + h * 0.7), fill=iris, outline=INK, width=4)
+    d.ellipse((cx - h * 0.3, cy - h * 0.3, cx + h * 0.3, cy + h * 0.3), fill=INK)
+    d.ellipse((cx - h * 0.5, cy - h * 0.55, cx - h * 0.15, cy - h * 0.2), fill=(255, 255, 255, 255))
+
+
+def wing(d, x, y, s, flip=False, col=MARBLE):
+    f = -1 if flip else 1
+    for k in range(5):                                                                               # fjädrar, längst ut först
+        L = 150 - k * 22
+        a = np.pi * (0.78 - 0.1 * k)
+        x1, y1 = x + f * L * s * -np.cos(a), y + L * s * np.sin(a) - 40 * s
+        poly(d, [(x, y - 10 * s), (x1, y1), (x1 + f * 12 * s, y1 + 30 * s), (x + f * 10 * s, y + 20 * s)], lighter(col, 1 - 0.04 * k), 5)
+    poly(d, [(x, y - 30 * s), (x + f * 70 * s, y - 70 * s), (x + f * 90 * s, y - 30 * s), (x + f * 20 * s, y + 30 * s)], col, 5)
+
+
+def art16(kind):
+    im = Image.new('RGBA', (400, 400))
+    d = ImageDraw.Draw(im)
+    if kind == 'roseglove':
+        palm = [(110, 390), (96, 230), (60, 150), (84, 136), (130, 196), (128, 80), (160, 76), (172, 180), (184, 60), (216, 60), (220, 180), (240, 80), (272, 86), (264, 200),
+                (300, 120), (328, 132), (300, 260), (290, 390)]
+        poly(d, palm, (150, 104, 62, 255), 7)                                                         # läderhandske
+        rrect(d, (100, 320, 300, 392), 10, (122, 82, 48, 255))
+        for x in (130, 170, 210, 250):
+            d.line((x, 330, x, 384), fill=(90, 58, 34, 255), width=4)
+        thorn_stem(d, [(330, 380), (290, 300), (230, 220), (170, 150), (120, 90)], thorns=5)
+        rose(d, 108, 72, 70, ROSE)
+        leaf(d, 250, 250, 70, 0.3)
+    elif kind == 'weepangel':
+        wing(d, 140, 200, 1.2, True)
+        wing(d, 260, 200, 1.2)
+        d.ellipse((140, 60, 260, 200), fill=MARBLE, outline=INK, width=7)                              # huvudet
+        d.chord((136, 50, 264, 150), 180, 360, fill=lighter(MARBLE, 0.85), outline=INK, width=7)      # håret i en knut
+        d.ellipse((176, 18, 224, 62), fill=lighter(MARBLE, 0.85), outline=INK, width=6)
+        poly(d, [(120, 220), (280, 220), (320, 400), (80, 400)], lighter(MARBLE, 0.92), 7)            # dräkten
+        for x in (150, 200, 250):
+            d.line((x, 240, x - 10 + (x - 200) * 0.3, 396), fill=lighter(MARBLE, 0.75), width=5)
+        for sgn in (-1, 1):                                                                           # händerna för ögonen
+            poly(d, [(200 + sgn * 6, 120), (200 + sgn * 56, 110), (200 + sgn * 64, 150), (200 + sgn * 50, 230), (200 + sgn * 16, 230)], lighter(MARBLE, 0.96), 6)
+            for k in range(3):
+                d.line((200 + sgn * (14 + k * 15), 122 - k * 3, 200 + sgn * (18 + k * 15), 160), fill=lighter(MARBLE, 0.7), width=4)
+        for x, y in ((150, 280), (250, 300), (180, 360)):                                             # sprickor och mossa
+            d.line((x, y, x + 20, y + 24, x + 6, y + 40), fill=(80, 80, 90, 255), width=4)
+        d.ellipse((230, 340, 290, 380), fill=(80, 120, 60, 255), outline=INK, width=4)
+    elif kind == 'pruner':
+        d.line((40, 340, 330, 130), fill=INK, width=36)                                               # grenen som klipps
+        d.line((40, 340, 330, 130), fill=(110, 76, 46, 255), width=22)
+        d.ellipse((300, 104, 360, 156), fill=(200, 170, 120, 255), outline=INK, width=6)               # snittytan
+        for x, y, a in ((120, 270, -2.2), (200, 230, 0.9), (260, 170, -2.0)):
+            leaf(d, x, y, 66, a)
+        poly(d, [(250, 20), (270, 16), (236, 190), (212, 186)], STEEL)                                # sekatören (stängd)
+        poly(d, [(222, 26), (240, 30), (232, 196), (206, 188)], lighter(STEEL, 0.85))
+        d.ellipse((208, 178, 240, 210), fill=(200, 160, 60, 255), outline=INK, width=5)
+        poly(d, [(208, 200), (230, 204), (190, 392), (150, 380)], (200, 50, 40, 255))
+        poly(d, [(222, 206), (242, 200), (246, 392), (210, 392)], (180, 40, 36, 255))
+        d.arc((196, 230, 260, 300), 90, 270, fill=(220, 220, 230, 255), width=5)                     # fjäder
+    elif kind == 'sandpouch':
+        poly(d, [(130, 160), (270, 160), (320, 260), (300, 360), (100, 360), (80, 260)], (110, 70, 120, 255), 8)  # säcken
+        poly(d, [(150, 110), (250, 110), (270, 166), (130, 166)], (130, 86, 140, 255), 7)
+        d.line((126, 164, 274, 164), fill=(220, 180, 90, 255), width=10)                             # snöre
+        d.line((270, 164, 330, 200), fill=(220, 180, 90, 255), width=6)
+        for k in range(30):                                                                           # sanden som rinner ut
+            x, y = 230 + k * 5 + 10 * np.sin(k), 110 - k * 3 + 8 * np.cos(k * 1.7)
+            r = 3 + (k % 3)
+            d.ellipse((x - r, y - r, x + r, y + r), fill=(255, 230, 150, 255))
+        star(d, 190, 260, 30, (255, 220, 120, 255))
+        for x, y in ((140, 300), (250, 310), (160, 210)):
+            star(d, x, y, 12, (240, 220, 255, 255), w=3)
+    elif kind == 'mistlantern':
+        d.line((200, 10, 200, 50), fill=INK, width=12)
+        d.arc((160, 10, 240, 80), 180, 360, fill=INK, width=12)                                      # bygel
+        poly(d, [(130, 70), (270, 70), (250, 110), (150, 110)], (60, 50, 70, 255))                    # tak
+        rrect(d, (140, 110, 260, 300), 8, (250, 220, 150, 255))                                      # glaset
+        for x in (180, 220):
+            d.line((x, 112, x, 298), fill=INK, width=6)
+        d.ellipse((176, 170, 224, 250), fill=(255, 250, 220, 255))
+        d.ellipse((188, 186, 212, 236), fill=(255, 180, 60, 255))
+        rrect(d, (120, 296, 280, 330), 8, (60, 50, 70, 255))
+        for k, y in enumerate((280, 330, 370)):                                                       # dimslöjor
+            d.line([(20 + 30 * j, y + 14 * np.sin(j + k)) for j in range(13)], fill=(220, 200, 250, 210), width=18 - 3 * k, joint='curve')
+    elif kind == 'fountaincoin':
+        d.ellipse((40, 40, 360, 360), fill=(210, 176, 80, 255), outline=INK, width=8)               # myntet
+        d.ellipse((66, 66, 334, 334), outline=(160, 120, 40, 255), width=6)
+        d.chord((110, 220, 290, 300), 0, 180, fill=(170, 130, 50, 255), outline=INK, width=5)        # fontänskål
+        rrect(d, (184, 150, 216, 240), 4, (170, 130, 50, 255), 5)
+        d.chord((140, 130, 260, 180), 0, 180, fill=(170, 130, 50, 255), outline=INK, width=5)
+        rrect(d, (160, 290, 240, 310), 4, (170, 130, 50, 255), 5)
+        for sgn in (-1, 1):                                                                          # vattenstrålar
+            d.arc((200 - 90 + sgn * 40, 80, 200 + 90 + sgn * 40, 260), 200 if sgn < 0 else 250, 290 if sgn < 0 else 340, fill=(130, 200, 255, 255), width=8)
+        d.line((200, 140, 200, 90), fill=(130, 200, 255, 255), width=8)
+        for x, y in ((80, 370), (330, 380), (360, 320)):
+            d.ellipse((x - 12, y - 16, x + 12, y + 16), fill=(120, 190, 255, 255), outline=INK, width=4)
+    elif kind == 'eyekey':
+        d.ellipse((30, 30, 190, 190), fill=(190, 150, 230, 255), outline=INK, width=8)               # nyckelns ögla
+        d.ellipse((52, 52, 168, 168), fill=NIGHT, outline=INK, width=5)
+        eye(d, 110, 110, 50, 30)
+        d.line((170, 170, 360, 360), fill=INK, width=40)                                             # skaftet
+        d.line((170, 170, 360, 360), fill=(190, 150, 230, 255), width=24)
+        for k in range(2):                                                                            # axet
+            x, y = 290 + k * 40, 290 + k * 40
+            poly(d, [(x, y), (x + 50, y - 50), (x + 70, y - 30), (x + 20, y + 20)], (190, 150, 230, 255), 6)
+        for x, y in ((250, 80), (330, 150), (70, 300)):
+            star(d, x, y, 18, MOON, w=3)
+    elif kind == 'roosterfeather':
+        feather(d, (60, 120, 60, 255), (190, 50, 30, 255), (240, 220, 170, 255), 16)
+        for x, y, r in ((90, 80, 18), (320, 140, 14)):                                                # gryningens strålar
+            star(d, x, y, r, (255, 210, 120, 255), 4, w=3)
+    elif kind == 'rosewater':
+        poly(d, [(170, 40), (230, 40), (230, 130), (320, 230), (300, 370), (100, 370), (80, 230), (170, 130)], (210, 220, 240, 200), 8)  # flaskan
+        d.polygon([(92, 240), (308, 240), (296, 360), (104, 360)], fill=(230, 110, 150, 255))            # rosenvattnet
+        d.line((92, 240, 308, 240), fill=(255, 190, 210, 255), width=6)
+        rrect(d, (160, 14, 240, 48), 6, (150, 100, 60, 255))                                         # korken
+        d.line((110, 250, 120, 340), fill=(255, 220, 230, 255), width=8)
+        for x, y, a in ((160, 290, 0.4), (240, 310, 2.2), (200, 200, 1.2)):                          # kronblad
+            leaf(d, x, y, 40, a, (220, 40, 70, 255))
+        rose(d, 300, 70, 50, ROSE)
+    elif kind == 'moonlight':
+        crescent(d, 220, 150, 130, MOON)
+        d.ellipse((60, 300, 300, 360), fill=(180, 140, 70, 255), outline=INK, width=7)               # ljusstakens fat
+        d.arc((270, 300, 340, 350), 270, 90, fill=INK, width=12)                                     # handtag
+        candle(d, 180, 240, 60, 90, (236, 228, 200, 255), 2)
+        d.ellipse((168, 190, 192, 232), fill=(255, 210, 90, 255), outline=INK, width=3)
+        for x, y in ((80, 80), (110, 200), (340, 60)):
+            star(d, x, y, 14, MOON, w=3)
+    elif kind == 'angeltear':
+        wing(d, 150, 230, 1.3, True)
+        wing(d, 250, 230, 1.3)
+        poly(d, [(200, 40), (270, 200), (260, 280), (200, 320), (140, 280), (130, 200)], (170, 200, 236, 255), 8)  # tåren av sten och glas
+        d.line((172, 120, 152, 250), fill=(236, 246, 255, 255), width=10)
+        d.ellipse((176, 240, 224, 290), fill=(200, 226, 255, 255))
+        for x, y in ((120, 360), (200, 380), (280, 356)):
+            d.ellipse((x - 10, y - 14, x + 10, y + 14), fill=(170, 200, 236, 255), outline=INK, width=4)
+    elif kind == 'bloodrose':
+        thorn_stem(d, [(80, 392), (120, 320), (170, 250), (200, 190)], thorns=4)
+        leaf(d, 130, 310, 80, -2.6)
+        rose(d, 220, 140, 120, ROSE)
+        for x, y, L in ((150, 220, 50), (290, 230, 80), (240, 250, 120)):                             # blod som droppar
+            d.line((x, y, x, y + L), fill=INK, width=18)
+            d.line((x, y, x, y + L), fill=(150, 10, 24, 255), width=10)
+            d.ellipse((x - 12, y + L - 6, x + 12, y + L + 20), fill=(150, 10, 24, 255), outline=INK, width=4)
+    elif kind == 'stardust':
+        poly(d, [(150, 60), (250, 60), (250, 140), (310, 220), (300, 360), (100, 360), (90, 220), (150, 140)], (60, 50, 100, 200), 8)  # glasflaska
+        rrect(d, (140, 30, 260, 66), 8, (200, 170, 110, 255))
+        for k in range(26):
+            x, y = 120 + (k * 47) % 170, 200 + (k * 29) % 150
+            d.ellipse((x - 4, y - 4, x + 4, y + 4), fill=(255, 240, 200, 255))
+        star(d, 200, 270, 40, MOON)
+        star(d, 150, 210, 18, (230, 210, 255, 255), w=3)
+        for x, y in ((280, 20), (340, 90), (60, 60)):
+            star(d, x, y, 16, MOON, w=3)
+    elif kind == 'eyestone':
+        poly(d, [(80, 180), (140, 90), (270, 80), (340, 170), (320, 300), (220, 350), (100, 320)], (120, 126, 140, 255), 8)  # stenen
+        d.line((120, 120, 180, 100), fill=(170, 176, 190, 255), width=8)
+        eye(d, 210, 220, 100, 56, (255, 200, 80, 255))
+        for a in range(0, 360, 30):                                                                   # strålarna: stenen väcker
+            x, y = 210 + 150 * np.cos(np.radians(a)), 220 + 150 * np.sin(np.radians(a))
+            d.line((210 + 120 * np.cos(np.radians(a)), 220 + 120 * np.sin(np.radians(a)), x, y), fill=(255, 236, 160, 255), width=5)
+    elif kind == 'waterlily':
+        d.ellipse((20, 220, 380, 380), fill=(40, 70, 110, 255), outline=INK, width=7)                 # dammen
+        d.pieslice((60, 240, 340, 370), 300, 600, fill=(60, 130, 60, 255), outline=INK, width=6)      # blad
+        d.line((200, 305, 330, 280), fill=(40, 100, 40, 255), width=4)
+        for k in range(8):                                                                            # näckrosen
+            a = np.pi * (1 + k / 7)
+            x, y = 200 + 80 * np.cos(a), 250 + 50 * np.sin(a)
+            poly(d, [(200, 260), (x - 18, y + 10), (x, y - 20), (x + 18, y + 10)], (250, 236, 246, 255), 5)
+        for k in range(5):
+            a = np.pi * (1.1 + 0.8 * k / 4)
+            x, y = 200 + 50 * np.cos(a), 240 + 40 * np.sin(a)
+            poly(d, [(200, 256), (x - 14, y + 6), (x, y - 26), (x + 14, y + 6)], (255, 200, 220, 255), 4)
+        d.ellipse((180, 220, 220, 252), fill=(255, 210, 70, 255), outline=INK, width=4)
+        for x, y in ((80, 120), (320, 110), (200, 60)):
+            d.arc((x - 30, y - 10, x + 30, y + 10), 0, 360, fill=(150, 210, 255, 255), width=4)
+    elif kind == 'poppies':
+        for x0, top, h in ((110, 120, 280), (230, 60, 340), (310, 170, 230)):
+            d.line([(x0, 400), (x0 + 10, 400 - h * 0.5), (x0 - 4, top + 40)], fill=INK, width=14, joint='curve')
+            d.line([(x0, 400), (x0 + 10, 400 - h * 0.5), (x0 - 4, top + 40)], fill=(80, 130, 60, 255), width=7, joint='curve')
+        for x, y, r in ((106, 120, 66), (226, 60, 80), (306, 170, 56)):                               # vallmorna
+            for k in range(4):
+                a = k * np.pi / 2 + 0.4
+                bx, by = x + r * 0.45 * np.cos(a), y + r * 0.4 * np.sin(a)
+                d.ellipse((bx - r * 0.62, by - r * 0.55, bx + r * 0.62, by + r * 0.55), fill=(220, 30, 30, 255), outline=INK, width=5)
+            d.ellipse((x - r * 0.3, y - r * 0.3, x + r * 0.3, y + r * 0.3), fill=INK)
+            for k in range(8):
+                a = k * np.pi / 4
+                d.line((x, y, x + r * 0.42 * np.cos(a), y + r * 0.42 * np.sin(a)), fill=(60, 40, 70, 255), width=3)
+        for x, y, s in ((330, 60, 26), (360, 30, 18), (60, 260, 22)):                                 # z z z
+            d.line((x - s, y - s, x + s, y - s, x - s, y + s, x + s, y + s), fill=(230, 220, 255, 255), width=6)
+    elif kind == 'marbleheart':
+        heart = [(200, 360)] + [(200 + 16 * np.sin(t) ** 3 * 10.5, 170 - (13 * np.cos(t) - 5 * np.cos(2 * t) - 2 * np.cos(3 * t) - np.cos(4 * t)) * 10.5) for t in np.linspace(-np.pi, np.pi, 60)]
+        poly(d, heart[1:], MARBLE, 8)
+        for pts in ([(80, 120), (140, 170), (130, 230), (190, 290)], [(260, 80), (240, 160), (300, 200)], [(150, 60), (170, 110)]):  # ådror
+            d.line(pts, fill=(150, 150, 170, 255), width=5, joint='curve')
+        d.line([(210, 50), (190, 120), (230, 180), (200, 250), (220, 330)], fill=INK, width=8, joint='curve')  # spricka
+        d.ellipse((90, 80, 150, 130), fill=(255, 255, 255, 255))
+    elif kind == 'topiary':
+        rrect(d, (130, 320, 270, 396), 10, (170, 90, 50, 255))                                       # krukan
+        d.line((130, 334, 270, 334), fill=INK, width=8)
+        d.line((200, 320, 200, 280), fill=INK, width=20)
+        d.line((200, 320, 200, 280), fill=(110, 76, 46, 255), width=10)
+        for cx, cy, r in ((200, 240, 70), (200, 140, 54), (200, 60, 38)):                             # klippta klot
+            d.ellipse((cx - r, cy - r, cx + r, cy + r), fill=(60, 120, 50, 255), outline=INK, width=7)
+            for k in range(6):
+                a = k * np.pi / 3 + cy
+                x, y = cx + r * 0.55 * np.cos(a), cy + r * 0.55 * np.sin(a)
+                d.arc((x - 14, y - 10, x + 14, y + 10), 180, 360, fill=(110, 180, 80, 255), width=4)
+        poly(d, [(250, 360), (380, 300), (386, 312), (262, 374)], (230, 196, 90, 255), 5)             # gyllene sax vid krukan
+        poly(d, [(250, 372), (380, 330), (382, 344), (256, 384)], (210, 176, 70, 255), 5)
+        d.ellipse((240, 356, 272, 388), fill=(255, 230, 140, 255), outline=INK, width=5)
+    elif kind == 'threadmaze':
+        for k in range(5):                                                                            # labyrinten
+            r = 40 + k * 34
+            gap = 40 + k * 70
+            d.arc((200 - r, 200 - r, 200 + r, 200 + r), gap, gap + 300, fill=INK, width=16)
+            d.arc((200 - r, 200 - r, 200 + r, 200 + r), gap, gap + 300, fill=(150, 130, 190, 255), width=8)
+        pts = [(200 + 6 * t * np.cos(t), 200 + 6 * t * np.sin(t)) for t in np.linspace(0, 30, 120)]
+        d.line(pts, fill=(220, 40, 50, 255), width=5, joint='curve')                                 # tråden
+        d.ellipse((290, 290, 380, 380), fill=(210, 40, 50, 255), outline=INK, width=6)                # nystanet
+        for k in range(4):
+            d.arc((296 + k * 6, 296 + k * 4, 374 - k * 4, 374 - k * 6), 30 * k, 30 * k + 160, fill=(255, 120, 120, 255), width=4)
+    elif kind == 'nightmaremask':
+        poly(d, [(110, 120), (60, 20), (150, 90)], (60, 30, 50, 255), 6)                              # horn
+        poly(d, [(290, 120), (340, 20), (250, 90)], (60, 30, 50, 255), 6)
+        poly(d, [(80, 120), (320, 120), (330, 230), (270, 350), (200, 380), (130, 350), (70, 230)], (50, 30, 70, 255), 8)  # masken
+        for x in (140, 260):                                                                          # glödande ögon
+            poly(d, [(x - 44, 190), (x + 44, 180), (x + 30, 222), (x - 36, 226)], (255, 60, 80, 255), 6)
+            d.ellipse((x - 10, 194, x + 10, 214), fill=(255, 230, 120, 255))
+        d.line([(130, 290), (160, 310), (200, 296), (240, 310), (270, 290)], fill=INK, width=10)       # flin
+        for x in (160, 200, 240):
+            poly(d, [(x - 10, 302), (x, 326), (x + 10, 302)], (230, 220, 200, 255), 3)
+        d.line((200, 130, 200, 170), fill=(120, 80, 140, 255), width=6)
+    elif kind == 'blackrose':
+        thorn_stem(d, [(200, 400), (190, 330), (210, 260), (200, 200)], (40, 60, 40, 255), 20, 6)
+        leaf(d, 196, 330, 90, -2.8, (40, 80, 40, 255))
+        leaf(d, 206, 280, 80, -0.3, (40, 80, 40, 255))
+        rose(d, 200, 120, 130, (40, 24, 40, 255), (200, 40, 60, 255))
+        for x, y in ((90, 60), (320, 50), (340, 200)):
+            star(d, x, y, 12, (200, 40, 60, 255), 4, w=3)
+    elif kind == 'dreamumbrella':
+        d.chord((20, 60, 380, 300), 180, 360, fill=DREAM, outline=INK, width=8)                       # duken
+        for k in range(1, 6):                                                                         # spröt
+            d.line((200, 64, 20 + k * 60, 180), fill=INK, width=6)
+        for k in range(6):                                                                            # bilder: månar och stjärnor
+            x, y = 50 + k * 60, 150 - 50 * np.sin(np.pi * (k + 0.5) / 6)
+            if k % 2:
+                star(d, x, y, 16, MOON, w=3)
+            else:
+                crescent(d, x, y, 16, MOON, 3)
+        for k in range(7):                                                                            # bågad kant
+            x = 20 + k * 360 / 6
+            d.arc((x - 30, 160, x + 30, 200), 0, 180, fill=INK, width=6)
+        d.line((200, 30, 200, 360), fill=INK, width=16)                                               # skaftet
+        d.line((200, 30, 200, 360), fill=(200, 180, 140, 255), width=8)
+        d.arc((150, 330, 210, 390), 0, 180, fill=INK, width=16)                                       # krycka
+        d.arc((150, 330, 210, 390), 0, 180, fill=(140, 90, 50, 255), width=8)
+        d.ellipse((188, 14, 212, 38), fill=MOON, outline=INK, width=4)
+    return im
+
+
+def draw_shears():
+    """Trädgårdssaxen: lång häcksax med två raka blad som står öppna i ett V och två långa träskaft med järnhylsor."""
+    im = Image.new('RGBA', (460, 460))
+    d = ImageDraw.Draw(im)
+    for ang, col in ((-0.16, (186, 190, 204, 255)), (0.16, (160, 166, 180, 255))):
+        ux, uy = np.cos(-np.pi / 2 + ang), np.sin(-np.pi / 2 + ang)
+        px, py = -uy, ux
+        cx, cy = 230, 250
+        hx, hy = cx - ux * 200, cy - uy * 200                                                          # skaftet nedåt
+        d.line((cx - ux * 40, cy - uy * 40, hx, hy), fill=INK, width=34)
+        d.line((cx - ux * 40, cy - uy * 40, hx, hy), fill=(120, 80, 44, 255), width=22)
+        d.line((cx - ux * 40, cy - uy * 40, cx - ux * 80, cy - uy * 80), fill=(90, 90, 100, 255), width=22)  # hylsa
+        blade = [(cx + px * 14, cy + py * 14), (cx + ux * 220 + px * 6, cy + uy * 220 + py * 6), (cx + ux * 226, cy + uy * 226), (cx + ux * 40 - px * 16, cy + uy * 40 - py * 16)]
+        poly(d, blade, col, 6)
+        d.line((cx + ux * 30 + px * 4, cy + uy * 30 + py * 4, cx + ux * 200 + px * 2, cy + uy * 200 + py * 2), fill=(236, 240, 248, 255), width=4)
+    d.ellipse((214, 234, 246, 266), fill=(200, 160, 60, 255), outline=INK, width=6)                     # nit
+    return im.crop(im.getbbox()).rotate(-40, resample=Image.BICUBIC, expand=True)
+
+
+def draw_dreamstaff():
+    """Drömstaven: smal silverstav med lindning, en månskära i toppen som håller en lysande stjärna."""
+    im = Image.new('RGBA', (400, 460))
+    d = ImageDraw.Draw(im)
+    rrect(d, (188, 170, 212, 452), 10, (190, 196, 214, 255))                                           # skaft
+    for y in (230, 300, 370):
+        d.line((190, y, 210, y + 12), fill=DREAM, width=6)
+    rrect(d, (176, 160, 224, 186), 8, (220, 180, 90, 255))
+    crescent(d, 200, 100, 90, (236, 220, 150, 255))
+    star(d, 214, 96, 44, (255, 246, 200, 255))
+    for x, y in ((90, 40), (320, 60), (300, 180)):
+        star(d, x, y, 14, (220, 200, 255, 255), w=3)
+    return im.crop(im.getbbox()).rotate(-24, resample=Image.BICUBIC, expand=True)
+
+
+GUNS.update({'shears': draw_shears, 'dreamstaff': draw_dreamstaff})
+
+
+def drawn_card16(cid, kind, size, dy, layers):
+    big = purple_bg()
+    for src, sc, px, py, tint, rot in layers:
+        cx, cy = S * 2 + px * S * 4, S * 2 + py * S * 4
+        im = layer15(src, int(S * 4 * sc))
+        if rot:
+            im = im.rotate(rot, resample=Image.BICUBIC, expand=True)
+        lum = im.convert('L')
+        rgb = Image.merge('RGB', [lum.point(lambda v, c=c: v * c // 255) for c in tint])
+        alpha = im.split()[3].point(lambda v: int(v * (0.9 if src.startswith('splat:') else 0.6)))
+        col = Image.merge('RGBA', rgb.split() + (alpha,))
+        big.alpha_composite(col, (int(cx - col.width / 2), int(cy - col.height / 2)))
+    g = art16(kind)
+    g = shade(g.crop(g.getbbox()))
+    k = S * 4 * size / max(g.size)
+    g = g.resize((max(1, int(g.width * k)), max(1, int(g.height * k))), Image.LANCZOS)
+    pos = ((S * 4 - g.width) // 2, int((S * 4 - g.height) / 2 + dy * S * 4))
+    add_glow(big, g, pos, (0, 0, 0), 12)
+    big.alpha_composite(g, pos)
+    save(big, cid)
+
+
+def v16_upgrade(cid, w, src, tint, rot):
+    """Som v9_upgrade, men rök ur smoke-particles läggs med sin egen alfa (som i drawn_card16)."""
+    if src.startswith('vfx:'):
+        v9_upgrade(cid, w, src, tint, rot)
+        return
+    big = purple_bg()
+    im = layer15(src, int(S * 4 * 0.86))
+    lum = im.convert('L')
+    rgb = Image.merge('RGB', [lum.point(lambda v, c=c: v * c // 255) for c in tint])
+    col = Image.merge('RGBA', rgb.split() + (im.split()[3].point(lambda v: int(v * 0.8)),))
+    big.alpha_composite(col, (int(S * 2 - col.width / 2), int(S * 2 - 10 - col.height / 2)))
+    g = gun(w, int(S * 4 * 0.42))
+    pos = (S * 4 - g.width - 10, S * 4 - g.height - 12)
+    add_glow(big, g, pos, (0, 0, 0), 10)
+    add_glow(big, g, pos, (255, 200, 90), 4)
+    big.alpha_composite(g, pos)
+    save(big, cid)
+
+
+def main_v16():
+    old = ({'ash:' + s for s, _ in V7.values()} | {k + ':' + s for k, s, _ in V8.values()} | {k + ':' + s for k, s, _ in V9_ASH.values()}
+           | {k + ':' + s for k, s, _ in V11_SRC.values()} | {k + ':' + s for k, s, _ in V13_SRC.values()} | {k + ':' + s for k, s, _ in V15_SRC.values()})
+    srcs = [k + ':' + s for k, s, _ in V16_SRC.values()]
+    assert len(srcs) == len(set(srcs)) and not old & set(srcs), 'varje bild används bara en gång'
+    assert len(V16_SRC) + len(V16_DRAWN) == 24 and not set(V16_SRC) & set(V16_DRAWN)
+    # alla tidigare bakgrundslager med prefix ('part:' för V9–V13, som skrevs utan prefix)
+    old_layers = ({'part:' + p[0] for t in (V9_DRAWN, V11_DRAWN, V13_DRAWN) for _, _, _, ps in t.values() for p in ps}
+                  | {p[0] for _, _, _, ps in V15_DRAWN.values() for p in ps}
+                  | {s for t in (V9_UPGRADES, V11_UPGRADES, V13_UPGRADES, V15_UPGRADES) for _, s, _, _ in t.values() if not s.startswith('vfx:')})
+    layers = [p[0] for _, _, _, ps in V16_DRAWN.values() for p in ps] + [s for _, s, _, _ in V16_UPGRADES.values() if not s.startswith('vfx:')]
+    assert all(s.split(':')[0] in ('splat', 'smoke') for s in layers), 'partiklarna är slut: bara stänk och rök'
+    assert len(layers) == len(set(layers)), 'varje stänk och rökbild används bara en gång'
+    assert not old_layers & set(layers), ('stänken och röken är oanvända', old_layers & set(layers))
+    fx = [s[4:] for _, s, _, _ in V16_UPGRADES.values() if s.startswith('vfx:')]
+    old_fx = ({s for _, s, _ in V6_UPGRADES.values()} | {n for ls in V6_ACTIVES.values() for n, *_ in ls} | {s for _, s, _ in V7_UPGRADES.values()}
+              | {s for _, s, _ in V8_UPGRADES.values()} | {s[4:] for t in (V9_UPGRADES, V11_UPGRADES, V13_UPGRADES, V15_UPGRADES) for _, s, _, _ in t.values() if s.startswith('vfx:')})
+    assert len(V16_UPGRADES) == 8 and len(fx) == len(set(fx)) and not old_fx & set(fx), 'varje effektbild används bara en gång'
+    n = 0
+    for cid, (kind, src, arg) in V16_SRC.items():
+        save(ash_card(src, arg), cid)
+        n += 1
+    for cid, (kind, size, dy, ps) in V16_DRAWN.items():
+        drawn_card16(cid, kind, size, dy, ps)
+        n += 1
+    for cid, w in V16_PACTS.items():
+        pact(cid, w)
+        n += 1
+    for cid, (w, src, tint, rot) in V16_UPGRADES.items():
+        v16_upgrade(cid, w, src, tint, rot)
+        n += 1
+    near_dupes(list(V16_SRC) + list(V16_DRAWN) + list(V16_PACTS) + list(V16_UPGRADES))
+    return n
+
+
 def main():
     assert len(CARDS) == len(set(CARDS)) == 50, len(CARDS)
     srcs = list(V5.values()) + [s for _, s in V5_UPGRADES.values()]
@@ -2384,6 +2863,9 @@ def main():
     if ONLY == 'v15':
         print(main_v15(), 'kortbilder ->', OUT)
         return
+    if ONLY == 'v16':
+        print(main_v16(), 'kortbilder ->', OUT)
+        return
     n = 0
     if not ONLY_V5:
         for cid in CARDS:
@@ -2406,6 +2888,7 @@ def main():
         n += main_v11()
         n += main_v13()
         n += main_v15()
+        n += main_v16()
     print(n, 'kortbilder ->', OUT)
 
 

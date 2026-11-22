@@ -165,6 +165,15 @@ const MOD_KEYS = {
   bellStun: 'Extra sekunder bedövning när du ringer i en klocka (platt)',
   fontBreak: 'HP du läker när du slår sönder en blodfunt (platt)',
   holyDmg: 'Andel extra skada medan du är välsignad (efter ett ljusstråk)',
+  // version 16: Den döda trädgården och Drömriket – taggrankor, stenänglar, saxen, drömstaven, sömnens dimma, fontäner, glidande väggar och sömn
+  thornResist: 'Andel mindre skada från taggrankor (taggrankornas rutor och de rotade taggrankorna)',
+  angelSight: 'Extra sekunder som stenänglar står kvar efter att du tittat bort (platt)',
+  shearDmg: 'Andel extra skada med trädgårdssaxen (klippen och kastet)',
+  dreamDmg: 'Andel extra skada med drömstaven (stjärnan och sömnsmällen)',
+  mistSight: 'Andel längre synvidd i sömnens dimma (fiender syns på längre avstånd)',
+  fountainHeal: 'Extra HP du läker när du dricker ur en fontän (platt)',
+  shiftSense: 'Andel kortare tid som glidande väggar står stängda (de öppnas snabbare)',
+  sleepResist: 'Andel mindre effekt av sömn och dåsighet (sömnens dimma, sömnpulver och drömstjärnor)',
 };
 const KEYS = Object.keys(MOD_KEYS);
 
@@ -684,6 +693,46 @@ const DEFS = [
   // legendariska
   ['kardinalens_ring', 'KARDINALENS RING', 'legendarisk', { holyDmg: 0.3, blessDur: 0.4, bellStun: 2, fontBreak: 6 }, 1, '+30 % SKADA SOM VÄLSIGNAD\n+40 % LÄNGRE VÄLSIGNELSE\n+2 S LÄNGRE KLOCKBEDÖVNING\n+6 HP PER KROSSAD FUNT', { unlock: 50 }],
   ['drottningens_krona', 'BIDROTTNINGENS KRONA', 'legendarisk', { beeDmg: 0.3, larvaDmg: 0.3, honeyResist: 0.3, poisonChance: 0.1 }, 1, '+30 % SKADA MED BIN\n+30 % SKADA MOT LARVER\n30 % MINDRE INBROMSNING\nI HONUNG\n10 % CHANS ATT FÖRGIFTA', { unlock: 50 }],
+  // ---- version 16: pakter och uppgraderingar för trädgårdssaxen och drömstaven ----
+  ['pakt_tradgardssax', 'HÄCKKLIPPARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nSAXEN BEHÖVER INGEN AMMO\n4 UNIKA UPPGRADERINGAR\nBARA TRÄDGÅRDSSAX RESTEN AV RUNDAN', { pact: 'shears', bad: 1 }],
+  ['pakt_dromstav', 'DRÖMVÄVARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR DRÖMMAR\n4 UNIKA UPPGRADERINGAR\nBARA DRÖMSTAV RESTEN AV RUNDAN', { pact: 'dreamstaff', bad: 1 }],
+  ['treklippet', 'TREKLIPPET', 'legendarisk', {}, 1, 'TRE KLIPP I STÄLLET\nFÖR TVÅ', { weapon: 'shears', wup: 'sh_triple' }],
+  ['blodklippet', 'BLODKLIPPET', 'sallsynt', {}, 1, 'KLIPPEN GER BLÖDNING', { weapon: 'shears', wup: 'sh_bleed' }],
+  ['saxkastet', 'SAXKASTET', 'sallsynt', {}, 1, 'KASTET GÖR MER SKADA', { weapon: 'shears', wup: 'sh_throw' }],
+  ['snabbklippet', 'SNABBKLIPPET', 'ovanlig', {}, 1, 'SNABBARE KLIPP', { weapon: 'shears', wup: 'sh_fast' }],
+  ['trogheten', 'TRÖGHETEN', 'ovanlig', {}, 1, 'STJÄRNAN SAKTAR NED\nI EN STÖRRE RADIE', { weapon: 'dreamstaff', wup: 'ds_slow' }],
+  ['stjarnregnet', 'STJÄRNREGNET', 'legendarisk', {}, 1, 'STJÄRNAN SMÄLLER I\nTRE MINDRE STJÄRNOR', { weapon: 'dreamstaff', wup: 'ds_split' }],
+  ['djupsomnen', 'DJUPSÖMNEN', 'sallsynt', {}, 1, 'FIENDERNA SOVER LÄNGRE', { weapon: 'dreamstaff', wup: 'ds_sleep' }],
+  ['stjarnfallet', 'STJÄRNFALLET', 'ovanlig', {}, 1, 'SNABBARE STJÄRNA', { weapon: 'dreamstaff', wup: 'ds_fast' }],
+  // ---- version 16: trädgård, rosor, törne, statyer, drömmar, sömn och mardrömmar (Den döda trädgården och Drömriket) ----
+  // vanliga
+  ['rosenhandsken', 'ROSENHANDSKEN', 'vanlig', { thornResist: 0.2 }, 3, '20 % MINDRE SKADA\nFRÅN TAGGRANKOR'],
+  ['stenblicken', 'STENBLICKEN', 'vanlig', { angelSight: 1 }, 2, 'STENÄNGLAR STÅR STILLA\n+1 S EFTER ATT DU\nTITTAT BORT'],
+  ['grensaxen', 'GRENSAXEN', 'vanlig', { shearDmg: 0.12 }, 3, '+12 % SKADA MED SAXEN'],
+  ['somnsanden', 'SÖMNSANDEN', 'vanlig', { dreamDmg: 0.12 }, 3, '+12 % SKADA MED\nDRÖMSTAVEN'],
+  ['dimlyktan', 'DIMLYKTAN', 'vanlig', { mistSight: 0.2 }, 3, '+20 % SIKT I\nSÖMNENS DIMMA'],
+  ['fontanmyntet', 'FONTÄNMYNTET', 'vanlig', { fountainHeal: 5 }, 3, '+5 HP NÄR DU DRICKER\nUR EN FONTÄN'],
+  ['dromnyckeln', 'DRÖMNYCKELN', 'vanlig', { shiftSense: 0.2 }, 3, 'GLIDANDE VÄGGAR ÖPPNAS\n20 % SNABBARE'],
+  ['tuppfjadern', 'TUPPFJÄDERN', 'vanlig', { sleepResist: 0.2 }, 3, '20 % MINDRE EFFEKT\nAV SÖMN'],
+  ['rosenvattnet', 'ROSENVATTNET', 'vanlig', { fountainHeal: 3, thornResist: 0.1 }, 2, '+3 HP FRÅN FONTÄNER\n10 % MINDRE SKADA\nFRÅN TAGGRANKOR', { unlock: 10 }],
+  ['nattljuset', 'NATTLJUSET', 'vanlig', { mistSight: 0.15, sleepResist: 0.1 }, 3, '+15 % SIKT I\nSÖMNENS DIMMA\n10 % MINDRE EFFEKT AV SÖMN', { unlock: 10 }],
+  // ovanliga
+  ['barkhuden', 'BARKHUDEN', 'ovanlig', { thornResist: 0.25, thorns: 3 }, 2, '25 % MINDRE SKADA\nFRÅN TAGGRANKOR\n+3 TAGGSKADA'],
+  ['stenangelns_tar', 'STENÄNGELNS TÅR', 'ovanlig', { angelSight: 2, dodge: 0.03 }, 2, 'STENÄNGLAR STÅR STILLA\n+2 S EFTER ATT DU\nTITTAT BORT\n+3 % CHANS ATT UNDVIKA', { unlock: 15 }],
+  ['rosensaxen', 'ROSENSAXEN', 'ovanlig', { shearDmg: 0.2, bleedChance: 0.05 }, 2, '+20 % SKADA MED SAXEN\n+5 % CHANS TILL BLÖDNING'],
+  ['stjarnstoftet', 'STJÄRNSTOFTET', 'ovanlig', { dreamDmg: 0.2, slowChance: 0.05 }, 2, '+20 % SKADA MED\nDRÖMSTAVEN\n+5 % CHANS ATT SAKTA NED', { unlock: 20 }],
+  ['vakarstenen', 'VÄCKARSTENEN', 'ovanlig', { sleepResist: 0.25, mistSight: 0.15 }, 2, '25 % MINDRE EFFEKT AV SÖMN\n+15 % SIKT I\nSÖMNENS DIMMA'],
+  ['nackrosen', 'NÄCKROSEN', 'ovanlig', { fountainHeal: 8, healMul: 0.1 }, 2, '+8 HP FRÅN FONTÄNER\n+10 % HELNING', { unlock: 15 }],
+  ['valmon', 'VALMON', 'ovanlig', { dreamDmg: 0.3, sleepResist: -0.3 }, 1, '+30 % SKADA MED\nDRÖMSTAVEN\nSÖMN 30 % STARKARE', { curse: true, bad: 1 }],
+  // sällsynta
+  ['rankornas_moder', 'RANKORNAS MODER', 'sallsynt', { thornResist: 0.35, meleeResist: 0.1 }, 1, '35 % MINDRE SKADA\nFRÅN TAGGRANKOR\n10 % MINDRE NÄRSTRIDSSKADA', { unlock: 25 }],
+  ['marmorhjartat', 'MARMORHJÄRTAT', 'sallsynt', { angelSight: 3, maxHp: 15 }, 1, 'STENÄNGLAR STÅR STILLA\n+3 S EFTER ATT DU\nTITTAT BORT\n+15 MAX HP', { unlock: 30 }],
+  ['mastersaxen', 'MÄSTARSAXEN', 'sallsynt', { shearDmg: 0.3, meleeDmg: 0.1, thornResist: 0.15 }, 1, '+30 % SKADA MED SAXEN\n+10 % NÄRSTRIDSSKADA\n15 % MINDRE SKADA\nFRÅN TAGGRANKOR', { unlock: 25 }],
+  ['ariadnes_trad', 'ARIADNES TRÅD', 'sallsynt', { shiftSense: 0.3, mistSight: 0.25 }, 1, 'GLIDANDE VÄGGAR ÖPPNAS\n30 % SNABBARE\n+25 % SIKT I\nSÖMNENS DIMMA', { unlock: 30 }],
+  ['mardromsmasken', 'MARDRÖMSMASKEN', 'sallsynt', { dreamDmg: 0.35, mistSight: 0.3, sleepResist: -0.4 }, 1, '+35 % SKADA MED\nDRÖMSTAVEN\n+30 % SIKT I DIMMAN\nSÖMN 40 % STARKARE', { curse: true, bad: 1 }],
+  // legendariska
+  ['svarta_rosen', 'DEN SVARTA ROSEN', 'legendarisk', { thornResist: 0.4, shearDmg: 0.3, fountainHeal: 6, angelSight: 2 }, 1, '40 % MINDRE SKADA\nFRÅN TAGGRANKOR\n+30 % SKADA MED SAXEN\n+6 HP FRÅN FONTÄNER\nSTENÄNGLAR STÅR STILLA +2 S', { unlock: 50 }],
+  ['jon_blunds_paraply', 'JON BLUNDS PARAPLY', 'legendarisk', { dreamDmg: 0.3, sleepResist: 0.4, mistSight: 0.3, shiftSense: 0.25 }, 1, '+30 % SKADA MED DRÖMSTAVEN\n40 % MINDRE EFFEKT AV SÖMN\n+30 % SIKT I DIMMAN\nGLIDANDE VÄGGAR ÖPPNAS\n25 % SNABBARE', { unlock: 50 }],
 ];
 
 // ---------- Set och synergier ----------
@@ -717,6 +766,9 @@ const SETS = {
   // version 15: KATEDRALENS VÄG (Blodkatedralen: ljus, välsignelse och blod) och KUPANS VÄG (Bikupan: bin, honung och larver)
   katedralen: { name: 'KATEDRALENS VÄG', text: '+25 % LÄNGRE VÄLSIGNELSE FRÅN LJUSSTRÅK\n+15 % SKADA MEDAN DU ÄR VÄLSIGNAD\n+5 HP NÄR DU KROSSAR EN BLODFUNT', mods: { blessDur: 0.25, holyDmg: 0.15, fontBreak: 5 } },
   kupan:  { name: 'KUPANS VÄG',       text: '+20 % SKADA MED BIN\n25 % MINDRE INBROMSNING I HONUNG\n+20 % SKADA MOT LARVER', mods: { beeDmg: 0.2, honeyResist: 0.25, larvaDmg: 0.2 } },
+  // version 16: TRÄDGÅRDENS VÄG (Den döda trädgården: törne, statyer och fontäner) och DRÖMMENS VÄG (Drömriket: dimma, sömn och drömstaven)
+  tradgarden: { name: 'TRÄDGÅRDENS VÄG', text: '25 % MINDRE SKADA FRÅN TAGGRANKOR\nSTENÄNGLAR STÅR STILLA +1 S EFTER ATT DU TITTAT BORT\n+5 HP FRÅN FONTÄNER', mods: { thornResist: 0.25, angelSight: 1, fountainHeal: 5 } },
+  drommen: { name: 'DRÖMMENS VÄG',    text: '+25 % SIKT I SÖMNENS DIMMA\n25 % MINDRE EFFEKT AV SÖMN\n+20 % SKADA MED DRÖMSTAVEN', mods: { mistSight: 0.25, sleepResist: 0.25, dreamDmg: 0.2 } },
 };
 // Synergitaggar: kort med samma tagg spelar bra ihop (t.ex. eld + explosion, krit + kritskada).
 const SYN = { eld: 'ELD', krit: 'KRIT', gift: 'GIFT', frost: 'FROST', blixt: 'BLIXT', skold: 'SKÖLD', guld: 'GULD', liv: 'LIV', rusning: 'RUSNING', skugga: 'SKUGGA', granat: 'GRANAT',
@@ -727,7 +779,8 @@ const SYN = { eld: 'ELD', krit: 'KRIT', gift: 'GIFT', frost: 'FROST', blixt: 'BL
   urverk: 'URVERK', tid: 'TIDEN', vind: 'VINDEN', storm: 'STORMEN', hojd: 'HÖJDEN',
   svamp: 'SVAMPAR', spor: 'SPORER', spegel: 'SPEGLAR', illusion: 'ILLUSIONER', glas: 'GLAS',
   bok: 'BÖCKER', black: 'BLÄCK', anga: 'ÅNGA', smide: 'SMIDE', metall: 'METALL',
-  kyrka: 'KATEDRALEN', helig: 'HELIGT LJUS', klocka: 'KLOCKOR', bi: 'BIN', honung: 'HONUNG', vax: 'VAX' };
+  kyrka: 'KATEDRALEN', helig: 'HELIGT LJUS', klocka: 'KLOCKOR', bi: 'BIN', honung: 'HONUNG', vax: 'VAX',
+  tradgard: 'TRÄDGÅRDEN', ros: 'ROSOR', torne: 'TÖRNE', staty: 'STATYER', drom: 'DRÖMMAR', somn: 'SÖMN', mardrom: 'MARDRÖMMAR' };
 // set och syn för alla kort samlas här: id: [set eller '', syn-taggar...]
 const TAGS = {
   // eld och explosioner
@@ -823,6 +876,16 @@ const TAGS = {
   helgonglorian: ['', 'helig'], rosettfonstret: ['', 'helig', 'glas'], blodsdopet: ['', 'blod', 'helig'],
   klockrepet: ['', 'klocka'], kyrkklockan: ['', 'klocka', 'kyrka'], klockarens_hammare: ['', 'klocka', 'narstrid'],
   larvkroken: ['', 'bi'], honungskakan: ['', 'honung', 'vax', 'bi'], larvsaxen: ['', 'bi', 'gift'], sota_fallan: ['', 'bi', 'honung'],
+  // version 16: TRÄDGÅRDENS VÄG (Den döda trädgården) och DRÖMMENS VÄG (Drömriket); trädgården, rosor, törne, statyer, drömmar, sömn och mardrömmar
+  rosenhandsken: ['tradgarden', 'torne', 'ros'], stenblicken: ['tradgarden', 'staty'], nackrosen: ['tradgarden', 'ros', 'tradgard', 'liv'],
+  rankornas_moder: ['tradgarden', 'torne', 'tradgard'], svarta_rosen: ['tradgarden', 'ros', 'torne', 'staty', 'tradgard'],
+  somnsanden: ['drommen', 'somn', 'drom'], dimlyktan: ['drommen', 'drom', 'ljus'], vakarstenen: ['drommen', 'somn'],
+  ariadnes_trad: ['drommen', 'drom'], jon_blunds_paraply: ['drommen', 'drom', 'somn', 'mardrom'],
+  grensaxen: ['', 'tradgard', 'narstrid'], fontanmyntet: ['', 'tradgard', 'liv'], rosenvattnet: ['', 'ros', 'tradgard', 'liv'],
+  barkhuden: ['', 'torne', 'tradgard'], rosensaxen: ['', 'ros', 'tradgard', 'blod'], mastersaxen: ['', 'tradgard', 'narstrid', 'torne'],
+  stenangelns_tar: ['', 'staty'], marmorhjartat: ['', 'staty', 'liv'],
+  dromnyckeln: ['', 'drom'], tuppfjadern: ['', 'somn'], nattljuset: ['', 'somn', 'drom'], stjarnstoftet: ['', 'drom'],
+  valmon: ['', 'somn', 'mardrom'], mardromsmasken: ['', 'mardrom', 'drom', 'somn'],
 };
 
 const ALL = DEFS.map(([id, name, rarity, mods, max, text, extra]) => {
@@ -950,6 +1013,9 @@ const FMT = {
   blessDur: ['p', 'LÄNGRE VÄLSIGNELSE'], honeyResist: ['p', 'SKYDD MOT HONUNG'], larvaDmg: ['p', 'SKADA MOT LARVER'],
   censerHeal: ['n', 'HP PER RÖKELSETRÄFF'], beeDmg: ['p', 'SKADA MED BIN'], bellStun: ['n', 'S LÄNGRE KLOCKBEDÖVNING'],
   fontBreak: ['n', 'HP PER KROSSAD BLODFUNT'], holyDmg: ['p', 'SKADA SOM VÄLSIGNAD'],
+  thornResist: ['p', 'SKYDD MOT TAGGRANKOR'], angelSight: ['n', 'S STILLA STENÄNGLAR'], shearDmg: ['p', 'SKADA MED SAXEN'],
+  dreamDmg: ['p', 'SKADA MED DRÖMSTAVEN'], mistSight: ['p', 'SIKT I SÖMNENS DIMMA'], fountainHeal: ['n', 'HP FRÅN FONTÄNER'],
+  shiftSense: ['p', 'SNABBARE GLIDANDE VÄGGAR'], sleepResist: ['p', 'SKYDD MOT SÖMN'],
 };
 const INVERT = { damageTaken: true };
 const num = v => String(Math.round(v * 100) / 100).replace('.', ',');
@@ -1095,7 +1161,7 @@ function preview(card, mods, ownedIds) {
 // ---------- Dragning ----------
 // Vikten skiftar mot sällsyntare med djup (våning, 0..) och luck (summan av luck-modden, 0.1 per kort).
 const CURSE_WEIGHT = 0.8; // förbannade kort dyker upp ibland
-const PACT_WEIGHT = 0.46, UPGRADE_WEIGHT = 11; // trettio pakter (vikten sänkt så att alla pakter tillsammans syns lika ofta som de fjorton förut; version 13: 0,53 -> 0,49, version 15: 0,49 -> 0,46); uppgraderingarna väger lite mer sedan korthögen växt (version 11: 8 -> 9, version 13: 9 -> 10, version 15: 10 -> 11): en pakt i ungefär var fjärde dragning; efter pakten kommer uppgraderingarna tätt
+const PACT_WEIGHT = 0.43, UPGRADE_WEIGHT = 12; // trettiotvå pakter (vikten sänkt så att alla pakter tillsammans syns lika ofta som de fjorton förut; version 13: 0,53 -> 0,49, version 15: 0,49 -> 0,46, version 16: 0,46 -> 0,43); uppgraderingarna väger lite mer sedan korthögen växt (version 11: 8 -> 9, version 13: 9 -> 10, version 15: 10 -> 11, version 16: 11 -> 12): en pakt i ungefär var fjärde dragning; efter pakten kommer uppgraderingarna tätt
 function rarityWeight(rarity, depth, luck) {
   const t = Math.max(0, (depth || 0) * 0.25 + (luck || 0) * 2.5); // 0 = början av rundan
   const base = RARITY[rarity].weight;
@@ -1156,7 +1222,8 @@ const WEAPON_NAME = { pistol: 'PISTOL', shotgun: 'HAGELGEVÄR', rifle: 'GEVÄR',
   axe: 'YXA', flamer: 'ELDKASTARE', launcher: 'GRANATKASTARE', nailgun: 'SPIKGEVÄR', staff: 'BLIXTSTAV', bow: 'LÅNGBÅGE',
   knives: 'KASTKNIVAR', hammer: 'STRIDSHAMMARE', musket: 'MUSKÖT', harpoon: 'HARPUN', boomerang: 'BUMERANG', prism: 'PRISMA',
   sawlauncher: 'SÅGBLAD', windgun: 'VINDBÖSSA', spear: 'SPJUT', sporelauncher: 'SPORKASTARE', mirrorshield: 'SPEGELSKÖLD', whip: 'PISKA',
-  runebook: 'RUNBOK', steamcannon: 'ÅNGKANON', censer: 'RÖKELSEKAR', hivelauncher: 'BIKASTARE' };
+  runebook: 'RUNBOK', steamcannon: 'ÅNGKANON', censer: 'RÖKELSEKAR', hivelauncher: 'BIKASTARE',
+  shears: 'TRÄDGÅRDSSAX', dreamstaff: 'DRÖMSTAV' };
 // etikett ovanför kortets namn: förbannelse, pakt, aktiv förmåga ('AKTIV · 8 S'), vilket vapen uppgraderingen hör till eller sammansmält
 const activeTag = card => 'AKTIV · ' + num(card.cd || 0) + ' S';
 function tag(card) {

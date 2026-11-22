@@ -9044,7 +9044,7 @@ function setupV16() {
 function updateV16(dt) {
   // glidande väggar: uppe 2 s, nere 2 s
   for (const s of shifts) {
-    const want = ((levelTime + s.ph) % 4) < 2;
+    const want = ((levelTime + s.ph) % 4) < 2 * Math.max(0.4, 1 - mod('shiftSense')); // kortet shiftSense: väggarna står uppe kortare
     if (want === s.up) continue;
     if (want && (Math.hypot(P.x - s.x - 0.5, P.y - s.y - 0.5) < 0.9 || ents.some(e => !e.dead && Math.hypot(e.x - s.x - 0.5, e.y - s.y - 0.5) < 0.8) || items.some(it => !it.taken && (it.x | 0) === s.x && (it.y | 0) === s.y))) continue; // stänger inte på någon
     s.up = want; map[s.y][s.x] = want ? 'ƣ' : '.'; flowCell = -1;

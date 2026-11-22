@@ -58,6 +58,9 @@
     <button class="d" id="b-pact15">DRAFT: RÖKELSEKAR OCH BIKASTARE</button>
     <button class="d" id="b-draft15">DRAFT: KATEDRAL, KLOCKOR, BIN OCH HONUNG</button>
     <button class="d" id="b-codex15">KORTARKIV: VERSION 15</button>
+    <button class="d" id="b-pact16">DRAFT: TRÄDGÅRDSSAX OCH DRÖMSTAV</button>
+    <button class="d" id="b-draft16">DRAFT: TRÄDGÅRD, TÖRNE, DRÖMMAR OCH SÖMN</button>
+    <button class="d" id="b-codex16">KORTARKIV: VERSION 16</button>
   </div>
   <div id="log">Tangenter 1-9, pilar, Enter och Esc fungerar i fönstren. Spelkänslig tangent-test: tryck på tangenter medan ett fönster är öppet och se om de loggas nedan.</div>
 </main>
@@ -291,6 +294,21 @@
   $('b-pact15').onclick = pact15;
   $('b-draft15').onclick = draft15;
   $('b-codex15').onclick = codex15;
+  // version 16: Den döda trädgården och Drömriket – pakter för trädgårdssaxen och drömstaven, kort om trädgården, rosor, törne, statyer, drömmar, sömn och mardrömmar
+  const pact16 = () => CardUI.draft(['pakt_tradgardssax', 'pakt_dromstav'].map(Cards.byId), { title: 'SVÄR EN ED', owned: state.owned }, c => {
+    if (!c) { stat(); return; }
+    state.owned.push(c.id); log('svor ' + c.name); stat();
+    const ups = Cards.ALL.filter(x => x.weapon === c.pact); // vapnets fyra uppgraderingar
+    CardUI.draft(ups, { title: Cards.WEAPON_NAME[c.pact] + ': VÄLJ ETT KORT', owned: state.owned, seen: new Set(seen), mods: Cards.computeMods(state.owned) }, u => { if (u) { state.owned.push(u.id); log('valde ' + u.name); } stat(); });
+  });
+  const draft16 = () => { // spelaren har två kort ur TRÄDGÅRDENS VÄG och ett ur DRÖMMENS VÄG
+    const own = state.owned.concat(['rosenhandsken', 'stenblicken', 'somnsanden']);
+    CardUI.draft(['nackrosen', 'vakarstenen', 'mardromsmasken', 'jon_blunds_paraply'].map(Cards.byId), { title: 'VÄLJ ETT KORT', owned: own, seen: new Set(seen), mods: Cards.computeMods(own) }, c => { if (c) { state.owned.push(c.id); log('valde ' + c.name); } stat(); });
+  };
+  const codex16 = () => CardUI.codex(Cards.ALL.filter(c => !c.weapon), { seen: new Set(Cards.ALL.map(c => c.id)), owned: new Set(state.owned.concat(['rosenhandsken', 'svarta_rosen', 'pakt_dromstav'])), unlocked: new Set(Cards.ALL.map(c => c.id)) }, () => log('stängde arkivet'), { query: 'DRÖM' });
+  $('b-pact16').onclick = pact16;
+  $('b-draft16').onclick = draft16;
+  $('b-codex16').onclick = codex16;
   const auto = q.get('auto');
   if (auto === 'draft') draft(3); else if (auto === 'draft5') draft(5); else if (auto === 'shop') shop(); else if (auto === 'souls') souls(); else if (auto === 'deck') CardUI.deck(state.owned);
   else if (auto === 'legend') CardUI.draft(['tomhetsstenen', 'gravvaktaren', 'ouroboros', 'askkungen', 'vaktarbanan'].map(Cards.byId), { title: 'LEGENDARISKA TESTKORT' }, () => {})
@@ -325,9 +343,12 @@
   else if (auto === 'pact15') pact15();
   else if (auto === 'draft15') draft15();
   else if (auto === 'codex15') codex15();
+  else if (auto === 'pact16') pact16();
+  else if (auto === 'draft16') draft16();
+  else if (auto === 'codex16') codex16();
   else if (auto === 'codex5') CardUI.codex(Cards.ALL.filter(c => !c.weapon), { seen: new Set(Cards.ALL.map(c => c.id)), owned: new Set(state.owned.concat(['slipstenen+'])), unlocked: new Set(Cards.ALL.map(c => c.id)), picks: { slipstenen: 7, glodkol: 1, lakebladet: 3 } }, () => log('stängde arkivet'));
   else if (auto === 'toast') { CardUI.toast(Cards.byId('forbannade_kronan')); CardUI.toast(Cards.byId('ouroboros')); }
-  window.__demo = { state, draw, seen, draftX, deck5, draft5x, alk, stats, draft6, deck6, refine6, codex6, draft7, pact7, shop7, deck7, codex7, talents8, pact8, draft8, codex8, pact9, draft9, codex9, pact11, draft11, codex11, pact13, draft13, codex13, pact15, draft15, codex15, T8, t8 };
+  window.__demo = { state, draw, seen, draftX, deck5, draft5x, alk, stats, draft6, deck6, refine6, codex6, draft7, pact7, shop7, deck7, codex7, talents8, pact8, draft8, codex8, pact9, draft9, codex9, pact11, draft11, codex11, pact13, draft13, codex13, pact15, draft15, codex15, pact16, draft16, codex16, T8, t8 };
 })();
 </script>
 </body>
