@@ -16,6 +16,7 @@
 //            --winds (visa vindrutorna som pilar > < v ^ i stället för ń)
 //            --teleports (visa teleporterparen som siffror 1 1, 2 2, 3 3 i stället för ť; paren listas alltid under rubriken)
 //            --belts (visa rullbanden som pilar > < v ^ i stället för Ÿ; banden listas alltid under rubriken)
+//            --arenas (version 14: rita arenarummens rektanglar: kanten som + och dörröppningarna som !; arenorna listas alltid under rubriken)
 //            --sky (visa himmelmasken)  --floor (visa golvmasken)  --mask (visa rumsmasken)  --rooms (lista rummen med rumstyp)
 //            --legend (teckenförklaring)  --n=3 (flera seeds i följd)  --stats (bara statistik över n banor: nya saker, fiendemix)
 // Golv visas som . (alla golvtexturer), vaktarens/bossens golv som ` så att salen syns (--floor visar golvmasken).
@@ -45,6 +46,7 @@
 //          node tools/gen-preview.js boss:fungus 3 --boss=mycelmother    /    node tools/gen-preview.js boss:mirror 3 --boss=mirrorking --teleports
 //          node tools/gen-preview.js --maze fungus 4    /    node tools/gen-preview.js --secret mirror 5    /    node tools/gen-preview.js mirror 1 --stats --n=100
 //          node tools/gen-preview.js --biome=library 7 3 --rooms --guardian=librarian   (version 13: hyllrader ũ, pulpeter Ű, ljuskronor ű, bläckpölar Ŭ)
+//          node tools/gen-preview.js --biome=dungeon 2 3 --arenas --rooms   (version 14: arenarum, nya rumstyper; --legend visar de nya fienderna)
 //          node tools/gen-preview.js --biome=foundry 7 3 --rooms --belts --guardian=colossus   (rullband Ÿ, smält metall Ź, ångventiler ź, stansar Ż)
 //          node tools/gen-preview.js boss:library 3 --boss=librarian    /    node tools/gen-preview.js boss:foundry 3 --boss=colossus --belts
 //          node tools/gen-preview.js --maze library 4    /    node tools/gen-preview.js --secret foundry 5    /    node tools/gen-preview.js foundry 1 --stats --n=100
@@ -116,8 +118,13 @@ const LEGEND = [
   'rekvisita: Ű pulpet (blockerar, läs boken)  ű ljuskrona (ljus, blockerar inte)  Ż stans/press (blockerar, slår ned var 3:e s)  ż städ/gjutform (blockerar)',
   'föremål: Ƃ bläckflaska (ammo till runboken)',
   'biblioteket: panelsalar med rader av fristående bokhyllor, pulpeter och bläckpölar; gjuteriet: plåtsalar med rullband, kanaler, ventiler och stansar',
+  'version 14: nya fiender: Ƅ snöfantom (frost)  ƅ lavaorm (vulkanen, djup 2+, nära lava)  Ɔ skarabépräst (gravkammaren, djup 2+)',
+  '  Ƈ kristallspindel (kristallgrottorna)  ƈ marulk (sjunkna staden, vid djupt vatten Đ/tidvatten Ĕ)  Ɖ vindande (molnborgen, djup 2+)',
+  '  arenarum: level.arenas (ett stridsrum som låses när du går in, 2-3 vågor; --arenas ritar rektangeln)',
+  '  nya rumstyper (befintliga tecken): pillargallery colonnade gravevault stonecircle stalagmites drownedcrypt icehall lavabridge obeliskhall',
+  '  crystalnave drownedgallery assemblyhall windshrine capgarden statuegallery readingnook crateyard',
 ];
-const OLD_EN = 'SKVILNORW', NEW_EN = 'UXY!@^+ÅÄÖÉÜÑÆÞÐÝÃÕÊÎÔËÍÏÓÚÛĀĂĳĴĵĶķĸ' + 'ŌōŎŏŐő' + 'ŗŘřŚśŜ' + 'ŲųŴŽžſ';
+const OLD_EN = 'SKVILNORW', NEW_EN = 'UXY!@^+ÅÄÖÉÜÑÆÞÐÝÃÕÊÎÔËÍÏÓÚÛĀĂĳĴĵĶķĸ' + 'ŌōŎŏŐő' + 'ŗŘřŚśŜ' + 'ŲųŴŽžſ' + 'ƄƅƆƇƈƉ';
 const FEAT = { anvil: '(', fortune: ')', prisoner: '[', challenge: '?', offering: ';', lever: '/', locked: ']', cracked: '{', arrows: '<', gas: '>', lava: '_', water: '-', ice: ':', webs: '"',
   alchemist: '£', priest: '€', petcage: '©', potions: '¥', icicles: 'Ç',
   campfire: '¶', questboard: '®', runes: 'ª', meat: 'ð', firejets: '°', crumble: '¬', pendulums: '±', plates: '¨', secretstairs: '÷', poisonbarrels: 'µ', frostbarrels: 'ß',
@@ -130,7 +137,8 @@ const FEAT = { anvil: '(', fortune: ')', prisoner: '[', challenge: '?', offering
   bouncepads: 'ţ', sporepools: 'Ť', teleporters: 'ť', glowshrooms: 'Ŧ', mirrorstatues: 'ŧ', mirrorwalls: 'š', capwalls: 'Ş', sporesacks: 'Ũ',
   sporelings: 'ŗ', mycelbrutes: 'Ř', shamans: 'ř', mirrorknights: 'Ś', illusionists: 'ś', shardlings: 'Ŝ',
   bookshelves: 'ũ', lecterns: 'Ű', chandeliers: 'ű', inkpools: 'Ŭ', belts: 'Ÿ', molten: 'Ź', vents: 'ź', presses: 'Ż', molds: 'ż', furnaces: 'Ŷ',
-  inkflasks: 'Ƃ', grimoires: 'Ų', inkslimes: 'ų', archivists: 'Ŵ', moltengolems: 'Ž', steambots: 'ž', sparkdrones: 'ſ' };
+  inkflasks: 'Ƃ', grimoires: 'Ų', inkslimes: 'ų', archivists: 'Ŵ', moltengolems: 'Ž', steambots: 'ž', sparkdrones: 'ſ',
+  snowwraiths: 'Ƅ', lavaworms: 'ƅ', scarabpriests: 'Ɔ', crystalspiders: 'Ƈ', anglerfish: 'ƈ', windspirits: 'Ɖ' };
 const arrow = b => (b.dx > 0 ? '>' : b.dx < 0 ? '<' : b.dy > 0 ? 'v' : '^');
 const makeLevel = (seed, d, shop) => (flag('secret') ? Gen.secret(seed, { biome: biome === 'random' ? undefined : biome, depth: d })
   : flag('maze') ? Gen.maze(seed, { biome: biome === 'random' ? undefined : biome, depth: d })
@@ -149,7 +157,7 @@ if (flag('stats')) {
   }
   const tot = Object.values(EN).reduce((a, b) => a + b, 0) || 1;
   console.log(`${biome}: ${n} banor, snitt ${(ms / n).toFixed(1)} ms`);
-  console.log('nya saker (andel banor %, snitt antal): ' + Object.keys(FEAT).concat(['beams']).map(k => `${k}=${(100 * (F[k] || 0) / n).toFixed(0)}%/${((FN[k] || 0) / n).toFixed(1)}`).join(' '));
+  console.log('nya saker (andel banor %, snitt antal): ' + Object.keys(FEAT).concat(['beams', 'arenas', 'setpieces']).map(k => `${k}=${(100 * (F[k] || 0) / n).toFixed(0)}%/${((FN[k] || 0) / n).toFixed(1)}`).join(' '));
   console.log('fiendemix %: ' + [...OLD_EN + NEW_EN].filter(c => EN[c]).map(c => `${c}=${(100 * EN[c] / tot).toFixed(0)}`).join(' '));
   console.log('rumstyper: ' + Object.entries(T).sort((a, b) => b[1] - a[1]).map(([k, v]) => k + '=' + v).join(' '));
   process.exit(0);
@@ -177,6 +185,7 @@ for (let k = 0; k < n; k++) {
     for (const b of lv.belts) { const p = at.get((b.y - b.dy) * W + b.x - b.dx); if (p && p.dx === b.dx && p.dy === b.dy) continue; let len = 0; for (let q = b; q && q.dx === b.dx && q.dy === b.dy; q = at.get((q.y + q.dy) * W + q.x + q.dx)) len++; runs.push(`${b.x},${b.y}${arrow(b)}${len}`); }
     console.log('rullband: ' + runs.length + ' band, ' + lv.belts.length + ' rutor (' + runs.join(' ') + ')');
   }
+  if (lv.arenas && lv.arenas.length) console.log('arenor: ' + lv.arenas.map(a => `${a.x0},${a.y0}-${a.x1},${a.y1} (${a.x1 - a.x0 + 1}x${a.y1 - a.y0 + 1}, ${a.waves} vågor, dörrar ${a.doors.map(d => d.x + ',' + d.y).join(' ')})`).join('; '));
   if (lv.winds && lv.winds.length) console.log('vind: ' + lv.winds.length + ' rutor (' + lv.winds.map(w => `${w.x},${w.y}${w.dx > 0 ? '>' : w.dx < 0 ? '<' : w.dy > 0 ? 'v' : '^'}`).join(' ') + ')');
   const errs = Gen.validate(lv);
   if (errs.length) console.log('VALIDERINGSFEL:\n  ' + errs.slice(0, 10).join('\n  '));
@@ -185,6 +194,10 @@ for (let k = 0; k < n; k++) {
   const mark = {}; // --beams: ljusschakt ~ och rullstenens bana = (utlösaren syns som ¹); --winds: vindens riktning
   if (flag('winds')) for (const w of lv.winds || []) mark[w.y * W + w.x] = w.dx > 0 ? '>' : w.dx < 0 ? '<' : w.dy > 0 ? 'v' : '^';
   if (flag('belts')) for (const b of lv.belts || []) mark[b.y * W + b.x] = arrow(b);
+  if (flag('arenas')) for (const a of lv.arenas || []) { // arenans kant som + (väggarna runt rummet), dörröppningarna som !
+    for (let y = a.y0 - 1; y <= a.y1 + 1; y++) for (let x = a.x0 - 1; x <= a.x1 + 1; x++) if (x < a.x0 || x > a.x1 || y < a.y0 || y > a.y1) mark[y * W + x] = '+';
+    for (const d of a.doors) mark[d.y * W + d.x] = '!';
+  }
   if (flag('teleports')) (lv.teleports || []).forEach((t, i) => { mark[t.a.y * W + t.a.x] = String(i + 1); mark[t.b.y * W + t.b.x] = String(i + 1); });
   if (flag('beams')) {
     for (const b of lv.beams || []) mark[b.y * W + b.x] = '~';
@@ -195,7 +208,7 @@ for (let k = 0; k < n; k++) {
     for (let x = 0; x < W; x++) {
       const c = lv.map[y][x];
       if (show) { s += (c >= '0' && c <= '9') || '#%~&=Ø¦Ò¤ÈÌÙĄĆĈĊČĎĹĺĻļĽľŝŞşŠšŢũŪūŵŶŷ'.includes(c) ? '#' : (show[y] ? show[y][x] : '?'); continue; }
-      if (mark[y * W + x] && (c === '.' || mark[y * W + x] === '~' || c === 'ń' || c === 'ť' || c === 'Ÿ')) { s += mark[y * W + x]; continue; }
+      if (mark[y * W + x] && (c === '.' || mark[y * W + x] === '~' || mark[y * W + x] === '+' || mark[y * W + x] === '!' || c === 'ń' || c === 'ť' || c === 'Ÿ')) { s += mark[y * W + x]; continue; }
       if (c !== '.') { s += c; continue; }
       const fi = lv.floorMask ? +lv.floorMask[y][x] : 0;
       s += fi === bossF ? '`' : '.';
