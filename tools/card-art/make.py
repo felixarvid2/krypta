@@ -44,6 +44,12 @@ gamma_bloom och två dekaler ur assets/ashfall-ai/flux/decals (tabellen V11_SRC)
 (tabellen V11_DRAWN). Pakterna för sporkastaren, spegelskölden och piskan ritas som siluetter; uppgraderingarna är
 oanvända effektbilder ur vfx (spormolnen, läkningen ...) eller partiklar med vapnet som bricka i hörnet (V11_UPGRADES).
 
+Version 13: 24 nya kort (böcker, bläck, runor, ånga, smide och metall) – gjuteriets kort ur de sista oanvända bilderna i
+assets/ashfall-ai som passar (medaljongerna furnace, heat_sink och molten_fists, två föremål, två färdighetsikoner och bossen
+pyre_warden, tabellen V13_SRC); bibliotekets böcker, bläckhorn, penna, stämpel och lupp samt gjuteriets verktyg ritas här med
+oanvända partiklar (V13_DRAWN). Pakterna för runboken och ångkanonen ritas som siluetter; uppgraderingarna är oanvända
+effektbilder ur vfx eller partiklar med vapnet som bricka i hörnet (V13_UPGRADES).
+
 Kör från repo-roten: python3 retrofps/tools/card-art/make.py .          (alla)
                      python3 retrofps/tools/card-art/make.py . v5       (bara version 5)
                      python3 retrofps/tools/card-art/make.py . v6       (bara version 6)
@@ -51,6 +57,7 @@ Kör från repo-roten: python3 retrofps/tools/card-art/make.py .          (alla)
                      python3 retrofps/tools/card-art/make.py . v8       (bara version 8)
                      python3 retrofps/tools/card-art/make.py . v9       (bara version 9)
                      python3 retrofps/tools/card-art/make.py . v11      (bara version 11)
+                     python3 retrofps/tools/card-art/make.py . v13      (bara version 13)
 """
 import os
 import sys
@@ -1464,6 +1471,396 @@ def main_v11():
     return n
 
 
+# ---------- version 13: Det förbjudna biblioteket och Gjuteriet ----------
+# Gjuteriets kort tas ur de sista oanvända bilderna i assets/ashfall-ai som passar: medaljongerna furnace (smältugnen),
+# heat_sink (ångande galler) och molten_fists (glödande näve), föremålen unique_governors_crucible (plåtharnesk med
+# glödande kärna) och unique_ashen_heartwood (glödande hjärta), färdighetsikonerna skill_furnace_cleave (klinga i eldring)
+# och skill_coolant_flush (ånga) samt bossen pyre_warden (en rustad koloss med brinnande hjälm) – tabellen V13_SRC.
+# Biblioteket har inga färdiga bilder (lore_log och keycard ser moderna ut), så böckerna, bläckhornet, pennan, stämpeln,
+# luppen och foliant ritas här, liksom gjuteriets verktyg (tång, städ, ventilratt, munstycke, rullband och spak), med
+# oanvända partiklar ur Kenneys particle-pack på samma mörklila vinjett (tabellen V13_DRAWN). Pakternas vapen (runboken
+# och ångkanonen) ritas som siluetter; uppgraderingarna är oanvända effektbilder ur vfx eller partiklar med vapnet som
+# bricka i hörnet (V13_UPGRADES).
+V13_SRC = {  # kort-id: (sort, bild, andel/beskärning) – som V11
+    'nithandsken': ('ash', 'aspects/molten_fists', 0.92), 'anggallret': ('ash', 'aspects/heat_sink', 0.92),
+    'angpannan': ('ash', 'aspects/furnace', 0.92), 'stalforkladet': ('ash', 'items/unique_governors_crucible', 0.86),
+    'smalthjartat': ('ash', 'items/unique_ashen_heartwood', 0.86), 'kolossens_hjarta': ('ash', 'bosses/pyre_warden', 0),
+    'assjans_klinga': ('skill', 'skill_furnace_cleave', SKILL_CROP), 'angvisslan': ('skill', 'skill_coolant_flush', SKILL_CROP),
+}
+# kort-id: (ritfunktion, storlek, förskjutning y, [(partikel, storlek, dx, dy, färg, vridning)])
+V13_DRAWN = {
+    'blackhornet': ('inkhorn', 0.84, 0.02, [('star_04', 0.9, -0.16, -0.18, (130, 150, 255), 0)]),
+    'runpennan': ('runequill', 0.86, 0, [('trace_03', 0.9, 0.12, 0.06, (110, 200, 255), 60)]),
+    'ventilnyckeln': ('valvewheel', 0.84, 0, [('smoke_01', 0.95, 0, -0.12, (200, 210, 225), 0)]),
+    'kopparmunstycket': ('nozzle', 0.86, 0.02, [('muzzle_03', 0.8, 0.2, -0.04, (230, 236, 246), -90)]),
+    'bokmarket': ('bookmark', 0.82, 0.02, [('window_01', 0.7, 0, -0.08, (255, 214, 140), 0)]),
+    'smidestangen': ('tongs', 0.86, 0, [('spark_01', 0.95, 0.1, -0.1, (255, 170, 80), 0)]),
+    'gjutarstovlarna': ('beltboot', 0.86, 0, [('trace_01', 0.9, 0, 0.3, (255, 180, 100), 90)]),
+    'lasglaset': ('magnifier', 0.86, 0.02, [('star_02', 0.9, -0.12, -0.14, (255, 230, 170), 0)]),
+    'runstampeln': ('stamp', 0.84, 0, [('scorch_01', 0.8, 0, 0.26, (140, 180, 255), 0)]),
+    'kopistens_lupp': ('scrollloupe', 0.88, 0.02, [('flame_05', 0.16, -0.31, -0.4, (255, 200, 120), 0)]),
+    'kilremmen': ('pulleys', 0.86, 0, [('trace_05', 0.95, 0, 0, (200, 205, 220), 90)]),
+    'svartblacket': ('spilledink', 0.86, 0.04, [('scorch_03', 0.95, 0, 0.12, (160, 70, 210), 0)]),
+    'eldskriften': ('flamebook', 0.84, 0.06, [('fire_02', 0.9, 0, -0.16, (255, 140, 60), 0)]),
+    'jattens_stad': ('anvil', 0.86, 0.04, [('spark_02', 0.95, 0.04, -0.2, (255, 200, 100), 0)]),
+    'gjutarspaken': ('lever', 0.84, 0, [('spark_07', 0.95, 0, -0.06, (255, 200, 120), 0)]),
+    'forbjudna_folianten': ('tome', 0.86, 0.02, [('flame_01', 1.0, 0, -0.08, (160, 90, 255), 0), ('flame_03', 0.8, 0.2, 0.18, (120, 255, 180), 0)]),
+}
+V13_PACTS = {'pakt_runbok': 'runebook', 'pakt_angkanon': 'steamcannon'}
+V13_UPGRADES = {  # kort-id: (vapen, 'vfx:<bild>' eller 'part:<partikel>', färgton eller None, vridning) – som V9
+    'runklyvningen': ('runebook', 'vfx:magic_circle_red', (140, 190, 255), 0), 'sokarrunan': ('runebook', 'vfx:rune_trap_0', None, 0),
+    'pappersstormen': ('runebook', 'part:dirt_03', (240, 232, 210), 0), 'blackstanket': ('runebook', 'part:dirt_01', (90, 110, 230), 0),
+    'langroret': ('steamcannon', 'vfx:steam_1', None, 0), 'skallningen': ('steamcannon', 'vfx:bubbles_0', (255, 170, 120), 0),
+    'tryckstoten': ('steamcannon', 'vfx:dust_1', (225, 230, 240), 0), 'overtrycket': ('steamcannon', 'part:muzzle_01', (220, 240, 255), -90),
+}
+
+LEATHER, PAGE, COPPER, IRON, GLOW, RUNE = (122, 40, 36, 255), (234, 220, 184, 255), (190, 104, 60, 255), (86, 90, 100, 255), (255, 150, 50, 255), (110, 200, 255, 255)
+
+
+def closed_book(d, x0, y0, x1, y1, cover, depth=26):
+    """Stängd bok sedd snett framifrån: sidblocket till höger/nedtill och pärmen över."""
+    poly(d, [(x1, y0 + depth), (x1 + depth, y0), (x1 + depth, y1 - depth), (x1, y1)], PAGE)          # sidorna
+    for k in range(1, 6):
+        t = k / 6
+        d.line((x1 + 3, y0 + depth + (y1 - y0 - depth) * t - 4 * t, x1 + depth - 3, y0 + (y1 - y0 - depth) * t + 2), fill=(190, 170, 130, 255), width=2)
+    poly(d, [(x0, y0 + depth), (x0 + depth, y0), (x1 + depth, y0), (x1, y0 + depth)], lighter(cover, 0.8))  # ovankant
+    rrect(d, (x0, y0 + depth, x1, y1), 6, cover)                                                     # pärmen
+    d.line((x0 + 22, y0 + depth + 6, x0 + 22, y1 - 6), fill=lighter(cover, 0.7), width=8)            # rygglist
+    for cy in (y0 + depth + 18, y1 - 18):                                                            # hörnbeslag
+        for cx in (x0 + 14, x1 - 14):
+            d.polygon([(cx - 12, cy), (cx, cy - 12), (cx + 12, cy), (cx, cy + 12)], fill=(220, 180, 90, 255), outline=INK)
+
+
+def open_book(d, cx, top, w, h, cover, page=PAGE, lines=True):
+    """Uppslagen bok: pärmen under, två sidor med böjd ovankant och en rygg i mitten."""
+    poly(d, [(cx - w / 2 - 14, top + 30), (cx, top + 46), (cx + w / 2 + 14, top + 30), (cx + w / 2 + 14, top + h + 14), (cx, top + h + 34), (cx - w / 2 - 14, top + h + 14)], cover)
+    for s in (-1, 1):
+        edge = [(cx + s * w / 2 * t, top + 24 - 22 * np.sin(np.pi * t) + 20 * t) for t in np.linspace(0, 1, 24)]
+        bottom = [(cx + s * w / 2 * t, top + h + 20 - 14 * np.sin(np.pi * t) + 4 * t) for t in np.linspace(1, 0, 24)]
+        poly(d, edge + bottom, page, w=5)
+        if lines:
+            for k in range(1, 7):
+                yy = top + 34 + k * (h - 40) / 7
+                d.line((cx + s * 18, yy, cx + s * (w / 2 - 22), yy - 4), fill=(150, 130, 100, 255), width=3)
+    d.line((cx, top + 20, cx, top + h + 26), fill=INK, width=5)
+
+
+def quill(d, tip, tail, vane_col=(238, 232, 220, 255), w=46):
+    """Fjäderpenna från spetsen (tip) till toppen (tail)."""
+    (x0, y0), (x1, y1) = tip, tail
+    L = np.hypot(x1 - x0, y1 - y0)
+    ux, uy = (x1 - x0) / L, (y1 - y0) / L
+    nx, ny = -uy, ux
+    left, right = [], []
+    for t in np.linspace(0.2, 1, 20):
+        ww = w * np.sin(np.pi * min(1, (t - 0.2) / 0.8)) ** 0.6 + 2
+        bx, by = x0 + ux * L * t, y0 + uy * L * t
+        left.append((bx + nx * ww - ux * ww * 0.3, by + ny * ww - uy * ww * 0.3))
+        right.append((bx - nx * ww * 0.7 - ux * ww * 0.3, by - ny * ww * 0.7 - uy * ww * 0.3))
+    poly(d, left + right[::-1], vane_col)
+    for t in np.linspace(0.3, 0.92, 9):
+        bx, by = x0 + ux * L * t, y0 + uy * L * t
+        d.line((bx, by, bx + nx * w * 0.8 - ux * 22, by + ny * w * 0.8 - uy * 22), fill=lighter(vane_col, 0.78), width=3)
+    d.line((x0, y0, x1, y1), fill=INK, width=12)
+    d.line((x0, y0, x1, y1), fill=(250, 246, 236, 255), width=5)
+    poly(d, [(x0, y0), (x0 + ux * 46 + nx * 9, y0 + uy * 46 + ny * 9), (x0 + ux * 46 - nx * 9, y0 + uy * 46 - ny * 9)], (40, 40, 60, 255), w=4)  # spets
+
+
+def rune(d, x, y, s, col, kind=0, w=6):
+    """En enkel runa (fyra varianter) med mitten i (x, y) och höjden 2s."""
+    d.line((x, y - s, x, y + s), fill=col, width=w)
+    if kind == 0:
+        d.line((x, y - s * 0.3, x + s * 0.6, y - s), fill=col, width=w)
+        d.line((x, y + s * 0.2, x + s * 0.6, y - s * 0.4), fill=col, width=w)
+    elif kind == 1:
+        d.line((x, y - s, x + s * 0.6, y - s * 0.4), fill=col, width=w)
+        d.line((x + s * 0.6, y - s * 0.4, x, y + s * 0.2), fill=col, width=w)
+    elif kind == 2:
+        d.line((x - s * 0.6, y - s * 0.5, x + s * 0.6, y + s * 0.5), fill=col, width=w)
+        d.line((x - s * 0.6, y + s * 0.5, x + s * 0.6, y - s * 0.5), fill=col, width=w)
+    else:
+        d.line((x, y, x + s * 0.6, y - s * 0.6), fill=col, width=w)
+        d.line((x, y, x - s * 0.6, y - s * 0.6), fill=col, width=w)
+
+
+def art13(kind):
+    im = Image.new('RGBA', (400, 400))
+    d = ImageDraw.Draw(im)
+    if kind == 'inkhorn':
+        horn = [(60, 360), (40, 300), (52, 220), (96, 150), (150, 110), (210, 96), (250, 120), (230, 160), (186, 186), (150, 230), (142, 300), (150, 360)]
+        poly(d, horn, (214, 196, 160, 255), w=8)                                                     # bläckhornet (ett djurhorn)
+        for k, y in enumerate((170, 230, 290)):
+            d.arc((30 + k * 6, y - 30, 170 - k * 4, y + 30), 160, 340, fill=(150, 120, 80, 255), width=5)
+        d.ellipse((196, 88, 262, 132), fill=(24, 30, 80, 255), outline=INK, width=5)                   # bläcket i öppningen
+        d.ellipse((212, 98, 236, 110), fill=(90, 110, 220, 255))
+        rrect(d, (30, 352, 190, 384), 10, (120, 84, 46, 255))                                         # fot
+        quill(d, (230, 112), (370, 10), (226, 230, 246, 255), 40)
+        for x, y, r in ((272, 200, 12), (300, 260, 9), (286, 320, 14)):                               # droppar
+            d.ellipse((x - r, y - r, x + r, y + r), fill=(40, 50, 130, 255), outline=INK, width=3)
+    elif kind == 'runequill':
+        poly(d, [(20, 330), (380, 300), (390, 380), (30, 396)], PAGE)                                 # pergament
+        for k, x in enumerate((70, 150, 230, 310)):                                                   # glödande runor
+            rune(d, x, 352, 24, RUNE, k % 4, 7)
+        quill(d, (300, 300), (110, 10), (200, 210, 236, 255), 52)
+        d.ellipse((288, 288, 312, 312), fill=(200, 240, 255, 255), outline=INK, width=3)              # glöd i spetsen
+    elif kind == 'valvewheel':
+        rrect(d, (40, 300, 360, 352), 10, IRON)                                                       # rör
+        for x in (60, 340):
+            rrect(d, (x - 20, 286, x + 20, 366), 6, (110, 114, 126, 255))
+        rrect(d, (184, 220, 216, 306), 6, (110, 114, 126, 255))                                       # ventilhals
+        d.ellipse((60, 20, 340, 300), outline=INK, width=40)                                          # ratten
+        d.ellipse((66, 26, 334, 294), outline=(190, 48, 40, 255), width=26)
+        for k in range(5):
+            a = k * 2 * np.pi / 5 - np.pi / 2
+            d.line((200, 160, 200 + 124 * np.cos(a), 160 + 124 * np.sin(a)), fill=INK, width=26)
+            d.line((200, 160, 200 + 124 * np.cos(a), 160 + 124 * np.sin(a)), fill=(170, 40, 34, 255), width=14)
+        d.ellipse((168, 128, 232, 192), fill=(200, 160, 70, 255), outline=INK, width=6)
+        d.line((20, 380, 210, 210), fill=INK, width=36)                                               # skiftnyckel
+        d.line((20, 380, 210, 210), fill=STEEL, width=22)
+        poly(d, [(190, 196), (238, 160), (266, 186), (240, 214), (256, 232), (226, 258)], STEEL)
+    elif kind == 'nozzle':
+        rrect(d, (10, 150, 130, 250), 8, IRON)                                                        # röret
+        rrect(d, (120, 120, 160, 280), 6, (150, 150, 160, 255))                                       # fläns
+        for y in (136, 176, 224, 264):
+            d.ellipse((132, y - 8, 148, y + 8), fill=(220, 190, 110, 255), outline=INK, width=3)
+        poly(d, [(160, 140), (300, 170), (360, 120), (380, 130), (380, 270), (360, 280), (300, 230), (160, 260)], COPPER, w=7)  # munstycket
+        d.line((170, 156, 296, 182), fill=(236, 160, 110, 255), width=6)
+        for x in (210, 260):                                                                          # band
+            d.line((x, 140 + (x - 160) * 0.2, x, 260 - (x - 160) * 0.2), fill=(130, 64, 34, 255), width=8)
+        rrect(d, (196, 84, 236, 140), 6, (110, 114, 126, 255))                                        # liten ventil
+        d.line((176, 84, 256, 84), fill=INK, width=14)
+        d.line((176, 84, 256, 84), fill=(190, 48, 40, 255), width=7)
+    elif kind == 'bookmark':
+        closed_book(d, 80, 30, 300, 340, (60, 70, 130, 255), 30)
+        d.rectangle((150, 120, 240, 220), outline=(220, 180, 90, 255), width=6)                       # titelfält
+        rune(d, 196, 170, 28, (230, 200, 110, 255), 3, 7)
+        poly(d, [(250, 300), (282, 300), (282, 396), (266, 376), (250, 396)], (200, 30, 40, 255), w=5)  # bokmärket
+    elif kind == 'tongs':
+        for a, b, c in (((20, 380), (210, 190), (370, 120)), ((60, 396), (200, 210), (360, 160))):
+            d.line((a, b, c), fill=INK, width=30, joint='curve')                                     # tångens skänklar
+            d.line((a, b, c), fill=(70, 72, 82, 255), width=18, joint='curve')
+        d.ellipse((186, 180, 226, 220), fill=(120, 124, 136, 255), outline=INK, width=5)               # nit
+        rrect(d, (236, 112, 396, 160), 10, GLOW)                                                      # glödande järnstång i käftarna
+        d.rectangle((248, 122, 386, 132), fill=(255, 230, 140, 255))
+        d.line((246, 150, 386, 150), fill=(220, 90, 30, 255), width=6)
+    elif kind == 'beltboot':
+        rrect(d, (10, 300, 390, 370), 34, (60, 60, 66, 255))                                          # rullbandet
+        for x in (50, 150, 250, 350):
+            d.ellipse((x - 28, 307, x + 28, 363), fill=(110, 114, 126, 255), outline=INK, width=5)
+            d.ellipse((x - 8, 327, x + 8, 343), fill=INK)
+        for x in (90, 200, 310):                                                                      # pilar på bandet
+            d.line((x - 20, 290, x, 300, x - 20, 310), fill=(255, 200, 60, 255), width=8)
+        poly(d, [(110, 40), (230, 40), (240, 180), (330, 210), (350, 280), (90, 280), (96, 180)], (110, 74, 44, 255), w=8)  # kängan
+        rrect(d, (84, 260, 356, 296), 8, IRON)                                                        # järnsula
+        for y in (70, 110, 150):                                                                      # plåtar och nitar
+            d.line((106, y, 236, y), fill=(80, 50, 30, 255), width=6)
+        poly(d, [(240, 200), (330, 214), (346, 270), (240, 270)], (150, 154, 166, 255), w=5)          # tåhätta
+        for x in (260, 300, 330):
+            d.ellipse((x - 6, 236, x + 6, 248), fill=(220, 190, 110, 255), outline=INK, width=2)
+    elif kind == 'magnifier':
+        open_book(d, 200, 200, 340, 150, (110, 54, 40, 255))
+        d.line((260, 220, 380, 390), fill=INK, width=34)                                              # skaft
+        d.line((260, 220, 380, 390), fill=(110, 72, 40, 255), width=20)
+        d.ellipse((60, 40, 290, 270), fill=(200, 230, 240, 110), outline=INK, width=10)                # linsen
+        d.ellipse((70, 50, 280, 260), outline=(200, 160, 70, 255), width=12)
+        for k, x in enumerate((120, 175, 230)):                                                       # förstorade bokstäver
+            rune(d, x, 150, 34, (60, 40, 30, 255), k, 10)
+        d.arc((90, 70, 240, 220), 200, 250, fill=(255, 255, 255, 255), width=8)
+    elif kind == 'stamp':
+        poly(d, [(20, 300), (380, 290), (370, 396), (30, 396)], PAGE)                                 # papperet
+        rune(d, 120, 344, 32, (90, 150, 255, 255), 0, 9)                                              # avtryck
+        d.ellipse((60, 300, 180, 390), outline=(90, 150, 255, 255), width=6)
+        rrect(d, (196, 220, 360, 270), 8, (196, 150, 64, 255))                                        # stämpelns fot
+        rrect(d, (206, 262, 350, 284), 4, (60, 40, 30, 255))
+        rrect(d, (258, 130, 298, 226), 8, (150, 100, 56, 255))                                        # hals
+        d.ellipse((228, 30, 328, 140), fill=(130, 72, 40, 255), outline=INK, width=7)                  # handtag
+        d.arc((244, 44, 312, 112), 200, 260, fill=(200, 140, 90, 255), width=7)
+    elif kind == 'scrollloupe':
+        poly(d, [(30, 150), (370, 150), (370, 330), (30, 330)], PAGE)                                 # utrullad skriftrulle
+        for x in (30, 370):
+            rrect(d, (x - 24, 130, x + 24, 350), 20, (176, 150, 110, 255))
+            rrect(d, (x - 10, 110, x + 10, 370), 6, (110, 72, 40, 255))
+        for y in range(180, 320, 22):
+            d.line((70, y, 330 - (y % 3) * 30, y), fill=(120, 100, 80, 255), width=4)
+        d.line((290, 120, 380, 20), fill=(200, 160, 70, 255), width=5)                                # kedjan
+        rrect(d, (40, 40, 76, 118), 6, (236, 226, 196, 255))                                          # ljuset
+        rrect(d, (26, 110, 90, 128), 6, (200, 160, 70, 255))
+        d.line((58, 40, 58, 26), fill=INK, width=4)
+        d.ellipse((190, 150, 310, 270), fill=(210, 236, 245, 120), outline=INK, width=8)               # luppen
+        d.ellipse((198, 158, 302, 262), outline=(200, 160, 70, 255), width=8)
+        rune(d, 250, 210, 26, (60, 40, 30, 255), 1, 8)
+    elif kind == 'pulleys':
+        hull = []                                                                                     # kilremmen runt båda skivorna
+        for cx, cy, r in ((90, 120, 86), (310, 290, 106)):
+            hull += [(cx + r * np.cos(a), cy + r * np.sin(a)) for a in np.linspace(0, 2 * np.pi, 72, endpoint=False)]
+        hull.sort()
+        def half(pts):
+            out = []
+            for p in pts:
+                while len(out) >= 2 and (out[-1][0] - out[-2][0]) * (p[1] - out[-2][1]) - (out[-1][1] - out[-2][1]) * (p[0] - out[-2][0]) <= 0:
+                    out.pop()
+                out.append(p)
+            return out
+        hull = half(hull)[:-1] + half(hull[::-1])[:-1]
+        d.line(hull + hull[:1], fill=INK, width=30, joint='curve')
+        d.line(hull + hull[:1], fill=(110, 74, 44, 255), width=16, joint='curve')
+        for cx, cy, r in ((90, 120, 76), (310, 290, 96)):
+            d.ellipse((cx - r, cy - r, cx + r, cy + r), fill=IRON, outline=INK, width=7)               # remskivor
+            d.ellipse((cx - r * 0.7, cy - r * 0.7, cx + r * 0.7, cy + r * 0.7), outline=(60, 62, 70, 255), width=8)
+            for k in range(6):
+                a = k * np.pi / 3
+                d.line((cx, cy, cx + r * 0.66 * np.cos(a), cy + r * 0.66 * np.sin(a)), fill=(130, 134, 146, 255), width=8)
+            d.ellipse((cx - 14, cy - 14, cx + 14, cy + 14), fill=(200, 160, 70, 255), outline=INK, width=4)
+        belt = (110, 74, 44, 255)
+        for t in (0.35, 0.62):                                                                        # pilar: remmen går åt ett håll
+            x, y = 90 + 220 * t + 60, 120 + 170 * t - 70
+            d.line((x - 22, y - 4, x + 2, y + 8, x - 10, y + 32), fill=(255, 200, 60, 255), width=7)
+    elif kind == 'spilledink':
+        poly(d, [(20, 330), (120, 270), (260, 280), (380, 330), (300, 390), (60, 390)], (20, 16, 30, 255), w=6)  # bläckpölen
+        skull = (140, 70, 190, 255)                                                                   # en dödskalle i pölen
+        d.ellipse((140, 286, 250, 366), outline=skull, width=6)
+        d.rectangle((168, 356, 222, 382), outline=skull, width=5)
+        for x in (182, 196, 210):
+            d.line((x, 360, x, 380), fill=skull, width=3)
+        for x in (172, 218):
+            d.ellipse((x - 16, 306, x + 16, 332), fill=skull)
+        d.polygon([(195, 336), (186, 352), (204, 352)], fill=skull)
+        poly(d, [(60, 150), (200, 80), (250, 170), (110, 240)], (40, 34, 56, 255), w=7)               # vält bläckflaska
+        poly(d, [(200, 80), (240, 60), (270, 130), (250, 170)], (60, 50, 80, 255), w=6)
+        rrect(d, (238, 44, 290, 84), 8, (196, 150, 64, 255))
+        d.line((76, 160, 190, 100), fill=(120, 100, 160, 255), width=6)
+        poly(d, [(110, 240), (130, 230), (140, 280), (120, 300)], (20, 16, 30, 255), w=4)
+    elif kind == 'flamebook':
+        open_book(d, 200, 220, 360, 150, (90, 30, 26, 255), lines=False)
+        for k, (x, y) in enumerate(((120, 290), (170, 280), (240, 280), (290, 290))):                 # brinnande runor på sidorna
+            rune(d, x, y, 22, (200, 70, 30, 255), k % 4, 7)
+        for k, (x, y, s) in enumerate(((130, 160, 34), (200, 110, 42), (270, 160, 34), (170, 40, 26), (240, 50, 28))):  # runor som stiger
+            rune(d, x, y, s, (255, 120 + k * 20, 40, 255), (k + 1) % 4, 10)
+            rune(d, x, y, s, (255, 236, 160, 255), (k + 1) % 4, 4)
+    elif kind == 'anvil':
+        poly(d, [(20, 140), (300, 140), (390, 120), (340, 190), (290, 200), (250, 240), (270, 320), (330, 330), (330, 380), (60, 380), (60, 330), (120, 320), (140, 240), (90, 200)], IRON, w=8)  # städet
+        d.line((30, 148, 300, 148), fill=(170, 176, 190, 255), width=8)
+        rrect(d, (130, 60, 280, 110), 8, (70, 72, 82, 255))                                           # hammarhuvud
+        d.line((200, 100, 330, 10), fill=INK, width=26)                                               # skaft
+        d.line((200, 100, 330, 10), fill=WOOD, width=14)
+        rrect(d, (60, 112, 170, 142), 6, GLOW)                                                        # glödande ämne
+    elif kind == 'lever':
+        rrect(d, (40, 300, 360, 380), 10, IRON)                                                       # bottenplatta
+        for x in (70, 330):
+            d.ellipse((x - 10, 330, x + 10, 350), fill=(220, 190, 110, 255), outline=INK, width=3)
+        d.chord((120, 220, 280, 380), 180, 360, fill=(110, 114, 126, 255), outline=INK, width=6)       # navet
+        d.line((200, 290, 300, 50), fill=INK, width=30)                                               # spaken
+        d.line((200, 290, 300, 50), fill=STEEL, width=16)
+        d.ellipse((268, 10, 336, 78), fill=(200, 40, 40, 255), outline=INK, width=6)                   # knopp
+        d.ellipse((60, 140, 170, 250), fill=(236, 226, 200, 255), outline=INK, width=7)               # tryckmätare
+        d.ellipse((64, 144, 166, 246), outline=(200, 160, 70, 255), width=6)
+        d.line((115, 195, 150, 165), fill=(200, 30, 30, 255), width=6)
+        for k in range(7):
+            a = np.pi * (0.8 + 1.4 * k / 6)
+            d.line((115 + 36 * np.cos(a), 195 + 36 * np.sin(a), 115 + 44 * np.cos(a), 195 + 44 * np.sin(a)), fill=INK, width=3)
+        rrect(d, (108, 246, 122, 300), 4, (110, 114, 126, 255))
+    elif kind == 'tome':
+        closed_book(d, 40, 20, 330, 380, (70, 20, 60, 255), 34)
+        for a, b in (((40, 120), (330, 330)), ((40, 330), (330, 120))):                               # kedjor i kors
+            for t in np.linspace(0, 1, 9):
+                x, y = a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t
+                d.ellipse((x - 18, y - 12, x + 18, y + 12), outline=INK, width=10)
+                d.ellipse((x - 18, y - 12, x + 18, y + 12), outline=(150, 154, 166, 255), width=5)
+        d.ellipse((130, 170, 240, 280), fill=(230, 220, 200, 255), outline=INK, width=7)               # ögat
+        d.ellipse((160, 196, 210, 254), fill=(150, 70, 230, 255), outline=INK, width=4)
+        d.ellipse((176, 212, 194, 238), fill=INK)
+        rrect(d, (160, 296, 210, 350), 8, (200, 160, 70, 255))                                        # hänglås
+        d.arc((166, 270, 204, 312), 180, 360, fill=INK, width=8)
+    return im
+
+
+def draw_runebook():
+    """Runboken: uppslagen läderbok med glödande runor, mässingshörn och ett bokmärke."""
+    im = Image.new('RGBA', (420, 420))
+    d = ImageDraw.Draw(im)
+    open_book(d, 210, 90, 360, 220, LEATHER, lines=False)
+    for k, (x, y) in enumerate(((100, 170), (150, 200), (100, 240), (270, 160), (320, 200), (270, 250))):
+        rune(d, x, y, 22, RUNE, k % 4, 8)
+    for x, y in ((24, 130), (396, 130), (24, 312), (396, 312)):
+        d.ellipse((x - 12, y - 12, x + 12, y + 12), fill=(220, 180, 90, 255), outline=INK, width=4)
+    poly(d, [(204, 330), (220, 330), (230, 410), (212, 396), (196, 410)], (200, 30, 40, 255), w=5)
+    for x, y in ((150, 60), (210, 30), (270, 64)):                                                     # runor som lyfter
+        rune(d, x, y, 18, (170, 230, 255, 255), 2, 6)
+    return im.rotate(-8, resample=Image.BICUBIC, expand=True)
+
+
+def draw_steamcannon():
+    """Ångkanonen: mässingspanna med tryckmätare, trähandtag och en lång kopparpipa som vidgas till en tratt."""
+    im = Image.new('RGBA', (460, 300))
+    d = ImageDraw.Draw(im)
+    poly(d, [(6, 150), (100, 136), (130, 140), (130, 176), (96, 180), (14, 206)], (118, 72, 38, 255))   # kolv
+    poly(d, [(150, 176), (184, 176), (174, 250), (140, 250)], (86, 54, 32, 255))                        # handtag
+    rrect(d, (120, 70, 300, 170), 46, (196, 150, 64, 255))                                             # pannan
+    for x in (160, 220, 270):
+        d.line((x, 74, x, 166), fill=(140, 100, 40, 255), width=6)
+    d.line((140, 92, 290, 92), fill=(236, 204, 120, 255), width=6)
+    d.ellipse((176, 10, 236, 70), fill=(236, 226, 200, 255), outline=INK, width=6)                      # tryckmätare
+    d.line((206, 40, 222, 22), fill=(200, 30, 30, 255), width=5)
+    rrect(d, (198, 64, 214, 80), 3, (110, 114, 126, 255))
+    rrect(d, (290, 120, 400, 152), 8, COPPER)                                                          # pipa
+    poly(d, [(396, 116), (452, 90), (456, 186), (396, 158)], (210, 120, 70, 255))                       # tratt
+    d.line((300, 126, 396, 126), fill=(236, 160, 110, 255), width=5)
+    d.line((130, 176, 300, 160), fill=INK, width=14)                                                   # rör under
+    d.line((130, 176, 300, 160), fill=(110, 114, 126, 255), width=7)
+    d.ellipse((270, 40, 300, 70), outline=INK, width=8)                                               # ventilratt
+    d.ellipse((272, 42, 298, 68), outline=(190, 48, 40, 255), width=4)
+    rrect(d, (280, 66, 290, 80), 2, (110, 114, 126, 255))
+    return im.crop(im.getbbox()).rotate(8, resample=Image.BICUBIC, expand=True)
+
+
+GUNS.update({'runebook': draw_runebook, 'steamcannon': draw_steamcannon})
+
+
+def drawn_card13(cid, kind, size, dy, parts):
+    big = purple_bg()
+    for name, sc, px, py, tint, rot in parts:
+        big = screen(big, particle(name, int(S * 4 * sc), tint, rot), S * 2 + px * S * 4, S * 2 + py * S * 4)
+    g = art13(kind)
+    g = shade(g.crop(g.getbbox()))
+    k = S * 4 * size / max(g.size)
+    g = g.resize((max(1, int(g.width * k)), max(1, int(g.height * k))), Image.LANCZOS)
+    pos = ((S * 4 - g.width) // 2, int((S * 4 - g.height) / 2 + dy * S * 4))
+    add_glow(big, g, pos, (0, 0, 0), 12)
+    big.alpha_composite(g, pos)
+    save(big, cid)
+
+
+def main_v13():
+    old = ({'ash:' + s for s, _ in V7.values()} | {k + ':' + s for k, s, _ in V8.values()} | {k + ':' + s for k, s, _ in V9_ASH.values()}
+           | {k + ':' + s for k, s, _ in V11_SRC.values()})
+    srcs = [k + ':' + s for k, s, _ in V13_SRC.values()]
+    assert len(srcs) == len(set(srcs)) and not old & set(srcs), 'varje bild används bara en gång'
+    assert len(V13_SRC) + len(V13_DRAWN) == 24 and not set(V13_SRC) & set(V13_DRAWN)
+    old_parts = ({p[0] for t in (V9_DRAWN, V11_DRAWN) for _, _, _, ps in t.values() for p in ps}
+                 | {s[5:] for t in (V9_UPGRADES, V11_UPGRADES) for _, s, _, _ in t.values() if s.startswith('part:')})
+    parts = [p[0] for _, _, _, ps in V13_DRAWN.values() for p in ps] + [s[5:] for _, s, _, _ in V13_UPGRADES.values() if s.startswith('part:')]
+    assert len(parts) == len(set(parts)) and not old_parts & set(parts), 'varje partikelbild används bara en gång'
+    fx = [s[4:] for _, s, _, _ in V13_UPGRADES.values() if s.startswith('vfx:')]
+    old_fx = ({s for _, s, _ in V6_UPGRADES.values()} | {n for ls in V6_ACTIVES.values() for n, *_ in ls} | {s for _, s, _ in V7_UPGRADES.values()}
+              | {s for _, s, _ in V8_UPGRADES.values()} | {s[4:] for t in (V9_UPGRADES, V11_UPGRADES) for _, s, _, _ in t.values() if s.startswith('vfx:')})
+    assert len(V13_UPGRADES) == 8 and len(fx) == len(set(fx)) and not old_fx & set(fx), 'varje effektbild används bara en gång'
+    n = 0
+    for cid, (kind, src, arg) in V13_SRC.items():
+        save(ash_card(src, arg) if kind == 'ash' else decal_card(src, arg) if kind == 'decal' else meshy_card(kind, src, arg), cid)
+        n += 1
+    for cid, (kind, size, dy, ps) in V13_DRAWN.items():
+        drawn_card13(cid, kind, size, dy, ps)
+        n += 1
+    for cid, w in V13_PACTS.items():
+        pact(cid, w)
+        n += 1
+    for cid, (w, src, tint, rot) in V13_UPGRADES.items():
+        v9_upgrade(cid, w, src, tint, rot)
+        n += 1
+    near_dupes(list(V13_SRC) + list(V13_DRAWN) + list(V13_PACTS) + list(V13_UPGRADES))
+    return n
+
+
 def main():
     assert len(CARDS) == len(set(CARDS)) == 50, len(CARDS)
     srcs = list(V5.values()) + [s for _, s in V5_UPGRADES.values()]
@@ -1483,6 +1880,9 @@ def main():
         return
     if ONLY == 'v11':
         print(main_v11(), 'kortbilder ->', OUT)
+        return
+    if ONLY == 'v13':
+        print(main_v13(), 'kortbilder ->', OUT)
         return
     n = 0
     if not ONLY_V5:
@@ -1504,6 +1904,7 @@ def main():
         n += main_v8()
         n += main_v9()
         n += main_v11()
+        n += main_v13()
     print(n, 'kortbilder ->', OUT)
 
 

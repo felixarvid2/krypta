@@ -52,6 +52,9 @@
     <button class="d" id="b-pact11">DRAFT: SPORKASTARE, SPEGELSKÖLD OCH PISKA</button>
     <button class="d" id="b-draft11">DRAFT: SVAMP, SPORER, SPEGLAR OCH GLAS</button>
     <button class="d" id="b-codex11">KORTARKIV: VERSION 11</button>
+    <button class="d" id="b-pact13">DRAFT: RUNBOK OCH ÅNGKANON</button>
+    <button class="d" id="b-draft13">DRAFT: BÖCKER, BLÄCK, ÅNGA OCH SMIDE</button>
+    <button class="d" id="b-codex13">KORTARKIV: VERSION 13</button>
   </div>
   <div id="log">Tangenter 1-9, pilar, Enter och Esc fungerar i fönstren. Spelkänslig tangent-test: tryck på tangenter medan ett fönster är öppet och se om de loggas nedan.</div>
 </main>
@@ -255,6 +258,21 @@
   $('b-pact11').onclick = pact11;
   $('b-draft11').onclick = draft11;
   $('b-codex11').onclick = codex11;
+  // version 13: Det förbjudna biblioteket och Gjuteriet – pakter för runboken och ångkanonen, kort om böcker, bläck, runor, ånga, smide och metall
+  const pact13 = () => CardUI.draft(['pakt_runbok', 'pakt_angkanon'].map(Cards.byId), { title: 'SVÄR EN ED', owned: state.owned }, c => {
+    if (!c) { stat(); return; }
+    state.owned.push(c.id); log('svor ' + c.name); stat();
+    const ups = Cards.ALL.filter(x => x.weapon === c.pact); // vapnets fyra uppgraderingar
+    CardUI.draft(ups, { title: Cards.WEAPON_NAME[c.pact] + ': VÄLJ ETT KORT', owned: state.owned, seen: new Set(seen), mods: Cards.computeMods(state.owned) }, u => { if (u) { state.owned.push(u.id); log('valde ' + u.name); } stat(); });
+  });
+  const draft13 = () => { // spelaren har två kort ur ARKIVETS VÄG och ett ur SMEDJANS VÄG
+    const own = state.owned.concat(['blackhornet', 'runpennan', 'smidestangen']);
+    CardUI.draft(['runstampeln', 'angpannan', 'kopistens_lupp', 'forbjudna_folianten'].map(Cards.byId), { title: 'VÄLJ ETT KORT', owned: own, seen: new Set(seen), mods: Cards.computeMods(own) }, c => { if (c) { state.owned.push(c.id); log('valde ' + c.name); } stat(); });
+  };
+  const codex13 = () => CardUI.codex(Cards.ALL.filter(c => !c.weapon), { seen: new Set(Cards.ALL.map(c => c.id)), owned: new Set(state.owned.concat(['blackhornet', 'kolossens_hjarta', 'pakt_runbok'])), unlocked: new Set(Cards.ALL.map(c => c.id)) }, () => log('stängde arkivet'), { query: 'ÅNGA' });
+  $('b-pact13').onclick = pact13;
+  $('b-draft13').onclick = draft13;
+  $('b-codex13').onclick = codex13;
   const auto = q.get('auto');
   if (auto === 'draft') draft(3); else if (auto === 'draft5') draft(5); else if (auto === 'shop') shop(); else if (auto === 'souls') souls(); else if (auto === 'deck') CardUI.deck(state.owned);
   else if (auto === 'legend') CardUI.draft(['tomhetsstenen', 'gravvaktaren', 'ouroboros', 'askkungen', 'vaktarbanan'].map(Cards.byId), { title: 'LEGENDARISKA TESTKORT' }, () => {})
@@ -283,9 +301,12 @@
   else if (auto === 'pact11') pact11();
   else if (auto === 'draft11') draft11();
   else if (auto === 'codex11') codex11();
+  else if (auto === 'pact13') pact13();
+  else if (auto === 'draft13') draft13();
+  else if (auto === 'codex13') codex13();
   else if (auto === 'codex5') CardUI.codex(Cards.ALL.filter(c => !c.weapon), { seen: new Set(Cards.ALL.map(c => c.id)), owned: new Set(state.owned.concat(['slipstenen+'])), unlocked: new Set(Cards.ALL.map(c => c.id)), picks: { slipstenen: 7, glodkol: 1, lakebladet: 3 } }, () => log('stängde arkivet'));
   else if (auto === 'toast') { CardUI.toast(Cards.byId('forbannade_kronan')); CardUI.toast(Cards.byId('ouroboros')); }
-  window.__demo = { state, draw, seen, draftX, deck5, draft5x, alk, stats, draft6, deck6, refine6, codex6, draft7, pact7, shop7, deck7, codex7, talents8, pact8, draft8, codex8, pact9, draft9, codex9, pact11, draft11, codex11, T8, t8 };
+  window.__demo = { state, draw, seen, draftX, deck5, draft5x, alk, stats, draft6, deck6, refine6, codex6, draft7, pact7, shop7, deck7, codex7, talents8, pact8, draft8, codex8, pact9, draft9, codex9, pact11, draft11, codex11, pact13, draft13, codex13, T8, t8 };
 })();
 </script>
 </body>

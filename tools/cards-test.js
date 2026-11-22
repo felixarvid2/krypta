@@ -23,8 +23,8 @@ function makeRng(seed) {
 const { ALL, RARITY, MOD_KEYS } = Cards;
 const keys = Object.keys(MOD_KEYS);
 const BASE = ALL.filter(c => !c.pact && !c.weapon && !c.active);
-ok(BASE.length === 247, 'antal vanliga kort ' + BASE.length + ' ska vara 247 (50 gamla + 50 i version 4 + 30 i version 5 + 25 i version 6 + 20 i version 7 + 24 i version 8 + 24 i version 9 + 24 i version 11)');
-ok(keys.length === 127, 'MOD_KEYS ska ha 127 nycklar, har ' + keys.length);
+ok(BASE.length === 271, 'antal vanliga kort ' + BASE.length + ' ska vara 271 (50 gamla + 50 i version 4 + 30 i version 5 + 25 i version 6 + 20 i version 7 + 24 i version 8 + 24 i version 9 + 24 i version 11 + 24 i version 13)');
+ok(keys.length === 135, 'MOD_KEYS ska ha 135 nycklar, har ' + keys.length);
 // de 27 nya mod-nycklarna
 const NEW_KEYS = ['grenades', 'grenadeDmg', 'stamina', 'dashCd', 'airDmg', 'backstab', 'comboGold', 'trapResist', 'freezeChance', 'poisonChance',
   'shockChance', 'interest', 'floorHeal', 'killExplode', 'reloadNova', 'eliteGold', 'trapSense', 'enemySense', 'critHeal', 'dashDmg',
@@ -78,14 +78,14 @@ for (const k of keys) ok(used.has(k), 'mod-nyckel ' + k + ' används av inget ko
 const locked = BASE.filter(c => c.unlock != null).length;
 ok(locked / BASE.length > 0.25 && locked / BASE.length < 0.45, 'andel låsta kort ' + locked + '/' + BASE.length);
 // vapenpakter: en per vapen, minst fyra unika uppgraderingar var
-for (const w of ['pistol', 'shotgun', 'rifle', 'smg', 'dbshotgun', 'crossbow', 'flaregun', 'sniper', 'axe', 'flamer', 'launcher', 'nailgun', 'staff', 'bow', 'knives', 'hammer', 'musket', 'harpoon', 'boomerang', 'prism', 'sawlauncher', 'windgun', 'spear', 'sporelauncher', 'mirrorshield', 'whip']) {
+for (const w of ['pistol', 'shotgun', 'rifle', 'smg', 'dbshotgun', 'crossbow', 'flaregun', 'sniper', 'axe', 'flamer', 'launcher', 'nailgun', 'staff', 'bow', 'knives', 'hammer', 'musket', 'harpoon', 'boomerang', 'prism', 'sawlauncher', 'windgun', 'spear', 'sporelauncher', 'mirrorshield', 'whip', 'runebook', 'steamcannon']) {
   ok(ALL.filter(c => c.pact === w).length === 1, 'en pakt för ' + w);
   const ups = ALL.filter(c => c.weapon === w);
   ok(ups.length >= 4, w + ' har ' + ups.length + ' uppgraderingar, minst 4');
   ok(new Set(ups.map(c => c.wup)).size === ups.length, w + ': unika wup');
 }
 for (let seed = 1; seed <= 300; seed++) {
-  const rng = makeRng(seed), pact = [null, 'pistol', 'shotgun', 'rifle', 'smg', 'dbshotgun', 'crossbow', 'flaregun', 'sniper', 'axe', 'flamer', 'launcher', 'nailgun', 'staff', 'bow', 'knives', 'hammer', 'musket', 'harpoon', 'boomerang', 'prism', 'sawlauncher', 'windgun', 'spear', 'sporelauncher', 'mirrorshield', 'whip'][seed % 27];
+  const rng = makeRng(seed), pact = [null, 'pistol', 'shotgun', 'rifle', 'smg', 'dbshotgun', 'crossbow', 'flaregun', 'sniper', 'axe', 'flamer', 'launcher', 'nailgun', 'staff', 'bow', 'knives', 'hammer', 'musket', 'harpoon', 'boomerang', 'prism', 'sawlauncher', 'windgun', 'spear', 'sporelauncher', 'mirrorshield', 'whip', 'runebook', 'steamcannon'][seed % 29];
   const got = Cards.draw(rng, 4, { depth: seed % 5, pact });
   for (const c of got) {
     ok(!(pact && c.pact), 'andra pakt dragen med pakt ' + pact);
@@ -146,7 +146,7 @@ ok(Cards.price(sp, 2, 0.5) < Cards.price(sp, 2, 0), 'pris ska sjunka med rabatt'
 
 // ---------- set ----------
 const SETS = Cards.SETS;
-ok(SETS && Object.keys(SETS).length === 18, '18 set');
+ok(SETS && Object.keys(SETS).length === 20, '20 set');
 for (const sid in SETS) {
   const st = SETS[sid], members = ALL.filter(c => c.set === sid);
   ok(st.name && st.text && st.mods && Object.keys(st.mods).length, sid + ': name/text/mods');
@@ -171,7 +171,7 @@ for (const sid in SETS) {
   const s2 = Cards.synergy(Cards.byId(three[2]), two);
   ok(/^FULLBORDAR /.test(s2), sid + ': synergy ska säga FULLBORDAR: "' + s2 + '"');
 }
-ok(Cards.setProgress([]).length === 18 && Cards.setProgress([]).every(x => x.have === 0 && !x.active), 'setProgress([])');
+ok(Cards.setProgress([]).length === 20 && Cards.setProgress([]).every(x => x.have === 0 && !x.active), 'setProgress([])');
 // synergy: syn-taggar och tomma fall
 ok(Cards.synergy(Cards.byId('grodan'), ['spakvinnan']).includes('GIFT'), 'gift + gift ska vara synergi');
 ok(Cards.synergy(Cards.byId('offerkniven'), ['solkonungen']).includes('KRIT'), 'krit + kritskada ska vara synergi');
@@ -263,7 +263,7 @@ for (const w in PACTS5) {
   for (let i = 0; i < 300; i++) for (const c of Cards.draw(rng, 4, { pact: w, unlocked: unlockedAll })) { ok(!c.pact && (!c.weapon || c.weapon === w), 'draw med pakt ' + w + ' gav ' + c.id); if (c.weapon === w) hit++; }
   ok(hit > 50, w + ': uppgraderingarna ska dras ofta efter pakten (' + hit + ')');
 }
-ok(Object.keys(Cards.WEAPON_NAME).length === 26 && ALL.filter(c => c.pact).length === 26, '26 vapen och 26 pakter');
+ok(Object.keys(Cards.WEAPON_NAME).length === 28 && ALL.filter(c => c.pact).length === 28, '28 vapen och 28 pakter');
 // set: alkemi och flock
 for (const sid of ['alkemi', 'flock']) {
   const members = ALL.filter(c => c.set === sid);
@@ -1017,6 +1017,157 @@ ok(Cards.describe(Cards.byId('urmycelet')).includes('SET: MYCELIETS VÄG') && Ca
   for (const a of ['pact11', 'draft11', 'codex11']) ok(demo.includes("auto === '" + a + "'"), 'demo ?auto=' + a);
 }
 console.log('Version 11: ' + V11.length + ' kort ' + JSON.stringify(v11Rar) + ', pakter ' + Object.values(PACTS11).map(x => x[0]).join(' ') + ', set ' + ['myceliet', 'spegeln'].map(k => k + '(' + ALL.filter(c => c.set === k).map(c => c.id).join(',') + ')').join(' '));
+// ---------- version 13: pakter för runboken och ångkanonen, 24 nya kort (böcker, bläck, runor, ånga, smide och metall), två set ----------
+const V13_KEYS = { inkResist: 'p', beltSpeed: 'p', ventResist: 'p', runeDmg: 'p', steamDmg: 'p', bookLore: 'n', forgeArmor: 'n', pressResist: 'p' };
+for (const k in V13_KEYS) {
+  ok(keys.includes(k) && /[a-zåäö]{4}/i.test(MOD_KEYS[k]), 'version 13-nyckel saknas eller saknar beskrivning: ' + k);
+  const l = Cards.modLines({ [k]: V13_KEYS[k] === 'p' ? 0.1 : 1 });
+  ok(l.length === 1 && l[0].good && l[0].text === l[0].text.toUpperCase() && /\d/.test(l[0].text) && (V13_KEYS[k] === 'p') === / % /.test(l[0].text), k + ': modLines ' + JSON.stringify(l));
+  ok(Cards.modLabel(k) !== k.toUpperCase() && Cards.modLabel(k) === Cards.modLabel(k).toUpperCase(), k + ': svensk etikett ' + Cards.modLabel(k));
+  ok(Cards.fmtVal(k, V13_KEYS[k] === 'p' ? 0.25 : 2) === (V13_KEYS[k] === 'p' ? '25 %' : '2'), k + ': fmtVal');
+  ok(Cards.modLines({ [k]: -1 })[0].good === false, k + ': negativt värde är en nackdel');
+}
+ok(new Set(Object.keys(V13_KEYS).map(Cards.modLabel)).size === 8 && Object.keys(V13_KEYS).every(k => !keys.filter(x => !(x in V13_KEYS)).some(x => Cards.modLabel(x) === Cards.modLabel(k))), 'version 13-nycklarna har egna etiketter');
+ok(/bläck/i.test(MOD_KEYS.inkResist) && /rullband/i.test(MOD_KEYS.beltSpeed) && /rätt håll/i.test(MOD_KEYS.beltSpeed) && /ångventil/i.test(MOD_KEYS.ventResist) && /run/i.test(MOD_KEYS.runeDmg)
+  && /ånga/i.test(MOD_KEYS.steamDmg) && /pulpet/i.test(MOD_KEYS.bookLore) && /platt/i.test(MOD_KEYS.bookLore) && /gjuterifiende/i.test(MOD_KEYS.forgeArmor) && /stansar/i.test(MOD_KEYS.pressResist), 'version 13-beskrivningar');
+const V13_IDS = ['blackhornet', 'runpennan', 'ventilnyckeln', 'kopparmunstycket', 'bokmarket', 'smidestangen', 'gjutarstovlarna', 'nithandsken', 'lasglaset', 'angvisslan',
+  'runstampeln', 'anggallret', 'stalforkladet', 'assjans_klinga', 'kopistens_lupp', 'kilremmen', 'svartblacket',
+  'eldskriften', 'angpannan', 'jattens_stad', 'gjutarspaken', 'smalthjartat', 'forbjudna_folianten', 'kolossens_hjarta'];
+ok(V13_IDS.length === 24 && new Set(V13_IDS).size === 24, '24 unika version 13-id');
+const V13 = V13_IDS.map(id => Cards.byId(id)).filter(Boolean);
+ok(V13.length === 24, 'version 13-kort saknas: ' + V13_IDS.filter(id => !Cards.byId(id)).join(','));
+const V13_WEAPONS = ['runebook', 'steamcannon'];
+const OLDER13 = new Set(ALL.filter(c => !V13_IDS.includes(c.id) && !V13_WEAPONS.includes(c.pact || c.weapon)).map(c => c.name));
+const v13Rar = {};
+for (const c of V13) {
+  v13Rar[c.rarity] = (v13Rar[c.rarity] || 0) + 1;
+  ok(!c.pact && !c.weapon && !c.active && !V11_IDS.includes(c.id) && !V9_IDS.includes(c.id) && !V8_IDS.includes(c.id) && !V7_IDS.includes(c.id) && !N6_IDS.includes(c.id) && !V5_IDS.includes(c.id) && !NEW_IDS.includes(c.id), c.id + ': nytt vanligt kort');
+  ok(c.name === c.name.toUpperCase() && c.text === c.text.toUpperCase() && /\d/.test(c.text), c.id + ': versaler och tal i texten');
+  ok(!OLDER13.has(c.name), c.id + ': namnet ' + c.name + ' finns redan');
+  ok(Cards.modLines(c).length === Object.keys(c.mods).length && c.text.split('\n').length >= Object.keys(c.mods).length, c.id + ': texten ska nämna alla effekter');
+  for (const k in c.mods) {
+    const v = c.mods[k], f2 = Cards.modLines({ [k]: v })[0];
+    if (/\d/.test(f2.text)) ok(c.text.includes(String(Math.round(Math.abs(v) * (/%/.test(f2.text) ? 100 : 1) * 10) / 10).replace('.', ',')), c.id + ': texten ska ha talet för ' + k);
+  }
+  ok(Object.keys(c.mods).some(k => k in V13_KEYS), c.id + ': använder en ny nyckel');
+  if (c.curse) ok(c.bad === 1 && Cards.sellPrice(c, 2) === 0 && Object.values(c.mods).some(v => v < 0) && / % /.test(c.text.split('\n').pop()), c.id + ': förbannat, nackdelen på sista raden');
+  else ok(Cards.sellPrice(c, 2) > 0 && Object.values(c.mods).every(v => v > 0), c.id + ': kan säljas, bara fördelar');
+  ok(Cards.describe(c).includes(c.name), c.id + ': describe');
+  ok(c.max <= 4 && (c.max === 1 || Cards.fuse(c.id) === c.id + '+'), c.id + ': max och sammansmältning');
+  ok(c.syn && c.syn.some(t => ['bok', 'black', 'anga', 'smide', 'metall'].includes(t)), c.id + ': har en ny synergitagg');
+  ok(c.text.split('\n').every(l => l.length <= 27), c.id + ': raderna ska vara högst 27 tecken');
+  if (c.max > 1) { const f = Cards.byId(c.id + '+'); ok(f && f.text !== c.text && f.text.split('\n').every(l => l.length <= 27), c.id + '+: ny text ' + (f && JSON.stringify(f.text))); }
+}
+ok(v13Rar.vanlig === 10 && v13Rar.ovanlig === 7 && v13Rar.sallsynt === 5 && v13Rar.legendarisk === 2, 'version 13 per sällsynthet ' + JSON.stringify(v13Rar));
+ok(V13.filter(c => c.curse).length === 2, '2 förbannade version 13-kort');
+ok(Object.keys(V13_KEYS).every(k => V13.filter(c => k in c.mods).length >= 2), 'varje ny nyckel ska användas av minst två nya kort: ' + Object.keys(V13_KEYS).filter(k => V13.filter(c => k in c.mods).length < 2).join(','));
+ok(V13.filter(c => c.unlock).length >= 6 && V13.every(c => !c.unlock || (c.unlock >= 10 && c.unlock <= 60)), 'version 13: några kort låses upp med själar');
+ok(['bok', 'black', 'anga', 'smide', 'metall'].every(t => Cards.SYN[t] && V13.filter(c => c.syn.includes(t)).length >= 3), 'nya synergitaggar med minst tre kort var');
+ok(V13.filter(c => c.syn.includes('runa')).length >= 3, 'runkorten har den gamla runtaggen');
+ok(Cards.byId('blackhornet+').text === '32 % MINDRE EFFEKT\nAV BLÄCK' && Cards.byId('blackhornet+').mods.inkResist === 0.32, 'sammansmält bläckhorn: ' + JSON.stringify(Cards.byId('blackhornet+').text));
+ok(Cards.byId('smidestangen+').mods.forgeArmor === 3 && Cards.byId('smidestangen+').text === '+3 RUSTNING PER DÖDAD\nGJUTERIFIENDE', 'sammansmält smidestång: ' + JSON.stringify(Cards.byId('smidestangen+').text));
+ok(Cards.byId('lasglaset+').text === '+2 EXTRA PULPETEFFEKT\n16 % MINDRE EFFEKT\nAV BLÄCK' && Cards.byId('lasglaset+').mods.bookLore === 2, 'sammansmält läsglas: ' + JSON.stringify(Cards.byId('lasglaset+').text));
+ok(Cards.byId('svartblacket+') === null && Cards.refine('smalthjartat') === null && Cards.byId('kolossens_hjarta+') === null, 'kort med max 1 kan inte smältas');
+{ const m13 = Cards.computeMods(['blackhornet', 'blackhornet', 'svartblacket', 'smalthjartat', 'angvisslan', 'bokmarket', 'kopistens_lupp', 'gjutarstovlarna', 'nithandsken']);
+  ok(Math.abs(m13.inkResist - 0.1) < 1e-9 && m13.runeDmg === 0.3 && m13.forgeArmor === 5 && m13.steamDmg === 0.33 && Math.abs(m13.ventResist + 0.25) < 1e-9
+    && m13.bookLore === 3 && m13.beltSpeed === 0.2 && m13.pressResist === 0.2 && m13.critChance === 0.05, 'computeMods med version 13-nycklar ' + JSON.stringify([m13.inkResist, m13.runeDmg, m13.forgeArmor, m13.steamDmg, m13.ventResist, m13.bookLore, m13.beltSpeed, m13.pressResist])); }
+{ // nya kort dras (alla upplåsta) och låsta dras inte
+  const rng = makeRng(1313), hit = new Set();
+  for (let i = 0; i < 4000; i++) for (const c of Cards.draw(rng, 3, { unlocked: unlockedAll, depth: i % 6 })) hit.add(c.id);
+  ok(V13_IDS.every(id => hit.has(id)), 'alla version 13-kort ska kunna dras: saknas ' + V13_IDS.filter(id => !hit.has(id)).join(','));
+  const rng2 = makeRng(1314);
+  for (let i = 0; i < 1000; i++) for (const c of Cards.draw(rng2, 3, {})) ok(!c.unlock || !V13_IDS.includes(c.id), 'låst version 13-kort dragen ' + c.id);
+}
+// pakter och uppgraderingar
+const PACTS13 = {
+  runebook: ['pakt_runbok', ['rb_split', 'rb_seek', 'rb_ward', 'rb_ink'], 'ALL AMMO BLIR BLÄCK', 'RUNBOK'],
+  steamcannon: ['pakt_angkanon', ['sc_range', 'sc_scald', 'sc_push', 'sc_fast'], 'ALL AMMO BLIR BRÄNSLE', 'ÅNGKANON'],
+};
+ok(JSON.stringify(Object.keys(PACTS13)) === JSON.stringify(V13_WEAPONS), 'version 13-vapnen');
+const V13_ART = V13_IDS.slice();
+for (const w in PACTS13) {
+  const [pid, wups, ammo, wname] = PACTS13[w], p = Cards.byId(pid);
+  ok(p && p.pact === w && p.rarity === 'sallsynt' && p.max === 1 && p.mods.dmg === 0.15 && p.bad === 1 && p.text.includes(ammo), pid + ': pakt för ' + w);
+  ok(Cards.WEAPON_NAME[w] === wname && p && p.text.includes('BARA ' + wname + ' RESTEN AV RUNDAN') && Cards.tag(p) === 'PAKT' && !OLDER13.has(p.name), w + ': WEAPON_NAME och pakttext');
+  ok(Cards.fuse(pid) === null && Cards.refine(pid) === null && Cards.sellPrice(pid, 3) === 0, pid + ': kan inte smältas, förädlas eller säljas');
+  V13_ART.push(pid);
+  const ups = ALL.filter(c => c.weapon === w);
+  ok(ups.length === 4 && JSON.stringify(ups.map(c => c.wup).sort()) === JSON.stringify(wups.slice().sort()), w + ': uppgraderingar ' + ups.map(c => c.wup).join(','));
+  ok(ups.some(u => u.rarity === 'legendarisk') && ups.some(u => u.rarity === 'ovanlig'), w + ': uppgraderingar av olika sällsynthet');
+  for (const u of ups) {
+    V13_ART.push(u.id);
+    ok(u.max === 1 && Object.keys(u.mods).length === 0 && Cards.tag(u) === wname && Cards.refine(u.id) === null && Cards.fuse(u.id) === null, u.id + ': uppgradering');
+    ok(u.name === u.name.toUpperCase() && u.text === u.text.toUpperCase() && !u.set && !OLDER13.has(u.name), u.id + ': versaler, inget set, nytt namn');
+    ok(u.text.split('\n').every(l => l.length <= 27), u.id + ': raderna ska vara högst 27 tecken');
+    ok(Cards.sellPrice(u, 2) === 0 && !Cards.canSell(u), u.id + ': kan inte säljas');
+  }
+  const rng = makeRng(63); let hit = 0;
+  for (let i = 0; i < 300; i++) for (const c of Cards.draw(rng, 4, { pact: w, unlocked: unlockedAll })) { ok(!c.pact && (!c.weapon || c.weapon === w), 'draw med pakt ' + w + ' gav ' + c.id); if (c.weapon === w) hit++; }
+  ok(hit > 50, w + ': uppgraderingarna ska dras ofta efter pakten (' + hit + ')');
+  const rng2 = makeRng(65);
+  for (let i = 0; i < 200; i++) for (const c of Cards.draw(rng2, 4, { unlocked: unlockedAll })) ok(c.weapon !== w, 'uppgradering ' + c.id + ' utan pakt');
+}
+ok(/BLÄCK/.test(Cards.byId('pakt_runbok').text) && /BRÄNSLE/.test(Cards.byId('pakt_angkanon').text), 'ammotexterna: bläck och bränsle (delas med eldkastaren)');
+ok(new Set(ALL.filter(c => c.wup).map(c => c.wup)).size === ALL.filter(c => c.wup).length, 'alla wup är unika');
+for (const w of Object.keys(Cards.WEAPON_NAME)) { // alla vapen: en pakt, fyra uppgraderingar och uppgraderingarna dras ofta efter pakten
+  const rng = makeRng(71); let hit = 0;
+  for (let i = 0; i < 300; i++) for (const c of Cards.draw(rng, 4, { pact: w, unlocked: unlockedAll })) if (c.weapon === w) hit++;
+  ok(ALL.filter(c => c.pact === w).length === 1 && ALL.filter(c => c.weapon === w).length >= 4 && hit > 50, w + ': pakt och uppgraderingar (' + hit + ')');
+}
+{ // pakterna dras utan pakt men aldrig en andra; pakter sammanlagt ungefär lika ofta som förut
+  const rng = makeRng(67), hit = new Set(); let pacts = 0, tot = 0;
+  for (let i = 0; i < 4000; i++) for (const c of Cards.draw(rng, 3, { unlocked: unlockedAll })) { tot++; if (c.pact) { pacts++; hit.add(c.id); } }
+  ok(['pakt_runbok', 'pakt_angkanon'].every(id => hit.has(id)), 'nya pakter dras');
+  ok(pacts / tot > 0.01 && pacts / tot < 0.04, 'andel pakter ' + (pacts / tot).toFixed(3));
+}
+// bilder: 96x96, unika (bland alla kort), ASCII-filnamn och byggda i tools/card-art/make.py
+{
+  const byHash = new Map();
+  for (const c of ALL) { const f = path.join(root, c.icon); if (fs.existsSync(f)) { const h = md5(f); if (!byHash.has(h)) byHash.set(h, []); byHash.get(h).push(c.id); } }
+  const src = fs.readFileSync(path.join(root, 'tools/card-art/make.py'), 'utf8');
+  for (const id of V13_ART) {
+    const c = Cards.byId(id), f = path.join(root, c.icon);
+    ok(/^assets\/cards\/[a-z0-9_]+\.png$/.test(c.icon), id + ': bildens filnamn ska vara ASCII: ' + c.icon);
+    ok(fs.existsSync(f), id + ': bild saknas');
+    if (!fs.existsSync(f)) continue;
+    const b = fs.readFileSync(f);
+    ok(b.readUInt32BE(16) === 96 && b.readUInt32BE(20) === 96, id + ': bilden ska vara 96x96');
+    ok(byHash.get(md5(f)).length === 1, id + ': samma bild som ' + byHash.get(md5(f)).join(','));
+    ok(src.includes("'" + id + "'"), id + ': bilden ska byggas i tools/card-art/make.py');
+  }
+  ok(V13_ART.length === 34, '34 nya bilder');
+  ok(/def draw_runebook\(/.test(src) && /def draw_steamcannon\(/.test(src), 'vapnen ritas som siluetter i make.py');
+  ok(/'runebook': draw_runebook/.test(src) && /'steamcannon': draw_steamcannon/.test(src), 'siluetterna finns i GUNS');
+  ok(/def main_v13\(/.test(src) && /near_dupes\(list\(V13_SRC\)/.test(src) && /n \+= main_v13\(\)/.test(src), 'make.py jämför de nya bilderna med alla befintliga kortbilder');
+}
+// set: ARKIVETS VÄG och SMEDJANS VÄG
+for (const [sid, name, need] of [['arkivet', 'ARKIVETS VÄG', ['inkResist', 'runeDmg', 'bookLore']], ['smedjan', 'SMEDJANS VÄG', ['forgeArmor', 'steamDmg', 'pressResist']]]) {
+  const members = ALL.filter(c => c.set === sid);
+  ok(SETS[sid] && SETS[sid].name === name && members.length >= 4 && members.length <= 6, sid + ': ' + members.length + ' kort');
+  ok(need.every(k => k in SETS[sid].mods), sid + ': bonusen ska handla om ' + need.join(', '));
+  ok(members.every(c => V13_IDS.includes(c.id) && !c.curse), sid + ': bara nya kort, inga förbannelser');
+  ok(members.some(c => c.rarity === 'vanlig') && members.some(c => c.rarity === 'legendarisk'), sid + ': olika sällsynthet');
+  for (const k in SETS[sid].mods) ok(SETS[sid].text.includes(String(Math.round(SETS[sid].mods[k] * (Cards.modLines({ [k]: SETS[sid].mods[k] })[0].text.includes('%') ? 100 : 1)))), sid + ': settexten nämner ' + k);
+  const three = members.slice(-3).map(c => c.id), m3 = Cards.computeMods(three), raw = {};
+  for (const id of three) for (const k in Cards.byId(id).mods) raw[k] = (raw[k] || 0) + Cards.byId(id).mods[k];
+  for (const k in SETS[sid].mods) ok(Math.abs(m3[k] - (raw[k] || 0) - SETS[sid].mods[k]) < 1e-6, sid + ': setbonus ' + k);
+  ok(Cards.setProgress(three).find(x => x.id === sid).active, sid + ': setProgress aktiv');
+}
+{ // setnamnen ska inte likna de gamla
+  const first = n => n.split(' ')[0];
+  for (const sid of ['arkivet', 'smedjan']) ok(Object.keys(SETS).filter(k => k !== sid).every(k => first(SETS[k].name) !== first(SETS[sid].name) && first(SETS[k].name).slice(0, 4) !== first(SETS[sid].name).slice(0, 4)), sid + ': setnamnet liknar ett annat');
+}
+ok(Cards.synergy(Cards.byId('runstampeln'), ['blackhornet', 'runpennan']) === 'FULLBORDAR ARKIVETS VÄG', 'synergy fullbordar arkivet: ' + Cards.synergy(Cards.byId('runstampeln'), ['blackhornet', 'runpennan']));
+ok(Cards.synergy(Cards.byId('angpannan'), ['smidestangen']) === 'SMEDJANS VÄG 2/3', 'synergy smedjan 2/3');
+ok(Cards.synergy(Cards.byId('bokmarket'), ['kopistens_lupp']).includes('BÖCKER') && Cards.synergy(Cards.byId('lasglaset'), ['svartblacket']).includes('BLÄCK')
+  && Cards.synergy(Cards.byId('kopparmunstycket'), ['angvisslan']).includes('ÅNGA') && Cards.synergy(Cards.byId('nithandsken'), ['jattens_stad']).includes('SMIDE')
+  && Cards.synergy(Cards.byId('gjutarspaken'), ['kilremmen']).includes('METALL') && Cards.synergy(Cards.byId('svartblacket'), ['runristaren']).includes('RUNOR'), 'nya syn-taggar');
+ok(Cards.describe(Cards.byId('forbjudna_folianten')).includes('SET: ARKIVETS VÄG') && Cards.describe(Cards.byId('kolossens_hjarta')).includes('SET: SMEDJANS VÄG'), 'describe nämner de nya seten');
+{
+  const demo = fs.readFileSync(path.join(root, 'tools/cards-demo.html'), 'utf8');
+  for (const a of ['pact13', 'draft13', 'codex13']) ok(demo.includes("auto === '" + a + "'"), 'demo ?auto=' + a);
+}
+console.log('Version 13: ' + V13.length + ' kort ' + JSON.stringify(v13Rar) + ', pakter ' + Object.values(PACTS13).map(x => x[0]).join(' ') + ', set ' + ['arkivet', 'smedjan'].map(k => k + '(' + ALL.filter(c => c.set === k).map(c => c.id).join(',') + ')').join(' '));
 
 
 console.log('Version 7: ' + V7.length + ' kort ' + JSON.stringify(v7Rar) + ', pakter ' + Object.values(PACTS7).map(x => x[0]).join(' ') + ', set ' + ['skuggor', 'oknen'].map(k => k + '(' + ALL.filter(c => c.set === k).map(c => c.id).join(',') + ')').join(' '));

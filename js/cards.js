@@ -147,6 +147,15 @@ const MOD_KEYS = {
   mirrorShards: 'Chans (0-1) att dödade fiender splittras i skärvor som skadar fiender runt omkring',
   fungusHeal: 'HP du läker när du dödar en svampfiende (platt)',
   whipReach: 'Extra räckvidd i rutor för piskan och närstrid (platt)',
+  // version 13: Det förbjudna biblioteket och Gjuteriet – bläck, rullband, ångventiler, runor, ånga, pulpeter, gjuterifiender och stansar
+  inkResist: 'Andel mindre effekt av bläck (bläckpölar och bläckslem: mindre mörker i kanten och mindre inbromsning)',
+  beltSpeed: 'Andel högre fart på rullband som går åt rätt håll (samma håll som du rör dig)',
+  ventResist: 'Andel mindre skada och knuff från ångventiler och ånga (ångautomaternas ångkon)',
+  runeDmg: 'Andel extra skada med runor (runbokens målsökande runor)',
+  steamDmg: 'Andel extra skada med ånga (ångkanonen och skållning)',
+  bookLore: 'Extra effekt när du läser en pulpet (platt: varje steg gör bokens tillfälliga bonus starkare och längre)',
+  forgeArmor: 'Rustning per dödad gjuterifiende (smältgolem, ångautomat, gnistdrönare; platt)',
+  pressResist: 'Andel mindre skada från stansar, pressar och andra fällor',
 };
 const KEYS = Object.keys(MOD_KEYS);
 
@@ -586,6 +595,46 @@ const DEFS = [
   // legendariska
   ['urmycelet', 'URMYCELET', 'legendarisk', { sporeResist: 0.4, fungusHeal: 4, bounceHeight: 0.3, poisonChance: 0.1 }, 1, '40 % MINDRE EFFEKT\nAV SPORER\n+4 HP PER SVAMPFIENDE\n+30 % HÖGRE STUDS\n10 % CHANS ATT FÖRGIFTA', { unlock: 50 }],
   ['tusenspegeln', 'TUSENSPEGELN', 'legendarisk', { reflectDmg: 0.4, mirrorShards: 0.1, illusionSight: 0.3, teleportShield: 2 }, 1, '+40 % SKADA PÅ\nSTUDSADE SKOTT\n10 % CHANS TILL SKÄRVOR\n30 % SE IGENOM ILLUSIONER\n2 S OSÅRBAR EFTER TELEPORT', { unlock: 50 }],
+  // ---- version 13: pakter och uppgraderingar för runboken och ångkanonen ----
+  ['pakt_runbok', 'SKRIVARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR BLÄCK\n4 UNIKA UPPGRADERINGAR\nBARA RUNBOK RESTEN AV RUNDAN', { pact: 'runebook', bad: 1 }],
+  ['pakt_angkanon', 'PANNMÄSTARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR BRÄNSLE\n4 UNIKA UPPGRADERINGAR\nBARA ÅNGKANON RESTEN AV RUNDAN', { pact: 'steamcannon', bad: 1 }],
+  ['runklyvningen', 'RUNKLYVNINGEN', 'legendarisk', {}, 1, 'RUNORNA DELAR SIG\nVID TRÄFF', { weapon: 'runebook', wup: 'rb_split' }],
+  ['sokarrunan', 'SÖKARRUNAN', 'ovanlig', {}, 1, 'STARKARE MÅLSÖKNING', { weapon: 'runebook', wup: 'rb_seek' }],
+  ['pappersstormen', 'PAPPERSSTORMEN', 'sallsynt', {}, 1, 'SIDVIRVELN HÅLLER LÄNGRE\nOCH KASTAR TILLBAKA SKOTT', { weapon: 'runebook', wup: 'rb_ward' }],
+  ['blackstanket', 'BLÄCKSTÄNKET', 'sallsynt', {}, 1, 'TRÄFFAR LÄMNAR BLÄCK\nSOM SAKTAR FIENDER', { weapon: 'runebook', wup: 'rb_ink' }],
+  ['langroret', 'LÅNGRÖRET', 'ovanlig', {}, 1, 'LÄNGRE ÅNGKON', { weapon: 'steamcannon', wup: 'sc_range' }],
+  ['skallningen', 'SKÅLLNINGEN', 'sallsynt', {}, 1, 'ÅNGAN SKÅLLAR:\nSKADA ÖVER TID', { weapon: 'steamcannon', wup: 'sc_scald' }],
+  ['tryckstoten', 'TRYCKSTÖTEN', 'legendarisk', {}, 1, 'KNUFFAR HÅRDARE\nFIENDER SOM SLÅR I\nVÄGGAR TAR SKADA', { weapon: 'steamcannon', wup: 'sc_push' }],
+  ['overtrycket', 'ÖVERTRYCKET', 'ovanlig', {}, 1, 'SNABBARE TRYCK', { weapon: 'steamcannon', wup: 'sc_fast' }],
+  // ---- version 13: böcker, bläck, runor, ånga, smide och metall (Det förbjudna biblioteket och Gjuteriet) ----
+  // vanliga
+  ['blackhornet', 'BLÄCKHORNET', 'vanlig', { inkResist: 0.2 }, 3, '20 % MINDRE EFFEKT\nAV BLÄCK'],
+  ['runpennan', 'RUNPENNAN', 'vanlig', { runeDmg: 0.12 }, 3, '+12 % SKADA MED RUNOR'],
+  ['ventilnyckeln', 'VENTILNYCKELN', 'vanlig', { ventResist: 0.2 }, 3, '20 % MINDRE SKADA\nFRÅN ÅNGA'],
+  ['kopparmunstycket', 'KOPPARMUNSTYCKET', 'vanlig', { steamDmg: 0.12 }, 3, '+12 % SKADA MED ÅNGA'],
+  ['bokmarket', 'BOKMÄRKET', 'vanlig', { bookLore: 1 }, 2, '+1 EXTRA EFFEKT NÄR\nDU LÄSER EN PULPET'],
+  ['smidestangen', 'SMIDESTÅNGEN', 'vanlig', { forgeArmor: 2 }, 3, '+2 RUSTNING PER DÖDAD\nGJUTERIFIENDE'],
+  ['gjutarstovlarna', 'GJUTARSTÖVLARNA', 'vanlig', { beltSpeed: 0.2 }, 3, '+20 % FART PÅ RULLBAND\nÅT RÄTT HÅLL'],
+  ['nithandsken', 'NITHANDSKEN', 'vanlig', { pressResist: 0.2 }, 3, '20 % MINDRE SKADA\nFRÅN STANSAR'],
+  ['lasglaset', 'LÄSGLASET', 'vanlig', { bookLore: 1, inkResist: 0.1 }, 2, '+1 EXTRA PULPETEFFEKT\n10 % MINDRE EFFEKT\nAV BLÄCK', { unlock: 10 }],
+  ['angvisslan', 'ÅNGVISSLAN', 'vanlig', { ventResist: 0.15, steamDmg: 0.08 }, 3, '15 % MINDRE SKADA\nFRÅN ÅNGA\n+8 % SKADA MED ÅNGA', { unlock: 10 }],
+  // ovanliga
+  ['runstampeln', 'RUNSTÄMPELN', 'ovanlig', { runeDmg: 0.2, inkResist: 0.15 }, 2, '+20 % SKADA MED RUNOR\n15 % MINDRE EFFEKT\nAV BLÄCK', { unlock: 15 }],
+  ['anggallret', 'ÅNGGALLRET', 'ovanlig', { ventResist: 0.3, heatResist: 0.1 }, 2, '30 % MINDRE SKADA\nFRÅN ÅNGA\n-10 % HETTA OCH ELD'],
+  ['stalforkladet', 'STÅLFÖRKLÄDET', 'ovanlig', { forgeArmor: 3, pressResist: 0.15 }, 2, '+3 RUSTNING PER DÖDAD\nGJUTERIFIENDE\n15 % MINDRE SKADA\nFRÅN STANSAR', { unlock: 15 }],
+  ['assjans_klinga', 'ÄSSJANS KLINGA', 'ovanlig', { forgeArmor: 2, burnChance: 0.08 }, 2, '+2 RUSTNING PER DÖDAD\nGJUTERIFIENDE\n+8 % BRANDCHANS'],
+  ['kopistens_lupp', 'KOPISTENS LUPP', 'ovanlig', { bookLore: 2, critChance: 0.05 }, 2, '+2 EXTRA EFFEKT NÄR\nDU LÄSER EN PULPET\n+5 % KRITCHANS', { unlock: 20 }],
+  ['kilremmen', 'KILREMMEN', 'ovanlig', { beltSpeed: 0.3, moveSpeed: 0.05 }, 2, '+30 % FART PÅ RULLBAND\nÅT RÄTT HÅLL\n+5 % RÖRELSEHASTIGHET'],
+  ['svartblacket', 'SVARTBLÄCKET', 'ovanlig', { runeDmg: 0.3, inkResist: -0.3 }, 1, '+30 % SKADA MED RUNOR\nBLÄCK 30 % STARKARE', { curse: true, bad: 1 }],
+  // sällsynta
+  ['eldskriften', 'ELDSKRIFTEN', 'sallsynt', { runeDmg: 0.3, bookLore: 1, burnChance: 0.08 }, 1, '+30 % SKADA MED RUNOR\n+1 EXTRA PULPETEFFEKT\n+8 % BRANDCHANS', { unlock: 30 }],
+  ['angpannan', 'ÅNGPANNAN', 'sallsynt', { steamDmg: 0.3, ventResist: 0.3 }, 1, '+30 % SKADA MED ÅNGA\n30 % MINDRE SKADA\nFRÅN ÅNGA', { unlock: 25 }],
+  ['jattens_stad', 'JÄTTENS STÄD', 'sallsynt', { forgeArmor: 4, pressResist: 0.25 }, 1, '+4 RUSTNING PER DÖDAD\nGJUTERIFIENDE\n25 % MINDRE SKADA\nFRÅN STANSAR', { unlock: 30 }],
+  ['gjutarspaken', 'GJUTARSPAKEN', 'sallsynt', { beltSpeed: 0.4, pressResist: 0.2 }, 1, '+40 % FART PÅ RULLBAND\nÅT RÄTT HÅLL\n20 % MINDRE SKADA\nFRÅN STANSAR', { unlock: 25 }],
+  ['smalthjartat', 'SMÄLTHJÄRTAT', 'sallsynt', { forgeArmor: 5, steamDmg: 0.25, ventResist: -0.4 }, 1, '+5 RUSTNING PER DÖDAD\nGJUTERIFIENDE\n+25 % SKADA MED ÅNGA\nÅNGA GÖR 40 % MER SKADA', { curse: true, bad: 1 }],
+  // legendariska
+  ['forbjudna_folianten', 'FÖRBJUDNA FOLIANTEN', 'legendarisk', { bookLore: 2, runeDmg: 0.3, inkResist: 0.3, xpMul: 0.1 }, 1, '+2 EXTRA PULPETEFFEKT\n+30 % SKADA MED RUNOR\n30 % MINDRE EFFEKT AV BLÄCK\n+10 % ERFARENHET', { unlock: 50 }],
+  ['kolossens_hjarta', 'KOLOSSENS HJÄRTA', 'legendarisk', { forgeArmor: 4, steamDmg: 0.3, ventResist: 0.3, beltSpeed: 0.3 }, 1, '+4 RUSTNING PER DÖDAD\nGJUTERIFIENDE\n+30 % SKADA MED ÅNGA\n30 % MINDRE SKADA AV ÅNGA\n+30 % FART PÅ RULLBAND', { unlock: 50 }],
 ];
 
 // ---------- Set och synergier ----------
@@ -613,6 +662,9 @@ const SETS = {
   // version 11: MYCELIETS VÄG (Svampriket: svampar och sporer) och SPEGELNS VÄG (Spegelpalatset: speglar, illusioner och glas)
   myceliet: { name: 'MYCELIETS VÄG',  text: '25 % MINDRE EFFEKT AV SPORER\n+2 HP PER DÖDAD SVAMPFIENDE\n+20 % HÖGRE STUDS', mods: { sporeResist: 0.25, fungusHeal: 2, bounceHeight: 0.2 } },
   spegeln: { name: 'SPEGELNS VÄG',    text: '+25 % SKADA PÅ STUDSADE SKOTT\n8 % CHANS ATT FIENDER SPLITTRAS I SKÄRVOR\n20 % CHANS ATT SE IGENOM ILLUSIONER', mods: { reflectDmg: 0.25, mirrorShards: 0.08, illusionSight: 0.2 } },
+  // version 13: ARKIVETS VÄG (Det förbjudna biblioteket: böcker, bläck och runor) och SMEDJANS VÄG (Gjuteriet: smide, ånga och metall)
+  arkivet: { name: 'ARKIVETS VÄG',    text: '25 % MINDRE EFFEKT AV BLÄCK\n+20 % SKADA MED RUNOR\n+1 EXTRA EFFEKT NÄR DU LÄSER EN PULPET', mods: { inkResist: 0.25, runeDmg: 0.2, bookLore: 1 } },
+  smedjan: { name: 'SMEDJANS VÄG',    text: '+2 RUSTNING PER DÖDAD GJUTERIFIENDE\n+20 % SKADA MED ÅNGA\n20 % MINDRE SKADA FRÅN STANSAR', mods: { forgeArmor: 2, steamDmg: 0.2, pressResist: 0.2 } },
 };
 // Synergitaggar: kort med samma tagg spelar bra ihop (t.ex. eld + explosion, krit + kritskada).
 const SYN = { eld: 'ELD', krit: 'KRIT', gift: 'GIFT', frost: 'FROST', blixt: 'BLIXT', skold: 'SKÖLD', guld: 'GULD', liv: 'LIV', rusning: 'RUSNING', skugga: 'SKUGGA', granat: 'GRANAT',
@@ -621,7 +673,8 @@ const SYN = { eld: 'ELD', krit: 'KRIT', gift: 'GIFT', frost: 'FROST', blixt: 'BL
   ljus: 'LAMPAN', spel: 'SPEL OCH BANK', vana: 'VAPENVANA', sjal: 'SJÄLAR',
   hav: 'HAVET', kristall: 'KRISTALL', kunskap: 'KUNSKAP', avgrund: 'AVGRUNDEN', hax: 'HÄXOR',
   urverk: 'URVERK', tid: 'TIDEN', vind: 'VINDEN', storm: 'STORMEN', hojd: 'HÖJDEN',
-  svamp: 'SVAMPAR', spor: 'SPORER', spegel: 'SPEGLAR', illusion: 'ILLUSIONER', glas: 'GLAS' };
+  svamp: 'SVAMPAR', spor: 'SPORER', spegel: 'SPEGLAR', illusion: 'ILLUSIONER', glas: 'GLAS',
+  bok: 'BÖCKER', black: 'BLÄCK', anga: 'ÅNGA', smide: 'SMIDE', metall: 'METALL' };
 // set och syn för alla kort samlas här: id: [set eller '', syn-taggar...]
 const TAGS = {
   // eld och explosioner
@@ -699,6 +752,15 @@ const TAGS = {
   sporkokongen: ['', 'spor', 'liv'], myceltraden: ['', 'svamp', 'narstrid'], hyfkedjan: ['', 'svamp', 'narstrid'],
   resestenen: ['', 'spegel'], portvaktarens_ring: ['', 'spegel'], irrblosset: ['', 'illusion', 'spegel'], tvillingporten: ['', 'spegel', 'illusion'],
   glassplittret: ['', 'glas'], glaskroppen: ['', 'glas', 'spegel'],
+  // version 13: ARKIVETS VÄG (biblioteket) och SMEDJANS VÄG (gjuteriet); böcker, bläck, runor, ånga, smide och metall
+  blackhornet: ['arkivet', 'black'], runpennan: ['arkivet', 'black', 'runa'], runstampeln: ['arkivet', 'runa', 'black'],
+  eldskriften: ['arkivet', 'runa', 'bok', 'eld'], forbjudna_folianten: ['arkivet', 'bok', 'runa', 'black'],
+  smidestangen: ['smedjan', 'smide', 'metall'], ventilnyckeln: ['smedjan', 'anga', 'metall'], stalforkladet: ['smedjan', 'smide', 'metall'],
+  angpannan: ['smedjan', 'anga', 'metall'], kolossens_hjarta: ['smedjan', 'smide', 'anga', 'metall'],
+  bokmarket: ['', 'bok'], lasglaset: ['', 'bok', 'black'], kopistens_lupp: ['', 'bok', 'krit'], svartblacket: ['', 'black', 'runa'],
+  kopparmunstycket: ['', 'anga', 'metall'], angvisslan: ['', 'anga'], anggallret: ['', 'anga', 'metall'], smalthjartat: ['', 'smide', 'anga'],
+  gjutarstovlarna: ['', 'metall', 'rusning'], kilremmen: ['', 'metall', 'rusning'], gjutarspaken: ['', 'metall'],
+  nithandsken: ['', 'smide', 'metall'], assjans_klinga: ['', 'smide', 'eld'], jattens_stad: ['', 'smide', 'metall'],
 };
 
 const ALL = DEFS.map(([id, name, rarity, mods, max, text, extra]) => {
@@ -820,6 +882,9 @@ const FMT = {
   sporeResist: ['p', 'SKYDD MOT SPORER'], bounceHeight: ['p', 'HÖGRE STUDS'], teleportShield: ['n', 'S OSÅRBAR EFTER TELEPORT'],
   reflectDmg: ['p', 'SKADA PÅ STUDSADE SKOTT'], illusionSight: ['p', 'CHANS ATT SE IGENOM ILLUSIONER'], mirrorShards: ['p', 'CHANS TILL SKÄRVOR'],
   fungusHeal: ['n', 'HP PER SVAMPFIENDE'], whipReach: ['n', 'RUTOR RÄCKVIDD FÖR PISKA'],
+  inkResist: ['p', 'SKYDD MOT BLÄCK'], beltSpeed: ['p', 'FART PÅ RULLBAND'], ventResist: ['p', 'SKYDD MOT ÅNGA'],
+  runeDmg: ['p', 'SKADA MED RUNOR'], steamDmg: ['p', 'SKADA MED ÅNGA'], bookLore: ['n', 'EXTRA PULPETEFFEKT'],
+  forgeArmor: ['n', 'RUSTNING PER GJUTERIFIENDE'], pressResist: ['p', 'SKYDD MOT STANSAR'],
 };
 const INVERT = { damageTaken: true };
 const num = v => String(Math.round(v * 100) / 100).replace('.', ',');
@@ -965,7 +1030,7 @@ function preview(card, mods, ownedIds) {
 // ---------- Dragning ----------
 // Vikten skiftar mot sällsyntare med djup (våning, 0..) och luck (summan av luck-modden, 0.1 per kort).
 const CURSE_WEIGHT = 0.8; // förbannade kort dyker upp ibland
-const PACT_WEIGHT = 0.53, UPGRADE_WEIGHT = 9; // tjugosex pakter (vikten sänkt så att alla pakter tillsammans syns lika ofta som de fjorton förut); uppgraderingarna väger lite mer sedan korthögen växt (version 11: 8 -> 9): en pakt i ungefär var fjärde dragning; efter pakten kommer uppgraderingarna tätt
+const PACT_WEIGHT = 0.49, UPGRADE_WEIGHT = 10; // tjugoåtta pakter (vikten sänkt så att alla pakter tillsammans syns lika ofta som de fjorton förut; version 13: 0,53 -> 0,49); uppgraderingarna väger lite mer sedan korthögen växt (version 11: 8 -> 9, version 13: 9 -> 10): en pakt i ungefär var fjärde dragning; efter pakten kommer uppgraderingarna tätt
 function rarityWeight(rarity, depth, luck) {
   const t = Math.max(0, (depth || 0) * 0.25 + (luck || 0) * 2.5); // 0 = början av rundan
   const base = RARITY[rarity].weight;
@@ -1025,7 +1090,8 @@ const canSell = card => sellPrice(card, 0) > 0;
 const WEAPON_NAME = { pistol: 'PISTOL', shotgun: 'HAGELGEVÄR', rifle: 'GEVÄR', smg: 'KPIST', dbshotgun: 'DUBBELBÖSSA', crossbow: 'ARMBORST', flaregun: 'SIGNALPISTOL', sniper: 'PRICKSKYTTE',
   axe: 'YXA', flamer: 'ELDKASTARE', launcher: 'GRANATKASTARE', nailgun: 'SPIKGEVÄR', staff: 'BLIXTSTAV', bow: 'LÅNGBÅGE',
   knives: 'KASTKNIVAR', hammer: 'STRIDSHAMMARE', musket: 'MUSKÖT', harpoon: 'HARPUN', boomerang: 'BUMERANG', prism: 'PRISMA',
-  sawlauncher: 'SÅGBLAD', windgun: 'VINDBÖSSA', spear: 'SPJUT', sporelauncher: 'SPORKASTARE', mirrorshield: 'SPEGELSKÖLD', whip: 'PISKA' };
+  sawlauncher: 'SÅGBLAD', windgun: 'VINDBÖSSA', spear: 'SPJUT', sporelauncher: 'SPORKASTARE', mirrorshield: 'SPEGELSKÖLD', whip: 'PISKA',
+  runebook: 'RUNBOK', steamcannon: 'ÅNGKANON' };
 // etikett ovanför kortets namn: förbannelse, pakt, aktiv förmåga ('AKTIV · 8 S'), vilket vapen uppgraderingen hör till eller sammansmält
 const activeTag = card => 'AKTIV · ' + num(card.cd || 0) + ' S';
 function tag(card) {
