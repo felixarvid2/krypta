@@ -1269,6 +1269,7 @@ Kombinerade utmaningar multiplicerar själarna. Sparplatsen väljs på startskä
   - Falska dörrar (Ʃ) som väcker en drömätare.
   - Drömlyktor (ƪ).
   - Sömnens dimma (Ʀ): fiender längre bort än 4 rutor blir nästan osynliga, och du blir dåsig.
+- **Banorna:** trädgården byggs utomhus med häckgångar, murade trädgårdar, statygångar och fontängårdar; drömriket med schackbrädesalar, salar med rader av glidande väggar och rum med falska dörrar. Båda kommer aldrig först i en omgång. Bossarenorna `garden` och `dream` finns, och trädgårdsmästaren och Jon Blund vaktar även vanliga våningar.
 - **Vapen:**
   - **Trädgårdssaxen (Ʊ):** två snabba klipp. Högerklick kastar saxen, som kommer tillbaka.
   - **Drömstaven (Ʋ, ammo drömflaskor Ƴ):** en långsam stjärna som saktar ned allt den passerar och smäller i sömn (bedövar).
@@ -1291,6 +1292,7 @@ Kombinerade utmaningar multiplicerar själarna. Sparplatsen väljs på startskä
   - Klockor (Ɛ) bedövar fiender inom 6 rutor men väcker resten av våningen.
   - Kyrkbänkar (Ǝ).
 - **Bikupan (`hive`):** honung (Ɩ) som klibbar fast. Larvsäckar (Ɨ) kläcks när du kommer nära, men går att krossa med E innan dess.
+- **Banorna:** katedralen har ett långhus med bänkrader, kor och altare, dopkapell och klocktorn; bikupan sexkantiga vaxceller, larvkammare och honungssalar, och arbetsbin i svärmar om 3–6. Bossarenorna `cathedral` och `hive` finns, och kardinalen och bidrottningen vaktar även vanliga våningar.
 - **Vapen:**
   - **Rökelsekaret (ƛ):** ett varv runt dig som träffar allt omkring, och röken läker dig lite.
   - **Bikastaren (Ɲ, ammo bikupor ƞ):** bin som söker upp fiender och sticker dem tre gånger.
@@ -1308,7 +1310,8 @@ Kombinerade utmaningar multiplicerar själarna. Sparplatsen väljs på startskä
 ## Version 14: Arenorna
 
 - **Arenarum (`level.arenas`):** när du går in fälls gallren ned i dörröppningarna och två eller tre vågor av våningens fiender kommer. När den sista är död går gallren upp, och en belöning (ett kortval, guld och hälsa eller ammo) ligger i mitten.
-- **Nya rumstyper** i de gamla biomerna, från bangeneratorn.
+- **Arenornas regler:** från våning 2 i ungefär varannan bana i biomerna med raka rum (aldrig start-, väktar- eller utgångsrummet). Ålar och jordmaskar kommer inte i vågorna, och en våg som inte går att döda släpper efter 45 sekunder.
+- **Sjutton nya rumstyper**, en per gammal biom: till exempel pelarsalen, stencirkeln, bron över lavan, kristallkatedralen och läsesalen. Ungefär var fjärde bana får en.
 - **Sex fiender i de mellersta biomerna:**
   - Snöfantomen (Ƅ, frost): nästan osynlig tills den är nära.
   - Lavaormen (ƅ, vulkan): dyker ned och bryter upp och spottar lava.

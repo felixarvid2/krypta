@@ -966,7 +966,12 @@ function weaponFor(depth) { // ett nytt vapen per våning i slumpad ordning; de 
 const BIOME_IDS = ['dungeon', 'caves', 'graveyard', 'forest', 'courtyard', 'swamp', 'frost', 'volcano', 'tomb', 'crystal', 'sunken', 'clock', 'sky', 'fungus', 'mirror', 'library', 'foundry', 'cathedral', 'hive', 'garden', 'dream'];
 let practice = null; // övningsläge: { biome } eller { boss }
 const biomeFor = depth => run && run.practice && run.practice.biome ? run.practice.biome : BIOME_IDS.includes(params.get('biome')) ? params.get('biome') : run && run.biomeChoice && run.biomeChoice[depth] ? run.biomeChoice[depth]
-  : RNG(run.seed).fork('biom' + cycleOf(depth)).shuffle(BIOME_IDS.slice())[(cyclePos(depth) - 1) % BIOME_IDS.length];
+  : lateLast(RNG(run.seed).fork('biom' + cycleOf(depth)).shuffle(BIOME_IDS.slice()))[(cyclePos(depth) - 1) % BIOME_IDS.length];
+function lateLast(order) { // trädgården och drömriket är sena biomer: aldrig först i en omgång
+  const LATE = ['garden', 'dream'];
+  if (LATE.includes(order[0])) { const i = order.findIndex(b => !LATE.includes(b)); if (i > 0) [order[0], order[i]] = [order[i], order[0]]; }
+  return order;
+}
 // väktaren på varje vanlig våning: en annan boss än varvets egen, i mindre format
 const guardianFor = depth => { const own = bossFor((cycleOf(depth) + 1) * (FLOORS + 1)); return RNG(run.seed).fork('väktare' + depth).pick(bossPool().filter(b => b !== own)); };
 function loadFloor(depth) {
@@ -1353,7 +1358,7 @@ const BIOME_FX = {
   garden: { grade: [0.96, 1.05, 0.92], fogK: 0.07, amb: [['garden_hum', 0.3, 1], ['amb_wind', 0.15, 1.1]], weather: 'leaves' },
   dream: { grade: [1.05, 0.9, 1.2], fogK: 0.11, amb: [['dream_hum', 0.35, 1], ['drone', 0.12, 0.7]], weather: 'sparkle' },
   cathedral: { grade: [1.1, 0.94, 0.96], fogK: 0.09, amb: [['cathedral_hum', 0.3, 1], ['drone', 0.12, 0.8]], weather: 'dust' },
-  hive: { grade: [1.12, 1.04, 0.8], fogK: 0.1, amb: [['hive_hum', 0.35, 1], ['amb_drip', 0.12, 0.9]], weather: 'spores' },
+  hive: { grade: [0.8, 0.7, 0.55], fogK: 0.12, amb: [['hive_hum', 0.35, 1], ['amb_drip', 0.12, 0.9]], weather: 'spores' },
   library: { grade: [1.08, 1.0, 0.92], fogK: 0.095, amb: [['library_hum', 0.3, 1], ['drone', 0.1, 1.3]], weather: 'dust' },
   foundry: { grade: [1.14, 0.98, 0.86], fogK: 0.08, amb: [['foundry_hum', 0.35, 1], ['gear_tick', 0.12, 0.8]], weather: 'ash' },
   fungus: { grade: [0.95, 1.08, 1.02], fogK: 0.1, amb: [['shroom_hum', 0.3, 1], ['amb_drip', 0.18, 1.1]], weather: 'spores' },
