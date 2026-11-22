@@ -156,6 +156,15 @@ const MOD_KEYS = {
   bookLore: 'Extra effekt när du läser en pulpet (platt: varje steg gör bokens tillfälliga bonus starkare och längre)',
   forgeArmor: 'Rustning per dödad gjuterifiende (smältgolem, ångautomat, gnistdrönare; platt)',
   pressResist: 'Andel mindre skada från stansar, pressar och andra fällor',
+  // version 15: Blodkatedralen och Bikupan – ljusstråk, välsignelse, honung, larver, rökelsekaret, bin, klockor och blodfuntar
+  blessDur: 'Andel längre välsignelse från ljusstråk (de blyinfattade fönstrens färgade ljus på golvet)',
+  honeyResist: 'Andel mindre inbromsning i honung (klibbiga honungsrutor)',
+  larvaDmg: 'Andel extra skada mot larver och larvsäckar',
+  censerHeal: 'Extra HP du läker per träff med rökelsekaret (platt)',
+  beeDmg: 'Andel extra skada med bin (bikastarens bin och drottningar)',
+  bellStun: 'Extra sekunder bedövning när du ringer i en klocka (platt)',
+  fontBreak: 'HP du läker när du slår sönder en blodfunt (platt)',
+  holyDmg: 'Andel extra skada medan du är välsignad (efter ett ljusstråk)',
 };
 const KEYS = Object.keys(MOD_KEYS);
 
@@ -635,6 +644,46 @@ const DEFS = [
   // legendariska
   ['forbjudna_folianten', 'FÖRBJUDNA FOLIANTEN', 'legendarisk', { bookLore: 2, runeDmg: 0.3, inkResist: 0.3, xpMul: 0.1 }, 1, '+2 EXTRA PULPETEFFEKT\n+30 % SKADA MED RUNOR\n30 % MINDRE EFFEKT AV BLÄCK\n+10 % ERFARENHET', { unlock: 50 }],
   ['kolossens_hjarta', 'KOLOSSENS HJÄRTA', 'legendarisk', { forgeArmor: 4, steamDmg: 0.3, ventResist: 0.3, beltSpeed: 0.3 }, 1, '+4 RUSTNING PER DÖDAD\nGJUTERIFIENDE\n+30 % SKADA MED ÅNGA\n30 % MINDRE SKADA AV ÅNGA\n+30 % FART PÅ RULLBAND', { unlock: 50 }],
+  // ---- version 15: pakter och uppgraderingar för rökelsekaret och bikastaren ----
+  ['pakt_rokelsekar', 'MINISTRANTENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nRÖKELSEKARET BEHÖVER INGEN AMMO\n4 UNIKA UPPGRADERINGAR\nBARA RÖKELSEKAR RESTEN AV RUNDAN', { pact: 'censer', bad: 1 }],
+  ['pakt_bikastare', 'BIODLARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR BIN\n4 UNIKA UPPGRADERINGAR\nBARA BIKASTARE RESTEN AV RUNDAN', { pact: 'hivelauncher', bad: 1 }],
+  ['langkedjan', 'LÅNGKEDJAN', 'ovanlig', {}, 1, 'LÄNGRE RÄCKVIDD', { weapon: 'censer', wup: 'cs_reach' }],
+  ['vigda_roken', 'DEN VIGDA RÖKEN', 'sallsynt', {}, 1, 'RÖKEN LÄKER MER', { weapon: 'censer', wup: 'cs_heal' }],
+  ['skarselden', 'SKÄRSELDEN', 'legendarisk', {}, 1, 'GLÖDEN SÄTTER FYR\nPÅ FIENDERNA', { weapon: 'censer', wup: 'cs_fire' }],
+  ['snabbsvingen', 'SNABBSVINGEN', 'ovanlig', {}, 1, 'SNABBARE SVING', { weapon: 'censer', wup: 'cs_fast' }],
+  ['svarmtiden', 'SVÄRMTIDEN', 'sallsynt', {}, 1, 'FLER BIN PER SKOTT', { weapon: 'hivelauncher', wup: 'hl_swarm' }],
+  ['giftgadden', 'GIFTGADDEN', 'ovanlig', {}, 1, 'BINAS STICK FÖRGIFTAR', { weapon: 'hivelauncher', wup: 'hl_poison' }],
+  ['drottninggelen', 'DROTTNINGGELÉN', 'legendarisk', {}, 1, 'IBLAND FLYGER EN DROTTNING\nSOM GÖR TREFALDIG SKADA', { weapon: 'hivelauncher', wup: 'hl_queen' }],
+  ['flyghalet', 'FLYGHÅLET', 'ovanlig', {}, 1, 'SNABBARE SKOTT', { weapon: 'hivelauncher', wup: 'hl_fast' }],
+  // ---- version 15: katedral, blod, ljus, klockor, bin, honung och vax (Blodkatedralen och Bikupan) ----
+  // vanliga
+  ['glasmalningen', 'GLASMÅLNINGEN', 'vanlig', { blessDur: 0.2 }, 3, '+20 % LÄNGRE VÄLSIGNELSE\nFRÅN LJUSSTRÅK'],
+  ['vaxsulorna', 'VAXSULORNA', 'vanlig', { honeyResist: 0.2 }, 3, '20 % MINDRE INBROMSNING\nI HONUNG'],
+  ['larvkroken', 'LARVKROKEN', 'vanlig', { larvaDmg: 0.15 }, 3, '+15 % SKADA MOT LARVER'],
+  ['rokelsekornen', 'RÖKELSEKORNEN', 'vanlig', { censerHeal: 1 }, 2, '+1 HP PER TRÄFF MED\nRÖKELSEKARET'],
+  ['bigadden', 'BIGADDEN', 'vanlig', { beeDmg: 0.12 }, 3, '+12 % SKADA MED BIN'],
+  ['klockrepet', 'KLOCKREPET', 'vanlig', { bellStun: 1 }, 2, '+1 S LÄNGRE BEDÖVNING\nFRÅN KLOCKOR'],
+  ['offerskalen', 'OFFERSKÅLEN', 'vanlig', { fontBreak: 4 }, 3, '+4 HP NÄR DU KROSSAR\nEN BLODFUNT'],
+  ['helgonglorian', 'HELGONGLORIAN', 'vanlig', { holyDmg: 0.1 }, 3, '+10 % SKADA MEDAN DU\nÄR VÄLSIGNAD'],
+  ['vaxljuset', 'VAXLJUSET', 'vanlig', { blessDur: 0.15, censerHeal: 1 }, 2, '+15 % LÄNGRE VÄLSIGNELSE\n+1 HP PER RÖKELSETRÄFF', { unlock: 10 }],
+  ['honungskakan', 'HONUNGSKAKAN', 'vanlig', { honeyResist: 0.15, larvaDmg: 0.08 }, 3, '15 % MINDRE INBROMSNING\nI HONUNG\n+8 % SKADA MOT LARVER', { unlock: 10 }],
+  // ovanliga
+  ['kyrkklockan', 'KYRKKLOCKAN', 'ovanlig', { bellStun: 2, holyDmg: 0.08 }, 2, '+2 S LÄNGRE BEDÖVNING\nFRÅN KLOCKOR\n+8 % SKADA SOM VÄLSIGNAD', { unlock: 15 }],
+  ['blodkalken', 'BLODKALKEN', 'ovanlig', { fontBreak: 6, lifesteal: 0.02 }, 2, '+6 HP NÄR DU KROSSAR\nEN BLODFUNT\n2 % AV SKADAN BLIR HP'],
+  ['biodlarhandskarna', 'BIODLARHANDSKARNA', 'ovanlig', { beeDmg: 0.2, honeyResist: 0.15 }, 2, '+20 % SKADA MED BIN\n15 % MINDRE INBROMSNING\nI HONUNG', { unlock: 15 }],
+  ['larvsaxen', 'LARVSAXEN', 'ovanlig', { larvaDmg: 0.25, poisonChance: 0.05 }, 2, '+25 % SKADA MOT LARVER\n+5 % CHANS ATT FÖRGIFTA'],
+  ['myrran', 'MYRRAN', 'ovanlig', { censerHeal: 2, healMul: 0.1 }, 2, '+2 HP PER TRÄFF MED\nRÖKELSEKARET\n+10 % HELNING', { unlock: 20 }],
+  ['rosettfonstret', 'ROSETTFÖNSTRET', 'ovanlig', { blessDur: 0.3, holyDmg: 0.1 }, 2, '+30 % LÄNGRE VÄLSIGNELSE\n+10 % SKADA SOM VÄLSIGNAD'],
+  ['sota_fallan', 'DEN SÖTA FÄLLAN', 'ovanlig', { beeDmg: 0.3, honeyResist: -0.3 }, 1, '+30 % SKADA MED BIN\nHONUNG BROMSAR 30 % MER', { curse: true, bad: 1 }],
+  // sällsynta
+  ['klockarens_hammare', 'KLOCKARENS HAMMARE', 'sallsynt', { bellStun: 2, meleeDmg: 0.15, fontBreak: 5 }, 1, '+2 S LÄNGRE BEDÖVNING\nFRÅN KLOCKOR\n+15 % NÄRSTRIDSSKADA\n+5 HP PER KROSSAD FUNT', { unlock: 30 }],
+  ['helgonreliken', 'HELGONRELIKEN', 'sallsynt', { holyDmg: 0.25, blessDur: 0.25 }, 1, '+25 % SKADA MEDAN DU\nÄR VÄLSIGNAD\n+25 % LÄNGRE VÄLSIGNELSE', { unlock: 25 }],
+  ['yngelvaktaren', 'YNGELVAKTAREN', 'sallsynt', { larvaDmg: 0.3, honeyResist: 0.25 }, 1, '+30 % SKADA MOT LARVER\n25 % MINDRE INBROMSNING\nI HONUNG', { unlock: 30 }],
+  ['rokelsemolnet', 'RÖKELSEMOLNET', 'sallsynt', { censerHeal: 3, regen: 0.2 }, 1, '+3 HP PER TRÄFF MED\nRÖKELSEKARET\n+0,2 HP PER SEKUND', { unlock: 25 }],
+  ['blodsdopet', 'BLODSDOPET', 'sallsynt', { fontBreak: 10, holyDmg: 0.2, healMul: -0.25 }, 1, '+10 HP PER KROSSAD FUNT\n+20 % SKADA SOM VÄLSIGNAD\n-25 % HELNING', { curse: true, bad: 1 }],
+  // legendariska
+  ['kardinalens_ring', 'KARDINALENS RING', 'legendarisk', { holyDmg: 0.3, blessDur: 0.4, bellStun: 2, fontBreak: 6 }, 1, '+30 % SKADA SOM VÄLSIGNAD\n+40 % LÄNGRE VÄLSIGNELSE\n+2 S LÄNGRE KLOCKBEDÖVNING\n+6 HP PER KROSSAD FUNT', { unlock: 50 }],
+  ['drottningens_krona', 'BIDROTTNINGENS KRONA', 'legendarisk', { beeDmg: 0.3, larvaDmg: 0.3, honeyResist: 0.3, poisonChance: 0.1 }, 1, '+30 % SKADA MED BIN\n+30 % SKADA MOT LARVER\n30 % MINDRE INBROMSNING\nI HONUNG\n10 % CHANS ATT FÖRGIFTA', { unlock: 50 }],
 ];
 
 // ---------- Set och synergier ----------
@@ -665,6 +714,9 @@ const SETS = {
   // version 13: ARKIVETS VÄG (Det förbjudna biblioteket: böcker, bläck och runor) och SMEDJANS VÄG (Gjuteriet: smide, ånga och metall)
   arkivet: { name: 'ARKIVETS VÄG',    text: '25 % MINDRE EFFEKT AV BLÄCK\n+20 % SKADA MED RUNOR\n+1 EXTRA EFFEKT NÄR DU LÄSER EN PULPET', mods: { inkResist: 0.25, runeDmg: 0.2, bookLore: 1 } },
   smedjan: { name: 'SMEDJANS VÄG',    text: '+2 RUSTNING PER DÖDAD GJUTERIFIENDE\n+20 % SKADA MED ÅNGA\n20 % MINDRE SKADA FRÅN STANSAR', mods: { forgeArmor: 2, steamDmg: 0.2, pressResist: 0.2 } },
+  // version 15: KATEDRALENS VÄG (Blodkatedralen: ljus, välsignelse och blod) och KUPANS VÄG (Bikupan: bin, honung och larver)
+  katedralen: { name: 'KATEDRALENS VÄG', text: '+25 % LÄNGRE VÄLSIGNELSE FRÅN LJUSSTRÅK\n+15 % SKADA MEDAN DU ÄR VÄLSIGNAD\n+5 HP NÄR DU KROSSAR EN BLODFUNT', mods: { blessDur: 0.25, holyDmg: 0.15, fontBreak: 5 } },
+  kupan:  { name: 'KUPANS VÄG',       text: '+20 % SKADA MED BIN\n25 % MINDRE INBROMSNING I HONUNG\n+20 % SKADA MOT LARVER', mods: { beeDmg: 0.2, honeyResist: 0.25, larvaDmg: 0.2 } },
 };
 // Synergitaggar: kort med samma tagg spelar bra ihop (t.ex. eld + explosion, krit + kritskada).
 const SYN = { eld: 'ELD', krit: 'KRIT', gift: 'GIFT', frost: 'FROST', blixt: 'BLIXT', skold: 'SKÖLD', guld: 'GULD', liv: 'LIV', rusning: 'RUSNING', skugga: 'SKUGGA', granat: 'GRANAT',
@@ -674,7 +726,8 @@ const SYN = { eld: 'ELD', krit: 'KRIT', gift: 'GIFT', frost: 'FROST', blixt: 'BL
   hav: 'HAVET', kristall: 'KRISTALL', kunskap: 'KUNSKAP', avgrund: 'AVGRUNDEN', hax: 'HÄXOR',
   urverk: 'URVERK', tid: 'TIDEN', vind: 'VINDEN', storm: 'STORMEN', hojd: 'HÖJDEN',
   svamp: 'SVAMPAR', spor: 'SPORER', spegel: 'SPEGLAR', illusion: 'ILLUSIONER', glas: 'GLAS',
-  bok: 'BÖCKER', black: 'BLÄCK', anga: 'ÅNGA', smide: 'SMIDE', metall: 'METALL' };
+  bok: 'BÖCKER', black: 'BLÄCK', anga: 'ÅNGA', smide: 'SMIDE', metall: 'METALL',
+  kyrka: 'KATEDRALEN', helig: 'HELIGT LJUS', klocka: 'KLOCKOR', bi: 'BIN', honung: 'HONUNG', vax: 'VAX' };
 // set och syn för alla kort samlas här: id: [set eller '', syn-taggar...]
 const TAGS = {
   // eld och explosioner
@@ -761,6 +814,15 @@ const TAGS = {
   kopparmunstycket: ['', 'anga', 'metall'], angvisslan: ['', 'anga'], anggallret: ['', 'anga', 'metall'], smalthjartat: ['', 'smide', 'anga'],
   gjutarstovlarna: ['', 'metall', 'rusning'], kilremmen: ['', 'metall', 'rusning'], gjutarspaken: ['', 'metall'],
   nithandsken: ['', 'smide', 'metall'], assjans_klinga: ['', 'smide', 'eld'], jattens_stad: ['', 'smide', 'metall'],
+  // version 15: KATEDRALENS VÄG (Blodkatedralen) och KUPANS VÄG (Bikupan); katedralen, heligt ljus, klockor, blod, bin, honung och vax
+  glasmalningen: ['katedralen', 'helig', 'kyrka'], offerskalen: ['katedralen', 'kyrka', 'blod'], blodkalken: ['katedralen', 'blod', 'kyrka'],
+  helgonreliken: ['katedralen', 'helig', 'kyrka'], kardinalens_ring: ['katedralen', 'kyrka', 'helig', 'klocka'],
+  bigadden: ['kupan', 'bi', 'gift'], vaxsulorna: ['kupan', 'vax', 'honung'], biodlarhandskarna: ['kupan', 'bi', 'honung'],
+  yngelvaktaren: ['kupan', 'bi', 'honung'], drottningens_krona: ['kupan', 'bi', 'honung', 'vax', 'gift'],
+  rokelsekornen: ['', 'kyrka', 'liv'], myrran: ['', 'kyrka', 'liv'], rokelsemolnet: ['', 'kyrka', 'liv'], vaxljuset: ['', 'vax', 'helig'],
+  helgonglorian: ['', 'helig'], rosettfonstret: ['', 'helig', 'glas'], blodsdopet: ['', 'blod', 'helig'],
+  klockrepet: ['', 'klocka'], kyrkklockan: ['', 'klocka', 'kyrka'], klockarens_hammare: ['', 'klocka', 'narstrid'],
+  larvkroken: ['', 'bi'], honungskakan: ['', 'honung', 'vax', 'bi'], larvsaxen: ['', 'bi', 'gift'], sota_fallan: ['', 'bi', 'honung'],
 };
 
 const ALL = DEFS.map(([id, name, rarity, mods, max, text, extra]) => {
@@ -885,6 +947,9 @@ const FMT = {
   inkResist: ['p', 'SKYDD MOT BLÄCK'], beltSpeed: ['p', 'FART PÅ RULLBAND'], ventResist: ['p', 'SKYDD MOT ÅNGA'],
   runeDmg: ['p', 'SKADA MED RUNOR'], steamDmg: ['p', 'SKADA MED ÅNGA'], bookLore: ['n', 'EXTRA PULPETEFFEKT'],
   forgeArmor: ['n', 'RUSTNING PER GJUTERIFIENDE'], pressResist: ['p', 'SKYDD MOT STANSAR'],
+  blessDur: ['p', 'LÄNGRE VÄLSIGNELSE'], honeyResist: ['p', 'SKYDD MOT HONUNG'], larvaDmg: ['p', 'SKADA MOT LARVER'],
+  censerHeal: ['n', 'HP PER RÖKELSETRÄFF'], beeDmg: ['p', 'SKADA MED BIN'], bellStun: ['n', 'S LÄNGRE KLOCKBEDÖVNING'],
+  fontBreak: ['n', 'HP PER KROSSAD BLODFUNT'], holyDmg: ['p', 'SKADA SOM VÄLSIGNAD'],
 };
 const INVERT = { damageTaken: true };
 const num = v => String(Math.round(v * 100) / 100).replace('.', ',');
@@ -1030,7 +1095,7 @@ function preview(card, mods, ownedIds) {
 // ---------- Dragning ----------
 // Vikten skiftar mot sällsyntare med djup (våning, 0..) och luck (summan av luck-modden, 0.1 per kort).
 const CURSE_WEIGHT = 0.8; // förbannade kort dyker upp ibland
-const PACT_WEIGHT = 0.49, UPGRADE_WEIGHT = 10; // tjugoåtta pakter (vikten sänkt så att alla pakter tillsammans syns lika ofta som de fjorton förut; version 13: 0,53 -> 0,49); uppgraderingarna väger lite mer sedan korthögen växt (version 11: 8 -> 9, version 13: 9 -> 10): en pakt i ungefär var fjärde dragning; efter pakten kommer uppgraderingarna tätt
+const PACT_WEIGHT = 0.46, UPGRADE_WEIGHT = 11; // trettio pakter (vikten sänkt så att alla pakter tillsammans syns lika ofta som de fjorton förut; version 13: 0,53 -> 0,49, version 15: 0,49 -> 0,46); uppgraderingarna väger lite mer sedan korthögen växt (version 11: 8 -> 9, version 13: 9 -> 10, version 15: 10 -> 11): en pakt i ungefär var fjärde dragning; efter pakten kommer uppgraderingarna tätt
 function rarityWeight(rarity, depth, luck) {
   const t = Math.max(0, (depth || 0) * 0.25 + (luck || 0) * 2.5); // 0 = början av rundan
   const base = RARITY[rarity].weight;
@@ -1091,7 +1156,7 @@ const WEAPON_NAME = { pistol: 'PISTOL', shotgun: 'HAGELGEVÄR', rifle: 'GEVÄR',
   axe: 'YXA', flamer: 'ELDKASTARE', launcher: 'GRANATKASTARE', nailgun: 'SPIKGEVÄR', staff: 'BLIXTSTAV', bow: 'LÅNGBÅGE',
   knives: 'KASTKNIVAR', hammer: 'STRIDSHAMMARE', musket: 'MUSKÖT', harpoon: 'HARPUN', boomerang: 'BUMERANG', prism: 'PRISMA',
   sawlauncher: 'SÅGBLAD', windgun: 'VINDBÖSSA', spear: 'SPJUT', sporelauncher: 'SPORKASTARE', mirrorshield: 'SPEGELSKÖLD', whip: 'PISKA',
-  runebook: 'RUNBOK', steamcannon: 'ÅNGKANON' };
+  runebook: 'RUNBOK', steamcannon: 'ÅNGKANON', censer: 'RÖKELSEKAR', hivelauncher: 'BIKASTARE' };
 // etikett ovanför kortets namn: förbannelse, pakt, aktiv förmåga ('AKTIV · 8 S'), vilket vapen uppgraderingen hör till eller sammansmält
 const activeTag = card => 'AKTIV · ' + num(card.cd || 0) + ' S';
 function tag(card) {

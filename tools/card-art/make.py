@@ -50,6 +50,12 @@ pyre_warden, tabellen V13_SRC); bibliotekets böcker, bläckhorn, penna, stämpe
 oanvända partiklar (V13_DRAWN). Pakterna för runboken och ångkanonen ritas som siluetter; uppgraderingarna är oanvända
 effektbilder ur vfx eller partiklar med vapnet som bricka i hörnet (V13_UPGRADES).
 
+Version 15: 24 nya kort (katedral, blod, ljus, klockor, bin, honung och vax) – bara medaljongen lifeblood och bossen
+brood_warden i assets/ashfall-ai passar (tabellen V15_SRC); resten ritas här (fönster, klockor, kalk, gloria, ljus, honungskakor,
+bin ...) med de sista oanvända partiklarna samt två nya källor: Kenneys splat-pack (blod- och honungsstänk) och smoke-particles
+(rökelserök), tabellen V15_DRAWN. Pakterna för rökelsekaret och bikastaren ritas som siluetter; uppgraderingarna är oanvända
+effektbilder ur vfx eller partiklar med vapnet som bricka i hörnet (V15_UPGRADES).
+
 Kör från repo-roten: python3 retrofps/tools/card-art/make.py .          (alla)
                      python3 retrofps/tools/card-art/make.py . v5       (bara version 5)
                      python3 retrofps/tools/card-art/make.py . v6       (bara version 6)
@@ -58,6 +64,7 @@ Kör från repo-roten: python3 retrofps/tools/card-art/make.py .          (alla)
                      python3 retrofps/tools/card-art/make.py . v9       (bara version 9)
                      python3 retrofps/tools/card-art/make.py . v11      (bara version 11)
                      python3 retrofps/tools/card-art/make.py . v13      (bara version 13)
+                     python3 retrofps/tools/card-art/make.py . v15      (bara version 15)
 """
 import os
 import sys
@@ -1861,6 +1868,496 @@ def main_v13():
     return n
 
 
+# ---------- version 15: Blodkatedralen och Bikupan ----------
+# Bara två oanvända bilder i assets/ashfall-ai passar: medaljongen lifeblood (ett blodrött hjärta) och bossen brood_warden
+# (en koloss full av äggsäckar) – tabellen V15_SRC. Resten ritas här (blyinfattade fönster, klockor, kalk, glorian, vaxljus,
+# honungskakor, bin, larver ...) på samma mörklila vinjett. Bakom motiven ligger de sista oanvända partiklarna ur Kenneys
+# particle-pack och två nya källor som inga kort använt: Kenneys splat-pack (blod, honung och vax som stänk) och
+# smoke-particles (rökelserök och ljusblixtar) – tabellen V15_DRAWN. Varje källbild används bara en gång. Pakternas vapen
+# (rökelsekaret och bikastaren) ritas som siluetter; uppgraderingarna är oanvända effektbilder ur vfx eller partiklar med
+# vapnet som bricka i hörnet (V15_UPGRADES).
+SPLATS = os.path.join(ROOT, 'assets/effects/splat-pack/PNG/Default (256px)')
+SMOKES = os.path.join(ROOT, 'assets/effects/smoke-particles/PNG')
+V15_SRC = {  # kort-id: (sort, bild, andel/beskärning) – som V13
+    'blodsdopet': ('ash', 'aspects/lifeblood', 0.92), 'yngelvaktaren': ('ash', 'bosses/brood_warden', 0),
+}
+# kort-id: (ritfunktion, storlek, förskjutning y, [(källa, storlek, dx, dy, färg, vridning)])
+# källa: 'part:<partikel>' (läggs med "screen"), 'splat:<stänk>' (täckande stänk) eller 'smoke:<mapp>/<bild>' (halvgenomskinlig rök)
+V15_DRAWN = {
+    'glasmalningen': ('lancet', 0.84, 0, [('part:muzzle_05', 0.95, 0, 0.12, (255, 210, 150), 180)]),
+    'vaxsulorna': ('waxboots', 0.8, -0.04, [('splat:splat05', 0.9, 0, 0.26, (226, 150, 34), 0)]),
+    'larvkroken': ('larvahook', 0.84, 0, [('part:slash_02', 0.85, 0, 0.1, (170, 230, 120), 0)]),
+    'rokelsekornen': ('incensebowl', 0.78, 0.1, [('smoke:White puff/whitePuff03', 0.8, 0, -0.18, (220, 210, 236), 0)]),
+    'bigadden': ('stinger', 0.86, 0, [('part:trace_04', 0.95, 0, 0, (255, 210, 90), 50)]),
+    'klockrepet': ('bellrope', 0.86, 0, [('part:slash_03', 0.85, 0.12, 0, (255, 220, 140), 0)]),
+    'offerskalen': ('bloodbowl', 0.84, 0.06, [('splat:splat19', 0.95, 0, 0.1, (130, 10, 20), 0)]),
+    'helgonglorian': ('halo', 0.84, 0, [('part:muzzle_04', 0.95, 0, 0.05, (255, 236, 170), 180)]),
+    'vaxljuset': ('candle', 0.84, 0.04, [('part:flame_06', 0.32, 0, -0.36, (255, 200, 90), 0)]),
+    'honungskakan': ('honeycomb', 0.84, 0, [('splat:splat26', 0.95, 0, 0.12, (210, 130, 20), 0)]),
+    'kyrkklockan': ('bigbell', 0.84, 0, [('smoke:Flash/flash02', 0.95, 0, 0, (255, 220, 150), 0)]),
+    'blodkalken': ('chalice', 0.84, 0, [('splat:splat28', 0.95, 0, 0.14, (120, 8, 18), 0)]),
+    'biodlarhandskarna': ('beegloves', 0.84, 0, [('splat:splat13', 0.85, 0, 0.2, (200, 130, 30), 0)]),
+    'larvsaxen': ('shears', 0.86, 0, [('splat:splat02', 0.9, 0.02, 0.18, (90, 170, 50), 0)]),
+    'myrran': ('myrrhjar', 0.8, 0.08, [('smoke:White puff/whitePuff11', 0.8, 0, -0.2, (236, 214, 190), 0)]),
+    'rosettfonstret': ('rosewindow', 0.86, 0, [('part:window_02', 0.7, 0, 0, (255, 180, 200), 45)]),
+    'sota_fallan': ('honeyjar', 0.84, 0, [('splat:splat33', 0.95, 0, 0.16, (236, 160, 30), 0)]),
+    'klockarens_hammare': ('bellhammer', 0.86, 0, [('part:flame_02', 0.9, 0.06, -0.04, (255, 190, 110), 0)]),
+    'helgonreliken': ('reliquary', 0.84, 0.02, [('part:window_03', 0.95, 0, -0.04, (255, 230, 150), 90)]),
+    'rokelsemolnet': ('censercloud', 0.84, 0.04, [('smoke:White puff/whitePuff19', 0.95, 0, 0, (210, 196, 230), 0),
+                                                   ('smoke:Black smoke/blackSmoke07', 0.6, -0.2, 0.24, (120, 100, 140), 0)]),
+    'kardinalens_ring': ('cardinalring', 0.84, 0, [('part:symbol_01', 0.55, 0, -0.06, (200, 30, 50), 0), ('splat:splat21', 0.9, 0, 0.2, (100, 6, 16), 0)]),
+    'drottningens_krona': ('beecrown', 0.86, 0, [('part:flame_04', 0.95, 0, -0.06, (255, 190, 60), 0), ('splat:splat17', 0.8, 0, 0.3, (220, 140, 24), 0)]),
+}
+V15_PACTS = {'pakt_rokelsekar': 'censer', 'pakt_bikastare': 'hivelauncher'}
+V15_UPGRADES = {  # kort-id: (vapen, 'vfx:<bild>' eller 'part:<partikel>', färgton eller None, vridning) – som V9
+    'langkedjan': ('censer', 'vfx:smoke_0', (230, 214, 190), 0), 'vigda_roken': ('censer', 'vfx:heal_0', None, 0),
+    'skarselden': ('censer', 'vfx:embers_0', None, 0), 'snabbsvingen': ('censer', 'part:slash_01', (255, 220, 150), 0),
+    'svarmtiden': ('hivelauncher', 'part:window_04', (255, 196, 60), 0), 'giftgadden': ('hivelauncher', 'vfx:bubbles_1', None, 0),
+    'drottninggelen': ('hivelauncher', 'part:symbol_02', (255, 214, 90), 0), 'flyghalet': ('hivelauncher', 'part:trace_07', (255, 200, 90), 90),
+}
+
+GOLD, WAX, HONEY, BLOOD, STONE, BEE = (220, 180, 90, 255), (240, 228, 190, 255), (236, 160, 40, 255), (150, 16, 26, 255), (112, 106, 116, 255), (244, 192, 40, 255)
+PANES = [(200, 40, 50, 255), (40, 90, 200, 255), (240, 190, 50, 255), (60, 160, 80, 255), (150, 60, 190, 255)]
+
+
+def bee(d, x, y, s=1.0, flip=False):
+    """Ett litet bi: gul kropp med svarta ränder, genomskinliga vingar, huvud och gadd."""
+    f = -1 if flip else 1
+    for wx, wy in ((-6, -30), (10, -26)):
+        d.ellipse((x + f * wx * s - 16 * s, y + wy * s - 12 * s, x + f * wx * s + 16 * s, y + wy * s + 12 * s), fill=(226, 240, 255, 210), outline=INK, width=max(2, int(3 * s)))
+    d.ellipse((x - 30 * s, y - 18 * s, x + 30 * s, y + 18 * s), fill=BEE, outline=INK, width=max(2, int(4 * s)))
+    for dx in (-10, 6):
+        d.line((x + f * dx * s, y - 16 * s, x + f * dx * s, y + 16 * s), fill=INK, width=max(2, int(8 * s)))
+    d.ellipse((x + f * 30 * s - 12 * s, y - 12 * s, x + f * 30 * s + 12 * s, y + 12 * s), fill=INK)
+    d.polygon([(x - f * 26 * s, y - 6 * s), (x - f * 46 * s, y), (x - f * 26 * s, y + 6 * s)], fill=INK)
+
+
+def hexcell(d, cx, cy, r, fill, w=5):
+    poly(d, [(cx + r * np.cos(np.pi / 6 + k * np.pi / 3), cy + r * np.sin(np.pi / 6 + k * np.pi / 3)) for k in range(6)], fill, w)
+
+
+def bell(d, cx, top, w, h, col, clapper=True):
+    """Kyrkklocka: krona, kropp som vidgar sig mot en tjock kant, och kläppen under."""
+    left = [(cx - w * (0.26 + 0.24 * t ** 2.4), top + h * t) for t in np.linspace(0, 1, 30)]
+    right = [(cx + w * (0.26 + 0.24 * t ** 2.4), top + h * t) for t in np.linspace(1, 0, 30)]
+    if clapper:
+        d.line((cx, top + h * 0.6, cx, top + h + 26), fill=INK, width=12)
+        d.ellipse((cx - 20, top + h + 6, cx + 20, top + h + 46), fill=lighter(col, 0.7), outline=INK, width=5)
+    rrect(d, (cx - w * 0.1, top - h * 0.2, cx + w * 0.1, top + 6), 6, lighter(col, 0.8))           # krona
+    d.chord((cx - w * 0.26, top - h * 0.12, cx + w * 0.26, top + h * 0.12), 180, 360, fill=col, outline=INK, width=6)
+    poly(d, left + right, col)
+    d.ellipse((cx - w * 0.52, top + h - 16, cx + w * 0.52, top + h + 16), fill=lighter(col, 0.85), outline=INK, width=6)  # kanten
+    for t in (0.35, 0.75):                                                                           # band
+        hw = w * (0.26 + 0.24 * t ** 2.4)
+        d.line((cx - hw + 6, top + h * t, cx + hw - 6, top + h * t), fill=lighter(col, 0.7), width=6)
+    d.line((cx - w * 0.16, top + 10, cx - w * 0.3, top + h * 0.85), fill=lighter(col, 1.3), width=8)  # glans
+
+
+def candle(d, x, top, w, h, col=WAX, drips=3):
+    rrect(d, (x - w / 2, top, x + w / 2, top + h), 6, col)
+    for k in range(drips):                                                                           # vaxdroppar
+        dx = x - w / 2 + 8 + k * (w - 16) / max(1, drips - 1)
+        L = 26 + 22 * ((k * 7) % 3)
+        d.line((dx, top + 4, dx, top + L), fill=INK, width=14)
+        d.line((dx, top + 4, dx, top + L), fill=lighter(col, 1.05), width=8)
+    d.ellipse((x - w / 2, top - 10, x + w / 2, top + 10), fill=lighter(col, 1.08), outline=INK, width=5)
+    d.line((x, top - 2, x, top - 22), fill=INK, width=5)                                             # veke
+
+
+def chalice(d, cx, top, w, h, col, liquid):
+    cup = [(cx - w / 2, top), (cx + w / 2, top), (cx + w * 0.36, top + h * 0.38), (cx + w * 0.12, top + h * 0.5), (cx - w * 0.12, top + h * 0.5), (cx - w * 0.36, top + h * 0.38)]
+    poly(d, cup, col)
+    d.ellipse((cx - w / 2, top - 18, cx + w / 2, top + 18), fill=liquid, outline=INK, width=6)          # vätskan
+    d.ellipse((cx - w * 0.3, top - 8, cx - w * 0.05, top + 4), fill=lighter(liquid, 1.6))
+    rrect(d, (cx - 14, top + h * 0.5, cx + 14, top + h * 0.82), 6, col)                             # fot
+    d.ellipse((cx - 26, top + h * 0.6, cx + 26, top + h * 0.7), fill=lighter(col, 0.85), outline=INK, width=5)  # nod
+    poly(d, [(cx - 14, top + h * 0.82), (cx + 14, top + h * 0.82), (cx + w * 0.4, top + h), (cx - w * 0.4, top + h)], lighter(col, 0.9))
+    d.line((cx - w * 0.36, top + 24, cx - w * 0.18, top + h * 0.42), fill=lighter(col, 1.3), width=7)
+
+
+def smoke_curl(d, pts, col, w=16):
+    """En slingrande rökslinga (ljus, utan kontur)."""
+    for k in range(len(pts) - 1):
+        d.line((pts[k], pts[k + 1]), fill=col, width=max(3, int(w * (1 - k / len(pts)))))
+
+
+def censer_pot(d, cx, cy, r, col=GOLD, ember=(255, 150, 50, 255)):
+    """Rökelsekar: rund skål med genombruten kupol, kors överst och fyra kedjor upp till en ring."""
+    for ox in (-0.8, -0.3, 0.3, 0.8):
+        d.line((cx + ox * r, cy - r * 0.2, cx, cy - r * 2.4), fill=INK, width=8)
+        d.line((cx + ox * r, cy - r * 0.2, cx, cy - r * 2.4), fill=(200, 200, 210, 255), width=3)
+    d.ellipse((cx - 16, cy - r * 2.4 - 26, cx + 16, cy - r * 2.4 + 6), outline=INK, width=10)
+    d.ellipse((cx - 16, cy - r * 2.4 - 26, cx + 16, cy - r * 2.4 + 6), outline=GOLD, width=4)
+    d.chord((cx - r, cy - r, cx + r, cy + r), 0, 180, fill=col, outline=INK, width=7)                    # skålen
+    d.chord((cx - r * 0.92, cy - r * 0.9, cx + r * 0.92, cy + r * 0.9), 180, 360, fill=lighter(col, 0.8), outline=INK, width=7)  # kupolen
+    for k in range(5):                                                                               # hål med glöd
+        a = np.pi * (1.15 + 0.7 * k / 4)
+        x, y = cx + r * 0.55 * np.cos(a), cy + r * 0.5 * np.sin(a)
+        d.ellipse((x - 8, y - 8, x + 8, y + 8), fill=ember, outline=INK, width=2)
+    d.line((cx - r, cy, cx + r, cy), fill=INK, width=8)
+    d.line((cx - r + 6, cy, cx + r - 6, cy), fill=lighter(col, 1.2), width=4)
+    rrect(d, (cx - r * 0.3, cy + r * 0.9, cx + r * 0.3, cy + r * 1.15), 4, lighter(col, 0.8))        # fot
+    d.line((cx, cy - r * 0.9, cx, cy - r * 1.3), fill=INK, width=10)                                 # kors
+    d.line((cx - 12, cy - r * 1.15, cx + 12, cy - r * 1.15), fill=INK, width=10)
+    d.line((cx, cy - r * 0.92, cx, cy - r * 1.28), fill=GOLD, width=4)
+    d.line((cx - 10, cy - r * 1.15, cx + 10, cy - r * 1.15), fill=GOLD, width=4)
+
+
+def skep(d, cx, bottom, w, h, col=(206, 160, 80, 255)):
+    """Halmkupa (bikupa av flätad halm): staplade valkar som smalnar av uppåt, med ett flyghål nedtill."""
+    rows = 6
+    for k in range(rows):
+        t0, t1 = k / rows, (k + 1) / rows
+        hw0 = w / 2 * np.sqrt(max(0.05, 1 - t0 ** 1.6)) if k else w / 2
+        hw1 = w / 2 * np.sqrt(max(0.05, 1 - t1 ** 1.6))
+        y0, y1 = bottom - h * t0, bottom - h * t1
+        d.rounded_rectangle((cx - max(hw0, hw1), y1 - 4, cx + max(hw0, hw1), y0 + 4), int(min(22, (y0 - y1) / 2)), fill=col if k % 2 else lighter(col, 0.88), outline=INK, width=5)
+        for x in np.linspace(cx - max(hw0, hw1) + 16, cx + max(hw0, hw1) - 16, 5):
+            d.line((x - 6, y1 + 6, x + 6, y0 - 6), fill=lighter(col, 0.7), width=3)
+    d.chord((cx - w * 0.12, bottom - h * 0.16, cx + w * 0.12, bottom + h * 0.08), 180, 360, fill=INK)  # flyghål
+
+
+def art15(kind):
+    im = Image.new('RGBA', (400, 400))
+    d = ImageDraw.Draw(im)
+    if kind == 'lancet':
+        outer = [(80, 390), (80, 150), (110, 70), (200, 10), (290, 70), (320, 150), (320, 390)]
+        inner = [(110, 370), (110, 160), (134, 96), (200, 44), (266, 96), (290, 160), (290, 370)]
+        poly(d, outer, STONE, w=8)                                                                    # stenbågen
+        for y in range(180, 370, 40):                                                                 # fogar i stenen
+            d.line((84, y, 108, y), fill=lighter(STONE, 0.75), width=4)
+            d.line((292, y + 20, 316, y + 20), fill=lighter(STONE, 0.75), width=4)
+        glass = Image.new('RGBA', (400, 400))
+        dg = ImageDraw.Draw(glass)
+        k = 0
+        for y in range(40, 380, 52):                                                                  # glasrutor i blyinfattning
+            for x in range(110, 290, 45):
+                dg.rectangle((x, y, x + 45, y + 52), fill=PANES[(k * 3) % 5], outline=INK, width=6); k += 1
+        dg.line((200, 40, 200, 380), fill=INK, width=8)
+        dg.ellipse((168, 70, 232, 134), fill=(255, 236, 160, 255), outline=INK, width=6)               # helgonets gloria
+        mask = Image.new('L', (400, 400))
+        ImageDraw.Draw(mask).polygon(inner, fill=255)
+        im.paste(glass, (0, 0), mask)
+        d = ImageDraw.Draw(im)
+        d.line(inner + [inner[0]], fill=INK, width=8)
+        rrect(d, (66, 366, 334, 396), 6, lighter(STONE, 0.85))                                        # fönsterbänk
+    elif kind == 'waxboots':
+        for x0, f in ((40, 1), (210, 1)):
+            poly(d, [(x0 + 30, 40), (x0 + 110, 40), (x0 + 116, 230), (x0 + 170, 260), (x0 + 172, 316), (x0 + 20, 316), (x0 + 24, 200)], (96, 62, 40, 255), w=7)
+            rrect(d, (x0 + 10, 300, x0 + 182, 350), 14, WAX)                                         # vaxsula
+            for k in range(3):
+                dx = x0 + 30 + k * 60
+                d.line((dx, 344, dx, 372 + 10 * (k % 2)), fill=INK, width=14)
+                d.line((dx, 344, dx, 372 + 10 * (k % 2)), fill=lighter(WAX, 1.05), width=8)
+            d.line((x0 + 40, 70, x0 + 100, 70), fill=(60, 36, 22, 255), width=6)
+            d.line((x0 + 40, 110, x0 + 100, 110), fill=(60, 36, 22, 255), width=6)
+    elif kind == 'larvahook':
+        d.line((300, 10, 300, 200), fill=INK, width=24)                                               # kroken
+        d.line((300, 10, 300, 200), fill=(150, 154, 166, 255), width=12)
+        d.arc((150, 120, 310, 300), 0, 200, fill=INK, width=26)
+        d.arc((150, 120, 310, 300), 0, 200, fill=(150, 154, 166, 255), width=12)
+        poly(d, [(146, 216), (130, 180), (170, 200)], (180, 184, 196, 255), w=5)
+        segs = [(70 + 34 * k, 300 - 40 * np.sin(k * 0.6), 30 - k * 1.5) for k in range(7)]           # larven
+        for x, y, r in segs[::-1]:
+            d.ellipse((x - r, y - r, x + r, y + r), fill=(236, 230, 200, 255), outline=INK, width=5)
+        x, y, r = segs[0]
+        d.ellipse((x - r - 4, y - r + 2, x + r - 10, y + r - 4), fill=(170, 110, 60, 255), outline=INK, width=5)
+        d.ellipse((x - 18, y - 10, x - 6, y + 2), fill=INK)
+    elif kind == 'incensebowl':
+        d.chord((40, 140, 360, 360), 0, 180, fill=(150, 110, 70, 255), outline=INK, width=8)           # skålen
+        d.ellipse((40, 220, 360, 280), fill=(110, 70, 40, 255), outline=INK, width=7)
+        for k in range(26):                                                                           # rökelsekorn
+            x, y = 80 + (k * 53) % 240, 236 + (k * 17) % 34
+            d.ellipse((x - 11, y - 8, x + 11, y + 8), fill=(236, 200, 120, 255), outline=INK, width=3)
+        for x, y in ((150, 244), (250, 250)):
+            d.ellipse((x - 10, y - 10, x + 10, y + 10), fill=(255, 140, 40, 255))
+        smoke_curl(d, [(160 + 30 * np.sin(t * 6), 230 - 220 * t) for t in np.linspace(0, 1, 30)], (236, 230, 246, 230), 18)
+        smoke_curl(d, [(250 - 26 * np.sin(t * 5), 236 - 200 * t) for t in np.linspace(0, 1, 30)], (220, 214, 236, 220), 14)
+        rrect(d, (160, 340, 240, 380), 8, (120, 84, 50, 255))
+    elif kind == 'stinger':
+        bee(d, 150, 170, 3.2)
+        poly(d, [(56, 152), (6, 176), (56, 196)], (60, 60, 66, 255), w=5)                              # gadden glänser
+        d.line((50, 168, 14, 176), fill=(200, 200, 210, 255), width=4)
+        for x, y in ((40, 220), (20, 240), (52, 250)):                                                # giftdroppar
+            d.ellipse((x - 9, y - 9, x + 9, y + 9), fill=(140, 220, 90, 255), outline=INK, width=3)
+    elif kind == 'bellrope':
+        bell(d, 120, 30, 180, 140, GOLD, False)
+        pts = [(220 + 30 * np.sin(t * 5), 20 + 320 * t) for t in np.linspace(0, 1, 40)]             # repet
+        for k in range(len(pts) - 1):
+            d.line((pts[k], pts[k + 1]), fill=INK, width=26)
+        for k in range(len(pts) - 1):
+            d.line((pts[k], pts[k + 1]), fill=(200, 170, 120, 255), width=16)
+        for k in range(0, len(pts) - 2, 3):
+            x, y = pts[k]
+            d.line((x - 8, y - 6, x + 8, y + 6), fill=(130, 100, 60, 255), width=4)
+        x, y = pts[-1]
+        rrect(d, (x - 24, y - 10, x + 24, y + 20), 8, (170, 30, 40, 255))                            # tofs
+        for dx in range(-26, 30, 10):
+            d.line((x + dx * 0.6, y + 18, x + dx, y + 60), fill=INK, width=8)
+            d.line((x + dx * 0.6, y + 18, x + dx, y + 58), fill=(200, 40, 50, 255), width=4)
+    elif kind == 'bloodbowl':
+        d.chord((30, 100, 370, 340), 0, 180, fill=(180, 180, 190, 255), outline=INK, width=8)
+        d.ellipse((30, 180, 370, 260), fill=BLOOD, outline=INK, width=8)
+        d.ellipse((90, 196, 200, 226), fill=(210, 60, 70, 255))
+        rrect(d, (150, 330, 250, 370), 8, (150, 150, 160, 255))
+        for k in range(8):                                                                            # gravyr
+            x = 70 + k * 37
+            d.line((x, 262, x + 10, 300 - abs(k - 3.5) * 6), fill=(120, 120, 130, 255), width=4)
+        for x, y in ((330, 290), (346, 330)):                                                         # droppar längs kanten
+            d.ellipse((x - 10, y - 14, x + 10, y + 14), fill=BLOOD, outline=INK, width=3)
+    elif kind == 'halo':
+        d.ellipse((40, 60, 360, 200), outline=INK, width=46)                                          # gloria
+        d.ellipse((46, 66, 354, 194), outline=(255, 214, 90, 255), width=30)
+        d.ellipse((60, 80, 340, 180), outline=(255, 246, 200, 255), width=6)
+        for k in range(12):                                                                           # strålar
+            a = k * np.pi / 6
+            d.line((200 + 170 * np.cos(a), 130 + 90 * np.sin(a), 200 + 196 * np.cos(a), 130 + 110 * np.sin(a)), fill=(255, 236, 170, 255), width=8)
+        d.ellipse((130, 170, 270, 330), fill=(60, 50, 70, 255), outline=INK, width=7)                 # helgonets huvud i skugga
+        d.chord((110, 260, 290, 400), 180, 360, fill=(90, 40, 50, 255), outline=INK, width=7)
+    elif kind == 'candle':
+        rrect(d, (80, 340, 320, 384), 12, (170, 130, 60, 255))                                        # ljusstake
+        rrect(d, (170, 300, 230, 348), 6, (196, 150, 64, 255))
+        candle(d, 200, 90, 110, 214, WAX, 4)
+        candle(d, 110, 170, 60, 140, (220, 200, 160, 255), 2)
+        candle(d, 290, 190, 60, 120, (230, 210, 170, 255), 2)
+        for x, y, r in ((200, 52, 26), (110, 140, 18), (290, 162, 16)):                               # lågor
+            d.ellipse((x - r * 0.6, y - r * 1.4, x + r * 0.6, y + r * 0.6), fill=(255, 200, 80, 255), outline=INK, width=3)
+            d.ellipse((x - r * 0.25, y - r * 0.5, x + r * 0.25, y + r * 0.4), fill=(255, 250, 220, 255))
+    elif kind == 'honeycomb':
+        for row in range(4):
+            for col in range(4):
+                cx, cy = 70 + col * 80 + (40 if row % 2 else 0), 60 + row * 70
+                if cx > 340:
+                    continue
+                hexcell(d, cx, cy, 46, HONEY if (row + col) % 3 else (250, 220, 120, 255), 7)
+                d.ellipse((cx - 18, cy - 18, cx - 2, cy - 4), fill=(255, 236, 170, 255))
+        for x, L in ((90, 80), (190, 120), (290, 60)):                                                # honung droppar
+            d.line((x, 300, x, 300 + L), fill=INK, width=26)
+            d.line((x, 300, x, 300 + L), fill=HONEY, width=16)
+            d.ellipse((x - 16, 300 + L - 10, x + 16, 300 + L + 20), fill=HONEY, outline=INK, width=5)
+    elif kind == 'bigbell':
+        rrect(d, (20, 10, 380, 50), 10, (90, 60, 36, 255))                                           # bjälken
+        bell(d, 200, 70, 300, 250, (196, 150, 64, 255))
+        for x in (100, 300):
+            d.arc((x - 50, 180, x + 50, 260), 120, 240, fill=(255, 236, 170, 255), width=6)        # ljudvågor
+    elif kind == 'chalice':
+        chalice(d, 200, 60, 260, 330, GOLD, BLOOD)
+        for x, y in ((90, 100), (310, 110)):
+            d.ellipse((x - 12, y - 4, x + 12, y + 40), fill=BLOOD, outline=INK, width=3)
+        for k in range(3):                                                                            # ädelstenar
+            x = 150 + k * 50
+            d.ellipse((x - 12, 130, x + 12, 154), fill=(200, 30, 40, 255), outline=INK, width=4)
+    elif kind == 'beegloves':
+        for x0, flip in ((30, False), (190, True)):
+            palm = [(x0 + 30, 380), (x0 + 20, 220), (x0 + 30, 120), (x0 + 60, 110), (x0 + 70, 180), (x0 + 80, 90), (x0 + 110, 90), (x0 + 112, 180), (x0 + 130, 110),
+                    (x0 + 160, 120), (x0 + 156, 240), (x0 + 150, 380)]
+            if flip:
+                palm = [(2 * x0 + 180 - x, y) for x, y in palm]
+            poly(d, palm, (236, 226, 196, 255), w=7)
+            rrect(d, (x0 + 18, 300, x0 + 162, 384), 10, (210, 200, 170, 255))                        # krage
+            for y in (320, 350):
+                d.line((x0 + 26, y, x0 + 154, y), fill=(150, 140, 110, 255), width=5)
+        bee(d, 150, 200, 1.3)
+        bee(d, 280, 120, 1.1, True)
+        bee(d, 90, 60, 1.0)
+    elif kind == 'shears':
+        for a, b in (((40, 360), (330, 60)), ((60, 60), (340, 360))):
+            pass
+        poly(d, [(200, 200), (360, 30), (376, 46), (214, 214)], (190, 194, 206, 255))                 # blad
+        poly(d, [(200, 200), (40, 30), (24, 46), (186, 214)], (170, 174, 186, 255))
+        d.line((210, 196, 352, 46), fill=(240, 244, 250, 255), width=5)
+        d.ellipse((186, 186, 214, 214), fill=GOLD, outline=INK, width=5)                              # nit
+        for cx in (120, 280):                                                                         # handtagsöglor
+            d.ellipse((cx - 64, 260, cx + 64, 388), outline=INK, width=34)
+            d.ellipse((cx - 60, 264, cx + 60, 384), outline=(110, 72, 40, 255), width=22)
+        d.line((200, 214, 150, 270), fill=INK, width=22)
+        d.line((200, 214, 250, 270), fill=INK, width=22)
+        d.line((200, 214, 150, 270), fill=(110, 72, 40, 255), width=12)
+        d.line((200, 214, 250, 270), fill=(110, 72, 40, 255), width=12)
+        for x, y in ((300, 110), (320, 150), (100, 110)):                                             # grön larvsaft
+            d.ellipse((x - 10, y - 12, x + 10, y + 12), fill=(130, 210, 80, 255), outline=INK, width=3)
+    elif kind == 'myrrhjar':
+        poly(d, [(120, 120), (280, 120), (320, 200), (310, 340), (260, 380), (140, 380), (90, 340), (80, 200)], (236, 220, 200, 255), w=8)  # alabasterkrus
+        for y in (200, 260, 320):
+            d.arc((90, y - 40, 310, y + 30), 20, 160, fill=(200, 180, 160, 255), width=5)
+        rrect(d, (150, 90, 250, 128), 8, (210, 196, 176, 255))
+        d.ellipse((140, 76, 260, 104), fill=(110, 60, 30, 255), outline=INK, width=6)                 # öppningen med myrra
+        rrect(d, (170, 250, 230, 300), 6, (170, 30, 40, 255))                                         # sigill
+        smoke_curl(d, [(200 + 34 * np.sin(t * 7), 90 - 90 * t) for t in np.linspace(0, 1, 26)], (236, 226, 246, 230), 18)
+    elif kind == 'rosewindow':
+        d.ellipse((10, 10, 390, 390), fill=STONE, outline=INK, width=8)
+        d.ellipse((40, 40, 360, 360), fill=(40, 30, 50, 255), outline=INK, width=6)
+        for k in range(12):                                                                           # kronbladen
+            a0, a1 = k * 30, k * 30 + 30
+            d.pieslice((44, 44, 356, 356), a0, a1, fill=PANES[k % 5], outline=INK, width=6)
+        for k in range(12):
+            a = (k * 30 + 15) * np.pi / 180
+            x, y = 200 + 120 * np.cos(a), 200 + 120 * np.sin(a)
+            d.ellipse((x - 22, y - 22, x + 22, y + 22), fill=PANES[(k + 2) % 5], outline=INK, width=5)
+        d.ellipse((130, 130, 270, 270), fill=(200, 40, 60, 255), outline=INK, width=7)
+        for k in range(8):
+            a = k * np.pi / 4
+            d.line((200, 200, 200 + 70 * np.cos(a), 200 + 70 * np.sin(a)), fill=INK, width=5)
+        d.ellipse((176, 176, 224, 224), fill=(255, 220, 110, 255), outline=INK, width=5)
+    elif kind == 'honeyjar':
+        poly(d, [(110, 110), (290, 110), (330, 170), (330, 360), (300, 390), (100, 390), (70, 360), (70, 170)], (236, 150, 30, 230), w=8)  # burken
+        d.line((100, 180, 100, 350), fill=(255, 220, 140, 255), width=10)
+        rrect(d, (100, 60, 300, 116), 10, (200, 180, 140, 255))                                       # tygskynke
+        d.line((96, 112, 304, 112), fill=(170, 30, 40, 255), width=10)
+        for k in range(4):
+            x = 120 + k * 52
+            d.line((x, 116, x - 6, 150 + 20 * (k % 2)), fill=INK, width=18)
+            d.line((x, 116, x - 6, 150 + 20 * (k % 2)), fill=(255, 190, 60, 255), width=10)
+        bee(d, 160, 260, 1.4)                                                                         # fastklistrade bin
+        bee(d, 250, 310, 1.2, True)
+        bee(d, 340, 60, 1.1, True)
+    elif kind == 'bellhammer':
+        bell(d, 120, 150, 150, 160, (196, 150, 64, 255))
+        d.line((380, 20, 230, 230), fill=INK, width=30)                                               # skaft
+        d.line((380, 20, 230, 230), fill=(122, 78, 42, 255), width=18)
+        ux, uy, px, py = -0.58, 0.81, 0.81, 0.58                                                      # skaftets riktning och tvärs över
+        hx, hy = 236, 222
+        poly(d, [(hx + px * 80 + ux * 34, hy + py * 80 + uy * 34), (hx + px * 80 - ux * 34, hy + py * 80 - uy * 34),
+                 (hx - px * 80 - ux * 34, hy - py * 80 - uy * 34), (hx - px * 80 + ux * 34, hy - py * 80 + uy * 34)], (110, 114, 126, 255), w=7)  # hammarhuvud
+        for sgn in (1, -1):                                                                           # järnband vid ändarna
+            d.line((hx + sgn * px * 60 + ux * 34, hy + sgn * py * 60 + uy * 34, hx + sgn * px * 60 - ux * 34, hy + sgn * py * 60 - uy * 34), fill=INK, width=8)
+        d.line((hx - px * 70 - ux * 26, hy - py * 70 - uy * 26, hx + px * 70 - ux * 26, hy + py * 70 - uy * 26), fill=(180, 184, 196, 255), width=6)
+        for a in (200, 230, 260):
+            x, y = 150 + 70 * np.cos(a * np.pi / 180), 230 + 70 * np.sin(a * np.pi / 180)
+            d.line((x, y, x - 30 * np.cos((a - 180) * np.pi / 180), y + 30 * np.sin((a - 180) * np.pi / 180)), fill=(255, 236, 170, 255), width=6)
+    elif kind == 'reliquary':
+        rrect(d, (70, 160, 330, 340), 12, GOLD)                                                       # skrinet
+        poly(d, [(60, 170), (200, 60), (340, 170)], lighter(GOLD, 0.85), w=7)                          # taket
+        d.line((200, 60, 200, 10), fill=INK, width=14)                                                # kors
+        d.line((180, 28, 220, 28), fill=INK, width=14)
+        d.line((200, 58, 200, 12), fill=(255, 230, 150, 255), width=6)
+        d.line((182, 28, 218, 28), fill=(255, 230, 150, 255), width=6)
+        rrect(d, (140, 190, 260, 310), 50, (255, 246, 210, 255))                                     # fönster med ljus
+        d.ellipse((176, 220, 224, 280), fill=(240, 200, 180, 255), outline=INK, width=4)             # benbit i fönstret
+        for x in (90, 310):
+            for y in (190, 310):
+                d.ellipse((x - 12, y - 12, x + 12, y + 12), fill=(200, 30, 40, 255), outline=INK, width=4)
+        rrect(d, (50, 330, 350, 372), 10, lighter(GOLD, 0.8))
+    elif kind == 'censercloud':
+        censer_pot(d, 200, 250, 100)
+        for k, (x, y) in enumerate(((90, 340), (310, 330), (60, 210), (340, 220))):
+            smoke_curl(d, [(x + 24 * np.sin(t * 6 + k), y - 120 * t) for t in np.linspace(0, 1, 20)], (230, 226, 240, 220), 16)
+    elif kind == 'cardinalring':
+        d.ellipse((70, 140, 330, 390), outline=INK, width=52)                                         # ringen
+        d.ellipse((76, 146, 324, 384), outline=GOLD, width=38)
+        d.arc((90, 160, 310, 370), 200, 260, fill=(255, 240, 180, 255), width=8)
+        poly(d, [(130, 160), (270, 160), (300, 110), (200, 30), (100, 110)], lighter(GOLD, 0.85), w=7)  # infattning
+        d.ellipse((140, 50, 260, 160), fill=(190, 20, 40, 255), outline=INK, width=7)                 # rubinen
+        d.ellipse((164, 70, 200, 100), fill=(255, 120, 130, 255))
+        for x in (120, 280):
+            d.ellipse((x - 10, 100, x + 10, 120), fill=(255, 240, 200, 255), outline=INK, width=3)
+    elif kind == 'beecrown':
+        base = [(40, 360), (40, 200), (100, 260), (140, 120), (200, 230), (260, 120), (300, 260), (360, 200), (360, 360)]
+        poly(d, base, HONEY, w=8)                                                                     # kronan av vax och honung
+        for row, y in enumerate((300, 340)):
+            for k in range(6):
+                hexcell(d, 70 + k * 52 + (26 if row else 0), y, 24, (250, 210, 100, 255) if (k + row) % 2 else (230, 150, 30, 255), 4)
+        for x, y in ((140, 120), (260, 120)):
+            d.ellipse((x - 18, y - 18, x + 18, y + 18), fill=(255, 236, 160, 255), outline=INK, width=5)
+        d.ellipse((176, 150, 224, 198), fill=(200, 30, 40, 255), outline=INK, width=5)
+        bee(d, 200, 70, 2.0)                                                                          # drottningen
+        rrect(d, (30, 352, 370, 380), 8, (190, 120, 30, 255))
+    return im
+
+
+def draw_censer():
+    """Rökelsekaret: genombrutet mässingskar på kedjor, med glöd i hålen och en ring att svinga det i."""
+    im = Image.new('RGBA', (420, 440))
+    d = ImageDraw.Draw(im)
+    censer_pot(d, 210, 320, 110)
+    return im.crop(im.getbbox()).rotate(-18, resample=Image.BICUBIC, expand=True)
+
+
+def draw_hivelauncher():
+    """Bikastaren: en halmkupa på en trästock med handtag och ett kort mässingsrör som bina flyger ut ur."""
+    im = Image.new('RGBA', (480, 320))
+    d = ImageDraw.Draw(im)
+    poly(d, [(6, 190), (110, 172), (150, 176), (150, 208), (104, 212), (16, 240)], (118, 72, 38, 255))   # kolv
+    poly(d, [(170, 206), (200, 206), (190, 280), (160, 280)], (86, 54, 32, 255))                        # handtag
+    rrect(d, (130, 180, 380, 214), 8, (110, 72, 40, 255))                                              # stock
+    skep(d, 250, 196, 200, 170)
+    rrect(d, (360, 150, 440, 190), 8, (196, 150, 64, 255))                                             # rör
+    d.ellipse((428, 144, 456, 196), fill=(150, 110, 40, 255), outline=INK, width=6)
+    d.line((370, 160, 432, 160), fill=(236, 204, 120, 255), width=5)
+    return im.crop(im.getbbox()).rotate(6, resample=Image.BICUBIC, expand=True)
+
+
+GUNS.update({'censer': draw_censer, 'hivelauncher': draw_hivelauncher})
+
+
+def layer15(src, size):
+    """Bakgrundslager: (RGB-bild, mask eller None). Partiklar läggs med "screen", stänk och rök med sin egen alfa."""
+    kind, name = src.split(':', 1)
+    if kind == 'part':
+        return None
+    im = Image.open(os.path.join(SPLATS if kind == 'splat' else SMOKES, name + '.png')).convert('RGBA')
+    im = im.crop(im.split()[3].point(lambda v: 255 if v > 16 else 0).getbbox() or (0, 0, im.width, im.height))
+    k = size / max(im.size)
+    return im.resize((max(1, int(im.width * k)), max(1, int(im.height * k))), Image.LANCZOS)
+
+
+def drawn_card15(cid, kind, size, dy, layers):
+    big = purple_bg()
+    for src, sc, px, py, tint, rot in layers:
+        cx, cy = S * 2 + px * S * 4, S * 2 + py * S * 4
+        if src.startswith('part:'):
+            big = screen(big, particle(src[5:], int(S * 4 * sc), tint, rot), cx, cy)
+            continue
+        im = layer15(src, int(S * 4 * sc))
+        if rot:
+            im = im.rotate(rot, resample=Image.BICUBIC, expand=True)
+        lum = im.convert('L')
+        rgb = Image.merge('RGB', [lum.point(lambda v, c=c: v * c // 255) for c in tint])
+        alpha = im.split()[3].point(lambda v: int(v * (0.9 if src.startswith('splat:') else 0.6)))
+        col = Image.merge('RGBA', rgb.split() + (alpha,))
+        big.alpha_composite(col, (int(cx - col.width / 2), int(cy - col.height / 2)))
+    g = art15(kind)
+    g = shade(g.crop(g.getbbox()))
+    k = S * 4 * size / max(g.size)
+    g = g.resize((max(1, int(g.width * k)), max(1, int(g.height * k))), Image.LANCZOS)
+    pos = ((S * 4 - g.width) // 2, int((S * 4 - g.height) / 2 + dy * S * 4))
+    add_glow(big, g, pos, (0, 0, 0), 12)
+    big.alpha_composite(g, pos)
+    save(big, cid)
+
+
+def main_v15():
+    old = ({'ash:' + s for s, _ in V7.values()} | {k + ':' + s for k, s, _ in V8.values()} | {k + ':' + s for k, s, _ in V9_ASH.values()}
+           | {k + ':' + s for k, s, _ in V11_SRC.values()} | {k + ':' + s for k, s, _ in V13_SRC.values()})
+    srcs = [k + ':' + s for k, s, _ in V15_SRC.values()]
+    assert len(srcs) == len(set(srcs)) and not old & set(srcs), 'varje bild används bara en gång'
+    assert len(V15_SRC) + len(V15_DRAWN) == 24 and not set(V15_SRC) & set(V15_DRAWN)
+    old_parts = ({p[0] for t in (V9_DRAWN, V11_DRAWN, V13_DRAWN) for _, _, _, ps in t.values() for p in ps}
+                 | {s[5:] for t in (V9_UPGRADES, V11_UPGRADES, V13_UPGRADES) for _, s, _, _ in t.values() if s.startswith('part:')})
+    layers = [p[0] for _, _, _, ps in V15_DRAWN.values() for p in ps] + [s for _, s, _, _ in V15_UPGRADES.values() if s.startswith('part:')]
+    assert len(layers) == len(set(layers)), 'varje partikel, stänk och rökbild används bara en gång'
+    assert not old_parts & {s[5:] for s in layers if s.startswith('part:')}, 'partiklarna är oanvända'
+    fx = [s[4:] for _, s, _, _ in V15_UPGRADES.values() if s.startswith('vfx:')]
+    old_fx = ({s for _, s, _ in V6_UPGRADES.values()} | {n for ls in V6_ACTIVES.values() for n, *_ in ls} | {s for _, s, _ in V7_UPGRADES.values()}
+              | {s for _, s, _ in V8_UPGRADES.values()} | {s[4:] for t in (V9_UPGRADES, V11_UPGRADES, V13_UPGRADES) for _, s, _, _ in t.values() if s.startswith('vfx:')})
+    assert len(V15_UPGRADES) == 8 and len(fx) == len(set(fx)) and not old_fx & set(fx), 'varje effektbild används bara en gång'
+    n = 0
+    for cid, (kind, src, arg) in V15_SRC.items():
+        save(ash_card(src, arg) if kind == 'ash' else decal_card(src, arg) if kind == 'decal' else meshy_card(kind, src, arg), cid)
+        n += 1
+    for cid, (kind, size, dy, ps) in V15_DRAWN.items():
+        drawn_card15(cid, kind, size, dy, ps)
+        n += 1
+    for cid, w in V15_PACTS.items():
+        pact(cid, w)
+        n += 1
+    for cid, (w, src, tint, rot) in V15_UPGRADES.items():
+        v9_upgrade(cid, w, src, tint, rot)
+        n += 1
+    near_dupes(list(V15_SRC) + list(V15_DRAWN) + list(V15_PACTS) + list(V15_UPGRADES))
+    return n
+
+
 def main():
     assert len(CARDS) == len(set(CARDS)) == 50, len(CARDS)
     srcs = list(V5.values()) + [s for _, s in V5_UPGRADES.values()]
@@ -1884,6 +2381,9 @@ def main():
     if ONLY == 'v13':
         print(main_v13(), 'kortbilder ->', OUT)
         return
+    if ONLY == 'v15':
+        print(main_v15(), 'kortbilder ->', OUT)
+        return
     n = 0
     if not ONLY_V5:
         for cid in CARDS:
@@ -1905,6 +2405,7 @@ def main():
         n += main_v9()
         n += main_v11()
         n += main_v13()
+        n += main_v15()
     print(n, 'kortbilder ->', OUT)
 
 
