@@ -89,6 +89,7 @@ Kör från repo-roten: python3 retrofps/tools/card-art/make.py .          (alla)
                      python3 retrofps/tools/card-art/make.py . v17      (bara version 17)
                      python3 retrofps/tools/card-art/make.py . v18      (bara version 18)
                      python3 retrofps/tools/card-art/make.py . v19      (bara version 19)
+                     python3 retrofps/tools/card-art/make.py . v20      (bara version 20)
 """
 import math
 import os
@@ -3711,6 +3712,194 @@ def main_v19():
     return n
 
 
+# ---------- version 20: Kloakerna och Öknen ----------
+# 16 nya kort, två pakter och åtta uppgraderingar. Motiven ritas här (art20) på samma sätt som i version 19:
+# en ritad gloria (halo19) bakom motivet på den mörklila vinjetten; pakternas vapen (kroksabeln och fällkastaren) som siluetter.
+V20_DRAWN = {  # kort-id: (ritfunktion, storlek, förskjutning y, (gloriatyp, färg))
+    'gummistovlarna': ('rubberboots', 0.84, 0, ('ring', (120, 170, 80))),
+    'angskyddet': ('steammask', 0.84, 0, ('rays', (220, 220, 210))),
+    'vattenskinnet': ('waterskin', 0.84, 0, ('stars', (110, 200, 255))),
+    'saltpasen': ('saltbag', 0.82, 0, ('ring', (230, 230, 240))),
+    'slojan': ('veil', 0.86, 0, ('rays', (230, 200, 140))),
+    'brynet': ('whetstone', 0.86, 0, ('stars', (200, 200, 220))),
+    'spannfjadern': ('spring20', 0.84, 0, ('ring', (180, 180, 190))),
+    'turbanen': ('turban', 0.86, 0, ('rays', (255, 200, 110))),
+    'kloakkartan': ('sewermap', 0.88, 0, ('ring', (140, 170, 90))),
+    'jagarens_snara': ('snare', 0.86, 0, ('stars', (200, 150, 90))),
+    'damaskusstalet': ('damascus', 0.9, 0, ('rays', (190, 200, 230))),
+    'igelburken': ('leechjar', 0.84, 0, ('ring', (160, 50, 70))),
+    'karavanledaren': ('camel', 0.9, 0, ('rays', (255, 190, 90))),
+    'rattfangaren': ('rattrap', 0.86, 0, ('stars', (170, 140, 110))),
+    'sandens_kniv': ('sandknife', 0.88, 0, ('ring', (170, 80, 60))),
+    'sfinxens_gata': ('sphinxhead', 0.9, 0, ('stars', (255, 215, 120))),
+}
+V20_PACTS = {'pakt_kroksabel': 'scimitar', 'pakt_fallkastare': 'trapthrower'}
+V20_UPGRADES = {  # kort-id: (vapen, ritfunktion, gloriafärg)
+    'sabelutfallet': ('scimitar', 'dasharrow', (255, 220, 150)), 'blodrannan': ('scimitar', 'blooddrop', (230, 60, 70)),
+    'breda_svepet': ('scimitar', 'arc20', (200, 220, 255)), 'latta_klingan': ('scimitar', 'wing20', (220, 240, 210)),
+    'dubbelsaxen': ('trapthrower', 'twotraps', (255, 200, 120)), 'giftbettet': ('trapthrower', 'venom', (120, 230, 90)),
+    'jarngreppet': ('trapthrower', 'chain20', (170, 180, 200)), 'snabbspannet': ('trapthrower', 'clock20', (150, 220, 255)),
+}
+SAND20, GREEN20, RUST20, WATER20, CLOTH20 = (214, 180, 110, 255), (90, 120, 50, 255), (150, 80, 40, 255), (80, 160, 230, 255), (230, 220, 200, 255)
+
+
+def trap20(d, cx, cy, r, col=STEEL):
+    """En björnsax sedd ovanifrån: en ring med tänder."""
+    d.ellipse((cx - r, cy - r * 0.6, cx + r, cy + r * 0.6), outline=col, width=int(r * 0.16))
+    for i in range(10):
+        a = i * math.pi / 5
+        x, y = cx + math.cos(a) * r * 0.75, cy + math.sin(a) * r * 0.45
+        poly(d, [(x - r * 0.08, y), (x + r * 0.08, y), (cx + math.cos(a) * r * 0.45, cy + math.sin(a) * r * 0.25)], CREAM19, 3)
+
+
+def art20(kind):
+    im = Image.new('RGBA', (400, 400))
+    d = ImageDraw.Draw(im)
+    if kind == 'rubberboots':
+        for x in (90, 210):
+            rrect(d, (x, 60, x + 90, 300), 14, GREEN20); rrect(d, (x, 260, x + 150 - 20, 340), 20, GREEN20); d.line((x, 120, x + 90, 120), fill=INK, width=8)
+    elif kind == 'steammask':
+        d.ellipse((100, 80, 300, 320), fill=IRON19, outline=INK, width=6)
+        for x in (150, 250): d.ellipse((x - 35, 140, x + 35, 210), fill=(200, 230, 230, 255), outline=INK, width=6)
+        d.ellipse((160, 240, 240, 330), fill=DARK19, outline=INK, width=6)
+    elif kind == 'waterskin':
+        d.ellipse((80, 120, 320, 360), fill=(150, 100, 60, 255), outline=INK, width=6); rrect(d, (175, 50, 225, 140), 10, (120, 80, 40, 255))
+        d.ellipse((150, 200, 250, 260), fill=WATER20)
+    elif kind == 'saltbag':
+        poly(d, [(120, 120), (280, 120), (330, 360), (70, 360)], CLOTH20); d.line((120, 130, 280, 130), fill=RUST20, width=14)
+        for i in range(14): d.ellipse((150 + (i * 37) % 110, 250 + (i * 23) % 80, 160 + (i * 37) % 110, 260 + (i * 23) % 80), fill=(255, 255, 255, 255))
+    elif kind == 'veil':
+        poly(d, [(200, 40), (330, 160), (300, 370), (100, 370), (70, 160)], (220, 200, 160, 230))
+        rrect(d, (120, 170, 280, 210), 8, DARK19); d.ellipse((140, 178, 175, 202), fill=(255, 230, 160, 255)); d.ellipse((225, 178, 260, 202), fill=(255, 230, 160, 255))
+    elif kind == 'whetstone':
+        rrect(d, (60, 220, 340, 300), 16, (110, 110, 120, 255)); poly(d, [(80, 200), (330, 70), (345, 95), (100, 215)], (210, 215, 230, 255))
+    elif kind == 'spring20':
+        for i in range(7): d.ellipse((120, 60 + i * 40, 280, 120 + i * 40), outline=STEEL, width=14)
+    elif kind == 'turban':
+        d.ellipse((70, 110, 330, 330), fill=(230, 220, 200, 255), outline=INK, width=6)
+        for i in range(4): d.arc((80, 120 + i * 30, 320, 300 + i * 10), 190, 350, fill=(190, 170, 140, 255), width=10)
+        d.ellipse((175, 140, 225, 190), fill=(200, 40, 60, 255), outline=GOLD19, width=8)
+    elif kind == 'sewermap':
+        rrect(d, (60, 70, 340, 330), 10, (200, 180, 130, 255))
+        for y in (130, 200, 270): d.line((90, y, 310, y), fill=GREEN20, width=14)
+        for x in (140, 260): d.line((x, 100, x, 300), fill=GREEN20, width=14)
+        d.line((250, 120, 290, 160), fill=(200, 40, 40, 255), width=10); d.line((290, 120, 250, 160), fill=(200, 40, 40, 255), width=10)
+    elif kind == 'snare':
+        d.arc((80, 80, 320, 320), 0, 360, fill=(170, 130, 80, 255), width=14); d.line((200, 320, 200, 390), fill=(170, 130, 80, 255), width=14); d.line((60, 390, 340, 390), fill=WOOD, width=20)
+    elif kind == 'damascus':
+        poly(d, [(80, 330), (310, 70), (340, 90), (110, 350)], (200, 205, 220, 255))
+        for i in range(6): d.arc((90 + i * 35, 120 + i * -5, 250 + i * 20, 260), 200, 300, fill=(140, 150, 170, 255), width=3)
+        rrect(d, (50, 320, 130, 360), 8, GOLD19)
+    elif kind == 'leechjar':
+        rrect(d, (100, 110, 300, 360), 30, (150, 200, 190, 200)); rrect(d, (120, 70, 280, 115), 10, RUST20)
+        for i in range(3): d.arc((130 + i * 40, 180 + i * 50, 230 + i * 30, 240 + i * 50), 0, 300, fill=(60, 20, 30, 255), width=16)
+    elif kind == 'camel':
+        d.ellipse((90, 170, 320, 280), fill=SAND20); d.ellipse((140, 120, 220, 200), fill=SAND20); d.ellipse((210, 120, 290, 200), fill=SAND20)
+        d.line((300, 200, 350, 90), fill=SAND20, width=34); d.ellipse((320, 60, 380, 110), fill=SAND20)
+        for x in (110, 160, 250, 300): d.line((x, 260, x, 370), fill=SAND20, width=20)
+    elif kind == 'rattrap':
+        rrect(d, (60, 230, 340, 300), 8, WOOD); d.line((90, 230, 310, 160), fill=STEEL, width=12); d.ellipse((260, 180, 310, 230), fill=(240, 210, 80, 255))
+    elif kind == 'sandknife':
+        poly(d, [(200, 30), (240, 260), (160, 260)], (200, 170, 130, 255)); rrect(d, (130, 255, 270, 285), 8, GOLD19); rrect(d, (180, 285, 220, 380), 8, RUST20)
+        for i in range(8): d.ellipse((80 + i * 30, 330 - (i % 3) * 20, 92 + i * 30, 342 - (i % 3) * 20), fill=SAND20)
+    elif kind == 'sphinxhead':
+        poly(d, [(200, 40), (330, 140), (320, 360), (80, 360), (70, 140)], (60, 100, 170, 255))
+        d.ellipse((130, 110, 270, 290), fill=SAND20, outline=INK, width=6)
+        for x in (170, 230): d.ellipse((x - 14, 170, x + 14, 192), fill=DARK19)
+        d.line((175, 245, 225, 245), fill=INK, width=6)
+    elif kind == 'dasharrow':
+        for i in range(3): d.line((60 + i * 30, 150 + i * 50, 240, 150 + i * 50), fill=(255, 230, 170, 255), width=16)
+        poly(d, [(240, 110), (350, 200), (240, 290)], (255, 230, 170, 255))
+    elif kind == 'blooddrop':
+        poly(d, [(200, 50), (290, 230), (110, 230)], (200, 30, 40, 255)); d.ellipse((105, 170, 295, 350), fill=(200, 30, 40, 255), outline=INK, width=6)
+    elif kind == 'arc20':
+        d.arc((40, 60, 360, 380), 200, 340, fill=(220, 230, 255, 255), width=40); d.arc((80, 110, 320, 350), 210, 330, fill=(150, 170, 220, 255), width=14)
+    elif kind == 'wing20':
+        for i in range(6): poly(d, [(80, 300), (120 + i * 40, 80 + i * 20), (150 + i * 40, 100 + i * 20)], (230, 240, 220, 255), 4)
+    elif kind == 'twotraps':
+        trap20(d, 130, 160, 100); trap20(d, 270, 260, 100)
+    elif kind == 'venom':
+        trap20(d, 200, 230, 150); poly(d, [(200, 30), (240, 110), (160, 110)], (120, 230, 90, 255)); d.ellipse((165, 80, 235, 150), fill=(120, 230, 90, 255))
+    elif kind == 'chain20':
+        for i in range(5): d.ellipse((60 + i * 60, 160 + (i % 2) * 20, 140 + i * 60, 240 + (i % 2) * 20), outline=STEEL, width=18)
+    elif kind == 'clock20':
+        d.ellipse((70, 70, 330, 330), fill=CREAM19, outline=INK, width=10); d.line((200, 200, 200, 110), fill=INK, width=12); d.line((200, 200, 270, 230), fill=INK, width=10)
+    else:
+        raise ValueError(kind)
+    return im
+
+
+def draw_scimitar():
+    """Kroksabeln: en krökt klinga med ett guldfäste."""
+    im = Image.new('RGBA', (520, 300))
+    d = ImageDraw.Draw(im)
+    d.pieslice((60, -200, 520, 260), 90, 170, fill=(210, 214, 226, 255), outline=INK, width=6)
+    d.pieslice((120, -120, 500, 200), 90, 175, fill=(0, 0, 0, 0))
+    rrect(d, (30, 200, 120, 236), 10, GOLD19)
+    rrect(d, (0, 210, 50, 226), 6, RUST20)
+    return im.crop(im.getbbox()).rotate(-10, resample=Image.BICUBIC, expand=True)
+
+
+def draw_trapthrower():
+    """Fällkastaren: en armborstliknande kastare med en björnsax framtill."""
+    im = Image.new('RGBA', (560, 300))
+    d = ImageDraw.Draw(im)
+    rrect(d, (10, 130, 360, 170), 12, WOOD)
+    d.arc((260, 40, 380, 260), 270, 90, fill=STEEL, width=18)
+    trap20(d, 450, 150, 90)
+    return im.crop(im.getbbox())
+
+
+GUNS.update({'scimitar': draw_scimitar, 'trapthrower': draw_trapthrower})
+
+
+def drawn_card20(cid, kind, size, dy, halo):
+    big = purple_bg()
+    big.alpha_composite(halo19(*halo))
+    g = art20(kind)
+    g = shade(g.crop(g.getbbox()))
+    k = S * 4 * size / max(g.size)
+    g = g.resize((max(1, int(g.width * k)), max(1, int(g.height * k))), Image.LANCZOS)
+    pos = ((S * 4 - g.width) // 2, int((S * 4 - g.height) / 2 + dy * S * 4))
+    add_glow(big, g, pos, (0, 0, 0), 12)
+    big.alpha_composite(g, pos)
+    save(big, cid)
+
+
+def v20_upgrade(cid, w, kind, col):
+    big = purple_bg()
+    big.alpha_composite(halo19('ring', col))
+    g = art20(kind)
+    g = shade(g.crop(g.getbbox()))
+    k = S * 4 * 0.72 / max(g.size)
+    g = g.resize((max(1, int(g.width * k)), max(1, int(g.height * k))), Image.LANCZOS)
+    big.alpha_composite(g, ((S * 4 - g.width) // 2, (S * 4 - g.height) // 2 - 14))
+    b = gun(w, int(S * 4 * 0.42))
+    pos = (S * 4 - b.width - 10, S * 4 - b.height - 12)
+    add_glow(big, b, pos, (0, 0, 0), 10)
+    add_glow(big, b, pos, (255, 200, 90), 4)
+    big.alpha_composite(b, pos)
+    save(big, cid)
+
+
+def main_v20():
+    assert len(V20_DRAWN) == 16 and len(V20_UPGRADES) == 8
+    kinds = [k for k, _, _, _ in V20_DRAWN.values()] + [k for _, k, _ in V20_UPGRADES.values()]
+    assert len(kinds) == len(set(kinds)), 'varje motiv ritas bara en gång'
+    n = 0
+    for cid, (kind, size, dy, halo) in V20_DRAWN.items():
+        drawn_card20(cid, kind, size, dy, halo)
+        n += 1
+    for cid, w in V20_PACTS.items():
+        pact(cid, w)
+        n += 1
+    for cid, (w, kind, col) in V20_UPGRADES.items():
+        v20_upgrade(cid, w, kind, col)
+        n += 1
+    near_dupes(list(V20_DRAWN) + list(V20_PACTS) + list(V20_UPGRADES))
+    return n
+
+
 
 
 def main():
@@ -3751,6 +3940,9 @@ def main():
     if ONLY == 'v19':
         print(main_v19(), 'kortbilder ->', OUT)
         return
+    if ONLY == 'v20':
+        print(main_v20(), 'kortbilder ->', OUT)
+        return
     n = 0
     if not ONLY_V5:
         for cid in CARDS:
@@ -3777,6 +3969,7 @@ def main():
         n += main_v17()
         n += main_v18()
         n += main_v19()
+        n += main_v20()
     print(n, 'kortbilder ->', OUT)
 
 

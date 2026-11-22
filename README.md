@@ -1261,6 +1261,37 @@ Version 7 lägger till 200 förbättringar:
 
 Kombinerade utmaningar multiplicerar själarna. Sparplatsen väljs på startskärmen, och `?fro=XXXX` i adressen fyller i ett delat frö.
 
+## Version 20: Kloakerna och Öknen
+
+- **Kloakerna (`sewer`):** inomhus, med valvat tegel (Ȭ) och rörväggar (ȭ), fuktig sten och galler på golvet.
+  - Slam (Ȳ) saktar dig 40 % och ger 2 skada i sekunden. Fiender saktas också.
+  - Sprutrör (ȳ) sprutar het ånga i 1 s var fjärde sekund (fasen beror på rutan). Ett väsande varnar 0,5 s innan, och ångan gör 8 skada.
+  - Slussar (ȷ, `level.sluices = [{x,y,open}]`) är vägg när de är stängda och slam när de är öppna. Slussratten (ȶ) öppnar eller stänger alla slussar på våningen, men en sluss som någon står i stängs inte. Saknas `level.sluices` letas slussarna upp i kartan.
+  - Råttbon (ȸ) släpper ut två eller tre råttor var tolfte sekund när du är nära, högst åtta åt gången, tills boet slagits sönder (30 skada).
+- **Öknen (`desert`):** utomhus under stark sol, med sanddyner och sandsten (ȯ), klippor (Ȱ), sand och ruinplattor. Öknen är en sen biom.
+  - Sandstorm: var trettionde sekund tjocknar dimman i sex sekunder, och sand blåser förbi. Sandvålnaderna blir nästan osynliga.
+  - Oaser (ȴ) läker 3 hp/s upp till 60 % av maxhälsan, högst 40 hp per oas. Sedan torkar oasen ut.
+  - Hägringar (ȵ) ser ut som oasvatten på mer än fyra rutors avstånd men är sand när du kommer nära. Kvicksand (¯) finns kvar från gravkammaren.
+  - Kaktusar (ȹ) ger 4 skada om du går in i dem. Amforor (Ⱥ) går sönder av skott och släpper ett föremål, eller ibland en skorpion. Eldkrukor (Ȼ) lyser.
+- **Vapen:**
+  - **Kroksabeln (Ʉ):** snabba närstridssvep (30 skada) som träffar alla i bågen. Högerklick ger ett utfallssteg tre rutor framåt med ett hugg (nedkylning 2 s). Den behöver ingen ammo.
+  - **Fällkastaren (Ʌ, ammo fällådor Ɇ):** kastar en björnsax som landar och slår igen om en fiende som kliver på den (60 skada och fast i 3 s). Högst fyra saxar ligger ute samtidigt.
+  - Båda har pakter med fyra uppgraderingar var.
+- **Fiender i kloakerna:**
+  - Alligatorn (ȼ) ligger gömd under slammet, rusar fram och biter. Högst två per bana.
+  - Slamvarelsen (Ƚ) kastar slamklumpar som lämnar slam där de landar.
+  - Rörmokaren (Ⱦ) är tålig och blir snabbare när den är skadad.
+  - Igeln (ȿ) fäster sig vid dig och suger blod tills du skjuter den eller hoppar tre gånger.
+- **Fiender i öknen:**
+  - Skorpionen (ɀ) är snabb, och svanshugget förgiftar.
+  - Nomaden (Ɂ) kliver undan åt sidan när du siktar på honom.
+  - Sandvålnaden (ɂ) är en flygande sandvirvel som sliter på dig när du är nära.
+  - Gamen (Ƀ) cirklar ovanför dig och dyker först när du har under halva hälsan.
+- **Bossar:**
+  - **Råttkungen:** biter, spyr slam, kallar på råttsvärmar och gräver sig in i väggen för att komma ut någon annanstans.
+  - **Sfinxen:** slår med tassen, skjuter ögonstrålar, kallar på mumier och skorpioner och frammanar en sandstorm i arenan.
+- **Kort:** 16 nya kort, sju nya kortnycklar (hettan använder den gamla `heatResist`) och två set: KLOAKERNAS VÄG och KARAVANENS VÄG. Kortbilderna ritas i `tools/card-art/make.py` (`v20`).
+
 ## Version 19: Gruvan och Observatoriet
 
 - **Den övergivna gruvan (`mine`):** inomhus, med timrade stollar (Ȑ) och malmådror (ȑ) som väggar, och gruvjord och plankgolv på golvet.

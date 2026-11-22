@@ -201,6 +201,14 @@ const MOD_KEYS = {
   meteorSense: 'Andel längre varning för meteorer, och mindre skada av dem',
   lowGrav: 'Andel högre och längre hopp på stjärnkartegolvet (lägre tyngdkraft)',
   starSight: 'Andel längre tid som teleskopet visar alla fiender',
+  // version 20: Kloakerna och Öknen – slam, ånga, oaser, iglar, sandstorm, kroksabeln, björnsaxar och hetta
+  sludgeResist: 'Andel mindre inbromsning av slammet i kloakerna',
+  sprayResist: 'Andel mindre skada av ångan från sprutrören',
+  oasisHeal: 'Andel snabbare och större läkning ur oaser',
+  leechResist: 'Chans att en igel inte fäster sig',
+  stormSight: 'Andel bättre sikt i sandstormen',
+  scimitarDmg: 'Andel extra skada med kroksabeln',
+  trapDmg: 'Andel extra skada med björnsaxar',
 };
 const KEYS = Object.keys(MOD_KEYS);
 
@@ -880,6 +888,38 @@ const DEFS = [
   // legendariska
   ['bergets_hjarta', 'BERGETS HJÄRTA', 'legendarisk', { cartResist: 0.3, blastResist: 0.3, oreLuck: 0.3, pickDmg: 0.3 }, 1, '30 % MINDRE SKADA AV VAGNAR\n30 % SPRÄNGSKYDD\n30 % TUR MED MALM\n+30 % SKADA MED HACKAN', { unlock: 50 }],
   ['himlavalvet', 'HIMLAVALVET', 'legendarisk', { meteorSense: 0.3, lowGrav: 0.3, starSight: 0.3, lanceCharge: 0.3 }, 1, '30 % LÄNGRE METEORVARNING\n30 % HÖGRE HOPP\n30 % LÄNGRE TELESKOPTID\n30 % SNABBARE LANSLADDNING', { unlock: 50 }],
+  // ---- version 20: pakter och uppgraderingar för kroksabeln och fällkastaren ----
+  ['pakt_kroksabel', 'NOMADENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nSABELN BEHÖVER INGEN AMMO\n4 UNIKA UPPGRADERINGAR\nBARA KROKSABEL RESTEN AV RUNDAN', { pact: 'scimitar', bad: 1 }],
+  ['pakt_fallkastare', 'PÄLSJÄGARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR FÄLLOR\n4 UNIKA UPPGRADERINGAR\nBARA FÄLLKASTARE RESTEN AV RUNDAN', { pact: 'trapthrower', bad: 1 }],
+  ['sabelutfallet', 'SABELUTFALLET', 'sallsynt', {}, 1, 'UTFALLSSTEGET ÄR\nKLART PÅ 1,2 S', { weapon: 'scimitar', wup: 'sc_dash' }],
+  ['blodrannan', 'BLODRÄNNAN', 'ovanlig', {}, 1, 'HUGGEN FÅR\nFIENDEN ATT BLÖDA', { weapon: 'scimitar', wup: 'sc_bleed' }],
+  ['breda_svepet', 'DET BREDA SVEPET', 'sallsynt', {}, 1, 'BREDARE SVEP', { weapon: 'scimitar', wup: 'sc_wide' }],
+  ['latta_klingan', 'LÄTTA KLINGAN', 'ovanlig', {}, 1, 'SNABBARE HUGG', { weapon: 'scimitar', wup: 'sc_swift' }],
+  ['dubbelsaxen', 'DUBBELSAXEN', 'legendarisk', {}, 1, 'KASTAR TVÅ SAXAR\nPÅ EN GÅNG', { weapon: 'trapthrower', wup: 'tt_double' }],
+  ['giftbettet', 'GIFTBETTET', 'sallsynt', {}, 1, 'SAXARNA FÖRGIFTAR', { weapon: 'trapthrower', wup: 'tt_poison' }],
+  ['jarngreppet', 'JÄRNGREPPET', 'sallsynt', {}, 1, 'SAXARNA HÅLLER\nFAST I 5 S', { weapon: 'trapthrower', wup: 'tt_hold' }],
+  ['snabbspannet', 'SNABBSPÄNNET', 'ovanlig', {}, 1, 'SNABBARE KAST\nOCH OMLADDNING', { weapon: 'trapthrower', wup: 'tt_fast' }],
+  // ---- version 20: slam, ånga, oaser, iglar, sandstorm, kroksabeln, björnsaxar och hetta (Kloakerna och Öknen) ----
+  // vanliga
+  ['gummistovlarna', 'GUMMISTÖVLARNA', 'vanlig', { sludgeResist: 0.2 }, 3, '20 % MINDRE INBROMSNING\nI SLAMMET'],
+  ['angskyddet', 'ÅNGSKYDDET', 'vanlig', { sprayResist: 0.25 }, 3, '25 % MINDRE SKADA\nAV ÅNGAN'],
+  ['vattenskinnet', 'VATTENSKINNET', 'vanlig', { oasisHeal: 0.2 }, 3, '20 % MER LÄKNING\nUR OASER'],
+  ['saltpasen', 'SALTPÅSEN', 'vanlig', { leechResist: 0.2 }, 3, '20 % CHANS ATT IGLAR\nINTE FÄSTER'],
+  ['slojan', 'SLÖJAN', 'vanlig', { stormSight: 0.2 }, 3, '20 % BÄTTRE SIKT\nI SANDSTORMEN'],
+  ['brynet', 'BRYNET', 'vanlig', { scimitarDmg: 0.12 }, 3, '+12 % SKADA MED\nKROKSABELN'],
+  ['spannfjadern', 'SPÄNNFJÄDERN', 'vanlig', { trapDmg: 0.15 }, 3, '+15 % SKADA MED\nBJÖRNSAXAR', { unlock: 10 }],
+  // ovanliga
+  ['turbanen', 'TURBANEN', 'ovanlig', { heatResist: 0.25, stormSight: 0.15 }, 2, '25 % SKYDD MOT HETTA\n15 % BÄTTRE SIKT\nI SANDSTORMEN'],
+  ['kloakkartan', 'KLOAKKARTAN', 'ovanlig', { sludgeResist: 0.3, sprayResist: 0.2 }, 2, '30 % MINDRE INBROMSNING\nI SLAMMET\n20 % MINDRE ÅNGSKADA', { unlock: 15 }],
+  ['jagarens_snara', 'JÄGARENS SNARA', 'ovanlig', { trapDmg: 0.25, dmg: 0.04 }, 2, '+25 % SKADA MED\nBJÖRNSAXAR\n+4 % SKADA', { unlock: 15 }],
+  ['damaskusstalet', 'DAMASKUSSTÅLET', 'ovanlig', { scimitarDmg: 0.2, critChance: 0.03 }, 2, '+20 % SKADA MED\nKROKSABELN\n+3 % KRITCHANS'],
+  ['igelburken', 'IGELBURKEN', 'ovanlig', { oasisHeal: 0.4, leechResist: -0.3 }, 1, '40 % MER LÄKNING\nUR OASER\n-30 % IGELSKYDD', { curse: true, bad: 1 }],
+  // sällsynta
+  ['karavanledaren', 'KARAVANLEDAREN', 'sallsynt', { oasisHeal: 0.3, stormSight: 0.3, heatResist: 0.2 }, 1, '30 % MER LÄKNING UR OASER\n30 % BÄTTRE STORMSIKT\n20 % SKYDD MOT HETTA', { unlock: 25 }],
+  ['rattfangaren', 'RÅTTFÅNGAREN', 'sallsynt', { trapDmg: 0.3, leechResist: 0.3 }, 1, '+30 % SKADA MED\nBJÖRNSAXAR\n30 % CHANS ATT IGLAR\nINTE FÄSTER', { unlock: 25 }],
+  ['sandens_kniv', 'SANDENS KNIV', 'sallsynt', { scimitarDmg: 0.4, heatResist: -0.3 }, 1, '+40 % SKADA MED\nKROKSABELN\n-30 % SKYDD MOT HETTA', { curse: true, bad: 1 }],
+  // legendariska
+  ['sfinxens_gata', 'SFINXENS GÅTA', 'legendarisk', { stormSight: 0.3, heatResist: 0.3, oasisHeal: 0.3, scimitarDmg: 0.3 }, 1, '30 % BÄTTRE STORMSIKT\n30 % SKYDD MOT HETTA\n30 % MER OASLÄKNING\n+30 % SKADA MED SABELN', { unlock: 50 }],
 ];
 
 // ---------- Set och synergier ----------
@@ -922,6 +962,9 @@ const SETS = {
   // version 19: GRUVANS VÄG (Gruvan: vagnar, explosioner och malm) och OBSERVATORIETS VÄG (Observatoriet: meteorer, låg tyngdkraft och teleskop)
   gruvan: { name: 'GRUVANS VÄG', text: '25 % MINDRE SKADA AV GRUVVAGNAR\n25 % MINDRE SKADA AV EXPLOSIONER\n20 % CHANS TILL DUBBELT MALMGULD', mods: { cartResist: 0.25, blastResist: 0.25, oreLuck: 0.2 } },
   observatoriet: { name: 'OBSERVATORIETS VÄG', text: '25 % LÄNGRE VARNING FÖR METEORER\n25 % HÖGRE HOPP PÅ STJÄRNKARTAN\n+25 % TID MED TELESKOPET', mods: { meteorSense: 0.25, lowGrav: 0.25, starSight: 0.25 } },
+  // version 20: KLOAKERNAS VÄG (Kloakerna: slam, ånga och iglar) och ÖKNENS VÄG (Öknen: oaser, sandstorm och hetta; id karavanen eftersom oknen redan finns sedan version 7)
+  kloakerna: { name: 'KLOAKERNAS VÄG', text: '25 % MINDRE INBROMSNING I SLAM\n25 % MINDRE SKADA AV ÅNGAN\n20 % CHANS ATT IGLAR INTE FÄSTER', mods: { sludgeResist: 0.25, sprayResist: 0.25, leechResist: 0.2 } },
+  karavanen: { name: 'KARAVANENS VÄG', text: '25 % MER LÄKNING UR OASER\n25 % BÄTTRE SIKT I SANDSTORMEN\n20 % SKYDD MOT HETTA', mods: { oasisHeal: 0.25, stormSight: 0.25, heatResist: 0.2 } },
   templet: { name: 'TEMPLETS VÄG', text: '25 % MINDRE GIFT\n+25 % TUR MED IDOLER OCH LYCKOHJUL\n25 % MINDRE INBROMSNING I LIANER', mods: { poisonResist: 0.25, idolLuck: 0.25, vineWalk: 0.25 } },
   laboratoriet: { name: 'LABORATORIETS VÄG', text: '25 % MINDRE SKADA AV SYRA\n+25 % TUR MED TRANSMUTATION\n20 % CHANS TILL STARK BRYGD', mods: { acidResist: 0.25, transmuteLuck: 0.25, brewLuck: 0.2 } },
   drommen: { name: 'DRÖMMENS VÄG',    text: '+25 % SIKT I SÖMNENS DIMMA\n25 % MINDRE EFFEKT AV SÖMN\n+20 % SKADA MED DRÖMSTAVEN', mods: { mistSight: 0.25, sleepResist: 0.25, dreamDmg: 0.2 } },
@@ -939,7 +982,8 @@ const SYN = { eld: 'ELD', krit: 'KRIT', gift: 'GIFT', frost: 'FROST', blixt: 'BL
   tradgard: 'TRÄDGÅRDEN', ros: 'ROSOR', torne: 'TÖRNE', staty: 'STATYER', drom: 'DRÖMMAR', somn: 'SÖMN', mardrom: 'MARDRÖMMAR',
   skepp: 'SKEPPET', kanon: 'KANONER', pirat: 'PIRATER', syra: 'SYRA', flaska: 'FLASKOR', transmut: 'TRANSMUTATION', tesla: 'TESLASPOLAR',
   cirkus: 'CIRKUSEN', rampljus: 'RAMPLJUSET', kniv: 'KNIVAR', kagla: 'KÄGLOR', pil: 'GIFTPILAR', idol: 'IDOLER', djungel: 'DJUNGELN',
-  gruva: 'GRUVAN', vagn: 'GRUVVAGNAR', malm: 'MALM', stjarna: 'STJÄRNOR', meteor: 'METEORER' };
+  gruva: 'GRUVAN', vagn: 'GRUVVAGNAR', malm: 'MALM', stjarna: 'STJÄRNOR', meteor: 'METEORER',
+  kloak: 'KLOAKERNA', slam: 'SLAM', oken: 'ÖKNEN', sabel: 'SABEL', falla: 'FÄLLOR' };
 // set och syn för alla kort samlas här: id: [set eller '', syn-taggar...]
 const TAGS = {
   // eld och explosioner
@@ -1063,6 +1107,10 @@ const TAGS = {
   slagrutan: ['', 'malm', 'guld'], hackskaftet: ['', 'malm', 'gruva'], linsputsen: ['', 'stjarna'], okularet: ['', 'stjarna'], rallarens_spade: ['', 'vagn', 'gruva'], dynamitbaltet: ['', 'gruva'],
   guldvaskarens_panna: ['', 'malm', 'guld'], brytjarnet: ['', 'malm', 'krit'], slipade_glaset: ['', 'stjarna'], planisfaren: ['', 'stjarna', 'meteor'], svartkrutet: ['', 'malm', 'gruva'],
   moderlodet: ['', 'malm', 'guld'], kometsvansen: ['', 'stjarna', 'meteor', 'krit'], fallande_stjarnan: ['', 'stjarna', 'meteor'],
+  // version 20: KLOAKERNAS VÄG (Kloakerna) och KARAVANENS VÄG (Öknen); kloaken, slam, öknen, sabeln och fällor
+  gummistovlarna: ['kloakerna', 'kloak', 'slam'], angskyddet: ['kloakerna', 'kloak'], saltpasen: ['kloakerna', 'kloak', 'slam'], kloakkartan: ['kloakerna', 'kloak', 'slam'], rattfangaren: ['kloakerna', 'kloak', 'falla'],
+  vattenskinnet: ['karavanen', 'oken'], slojan: ['karavanen', 'oken'], turbanen: ['karavanen', 'oken'], karavanledaren: ['karavanen', 'oken'], sfinxens_gata: ['karavanen', 'oken', 'sabel'],
+  brynet: ['', 'sabel'], spannfjadern: ['', 'falla'], jagarens_snara: ['', 'falla'], damaskusstalet: ['', 'sabel', 'krit'], igelburken: ['', 'slam', 'oken'], sandens_kniv: ['', 'sabel', 'oken'],
 };
 
 const ALL = DEFS.map(([id, name, rarity, mods, max, text, extra]) => {
@@ -1199,6 +1247,8 @@ const FMT = {
   dartDmg: ['p', 'SKADA MED GIFTPILAR'], poisonResist: ['p', 'SKYDD MOT GIFT'], idolLuck: ['p', 'TUR MED IDOLER'], vineWalk: ['p', 'LÄTTARE I LIANER'],
   cartResist: ['p', 'SKYDD MOT GRUVVAGNAR'], blastResist: ['p', 'SPRÄNGSKYDD'], oreLuck: ['p', 'TUR MED MALM'], pickDmg: ['p', 'SKADA MED HACKAN'],
   lanceCharge: ['p', 'SNABBARE LANSLADDNING'], meteorSense: ['p', 'METEORVARNING'], lowGrav: ['p', 'HÖGRE HOPP PÅ STJÄRNKARTAN'], starSight: ['p', 'TID MED TELESKOPET'],
+  sludgeResist: ['p', 'SLAMSKYDD'], sprayResist: ['p', 'ÅNGSKYDD'], oasisHeal: ['p', 'LÄKNING UR OASER'], leechResist: ['p', 'IGELSKYDD'],
+  stormSight: ['p', 'SIKT I SANDSTORMEN'], scimitarDmg: ['p', 'SKADA MED KROKSABELN'], trapDmg: ['p', 'SKADA MED BJÖRNSAXAR'],
 };
 const INVERT = { damageTaken: true };
 const num = v => String(Math.round(v * 100) / 100).replace('.', ',');
@@ -1344,7 +1394,7 @@ function preview(card, mods, ownedIds) {
 // ---------- Dragning ----------
 // Vikten skiftar mot sällsyntare med djup (våning, 0..) och luck (summan av luck-modden, 0.1 per kort).
 const CURSE_WEIGHT = 0.8; // förbannade kort dyker upp ibland
-const PACT_WEIGHT = 0.42, UPGRADE_WEIGHT = 17; // version 19: trettioåtta pakter (0,4 -> 0,42 så att pakterna syns lika ofta när korthögen vuxit), uppgraderingarna 15 -> 17 // trettiosex pakter (vikten sänkt så att alla pakter tillsammans syns lika ofta som de fjorton förut; version 13: 0,53 -> 0,49, version 15: 0,49 -> 0,46, version 16: 0,46 -> 0,43, version 17: 0,43 -> 0,4, version 18: oförändrad 0,4 med trettiosex pakter); uppgraderingarna väger lite mer sedan korthögen växt (version 11: 8 -> 9, version 13: 9 -> 10, version 15: 10 -> 11, version 16: 11 -> 12, version 17: 12 -> 13, version 18: 13 -> 15): en pakt i ungefär var fjärde dragning; efter pakten kommer uppgraderingarna tätt
+const PACT_WEIGHT = 0.44, UPGRADE_WEIGHT = 18; // version 20: fyrtio pakter (0,42 -> 0,44), uppgraderingarna 17 -> 18 // version 19: trettioåtta pakter (0,4 -> 0,42 så att pakterna syns lika ofta när korthögen vuxit), uppgraderingarna 15 -> 17 // trettiosex pakter (vikten sänkt så att alla pakter tillsammans syns lika ofta som de fjorton förut; version 13: 0,53 -> 0,49, version 15: 0,49 -> 0,46, version 16: 0,46 -> 0,43, version 17: 0,43 -> 0,4, version 18: oförändrad 0,4 med trettiosex pakter); uppgraderingarna väger lite mer sedan korthögen växt (version 11: 8 -> 9, version 13: 9 -> 10, version 15: 10 -> 11, version 16: 11 -> 12, version 17: 12 -> 13, version 18: 13 -> 15): en pakt i ungefär var fjärde dragning; efter pakten kommer uppgraderingarna tätt
 function rarityWeight(rarity, depth, luck) {
   const t = Math.max(0, (depth || 0) * 0.25 + (luck || 0) * 2.5); // 0 = början av rundan
   const base = RARITY[rarity].weight;
@@ -1406,7 +1456,7 @@ const WEAPON_NAME = { pistol: 'PISTOL', shotgun: 'HAGELGEVÄR', rifle: 'GEVÄR',
   knives: 'KASTKNIVAR', hammer: 'STRIDSHAMMARE', musket: 'MUSKÖT', harpoon: 'HARPUN', boomerang: 'BUMERANG', prism: 'PRISMA',
   sawlauncher: 'SÅGBLAD', windgun: 'VINDBÖSSA', spear: 'SPJUT', sporelauncher: 'SPORKASTARE', mirrorshield: 'SPEGELSKÖLD', whip: 'PISKA',
   runebook: 'RUNBOK', steamcannon: 'ÅNGKANON', censer: 'RÖKELSEKAR', hivelauncher: 'BIKASTARE',
-  shears: 'TRÄDGÅRDSSAX', dreamstaff: 'DRÖMSTAV', chaincannon: 'KEDJEKANON', acidsprayer: 'SYRASPRUTA', pinthrower: 'KÄGLEKASTARE', blowgun: 'BLÅSRÖR', pickaxe: 'HACKA', starlance: 'STJÄRNLANS' };
+  shears: 'TRÄDGÅRDSSAX', dreamstaff: 'DRÖMSTAV', chaincannon: 'KEDJEKANON', acidsprayer: 'SYRASPRUTA', pinthrower: 'KÄGLEKASTARE', blowgun: 'BLÅSRÖR', pickaxe: 'HACKA', starlance: 'STJÄRNLANS', scimitar: 'KROKSABEL', trapthrower: 'FÄLLKASTARE' };
 // etikett ovanför kortets namn: förbannelse, pakt, aktiv förmåga ('AKTIV · 8 S'), vilket vapen uppgraderingen hör till eller sammansmält
 const activeTag = card => 'AKTIV · ' + num(card.cd || 0) + ' S';
 function tag(card) {

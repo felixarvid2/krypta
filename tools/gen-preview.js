@@ -1,10 +1,10 @@
 'use strict';
 // Skriver ut en genererad bana som ASCII: node tools/gen-preview.js <biom> [seed] [djup] [flaggor]
 //   biom: dungeon | caves | graveyard | forest | courtyard | swamp | frost | volcano | tomb | crystal | sunken | clock | sky | fungus | mirror
-//         | library | foundry | cathedral | hive | garden | dream | ship | lab | circus | jungle | mine | observatory
+//         | library | foundry | cathedral | hive | garden | dream | ship | lab | circus | jungle | mine | observatory | sewer | desert
 //         | boss | boss:hall | boss:graveyard | boss:cave | boss:forest | boss:swamp | boss:frost | boss:volcano | boss:tomb | boss:crystal
 //         | boss:sunken | boss:clock | boss:sky | boss:fungus | boss:mirror | boss:library | boss:foundry | boss:cathedral | boss:hive
-//         | boss:garden | boss:dream | boss:ship | boss:lab | boss:circus | boss:jungle | boss:mine | boss:observatory | random
+//         | boss:garden | boss:dream | boss:ship | boss:lab | boss:circus | boss:jungle | boss:mine | boss:observatory | boss:sewer | boss:desert | random
 //         (eller --biome=clock, --biome=fungus, --biome=library, --biome=foundry)
 //   flaggor: --biome=swamp  --shop  --weapon=g (eller --weapon=axe, --weapon=harpoon, --weapon=Â, --weapon=spear, --weapon=Į, --weapon=whip, --weapon=Ŕ,
 //            --weapon=runebook, --weapon=Ɓ, --weapon=censer, --weapon=Ɲ, --weapon=shears, --weapon=Ʋ, --weapon=chaincannon, --weapon=Ǭ, --weapon=pinthrower, --weapon=Ȏ, --weapon=pickaxe, --weapon=Ȫ)
@@ -67,6 +67,8 @@
 //          node tools/gen-preview.js boss:circus 3 --boss=ringmaster    /    node tools/gen-preview.js boss:jungle 3 --boss=serpent    /    node tools/gen-preview.js jungle 1 --stats --n=100
 //          node tools/gen-preview.js --biome=mine 7 3 --rooms --guardian=foreman   (version 19: timmer Ȑ, malmådror ȑ, räls Ȗ med vagnbanor, gas ȗ, ras Ș)
 //          node tools/gen-preview.js --biome=observatory 7 4 --rooms --guardian=starseer   (mässing ȓ, kupolspringor Ț, stjärnkartegolv ș, stjärnportar Ƞ)
+//          node tools/gen-preview.js --biome=sewer 7 3 --rooms --guardian=ratking   (version 20: valvtegel Ȭ, rör ȭ, slam Ȳ, sprutrör ȳ, slussar ȷ med ratten ȶ)
+//          node tools/gen-preview.js desert 7 4 --guardian=sphinx    /    node tools/gen-preview.js boss:sewer 3 --boss=ratking    /    node tools/gen-preview.js boss:desert 3 --boss=sphinx
 //          node tools/gen-preview.js boss:mine 3 --boss=foreman    /    node tools/gen-preview.js boss:observatory 3 --boss=starseer    /    node tools/gen-preview.js mine 1 --stats --n=100
 const fs = require('fs');
 const path = require('path');
@@ -178,8 +180,14 @@ const LEGEND = [
   '  ș stjärnkartegolv (låg tyngdkraft, får ligga på vägen)',
   'rekvisita: ț gruvvagn i vila  Ȝ dynamitlåda  ȝ karbidlampa (ljus)  Ȟ orrery  ȟ teleskop      föremål: ȫ stjärnstoftsflaska',
   'gruvan: lastplatsen, schaktet, malmgrottan, sprängkammaren, den rasade stollen; observatoriet: stora kupolen, planetariet, teleskopgalleriet, kartrummet',
+  'version 20: väggar Ȭ valvtegel  ȭ rörvägg  Ȯ råttkungens vägg  ȯ ruinsten  Ȱ klippa  ȱ sfinxens vägg',
+  'vapen: Ʉ kroksabeln  Ʌ fällkastaren      nya fiender: ȼ alligator (högst 2, djup 2+)  Ƚ slamvarelse  Ⱦ rörmokare  ȿ igel',
+  '  ɀ skorpion  Ɂ nomad  ɂ sandvålnad (högst 2, djup 2+)  Ƀ gam      (råttorna ǚ även i kloakerna)',
+  'golvrutor (Ȳ ȳ ȷ aldrig enda vägen): Ȳ slam  ȳ sprutrör  ȷ sluss (level.sluices, vägg när stängd)  ȴ oas (högst 2)  ȵ hägring  ¯ kvicksand (öknen)',
+  'rekvisita: ȶ slussratt (en per bana med slussar)  ȸ råttbo  ȹ kaktus  Ⱥ amfora  Ȼ kokpanna (ljus)      föremål: Ɇ fällåda',
+  'kloakerna: kanalsalen, pumprummet, råttboet, slussgången; öknen: ruinhovet, oasen, dynfältet, karavanlägret (gårdarna under himlen)',
 ];
-const OLD_EN = 'SKVILNORW', NEW_EN = 'UXY!@^+ÅÄÖÉÜÑÆÞÐÝÃÕÊÎÔËÍÏÓÚÛĀĂĳĴĵĶķĸ' + 'ŌōŎŏŐő' + 'ŗŘřŚśŜ' + 'ŲųŴŽžſ' + 'ƄƅƆƇƈƉ' + 'ƑƒƜƘƙƚ' + 'ƫƬƭƮƯư' + 'ǕǖǗǘǙǚǣǤǥǦǧǨ' + 'ǷǸǹǺǻǼȈȉȊȋȌȍ' + 'ȡȢȣȤȥȦȧȨ';
+const OLD_EN = 'SKVILNORW', NEW_EN = 'UXY!@^+ÅÄÖÉÜÑÆÞÐÝÃÕÊÎÔËÍÏÓÚÛĀĂĳĴĵĶķĸ' + 'ŌōŎŏŐő' + 'ŗŘřŚśŜ' + 'ŲųŴŽžſ' + 'ƄƅƆƇƈƉ' + 'ƑƒƜƘƙƚ' + 'ƫƬƭƮƯư' + 'ǕǖǗǘǙǚǣǤǥǦǧǨ' + 'ǷǸǹǺǻǼȈȉȊȋȌȍ' + 'ȡȢȣȤȥȦȧȨ' + 'ȼȽȾȿɀɁɂɃ';
 const FEAT = { anvil: '(', fortune: ')', prisoner: '[', challenge: '?', offering: ';', lever: '/', locked: ']', cracked: '{', arrows: '<', gas: '>', lava: '_', water: '-', ice: ':', webs: '"',
   alchemist: '£', priest: '€', petcage: '©', potions: '¥', icicles: 'Ç',
   campfire: '¶', questboard: '®', runes: 'ª', meat: 'ð', firejets: '°', crumble: '¬', pendulums: '±', plates: '¨', secretstairs: '÷', poisonbarrels: 'µ', frostbarrels: 'ß',
@@ -208,7 +216,10 @@ const FEAT = { anvil: '(', fortune: ')', prisoner: '[', challenge: '?', offering
   mosquitoes: 'Ȍ', templeguardians: 'ȍ',
   timbers: 'Ȑ', oreveins: 'ȑ', brasswalls: 'ȓ', starcharts: 'Ȕ', rails: 'Ȗ', gaspockets: 'ȗ', caveins: 'Ș', starmaps: 'ș', domeslits: 'Ț', minecarts: 'ț', // version 19
   dynamite: 'Ȝ', carbidelamps: 'ȝ', orreries: 'Ȟ', telescopes: 'ȟ', starportals: 'Ƞ', stardust: 'ȫ', miners: 'ȡ', coalgolems: 'Ȣ', molemen: 'ȣ', sparkwisps: 'Ȥ',
-  starspawns: 'ȥ', astronomers: 'Ȧ', clockowls: 'ȧ', voidwatchers: 'Ȩ' };
+  starspawns: 'ȥ', astronomers: 'Ȧ', clockowls: 'ȧ', voidwatchers: 'Ȩ',
+  sewerbricks: 'Ȭ', pipewalls: 'ȭ', dunes: 'ȯ', mesas: 'Ȱ', sludge: 'Ȳ', steampipes: 'ȳ', oases: 'ȴ', mirages: 'ȵ', sluicewheels: 'ȶ', sluices: 'ȷ', // version 20
+  ratnests: 'ȸ', cacti: 'ȹ', amphorae: 'Ⱥ', braziers: 'Ȼ', traps: 'Ɇ', alligators: 'ȼ', sludgemen: 'Ƚ', plumbers: 'Ⱦ', leeches: 'ȿ', scorpions: 'ɀ', nomads: 'Ɂ',
+  sandwraiths: 'ɂ', vultures: 'Ƀ' };
 const arrow = b => (b.dx > 0 ? '>' : b.dx < 0 ? '<' : b.dy > 0 ? 'v' : '^');
 const makeLevel = (seed, d, shop) => (flag('secret') ? Gen.secret(seed, { biome: biome === 'random' ? undefined : biome, depth: d })
   : flag('maze') ? Gen.maze(seed, { biome: biome === 'random' ? undefined : biome, depth: d })
@@ -251,6 +262,7 @@ for (let k = 0; k < n; k++) {
   if (lv.saws && lv.saws.length) console.log('sågspår: ' + lv.saws.map(s => `${s.x0},${s.y0}-${s.x1},${s.y1}`).join('  '));
   if (lv.teleports && lv.teleports.length) console.log('teleporterpar: ' + lv.teleports.map((t, i) => `${i + 1}: ${t.a.x},${t.a.y} <-> ${t.b.x},${t.b.y}`).join('  '));
   if (lv.carts && lv.carts.length) console.log('vagnbanor: ' + lv.carts.map((c, i) => `${i + 1}: ${c.loop ? 'slinga' : 'fram och tillbaka'} ${c.path.length} rutor från ${c.path[0].x},${c.path[0].y}, fart ${c.speed}, fas ${c.ph}`).join('  ')); // (version 19)
+  if (lv.sluices && lv.sluices.length) console.log('slussar: ' + lv.sluices.map(q => `${q.x},${q.y}${q.open ? ' (öppen)' : ''}`).join(' '));
   if (lv.starports && lv.starports.length) console.log('stjärnportpar: ' + lv.starports.map((p, i) => `${i + 1}: ${p[0].x},${p[0].y} <-> ${p[1].x},${p[1].y}`).join('  '));
   if (lv.belts && lv.belts.length) { // rullbanden som raka band: start, riktning och längd
     const at = new Map(lv.belts.map(b => [b.y * W + b.x, b])), runs = [];
@@ -294,7 +306,7 @@ for (let k = 0; k < n; k++) {
   }
   if (flag('rooms')) {
     // per rum: typ, rumstyp, ruta, antal fiender och rekvisita (räknat via rumsmasken när den finns)
-    const ENEMY = 'SKVILNORWEQ' + NEW_EN, PROPS = 'ckjquvwyzeiFHJT()[?;/£€©¶®µß÷²³çÿýĖĘĚĞĠŅņŇňŒŦŧŰűŻż' + 'ƎƏƐƗƧƨƩƪ' + 'ǎǐǑǝǞǟ' + 'ǳǴǵǶȄȅȆȇ' + 'țȜȝȞȟ';
+    const ENEMY = 'SKVILNORWEQ' + NEW_EN, PROPS = 'ckjquvwyzeiFHJT()[?;/£€©¶®µß÷²³çÿýĖĘĚĞĠŅņŇňŒŦŧŰűŻż' + 'ƎƏƐƗƧƨƩƪ' + 'ǎǐǑǝǞǟ' + 'ǳǴǵǶȄȅȆȇ' + 'țȜȝȞȟ' + 'ȶȸȹȺȻ';
     lv.rooms.forEach((r, i) => {
       let en = 0, pr = 0, items = '';
       for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -302,7 +314,7 @@ for (let k = 0; k < n; k++) {
         if (!inside) continue;
         const c = lv.map[y][x];
         if (ENEMY.includes(c)) en++; else if (PROPS.includes(c)) pr++;
-        if ("ZhaA$CMwy,'}¥ªðþ¼½ĢŊŋŨƂƞƳǫǭǾȏȫ".includes(c) || (Gen.WEAPONS && Gen.WEAPONS[c])) items += c;
+        if ("ZhaA$CMwy,'}¥ªðþ¼½ĢŊŋŨƂƞƳǫǭǾȏȫɆ".includes(c) || (Gen.WEAPONS && Gen.WEAPONS[c])) items += c;
       }
       console.log(`  ${String(i).padStart(2)} ${String.fromCharCode(48 + i)} ${r.type.padEnd(9)} ${(r.arch || '').padEnd(12)} ${(r.tag || r.shape || '').padEnd(9)} ${r.x},${r.y} ${r.w}x${r.h}  fiender ${en}  rekvisita ${pr}  ${items}` + (r.guardian ? '  vaktare ' + r.guardian : '') + (r.lock ? '  lås ' + r.lock : ''));
     });
