@@ -1,0 +1,11 @@
+import { setup } from './head.mjs';
+const { pg, ev, wait, ok, start, done } = await setup(8890, 'out/t64');
+await start('&seed=64&biome=dungeon&god=1');
+await ev(() => { const g = __game, P = g.P; for (const e of g.ents()) e.dead = true;
+  ['tempo', 'storm', 'prismatic', 'gusty'].forEach((id, i) => { const a = P.a + (i - 1.5) * 0.3, e = g.spawnEnemy('S', P.x + Math.cos(a) * 4, P.y + Math.sin(a) * 4); e.elite = { id, name: id }; e.alert = true; e.hp = e.maxHp = 200; }); });
+await wait(7000);
+await ev(() => { for (const e of __game.ents()) if (!e.dead) __game.hurtEnemy(e, 5, e.x, e.y, {}); }); await wait(1500);
+ok(await ev(() => __game.bubbles().length) >= 1, 'tidsbunden elit har en bubbla');
+await ev(() => { for (const e of __game.ents()) if (!e.dead) __game.hurtEnemy(e, 9999, e.x, e.y, {}); }); await wait(500);
+ok(await ev(() => __game.bubbles().filter(b => b.t > 0).length) === 0, 'bubblan försvinner när eliten dör');
+await done();

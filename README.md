@@ -143,6 +143,15 @@ Spelare och gränssnitt
 53. Positionsljud i stereo som dämpas bakom väggar.
 54. Fotsteg i takt med farten.
 
+## Förbättringsloopen
+
+Spelet har en självförbättrande loop för Claude Code: **mät → planera → bygg och testa → granska → slå ihop → lär**.
+
+- **Mät:** `node tools/playtest/measure.mjs` kör bangeneratorns och kortens tester, hela speltestsviten och spelrobotar utan gudläge i varje biom, och skriver `tools/playtest/out/report.md`.
+- **Planera, bygga, granska, slå ihop:** arbetsflödet `.claude/workflows/forbattra.js` (skillen `forbattra`) låter en planerare välja små, testbara förbättringar ur rapporten, en byggare genomföra dem en i taget med ett eget test, en oberoende granskare läsa diffen, och checkar bara in det som är grönt. Underkända ändringar sparas som patch och återställs.
+- **Lär:** loopens minne är `tools/playtest/LOOP_NOTES.md` (backlogg, historik, lärdomar), som varje runda läser och uppdaterar.
+- **Testriggen:** `tools/playtest/` (Playwright-tester, bottar), `tools/artifact/` (bygget av claude.ai-artefakten med stabila paket och tester för dator och telefon).
+
 ## Version 3: biomer, väktarrum och 100 förbättringar
 
 ### Biomerna ser och låter olika

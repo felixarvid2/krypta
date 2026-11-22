@@ -1,0 +1,13 @@
+import { setup } from './head.mjs';
+const { pg, shot, ev, wait, ok, done } = await setup(8887, 'out/t61');
+await pg.goto('http://localhost:8887/index.html?nolock=1'); await pg.waitForFunction('!document.getElementById("start").disabled', { timeout: 60000 });
+await ev(() => { __game.profile.tutDone = true; __game.profile.wkills = { rifle: 150, spear: 120, axe: 30 }; __game.beginHub(); }); await wait(1500);
+await ev(() => { const P = __game.P; P.x = 4.5; P.y = 12.5; P.a = Math.PI / 2; }); await wait(300); await pg.keyboard.press('KeyE'); await wait(600); await shot('wm');
+const rows = await ev(() => [...document.querySelectorAll('.cu-li')].map(e => e.textContent).filter(t => /GEVÄR|SPJUT/.test(t)).join(' | '));
+ok(/VÄLJ SOM STARTVAPEN/.test(rows), 'vapenmästaren listar valbara vapen: ' + rows.slice(0, 120));
+await ev(() => { const li = [...document.querySelectorAll('.cu-li')].find(e => /SPJUTET/.test(e.textContent)); li.click(); }); await wait(400);
+ok(await ev(() => __game.settings.startWeapon) === 'spear', 'spjutet valt som startvapen');
+await pg.keyboard.press('Escape'); await wait(500);
+await ev(() => { __game.showTitle(); __game.begin('new'); }); await wait(1500);
+ok(await ev(() => __game.P.has[__game.WEAPONS.findIndex(w => w.id === 'spear')]), 'rundan börjar med spjutet');
+await done();
