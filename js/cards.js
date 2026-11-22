@@ -174,6 +174,15 @@ const MOD_KEYS = {
   fountainHeal: 'Extra HP du läker när du dricker ur en fontän (platt)',
   shiftSense: 'Andel kortare tid som glidande väggar står stängda (de öppnas snabbare)',
   sleepResist: 'Andel mindre effekt av sömn och dåsighet (sömnens dimma, sömnpulver och drömstjärnor)',
+  // version 17: Spökskeppet och Laboratoriet – sköljt däck, kanoner, kedjekulor, syra, transmutation, teslaspolar och alembiker
+  deckGrip: 'Andel mer grepp på sköljt däck (mindre halka och mindre knuff av vågorna)',
+  cannonDmg: 'Andel extra skada med kanoner (kanonkulan och smällen)',
+  chainDmg: 'Andel extra skada med kedjekulekanonen',
+  acidDmg: 'Andel extra skada med syra (syrasprutan, syrapölar och syrakar mot fiender)',
+  acidResist: 'Andel mindre skada av syra (syrakar, slemmets syrapölar och frätningen av rustningen)',
+  transmuteLuck: 'Andel tur med transmutation: fiender är av guld längre och ger mer guld, och cirkelns dryck kommer oftare',
+  teslaResist: 'Andel mindre skada från teslaspolarnas blixtar',
+  brewLuck: 'Chans att alembiken brygger en stark dryck',
 };
 const KEYS = Object.keys(MOD_KEYS);
 
@@ -733,6 +742,46 @@ const DEFS = [
   // legendariska
   ['svarta_rosen', 'DEN SVARTA ROSEN', 'legendarisk', { thornResist: 0.4, shearDmg: 0.3, fountainHeal: 6, angelSight: 2 }, 1, '40 % MINDRE SKADA\nFRÅN TAGGRANKOR\n+30 % SKADA MED SAXEN\n+6 HP FRÅN FONTÄNER\nSTENÄNGLAR STÅR STILLA +2 S', { unlock: 50 }],
   ['jon_blunds_paraply', 'JON BLUNDS PARAPLY', 'legendarisk', { dreamDmg: 0.3, sleepResist: 0.4, mistSight: 0.3, shiftSense: 0.25 }, 1, '+30 % SKADA MED DRÖMSTAVEN\n40 % MINDRE EFFEKT AV SÖMN\n+30 % SIKT I DIMMAN\nGLIDANDE VÄGGAR ÖPPNAS\n25 % SNABBARE', { unlock: 50 }],
+  // ---- version 17: pakter och uppgraderingar för kedjekulekanonen och syrasprutan ----
+  ['pakt_kedjekanon', 'KAPARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR KEDJEKULOR\n4 UNIKA UPPGRADERINGAR\nBARA KEDJEKANON RESTEN AV RUNDAN', { pact: 'chaincannon', bad: 1 }],
+  ['pakt_syraspruta', 'ALKEMISTENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR SYRA\n4 UNIKA UPPGRADERINGAR\nBARA SYRASPRUTA RESTEN AV RUNDAN', { pact: 'acidsprayer', bad: 1 }],
+  ['genomslaget', 'GENOMSLAGET', 'legendarisk', {}, 1, 'KULAN GÅR IGENOM\nSJU FIENDER', { weapon: 'chaincannon', wup: 'cc_pierce' }],
+  ['virvelkulan', 'VIRVELKULAN', 'sallsynt', {}, 1, 'KULAN SNURRAR BREDARE\nOCH BEDÖVAR', { weapon: 'chaincannon', wup: 'cc_spin' }],
+  ['brandkulan', 'BRANDKULAN', 'sallsynt', {}, 1, 'KULAN TÄNDER ELD', { weapon: 'chaincannon', wup: 'cc_fire' }],
+  ['snabbladdaren', 'SNABBLADDAREN', 'ovanlig', {}, 1, 'SNABBARE OMLADDNING', { weapon: 'chaincannon', wup: 'cc_fast' }],
+  ['fratsaret', 'FRÄTSÅRET', 'legendarisk', {}, 1, 'FRÄTNINGEN GER 35 %\nMER SKADA OCH VARAR LÄNGRE', { weapon: 'acidsprayer', wup: 'as_corrode' }],
+  ['bredstralen', 'BREDSTRÅLEN', 'ovanlig', {}, 1, 'BREDARE STRÅLE', { weapon: 'acidsprayer', wup: 'as_spread' }],
+  ['giftangorna', 'GIFTÅNGORNA', 'sallsynt', {}, 1, 'STRÅLEN LÄMNAR\nSYRAPÖLAR', { weapon: 'acidsprayer', wup: 'as_fumes' }],
+  ['tryckpumpen', 'TRYCKPUMPEN', 'ovanlig', {}, 1, 'LÄNGRE STRÅLE', { weapon: 'acidsprayer', wup: 'as_fast' }],
+  // ---- version 17: skeppet, kanoner, pirater, syra, flaskor, transmutation och teslaspolar (Spökskeppet och Laboratoriet) ----
+  // vanliga
+  ['sjobenen', 'SJÖBENEN', 'vanlig', { deckGrip: 0.2 }, 3, '20 % MER GREPP\nPÅ SKÖLJT DÄCK'],
+  ['krutpungen', 'KRUTPUNGEN', 'vanlig', { cannonDmg: 0.15 }, 3, '+15 % SKADA MED KANONER'],
+  ['kedjelanken', 'KEDJELÄNKEN', 'vanlig', { chainDmg: 0.12 }, 3, '+12 % SKADA MED\nKEDJEKULOR'],
+  ['syrakolven', 'SYRAKOLVEN', 'vanlig', { acidDmg: 0.12 }, 3, '+12 % SKADA MED SYRA'],
+  ['gummiforkladet', 'GUMMIFÖRKLÄDET', 'vanlig', { acidResist: 0.2 }, 3, '20 % MINDRE SKADA\nAV SYRA'],
+  ['blysmycket', 'BLYSMYCKET', 'vanlig', { transmuteLuck: 0.2 }, 3, '+20 % TUR MED\nTRANSMUTATION'],
+  ['jordkabeln', 'JORDKABELN', 'vanlig', { teslaResist: 0.25 }, 3, '25 % MINDRE SKADA\nFRÅN TESLASPOLAR'],
+  ['destillatet', 'DESTILLATET', 'vanlig', { brewLuck: 0.15 }, 3, '15 % CHANS TILL STARK\nBRYGD I ALEMBIKEN'],
+  ['tjarat_rep', 'TJÄRAT REP', 'vanlig', { deckGrip: 0.12, cannonDmg: 0.08 }, 2, '12 % MER GREPP\nPÅ SKÖLJT DÄCK\n+8 % SKADA MED KANONER', { unlock: 10 }],
+  ['skyddsglasogonen', 'SKYDDSGLASÖGONEN', 'vanlig', { acidResist: 0.12, teslaResist: 0.12 }, 3, '12 % MINDRE SKADA AV SYRA\n12 % MINDRE SKADA\nFRÅN TESLASPOLAR', { unlock: 10 }],
+  // ovanliga
+  ['kaparbrevet', 'KAPARBREVET', 'ovanlig', { cannonDmg: 0.2, goldMul: 0.1 }, 2, '+20 % SKADA MED KANONER\n+10 % GULD'],
+  ['kedjesmeden', 'KEDJESMEDEN', 'ovanlig', { chainDmg: 0.2, dmg: 0.04 }, 2, '+20 % SKADA MED\nKEDJEKULOR\n+4 % SKADA'],
+  ['syrastanket', 'SYRASTÄNKET', 'ovanlig', { acidDmg: 0.2, poisonChance: 0.05 }, 2, '+20 % SKADA MED SYRA\n+5 % CHANS ATT FÖRGIFTA', { unlock: 15 }],
+  ['guldlovet', 'GULDLÖVET', 'ovanlig', { transmuteLuck: 0.3, goldMul: 0.05 }, 2, '+30 % TUR MED\nTRANSMUTATION\n+5 % GULD'],
+  ['faradays_bur', 'FARADAYS BUR', 'ovanlig', { teslaResist: 0.4, shockChance: 0.05 }, 2, '40 % MINDRE SKADA\nFRÅN TESLASPOLAR\n+5 % CHANS TILL BLIXT', { unlock: 15 }],
+  ['brygdboken', 'BRYGDBOKEN', 'ovanlig', { brewLuck: 0.25, potionPower: 0.1 }, 2, '25 % CHANS TILL STARK\nBRYGD I ALEMBIKEN\n+10 % STARKARE DRYCKER'],
+  ['rombuteljen', 'ROMBUTELJEN', 'ovanlig', { cannonDmg: 0.3, deckGrip: -0.3 }, 1, '+30 % SKADA MED KANONER\nDÄCKET 30 % HALARE', { curse: true, bad: 1 }],
+  // sällsynta
+  ['kaptenens_kompass', 'KAPTENENS KOMPASS', 'sallsynt', { deckGrip: 0.35, cannonDmg: 0.2, moveSpeed: 0.05 }, 1, '35 % MER GREPP\nPÅ SKÖLJT DÄCK\n+20 % SKADA MED KANONER\n+5 % RÖRELSEHASTIGHET', { unlock: 25 }],
+  ['ankarkettingen', 'ANKARKETTINGEN', 'sallsynt', { chainDmg: 0.3, meleeResist: 0.1 }, 1, '+30 % SKADA MED\nKEDJEKULOR\n10 % MINDRE NÄRSTRIDSSKADA', { unlock: 30 }],
+  ['salamanderhuden', 'SALAMANDERHUDEN', 'sallsynt', { acidResist: 0.35, maxHp: 15 }, 1, '35 % MINDRE SKADA\nAV SYRA\n+15 MAX HP', { unlock: 25 }],
+  ['vises_sten', 'DE VISES STEN', 'sallsynt', { transmuteLuck: 0.4, brewLuck: 0.2, goldMul: 0.1 }, 1, '+40 % TUR MED\nTRANSMUTATION\n20 % CHANS TILL STARK BRYGD\n+10 % GULD', { unlock: 30 }],
+  ['kvicksilverbagaren', 'KVICKSILVERBÄGAREN', 'sallsynt', { acidDmg: 0.35, transmuteLuck: 0.2, acidResist: -0.3 }, 1, '+35 % SKADA MED SYRA\n+20 % TUR MED\nTRANSMUTATION\nSYRA SKADAR 30 % MER', { curse: true, bad: 1 }],
+  // legendariska
+  ['hollandarens_ror', 'HOLLÄNDARENS ROR', 'legendarisk', { deckGrip: 0.4, cannonDmg: 0.3, chainDmg: 0.3, goldMul: 0.1 }, 1, '40 % MER GREPP PÅ DÄCK\n+30 % SKADA MED KANONER\n+30 % SKADA MED\nKEDJEKULOR\n+10 % GULD', { unlock: 50 }],
+  ['smaragdtavlan', 'SMARAGDTAVLAN', 'legendarisk', { acidDmg: 0.3, acidResist: 0.3, transmuteLuck: 0.3, brewLuck: 0.2 }, 1, '+30 % SKADA MED SYRA\n30 % MINDRE SKADA AV SYRA\n+30 % TUR MED\nTRANSMUTATION\n20 % CHANS TILL STARK BRYGD', { unlock: 50 }],
 ];
 
 // ---------- Set och synergier ----------
@@ -768,6 +817,9 @@ const SETS = {
   kupan:  { name: 'KUPANS VÄG',       text: '+20 % SKADA MED BIN\n25 % MINDRE INBROMSNING I HONUNG\n+20 % SKADA MOT LARVER', mods: { beeDmg: 0.2, honeyResist: 0.25, larvaDmg: 0.2 } },
   // version 16: TRÄDGÅRDENS VÄG (Den döda trädgården: törne, statyer och fontäner) och DRÖMMENS VÄG (Drömriket: dimma, sömn och drömstaven)
   tradgarden: { name: 'TRÄDGÅRDENS VÄG', text: '25 % MINDRE SKADA FRÅN TAGGRANKOR\nSTENÄNGLAR STÅR STILLA +1 S EFTER ATT DU TITTAT BORT\n+5 HP FRÅN FONTÄNER', mods: { thornResist: 0.25, angelSight: 1, fountainHeal: 5 } },
+  // version 17: SKEPPETS VÄG (Spökskeppet: däck, kanoner och kedjekulor) och LABORATORIETS VÄG (Laboratoriet: syra, transmutation och brygder)
+  skeppet: { name: 'SKEPPETS VÄG',    text: '25 % MER GREPP PÅ SKÖLJT DÄCK\n+25 % SKADA MED KANONER\n+20 % SKADA MED KEDJEKULOR', mods: { deckGrip: 0.25, cannonDmg: 0.25, chainDmg: 0.2 } },
+  laboratoriet: { name: 'LABORATORIETS VÄG', text: '25 % MINDRE SKADA AV SYRA\n+25 % TUR MED TRANSMUTATION\n20 % CHANS TILL STARK BRYGD', mods: { acidResist: 0.25, transmuteLuck: 0.25, brewLuck: 0.2 } },
   drommen: { name: 'DRÖMMENS VÄG',    text: '+25 % SIKT I SÖMNENS DIMMA\n25 % MINDRE EFFEKT AV SÖMN\n+20 % SKADA MED DRÖMSTAVEN', mods: { mistSight: 0.25, sleepResist: 0.25, dreamDmg: 0.2 } },
 };
 // Synergitaggar: kort med samma tagg spelar bra ihop (t.ex. eld + explosion, krit + kritskada).
@@ -780,7 +832,8 @@ const SYN = { eld: 'ELD', krit: 'KRIT', gift: 'GIFT', frost: 'FROST', blixt: 'BL
   svamp: 'SVAMPAR', spor: 'SPORER', spegel: 'SPEGLAR', illusion: 'ILLUSIONER', glas: 'GLAS',
   bok: 'BÖCKER', black: 'BLÄCK', anga: 'ÅNGA', smide: 'SMIDE', metall: 'METALL',
   kyrka: 'KATEDRALEN', helig: 'HELIGT LJUS', klocka: 'KLOCKOR', bi: 'BIN', honung: 'HONUNG', vax: 'VAX',
-  tradgard: 'TRÄDGÅRDEN', ros: 'ROSOR', torne: 'TÖRNE', staty: 'STATYER', drom: 'DRÖMMAR', somn: 'SÖMN', mardrom: 'MARDRÖMMAR' };
+  tradgard: 'TRÄDGÅRDEN', ros: 'ROSOR', torne: 'TÖRNE', staty: 'STATYER', drom: 'DRÖMMAR', somn: 'SÖMN', mardrom: 'MARDRÖMMAR',
+  skepp: 'SKEPPET', kanon: 'KANONER', pirat: 'PIRATER', syra: 'SYRA', flaska: 'FLASKOR', transmut: 'TRANSMUTATION', tesla: 'TESLASPOLAR' };
 // set och syn för alla kort samlas här: id: [set eller '', syn-taggar...]
 const TAGS = {
   // eld och explosioner
@@ -886,6 +939,12 @@ const TAGS = {
   stenangelns_tar: ['', 'staty'], marmorhjartat: ['', 'staty', 'liv'],
   dromnyckeln: ['', 'drom'], tuppfjadern: ['', 'somn'], nattljuset: ['', 'somn', 'drom'], stjarnstoftet: ['', 'drom'],
   valmon: ['', 'somn', 'mardrom'], mardromsmasken: ['', 'mardrom', 'drom', 'somn'],
+  // version 17: SKEPPETS VÄG (Spökskeppet) och LABORATORIETS VÄG (Laboratoriet); skeppet, kanoner, pirater, syra, flaskor, transmutation och teslaspolar
+  sjobenen: ['skeppet', 'skepp'], krutpungen: ['skeppet', 'kanon'], kaptenens_kompass: ['skeppet', 'skepp', 'pirat'], ankarkettingen: ['skeppet', 'kanon', 'skepp'], hollandarens_ror: ['skeppet', 'skepp', 'pirat', 'kanon'],
+  gummiforkladet: ['laboratoriet', 'syra'], blysmycket: ['laboratoriet', 'transmut', 'guld'], guldlovet: ['laboratoriet', 'transmut', 'guld'], salamanderhuden: ['laboratoriet', 'syra', 'flaska'], smaragdtavlan: ['laboratoriet', 'transmut', 'syra', 'flaska'],
+  kedjelanken: ['', 'kanon', 'skepp'], syrakolven: ['', 'syra', 'flaska'], jordkabeln: ['', 'tesla', 'blixt'], destillatet: ['', 'flaska', 'dryck'], tjarat_rep: ['', 'skepp', 'kanon'], skyddsglasogonen: ['', 'syra', 'tesla'],
+  kaparbrevet: ['', 'pirat', 'kanon', 'guld'], kedjesmeden: ['', 'kanon', 'metall'], syrastanket: ['', 'syra', 'gift'], faradays_bur: ['', 'tesla', 'blixt'], brygdboken: ['', 'flaska', 'dryck', 'transmut'],
+  rombuteljen: ['', 'pirat', 'skepp'], vises_sten: ['', 'transmut', 'guld', 'flaska'], kvicksilverbagaren: ['', 'syra', 'transmut', 'flaska'],
 };
 
 const ALL = DEFS.map(([id, name, rarity, mods, max, text, extra]) => {
@@ -1016,6 +1075,8 @@ const FMT = {
   thornResist: ['p', 'SKYDD MOT TAGGRANKOR'], angelSight: ['n', 'S STILLA STENÄNGLAR'], shearDmg: ['p', 'SKADA MED SAXEN'],
   dreamDmg: ['p', 'SKADA MED DRÖMSTAVEN'], mistSight: ['p', 'SIKT I SÖMNENS DIMMA'], fountainHeal: ['n', 'HP FRÅN FONTÄNER'],
   shiftSense: ['p', 'SNABBARE GLIDANDE VÄGGAR'], sleepResist: ['p', 'SKYDD MOT SÖMN'],
+  deckGrip: ['p', 'GREPP PÅ SKÖLJT DÄCK'], cannonDmg: ['p', 'SKADA MED KANONER'], chainDmg: ['p', 'SKADA MED KEDJEKULOR'], acidDmg: ['p', 'SKADA MED SYRA'],
+  acidResist: ['p', 'SKYDD MOT SYRA'], transmuteLuck: ['p', 'TUR MED TRANSMUTATION'], teslaResist: ['p', 'SKYDD MOT TESLASPOLAR'], brewLuck: ['p', 'CHANS TILL STARK BRYGD'],
 };
 const INVERT = { damageTaken: true };
 const num = v => String(Math.round(v * 100) / 100).replace('.', ',');
@@ -1161,7 +1222,7 @@ function preview(card, mods, ownedIds) {
 // ---------- Dragning ----------
 // Vikten skiftar mot sällsyntare med djup (våning, 0..) och luck (summan av luck-modden, 0.1 per kort).
 const CURSE_WEIGHT = 0.8; // förbannade kort dyker upp ibland
-const PACT_WEIGHT = 0.43, UPGRADE_WEIGHT = 12; // trettiotvå pakter (vikten sänkt så att alla pakter tillsammans syns lika ofta som de fjorton förut; version 13: 0,53 -> 0,49, version 15: 0,49 -> 0,46, version 16: 0,46 -> 0,43); uppgraderingarna väger lite mer sedan korthögen växt (version 11: 8 -> 9, version 13: 9 -> 10, version 15: 10 -> 11, version 16: 11 -> 12): en pakt i ungefär var fjärde dragning; efter pakten kommer uppgraderingarna tätt
+const PACT_WEIGHT = 0.4, UPGRADE_WEIGHT = 13; // trettiofyra pakter (vikten sänkt så att alla pakter tillsammans syns lika ofta som de fjorton förut; version 13: 0,53 -> 0,49, version 15: 0,49 -> 0,46, version 16: 0,46 -> 0,43, version 17: 0,43 -> 0,4); uppgraderingarna väger lite mer sedan korthögen växt (version 11: 8 -> 9, version 13: 9 -> 10, version 15: 10 -> 11, version 16: 11 -> 12, version 17: 12 -> 13): en pakt i ungefär var fjärde dragning; efter pakten kommer uppgraderingarna tätt
 function rarityWeight(rarity, depth, luck) {
   const t = Math.max(0, (depth || 0) * 0.25 + (luck || 0) * 2.5); // 0 = början av rundan
   const base = RARITY[rarity].weight;
@@ -1223,7 +1284,7 @@ const WEAPON_NAME = { pistol: 'PISTOL', shotgun: 'HAGELGEVÄR', rifle: 'GEVÄR',
   knives: 'KASTKNIVAR', hammer: 'STRIDSHAMMARE', musket: 'MUSKÖT', harpoon: 'HARPUN', boomerang: 'BUMERANG', prism: 'PRISMA',
   sawlauncher: 'SÅGBLAD', windgun: 'VINDBÖSSA', spear: 'SPJUT', sporelauncher: 'SPORKASTARE', mirrorshield: 'SPEGELSKÖLD', whip: 'PISKA',
   runebook: 'RUNBOK', steamcannon: 'ÅNGKANON', censer: 'RÖKELSEKAR', hivelauncher: 'BIKASTARE',
-  shears: 'TRÄDGÅRDSSAX', dreamstaff: 'DRÖMSTAV' };
+  shears: 'TRÄDGÅRDSSAX', dreamstaff: 'DRÖMSTAV', chaincannon: 'KEDJEKANON', acidsprayer: 'SYRASPRUTA' };
 // etikett ovanför kortets namn: förbannelse, pakt, aktiv förmåga ('AKTIV · 8 S'), vilket vapen uppgraderingen hör till eller sammansmält
 const activeTag = card => 'AKTIV · ' + num(card.cd || 0) + ' S';
 function tag(card) {

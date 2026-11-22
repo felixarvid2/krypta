@@ -1261,6 +1261,41 @@ Version 7 lägger till 200 förbättringar:
 
 Kombinerade utmaningar multiplicerar själarna. Sparplatsen väljs på startskärmen, och `?fro=XXXX` i adressen fyller i ett delat frö.
 
+## Version 17: Spökskeppet och Laboratoriet
+
+- **Spökskeppet (`ship`):** ett skepp på ett nattsvart hav, med däck under himlen och kajutor och lastrum under däck. Väggarna är skrov (ǒ) och master med rigg (Ǔ).
+  - Ruttna plankor (Ǎ) brakar igenom om du står kvar 0,6 s: 10 skada, och du hamnar på senaste säkra ruta. Fiender som går på dem bryter dem också (stora direkt), tar skada och kliver upp bredvid.
+  - Sköljt däck (Ǐ) är halt som is, och var sjätte sekund knuffar en våg allt som står på det.
+  - Kanoner (ǎ) avfyras med E dit du tittar, en gång: 60 skada i en linje och en smäll. Skeppslyktor (ǐ) och krutfat (Ǒ) som smäller.
+- **Laboratoriet (`lab`):** kakel (Ǡ) och hyllor med burkar (ǡ).
+  - Syrakar (Ǜ) fräter: först 2 rustning, sedan 4 skada var halv sekund.
+  - En fiende på en transmutationscirkel (ǜ) blir av guld i 3 s: den står still, tar dubbel skada och ger guld om den dör. Själv får du en slumpad dryckeseffekt, högst var 20:e sekund.
+  - Teslaspolar (Ǟ) slår en blixt mot det närmaste levande inom fyra rutor, dig eller en fiende.
+  - Flaskhyllor (ǝ) går sönder i ett moln av gift, frost eller eld. I alembiker (ǟ) brygger du en dryck för 20 guld, högst två gånger.
+  - Laboratoriet kommer, som trädgården och drömriket, aldrig först i en omgång. I Avgrunden är första våningen i varje sexvåningsvarv aldrig en av de tre.
+- **Vapen:**
+  - **Kedjekulekanonen (Ǫ, ammo kulkistor ǫ):** en snurrande kedjekula som går igenom upp till fyra fiender. Två skott och sedan en lång omladdning.
+  - **Syrasprutan (Ǭ, ammo syraflaskor ǭ):** en kort grön stråle. Den skadar över tid och fräter, så att fienden tar 20 % mer skada i 3 s.
+  - Båda har pakter med fyra uppgraderingar var.
+- **Fiender på skeppet:**
+  - Spökpiraten (Ǖ) blir genomskinlig och immun i 1 s efter en träff.
+  - Kanonjären (ǖ) lobbar kanonkulor som landar där en ring lyser.
+  - Den drunknade matrosen (Ǘ) saktar ned dig och lämnar en vattenpöl.
+  - Papegojspöket (ǘ) dyker och stjäl tre guld.
+  - Tentakeln (Ǚ) slår över en ring på 2,2 rutor och dyker upp på ett nytt ställe var åttonde sekund.
+  - Skeppsråttor (ǚ) kommer i flock.
+- **Fiender i laboratoriet:**
+  - Homunkulusen (ǣ) delar sig en gång.
+  - Slemmet (Ǥ) lämnar syrapölar, tar mindre skada av kulor och mer av eld.
+  - Lärlingen (ǥ) kastar flaskor med gift, frost eller eld.
+  - Kvicksilvergolemen (Ǧ) reser sig en gång, om den inte dör av eld eller en explosion.
+  - Flaskgasten (ǧ) smäller vid kontakt.
+  - Kimären (Ǩ) växlar mellan bett, eld och giftspott.
+- **Bossar:**
+  - **Spökkaptenen:** sabel och flintlåspistol. Han blir till dimma och är då immun, kallar på besättningen och skjuter kanonsalvor med varningsringar.
+  - **Alkemisten:** dricker drycker som gör honom till jätte, blixtsnabb eller osynlig (han syns bara när han kastar). Han kastar flaskor, förvandlar golvet till syra och väcker homunkulusar och flaskgastar.
+- **Kort:** 24 nya kort, åtta nya kortnycklar och två set: SKEPPETS VÄG och LABORATORIETS VÄG.
+
 ## Version 16: Trädgården och Drömriket
 
 - **Den döda trädgården (`garden`):** utomhus, med häckar (Ɵ), murar (Ơ), fontäner (Ƨ) som läker en gång och stenstatyer (ƨ). Taggrankor (ƥ) river och saktar ned, och de brinner bort av eldkastaren, brinnande mark och eld.

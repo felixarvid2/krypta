@@ -62,6 +62,11 @@ masker, Jon Blunds paraply ...). Kenneys partiklar är slut, så bakom motiven l
 smoke-particles (V16_DRAWN). Pakterna för trädgårdssaxen och drömstaven ritas som siluetter; uppgraderingarna är de sista
 oanvända effektbilderna ur vfx med vapnet som bricka i hörnet (V16_UPGRADES). Kvar i vfx efter detta: bara atlas och explosion_2.
 
+Version 17: 24 nya kort (skeppet, kanoner, pirater, syra, flaskor, transmutation och teslaspolar) – inga oanvända bilder passar
+längre, så alla motiv ritas här (sjöstövlar, krutpung, kedjor, kolvar, kompass, ankare, roder, salamander, de vises sten ...) med
+oanvända stänk och rök bakom (V17_DRAWN). Pakterna för kedjekulekanonen och syrasprutan ritas som siluetter; uppgraderingarna är
+oanvända stänk och rök med vapnet som bricka i hörnet (V17_UPGRADES).
+
 Kör från repo-roten: python3 retrofps/tools/card-art/make.py .          (alla)
                      python3 retrofps/tools/card-art/make.py . v5       (bara version 5)
                      python3 retrofps/tools/card-art/make.py . v6       (bara version 6)
@@ -72,6 +77,7 @@ Kör från repo-roten: python3 retrofps/tools/card-art/make.py .          (alla)
                      python3 retrofps/tools/card-art/make.py . v13      (bara version 13)
                      python3 retrofps/tools/card-art/make.py . v15      (bara version 15)
                      python3 retrofps/tools/card-art/make.py . v16      (bara version 16)
+                     python3 retrofps/tools/card-art/make.py . v17      (bara version 17)
 """
 import os
 import sys
@@ -2837,6 +2843,344 @@ def main_v16():
     return n
 
 
+# ---------- version 17: Spökskeppet och Laboratoriet ----------
+# Inga oanvända bilder i assets/ashfall-ai eller rune-ai passar längre, så alla 24 motiv ritas här (sjöstövlar, krutpung, kedjor,
+# kolvar, förkläde, kompass, ankare, roder, salamander, de vises sten, smaragdtavlan ...) på samma mörklila vinjett. Bakom motiven
+# ligger stänk ur splat-pack och rök ur smoke-particles som inget tidigare kort använt (V17_DRAWN). Pakternas vapen
+# (kedjekulekanonen och syrasprutan) ritas som siluetter; uppgraderingarna har oanvända stänk eller rök med vapnet som bricka
+# i hörnet (V17_UPGRADES, ritas med v16_upgrade).
+V17_DRAWN = {  # kort-id: (ritfunktion, storlek, förskjutning y, [(källa, storlek, dx, dy, färg, vridning)]) – som V16_DRAWN
+    'sjobenen': ('boots', 0.84, 0.02, [('splat:splat00', 0.9, 0, 0.16, (60, 110, 150), 0)]),
+    'krutpungen': ('powderbag', 0.82, 0.02, [('smoke:Explosion/explosion00', 0.95, 0, -0.04, (255, 150, 70), 0)]),
+    'kedjelanken': ('chainlinks', 0.86, 0, [('smoke:Black smoke/blackSmoke00', 0.95, 0, 0.04, (120, 120, 140), 0)]),
+    'syrakolven': ('roundflask', 0.82, 0.02, [('splat:splat01', 0.9, 0, 0.16, (80, 200, 60), 0)]),
+    'gummiforkladet': ('apron', 0.84, 0, [('splat:splat03', 0.9, 0.04, 0.18, (90, 170, 50), 0)]),
+    'blysmycket': ('leadamulet', 0.8, 0, [('smoke:Flash/flash05', 0.95, 0, 0, (255, 220, 120), 0)]),
+    'jordkabeln': ('groundcable', 0.84, 0, [('smoke:Flash/flash07', 0.95, 0, 0, (150, 200, 255), 0)]),
+    'destillatet': ('distillate', 0.86, 0, [('smoke:White puff/whitePuff00', 0.95, 0, -0.06, (170, 230, 170), 0)]),
+    'tjarat_rep': ('ropecoil', 0.84, 0.02, [('splat:splat06', 0.9, 0, 0.14, (70, 50, 30), 0)]),
+    'skyddsglasogonen': ('goggles', 0.86, 0, [('smoke:White puff/whitePuff01', 0.95, 0, 0.04, (150, 220, 160), 0)]),
+    'kaparbrevet': ('letter', 0.86, 0, [('smoke:Black smoke/blackSmoke01', 0.95, 0, 0.06, (150, 110, 70), 0)]),
+    'kedjesmeden': ('chainhammer', 0.86, 0, [('smoke:Explosion/explosion01', 0.95, 0, 0.04, (255, 120, 50), 0)]),
+    'syrastanket': ('acidsplash', 0.84, 0, [('splat:splat09', 0.95, 0, 0.06, (110, 220, 40), 0)]),
+    'guldlovet': ('goldleaf', 0.84, 0, [('smoke:White puff/whitePuff02', 0.95, 0, 0, (255, 214, 120), 0)]),
+    'faradays_bur': ('faraday', 0.86, 0, [('smoke:Black smoke/blackSmoke02', 0.95, 0, 0.04, (110, 150, 230), 0)]),
+    'brygdboken': ('brewbook', 0.84, 0.02, [('smoke:White puff/whitePuff04', 0.95, 0, -0.08, (190, 140, 230), 0)]),
+    'rombuteljen': ('rumbottle', 0.86, 0, [('splat:splat14', 0.9, 0, 0.18, (150, 70, 30), 0)]),
+    'kaptenens_kompass': ('compass', 0.82, 0, [('smoke:White puff/whitePuff06', 0.95, 0, 0, (140, 180, 220), 0)]),
+    'ankarkettingen': ('anchor', 0.88, 0, [('splat:splat16', 0.95, 0, 0.14, (50, 90, 120), 0)]),
+    'salamanderhuden': ('salamander', 0.88, 0, [('smoke:Explosion/explosion02', 0.95, 0, 0.02, (255, 110, 40), 0)]),
+    'vises_sten': ('philstone', 0.78, 0, [('smoke:White puff/whitePuff07', 0.95, 0, 0, (255, 90, 80), 0)]),
+    'kvicksilverbagaren': ('mercurycup', 0.84, 0, [('smoke:Black smoke/blackSmoke04', 0.95, 0, 0.04, (170, 170, 190), 0)]),
+    'hollandarens_ror': ('shipwheel', 0.9, 0, [('smoke:Black smoke/blackSmoke05', 0.95, 0, 0, (90, 140, 120), 0),
+                                              ('splat:splat18', 0.6, 0.22, 0.28, (40, 90, 110), 0)]),
+    'smaragdtavlan': ('emeraldtablet', 0.86, 0, [('smoke:White puff/whitePuff08', 0.95, 0, -0.04, (90, 230, 140), 0),
+                                                ('splat:splat20', 0.6, -0.22, 0.28, (60, 170, 90), 0)]),
+}
+V17_PACTS = {'pakt_kedjekanon': 'chaincannon', 'pakt_syraspruta': 'acidsprayer'}
+V17_UPGRADES = {  # kort-id: (vapen, 'splat:'/'smoke:'-bild, färgton, vridning) – ritas med v16_upgrade
+    'genomslaget': ('chaincannon', 'smoke:Explosion/explosion03', (255, 170, 90), 0), 'virvelkulan': ('chaincannon', 'smoke:White puff/whitePuff10', (200, 210, 230), 0),
+    'brandkulan': ('chaincannon', 'smoke:Explosion/explosion04', (255, 110, 40), 0), 'snabbladdaren': ('chaincannon', 'smoke:Black smoke/blackSmoke06', (200, 180, 150), 0),
+    'fratsaret': ('acidsprayer', 'splat:splat22', (100, 230, 50), 0), 'bredstralen': ('acidsprayer', 'splat:splat24', (150, 240, 90), 0),
+    'giftangorna': ('acidsprayer', 'smoke:Fart/fart00', (120, 220, 80), 0), 'tryckpumpen': ('acidsprayer', 'splat:splat25', (180, 255, 120), 0),
+}
+ACIDG, BRASS, IRON, WOOD, SEA, SILVER = (110, 220, 60, 255), (206, 164, 72, 255), (96, 98, 110, 255), (128, 84, 46, 255), (50, 96, 130, 255), (200, 204, 216, 255)
+
+
+def link(d, cx, cy, w, h, ang, col=IRON):
+    """En kedjelänk (oval ring) vriden ang radianer."""
+    pts = [(cx + np.cos(t) * w * np.cos(ang) - np.sin(t) * h * np.sin(ang), cy + np.cos(t) * w * np.sin(ang) + np.sin(t) * h * np.cos(ang)) for t in np.linspace(0, 2 * np.pi, 40)]
+    d.line(pts + [pts[0]], fill=INK, width=22, joint='curve')
+    d.line(pts + [pts[0]], fill=col, width=12, joint='curve')
+
+
+def flask(d, cx, bottom, r, neck, col, liquid, level=0.55):
+    """Rundkolv: en klotformad buk och en smal hals."""
+    cy = bottom - r
+    rrect(d, (cx - neck, cy - r - neck * 5, cx + neck, cy - r * 0.6), 6, col)
+    d.ellipse((cx - r, cy - r, cx + r, cy + r), fill=col, outline=INK, width=7)
+    d.chord((cx - r + 8, cy - r + 8, cx + r - 8, cy + r - 8), 180 - 90 * level * 2 + 90, 360 + 90 - (180 - 90 * level * 2), fill=liquid)
+    d.ellipse((cx - r * 0.55, cy - r * 0.6, cx - r * 0.25, cy - r * 0.2), fill=(255, 255, 255, 200))
+    rrect(d, (cx - neck - 6, cy - r - neck * 5 - 14, cx + neck + 6, cy - r - neck * 5 + 6), 4, (150, 110, 70, 255))
+
+
+def art17(kind):
+    im = Image.new('RGBA', (400, 400))
+    d = ImageDraw.Draw(im)
+    if kind == 'boots':
+        for x0, flip in ((60, 1), (210, 1)):
+            poly(d, [(x0 + 20, 40), (x0 + 110, 40), (x0 + 110, 300), (x0 + 150, 320), (x0 + 150, 370), (x0, 370), (x0, 300), (x0 + 20, 290)], (40, 44, 52, 255))
+            d.line((x0 + 20, 80, x0 + 110, 80), fill=(80, 84, 96, 255), width=8)
+            rrect(d, (x0 - 4, 360, x0 + 156, 384), 6, (24, 24, 30, 255))
+        for k in range(4):
+            d.arc((k * 100 - 20, 340, k * 100 + 80, 400), 180, 360, fill=(120, 190, 230, 255), width=8)
+    elif kind == 'powderbag':
+        poly(d, [(110, 150), (290, 150), (330, 260), (300, 370), (100, 370), (70, 260)], (150, 110, 70, 255), 8)
+        poly(d, [(150, 100), (250, 100), (270, 156), (130, 156)], (120, 86, 52, 255), 7)
+        d.line((128, 156, 272, 156), fill=(60, 40, 24, 255), width=10)
+        d.text((176, 230), 'X', fill=INK)
+        d.line((160, 220, 240, 320), fill=INK, width=10)
+        d.line((240, 220, 160, 320), fill=INK, width=10)
+        d.line((250, 100, 300, 40, 340, 50), fill=(200, 170, 110, 255), width=6)                   # stubin
+        for k in range(8):
+            a = k * np.pi / 4
+            d.line((340, 50, 340 + np.cos(a) * 26, 50 + np.sin(a) * 26), fill=(255, 200, 80, 255), width=5)
+    elif kind == 'chainlinks':
+        for k in range(5):
+            link(d, 70 + k * 64, 110 + k * 48, 56, 30, 0.64 + (k % 2) * 1.57 * 0.0, IRON if k % 2 else lighter(IRON, 1.2))
+    elif kind == 'roundflask':
+        flask(d, 200, 380, 130, 28, (190, 220, 210, 160), ACIDG, 0.6)
+        for x, y, r in ((170, 260, 14), (230, 300, 10), (200, 200, 8)):
+            d.ellipse((x - r, y - r, x + r, y + r), outline=(220, 255, 200, 255), width=4)
+    elif kind == 'apron':
+        poly(d, [(120, 100), (280, 100), (300, 200), (330, 380), (70, 380), (100, 200)], (60, 70, 60, 255), 8)
+        d.line((120, 100, 90, 20), fill=INK, width=12)
+        d.line((280, 100, 310, 20), fill=INK, width=12)
+        d.line((80, 200, 20, 230), fill=(40, 44, 40, 255), width=10)
+        d.line((320, 200, 380, 230), fill=(40, 44, 40, 255), width=10)
+        rrect(d, (150, 230, 250, 300), 8, (80, 90, 80, 255))
+        for x, y in ((140, 160), (250, 330), (190, 340)):
+            d.ellipse((x - 18, y - 12, x + 18, y + 12), fill=ACIDG, outline=INK, width=4)
+    elif kind == 'leadamulet':
+        d.line((120, 20, 200, 160, 280, 20), fill=(150, 150, 160, 255), width=8)
+        d.ellipse((90, 140, 310, 360), fill=(110, 110, 120, 255), outline=INK, width=9)
+        d.pieslice((90, 140, 310, 360), 270, 90, fill=GOLD, outline=INK, width=9)
+        d.ellipse((150, 200, 250, 300), outline=INK, width=8)
+        poly(d, [(200, 210), (240, 280), (160, 280)], (60, 60, 70, 255), 5)
+    elif kind == 'groundcable':
+        pts = [(200 + np.cos(t) * (40 + t * 14), 180 + np.sin(t) * (40 + t * 14) * 0.6) for t in np.linspace(0, 4 * np.pi, 80)]
+        d.line(pts, fill=INK, width=22, joint='curve')
+        d.line(pts, fill=(180, 60, 40, 255), width=12, joint='curve')
+        d.line((200, 260, 200, 330), fill=INK, width=12)
+        for k, w in enumerate((140, 96, 52)):
+            d.line((200 - w / 2, 330 + k * 22, 200 + w / 2, 330 + k * 22), fill=(200, 200, 210, 255), width=10)
+    elif kind == 'distillate':
+        d.line((40, 80, 230, 150), fill=INK, width=24)                                                 # röret
+        d.line((40, 80, 230, 150), fill=(200, 220, 220, 200), width=12)
+        d.line((230, 150, 240, 210), fill=INK, width=20)
+        d.line((230, 150, 240, 210), fill=(200, 220, 220, 200), width=10)
+        for y in (240, 272):
+            d.ellipse((232, y, 248, y + 22), fill=(140, 230, 160, 255), outline=INK, width=3)
+        rrect(d, (190, 300, 290, 390), 14, (190, 220, 210, 150))
+        d.rectangle((198, 340, 282, 382), fill=(140, 230, 160, 255))
+    elif kind == 'ropecoil':
+        for k in range(6):
+            r = 160 - k * 24
+            d.ellipse((200 - r, 210 - r * 0.6, 200 + r, 210 + r * 0.6), outline=INK, width=24)
+            d.ellipse((200 - r, 210 - r * 0.6, 200 + r, 210 + r * 0.6), outline=(150, 110, 60, 255), width=14)
+        d.line((330, 230, 370, 340), fill=INK, width=24)
+        d.line((330, 230, 370, 340), fill=(150, 110, 60, 255), width=14)
+    elif kind == 'goggles':
+        d.line((20, 200, 380, 200), fill=(60, 50, 40, 255), width=26)
+        for cx in (130, 270):
+            d.ellipse((cx - 70, 130, cx + 70, 270), fill=BRASS, outline=INK, width=8)
+            d.ellipse((cx - 52, 148, cx + 52, 252), fill=(80, 190, 110, 230), outline=INK, width=6)
+            d.ellipse((cx - 36, 160, cx - 10, 186), fill=(230, 255, 230, 220))
+        rrect(d, (186, 184, 214, 216), 6, BRASS)
+    elif kind == 'letter':
+        rrect(d, (70, 50, 330, 360), 10, (230, 210, 160, 255))
+        d.ellipse((50, 20, 350, 80), fill=(210, 190, 140, 255), outline=INK, width=7)
+        d.ellipse((50, 330, 350, 390), fill=(210, 190, 140, 255), outline=INK, width=7)
+        for y in range(110, 280, 30):
+            d.line((110, y, 290 - (y % 60), y), fill=(90, 70, 50, 255), width=6)
+        d.ellipse((220, 260, 300, 340), fill=(170, 20, 30, 255), outline=INK, width=6)
+        d.line((240, 280, 280, 320), fill=(240, 220, 200, 255), width=5)
+        d.line((280, 280, 240, 320), fill=(240, 220, 200, 255), width=5)
+    elif kind == 'chainhammer':
+        for k in range(4):
+            link(d, 60 + k * 50, 330 - k * 30, 40, 22, -0.55, IRON)
+        d.line((210, 330, 330, 90), fill=INK, width=30)
+        d.line((210, 330, 330, 90), fill=WOOD, width=18)
+        poly(d, [(250, 40), (390, 110), (360, 170), (220, 100)], (140, 140, 156, 255), 8)
+    elif kind == 'acidsplash':
+        for k in range(9):
+            a = -np.pi / 2 + (k - 4) * 0.32
+            r = 120 + (k % 3) * 40
+            x, y = 200 + np.cos(a) * r, 300 + np.sin(a) * r
+            d.line((200, 300, x, y), fill=INK, width=24)
+            d.line((200, 300, x, y), fill=ACIDG, width=14)
+            d.ellipse((x - 20, y - 26, x + 20, y + 14), fill=ACIDG, outline=INK, width=5)
+        d.ellipse((90, 280, 310, 360), fill=lighter(ACIDG, 0.8), outline=INK, width=7)
+    elif kind == 'goldleaf':
+        for x, y, a, s in ((130, 220, -0.9, 1.0), (250, 160, 0.5, 1.1), (210, 300, 2.4, 0.9), (290, 290, 1.4, 0.7)):
+            leaf(d, x, y, 120 * s, a, GOLD)
+        for x, y in ((80, 80), (320, 70), (340, 200)):
+            star(d, x, y, 14, (255, 240, 180, 255), 4, w=3)
+    elif kind == 'faraday':
+        d.ellipse((90, 40, 310, 120), outline=INK, width=12)
+        for k in range(9):
+            x = 90 + k * 27.5
+            d.line((x, 80, x, 360), fill=INK, width=10)
+            d.line((x, 80, x, 360), fill=BRASS, width=5)
+        d.ellipse((80, 320, 320, 400), outline=INK, width=12)
+        d.line((200, 30, 170, 150, 230, 180, 180, 330), fill=(255, 255, 255, 255), width=12)
+        d.line((200, 30, 170, 150, 230, 180, 180, 330), fill=(130, 190, 255, 255), width=6)
+    elif kind == 'brewbook':
+        closed_book(d, 60, 220, 340, 380, (90, 50, 110, 255))
+        flask(d, 200, 250, 70, 18, (200, 220, 230, 160), (190, 90, 220, 255), 0.6)
+    elif kind == 'rumbottle':
+        rrect(d, (130, 140, 270, 390), 30, (90, 50, 24, 255))
+        rrect(d, (172, 40, 228, 150), 10, (90, 50, 24, 255))
+        rrect(d, (166, 20, 234, 50), 6, (160, 120, 70, 255))
+        rrect(d, (146, 220, 254, 330), 6, (230, 210, 160, 255))
+        d.ellipse((176, 236, 224, 284), fill=(240, 240, 230, 255), outline=INK, width=5)
+        d.ellipse((186, 252, 198, 264), fill=INK)
+        d.ellipse((202, 252, 214, 264), fill=INK)
+        d.line((170, 300, 230, 320), fill=INK, width=6)
+        d.line((230, 300, 170, 320), fill=INK, width=6)
+    elif kind == 'compass':
+        d.ellipse((40, 40, 360, 360), fill=BRASS, outline=INK, width=10)
+        d.ellipse((70, 70, 330, 330), fill=(236, 226, 196, 255), outline=INK, width=6)
+        for k in range(8):
+            a = k * np.pi / 4
+            d.line((200 + np.cos(a) * 110, 200 + np.sin(a) * 110, 200 + np.cos(a) * 128, 200 + np.sin(a) * 128), fill=INK, width=6)
+        poly(d, [(200, 80), (226, 200), (174, 200)], (190, 30, 30, 255), 5)
+        poly(d, [(200, 320), (226, 200), (174, 200)], (60, 60, 70, 255), 5)
+        d.ellipse((186, 186, 214, 214), fill=BRASS, outline=INK, width=4)
+    elif kind == 'anchor':
+        d.line((200, 70, 200, 340), fill=INK, width=40)
+        d.line((200, 70, 200, 340), fill=IRON, width=26)
+        d.line((120, 120, 280, 120), fill=INK, width=34)
+        d.line((120, 120, 280, 120), fill=IRON, width=20)
+        d.ellipse((168, 14, 232, 78), outline=INK, width=24)
+        d.ellipse((168, 14, 232, 78), outline=IRON, width=12)
+        d.arc((60, 180, 340, 380), 20, 160, fill=INK, width=40)
+        d.arc((60, 180, 340, 380), 20, 160, fill=IRON, width=26)
+        for sgn in (-1, 1):
+            poly(d, [(200 + sgn * 126, 300), (200 + sgn * 160, 250), (200 + sgn * 150, 320)], IRON, 6)
+        for k in range(3):
+            link(d, 240 + k * 40, 40 + k * 10, 26, 14, 0.2 + k * 0.6, lighter(IRON, 1.2))
+    elif kind == 'salamander':
+        body = [(60 + t * 280, 220 + np.sin(t * 6) * 40) for t in np.linspace(0, 1, 30)]
+        d.line(body, fill=INK, width=64, joint='curve')
+        d.line(body, fill=(230, 100, 30, 255), width=48, joint='curve')
+        d.ellipse((300, 170, 380, 250), fill=(230, 100, 30, 255), outline=INK, width=7)
+        d.ellipse((340, 186, 358, 204), fill=(255, 230, 80, 255), outline=INK, width=3)
+        for x, s in ((120, 1), (130, -1), (250, 1), (260, -1)):
+            y = 220 + np.sin((x - 60) / 280 * 6) * 40
+            d.line((x, y, x + 20, y + s * 70), fill=INK, width=18)
+            d.line((x, y, x + 20, y + s * 70), fill=(230, 100, 30, 255), width=10)
+        for x in range(90, 300, 40):
+            y = 220 + np.sin((x - 60) / 280 * 6) * 40
+            d.ellipse((x - 9, y - 9, x + 9, y + 9), fill=(40, 30, 20, 255))
+    elif kind == 'philstone':
+        pts = [(200 + np.cos(a) * r, 200 + np.sin(a) * r) for a, r in zip(np.linspace(0, 2 * np.pi, 9)[:-1], (150, 120, 160, 110, 150, 130, 160, 120))]
+        poly(d, pts, (190, 20, 40, 255), 9)
+        poly(d, [pts[0], pts[2], (200, 200)], (230, 60, 70, 255), 5)
+        poly(d, [pts[4], pts[6], (200, 200)], (140, 10, 30, 255), 5)
+        d.ellipse((130, 120, 170, 160), fill=(255, 200, 200, 230))
+    elif kind == 'mercurycup':
+        poly(d, [(80, 60), (320, 60), (270, 220), (130, 220)], SILVER, 8)
+        d.ellipse((80, 40, 320, 90), fill=(160, 166, 180, 255), outline=INK, width=7)
+        d.ellipse((110, 50, 290, 80), fill=(236, 240, 248, 255))
+        rrect(d, (180, 220, 220, 330), 6, SILVER)
+        rrect(d, (110, 330, 290, 370), 10, SILVER)
+        for x, y in ((300, 110), (320, 170), (310, 230)):
+            d.ellipse((x - 14, y - 14, x + 14, y + 14), fill=(230, 234, 244, 255), outline=INK, width=4)
+    elif kind == 'shipwheel':
+        for k in range(8):
+            a = k * np.pi / 4
+            d.line((200, 200, 200 + np.cos(a) * 190, 200 + np.sin(a) * 190), fill=INK, width=30)
+            d.line((200, 200, 200 + np.cos(a) * 190, 200 + np.sin(a) * 190), fill=WOOD, width=18)
+            x, y = 200 + np.cos(a) * 190, 200 + np.sin(a) * 190
+            d.ellipse((x - 18, y - 18, x + 18, y + 18), fill=lighter(WOOD, 1.2), outline=INK, width=5)
+        d.ellipse((60, 60, 340, 340), outline=INK, width=36)
+        d.ellipse((60, 60, 340, 340), outline=WOOD, width=22)
+        d.ellipse((160, 160, 240, 240), fill=BRASS, outline=INK, width=7)
+    elif kind == 'emeraldtablet':
+        rrect(d, (90, 30, 310, 380), 40, (40, 150, 90, 255))
+        rrect(d, (110, 50, 290, 360), 30, (60, 190, 120, 255))
+        for k in range(5):
+            y = 90 + k * 56
+            for j in range(4):
+                x = 140 + j * 38
+                rune(d, x, y, 14, (230, 255, 230, 255), (k + j) % 4, 4)
+    return im
+
+
+def draw_chaincannon():
+    """Kedjekulekanonen: en kort handkanon av järn på en träkolv, och två kulor med en kedja emellan framför mynningen."""
+    im = Image.new('RGBA', (520, 300))
+    d = ImageDraw.Draw(im)
+    poly(d, [(10, 150), (120, 130), (150, 140), (150, 184), (110, 190), (20, 214)], WOOD)                # kolv
+    poly(d, [(150, 180), (186, 180), (174, 250), (140, 250)], (86, 54, 32, 255))                        # handtag
+    rrect(d, (130, 110, 340, 190), 30, (70, 72, 82, 255))                                              # pipan
+    for x in (170, 240, 310):
+        rrect(d, (x - 8, 104, x + 8, 196), 4, BRASS)
+    d.ellipse((320, 100, 360, 200), fill=(40, 40, 48, 255), outline=INK, width=6)
+    for cx, cy in ((420, 90), (470, 220)):
+        d.ellipse((cx - 36, cy - 36, cx + 36, cy + 36), fill=(60, 62, 72, 255), outline=INK, width=7)
+        d.ellipse((cx - 22, cy - 24, cx - 6, cy - 8), fill=(160, 164, 180, 255))
+    for k in range(4):
+        link(d, 430 + k * 10, 120 + k * 26, 16, 9, 1.2, (150, 150, 160, 255))
+    return im.crop(im.getbbox()).rotate(8, resample=Image.BICUBIC, expand=True)
+
+
+def draw_acidsprayer():
+    """Syrasprutan: en glastank med grön syra på ryggen av en mässingsspruta, ett handtag och ett långt munstycke med droppar."""
+    im = Image.new('RGBA', (520, 300))
+    d = ImageDraw.Draw(im)
+    poly(d, [(10, 160), (110, 144), (130, 150), (130, 190), (100, 194), (20, 214)], WOOD)                # kolv
+    rrect(d, (110, 150, 330, 200), 14, BRASS)                                                          # kroppen
+    poly(d, [(160, 196), (196, 196), (184, 270), (150, 270)], (86, 54, 32, 255))
+    rrect(d, (150, 40, 290, 150), 30, (190, 220, 210, 170))                                            # tanken
+    d.rectangle((160, 90, 280, 142), fill=ACIDG)
+    d.ellipse((180, 60, 200, 80), fill=(240, 255, 240, 200))
+    rrect(d, (320, 164, 470, 186), 8, (150, 150, 160, 255))                                            # munstycke
+    poly(d, [(466, 156), (500, 150), (500, 200), (466, 194)], BRASS)
+    for x, y in ((510, 230), (490, 260), (515, 280)):
+        d.ellipse((x - 10, y - 14, x + 10, y + 8), fill=ACIDG, outline=INK, width=4)
+    return im.crop(im.getbbox()).rotate(8, resample=Image.BICUBIC, expand=True)
+
+
+GUNS.update({'chaincannon': draw_chaincannon, 'acidsprayer': draw_acidsprayer})
+
+
+def drawn_card17(cid, kind, size, dy, layers):
+    big = purple_bg()
+    for src, sc, px, py, tint, rot in layers:
+        cx, cy = S * 2 + px * S * 4, S * 2 + py * S * 4
+        im = layer15(src, int(S * 4 * sc))
+        if rot:
+            im = im.rotate(rot, resample=Image.BICUBIC, expand=True)
+        lum = im.convert('L')
+        rgb = Image.merge('RGB', [lum.point(lambda v, c=c: v * c // 255) for c in tint])
+        alpha = im.split()[3].point(lambda v: int(v * (0.9 if src.startswith('splat:') else 0.6)))
+        col = Image.merge('RGBA', rgb.split() + (alpha,))
+        big.alpha_composite(col, (int(cx - col.width / 2), int(cy - col.height / 2)))
+    g = art17(kind)
+    g = shade(g.crop(g.getbbox()))
+    k = S * 4 * size / max(g.size)
+    g = g.resize((max(1, int(g.width * k)), max(1, int(g.height * k))), Image.LANCZOS)
+    pos = ((S * 4 - g.width) // 2, int((S * 4 - g.height) / 2 + dy * S * 4))
+    add_glow(big, g, pos, (0, 0, 0), 12)
+    big.alpha_composite(g, pos)
+    save(big, cid)
+
+
+def main_v17():
+    old_layers = ({'part:' + p[0] for t in (V9_DRAWN, V11_DRAWN, V13_DRAWN) for _, _, _, ps in t.values() for p in ps}
+                  | {p[0] for t in (V15_DRAWN, V16_DRAWN) for _, _, _, ps in t.values() for p in ps}
+                  | {s for t in (V9_UPGRADES, V11_UPGRADES, V13_UPGRADES, V15_UPGRADES, V16_UPGRADES) for _, s, _, _ in t.values() if not s.startswith('vfx:')})
+    layers = [p[0] for _, _, _, ps in V17_DRAWN.values() for p in ps] + [s for _, s, _, _ in V17_UPGRADES.values()]
+    assert len(V17_DRAWN) == 24 and len(V17_UPGRADES) == 8
+    assert all(s.split(':')[0] in ('splat', 'smoke') for s in layers), 'bara stänk och rök'
+    assert len(layers) == len(set(layers)), 'varje stänk och rökbild används bara en gång'
+    assert not old_layers & set(layers), ('stänken och röken är oanvända', old_layers & set(layers))
+    n = 0
+    for cid, (kind, size, dy, ps) in V17_DRAWN.items():
+        drawn_card17(cid, kind, size, dy, ps)
+        n += 1
+    for cid, w in V17_PACTS.items():
+        pact(cid, w)
+        n += 1
+    for cid, (w, src, tint, rot) in V17_UPGRADES.items():
+        v16_upgrade(cid, w, src, tint, rot)
+        n += 1
+    near_dupes(list(V17_DRAWN) + list(V17_PACTS) + list(V17_UPGRADES))
+    return n
+
+
 def main():
     assert len(CARDS) == len(set(CARDS)) == 50, len(CARDS)
     srcs = list(V5.values()) + [s for _, s in V5_UPGRADES.values()]
@@ -2866,6 +3210,9 @@ def main():
     if ONLY == 'v16':
         print(main_v16(), 'kortbilder ->', OUT)
         return
+    if ONLY == 'v17':
+        print(main_v17(), 'kortbilder ->', OUT)
+        return
     n = 0
     if not ONLY_V5:
         for cid in CARDS:
@@ -2889,6 +3236,7 @@ def main():
         n += main_v13()
         n += main_v15()
         n += main_v16()
+        n += main_v17()
     print(n, 'kortbilder ->', OUT)
 
 
