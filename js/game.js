@@ -6001,7 +6001,7 @@ const BOSS_SPECIAL = {
     if (b.spK) { // frostnova: hoppa för att undvika
       if (b.t < 0.05) { bossWarn(b, 'FROSTNOVA – HOPPA!'); play('frost_boss_roar', 0.9, 0.9); }
       if (!settings.lowfx && b.t < 1) for (let i = 0; i < 3; i++) { const a = rnd(0, TAU), r = (1 - b.t) * 6; particles.push({ x: b.x + Math.cos(a) * r, y: b.y + Math.sin(a) * r, z: 0.05, vx: 0, vy: 0, vz: 0, life: 0.2, maxLife: 0.2, img: fx.hit[1], size: 0.08, add: true, tint: [150, 210, 255] }); }
-      if (b.t > 1 && !b.didHit) { b.didHit = true; frostBurst(b.x, b.y); if (dist < 7 && P.jz < 0.2) { hurtPlayer(10, b.x, b.y, 'proj'); P.slowT = Math.max(P.slowT, 2.5); say('DU ÄR NEDKYLD', 1.2); } }
+      if (b.t > 1 && !b.didHit) { b.didHit = true; frostBurst(b.x, b.y); if (dist < 7 && P.jz < 0.2) { hurtPlayer(bossShotDmg(b, 10), b.x, b.y, 'proj'); P.slowT = Math.max(P.slowT, 2.5); say('DU ÄR NEDKYLD', 1.2); } }
       if (b.t > 1.4) { b.state = 'idle'; b.t = 0; b.cd = 0.8; }
       return;
     }
@@ -7192,7 +7192,7 @@ Object.assign(BOSS_AI, {
       for (let k = 1; k < 14; k++) if (!settings.lowfx && Math.random() < 0.5) { const x = b.x + dx * k * 0.9, y = b.y + dy * k * 0.9; if (solid(x, y)) break; particles.push({ x, y, z: 0.5, vx: 0, vy: 0, vz: 0, life: 0.08, maxLife: 0.08, img: fx.hit[1], size: 0.12, add: true, tint: [255, 220, 90] }); }
       flashes.push({ x: b.x + dx * 3, y: b.y + dy * 3, t: 0.05, r: 4, col: [255, 210, 90] });
       let rel = Math.atan2(P.y - b.y, P.x - b.x) - a; rel = Math.atan2(Math.sin(rel), Math.cos(rel));
-      if (Math.abs(rel) < 0.08 && (b.beamHitT || 0) < tmr && hasLOS(b.x, b.y, P.x, P.y)) { b.beamHitT = tmr + 0.25; hurtPlayer(7, b.x, b.y, 'proj'); }
+      if (Math.abs(rel) < 0.08 && (b.beamHitT || 0) < tmr && hasLOS(b.x, b.y, P.x, P.y)) { b.beamHitT = tmr + 0.25; hurtPlayer(bossShotDmg(b, 7), b.x, b.y, 'proj'); }
       if (b.t > 1.8) { b.state = 'idle'; b.t = 0; b.cd = rnd(1.2, 1.8) / fast; }
       return;
     }
