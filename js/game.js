@@ -8725,7 +8725,7 @@ let arenas = [], arenaCur = null, arenaPool = [];
 const inArena = (a, x, y, m = 0) => x >= a.x0 + m && x < a.x1 + 1 - m && y >= a.y0 + m && y < a.y1 + 1 - m;
 function setupV14() {
   arenas = (lvl.arenas || []).filter(a => a && a.doors).map(a => ({ ...a, state: 'idle', wave: 0, waves: a.waves || 2, alive: [], t: 0 })); arenaCur = null;
-  const types = new Set(); for (const e of ents) if (!e.dead && !e.boss && !e.minion && !e.elite && !e.dormant && ENEMY_DEFS[e.type] && !ENEMY_DEFS[e.type].boss) types.add(e.type);
+  const types = new Set(); for (const e of ents) if (!e.dead && !e.boss && !e.minion && !e.elite && !e.dormant && ENEMY_DEFS[e.type] && !ENEMY_DEFS[e.type].boss && !['eel', 'worm', 'mimic'].includes(e.d.ai)) types.add(e.type); // inget som bara kan finnas i vatten eller under jord
   arenaPool = [...types]; if (!arenaPool.length) arenaPool = ['S', 'K'];
 }
 function arenaLock(a, lock) {
@@ -8750,7 +8750,8 @@ function updateV14(dt) {
       a.state = 'fight'; arenaCur = a; arenaLock(a, true); play('arena_lock', 1); P.shake = Math.max(P.shake, 1); say('ARENAN STÄNGS – ÖVERLEV', 2.5); setMusic(true); a.t = 1; firstHint('arena', 'ARENARUM: GALLREN ÖPPNAS NÄR ALLA VÅGOR ÄR DÖDA – DÅ VÄNTAR EN BELÖNING.'); break; }
     return; }
   const a = arenaCur; a.alive = a.alive.filter(e => !e.dead);
-  if (a.alive.length) return;
+  if (a.alive.length) { a.waveT = (a.waveT || 0) + dt; if (a.waveT > 45) { for (const e of a.alive) { e.hidden = false; e.arena = false; } a.alive = []; } return; } // skydd: en våg som inte går att döda släpper efter 45 s
+  a.waveT = 0;
   a.t -= dt; if (a.t > 0) return;
   if (a.wave < a.waves) { arenaSpawnWave(a); a.t = 1.2; return; }
   // klart: gallren går upp och belöningen kommer
