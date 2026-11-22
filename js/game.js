@@ -10725,7 +10725,7 @@ function setupV20() {
     if (cellAt(e.x, e.y) !== 'Ȳ') for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]]) if (cellAt(e.x + a, e.y + b) === 'Ȳ') { e.x = (e.x | 0) + a + 0.5; e.y = (e.y | 0) + b + 0.5; break; }
     if (cellAt(e.x, e.y) === 'Ȳ') e.hidden = true; }
   for (const pr of props) if (pr.ch === 'ȸ') pr.nestT = rnd(4, 12);
-  if (lvl && lvl.biome === 'desert') for (const t of torches) if (t.prop && !t.v20dim) { t.v20dim = true; for (const c of t.cells) c[1] *= 0.55; } // ljusen mot sandstenen: dämpade så att öknen inte bländar
+  if (lvl && lvl.biome === 'desert') for (const t of torches) if (t.prop && t.prop.ch !== 'Ȼ' && !t.v20dim) { t.v20dim = true; for (const c of t.cells) c[1] *= 0.55; } // kokpannorna lyser som eldfaten de ersätter; övrig rekvisita (ljusen m.fl.) dämpas mot sandstenen så att öknen inte bländar
 }
 let v20Oas = null, v20fogOn = false, v20slN = 0; // v20slN: nya slamrutor från klumpar (högst 30 per bana)
 function v20SetSluice(s, open, quiet) {
