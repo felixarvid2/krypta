@@ -5254,7 +5254,7 @@ function update(dt) {
   P.bobAmp += (clamp(speed / 3.1 * (P.runK > 0.5 && !settings.reduceMotion ? 1.2 : 1), 0, 1.6) - P.bobAmp) * Math.min(1, dt * 8);
   P.bob += dt * (4 + speed * 2.2);
   if (speed > 0.8 && onGround()) { stepT -= dt * speed / 3.1; if (stepT <= 0) { const st = stepSound(); play(st[0], st[1] * (P.crouch > 0.5 ? 0.4 : 1), rnd(0.9, 1.1) * st[2]); stepT = 0.42; if (P.crouch < 0.5) noise(speed > 4 ? 5 : 1.8); } } // springande fotsteg hörs
-  for (const key in doors) { const d = doors[key]; if (d.target === 0 && d.open > 0 && occupied(d)) d.target = 1; d.open += Math.sign(d.target - d.open) * Math.min(Math.abs(d.target - d.open), dt * (d.secret ? 0.6 : 1.4)); }
+  for (const key in doors) { const d = doors[key]; if (d.target === 0 && d.open > 0 && occupied(d)) { if (d.arena) arenaClearDoor(d); else d.target = 1; } d.open += Math.sign(d.target - d.open) * Math.min(Math.abs(d.target - d.open), dt * (d.secret ? 0.6 : 1.4)); }
   updateFlow();
   updateWeapon(dt);
   // föremål (guld dras till spelaren, magnetkort gäller allt)
@@ -8963,6 +8963,18 @@ function setupV14() {
   const types = new Set(); for (const e of ents) if (!e.dead && !e.boss && !e.minion && !e.elite && !e.dormant && ENEMY_DEFS[e.type] && !ENEMY_DEFS[e.type].boss && !['eel', 'worm', 'mimic', 'tentacle', 'templeguardian', 'blowgunner', 'moleman', 'alligator', 'leech'].includes(e.d.ai)) types.add(e.type); // inget som bara kan finnas i vatten eller under jord, står still eller gömmer sig
   arenaPool = [...types]; if (!arenaPool.length) arenaPool = ['S', 'K'];
 }
+function arenaClearDoor(d) { // ett arenagaller stängs inte på någon: den som står i öppningen knuffas ut (spelaren in i arenan, fiender ut)
+  const a = arenaCur || arenas.find(o => o.doors.some(q => q.x === d.x && q.y === d.y)); if (!a) { d.target = 1; return; }
+  const cx = (a.x0 + a.x1 + 1) / 2, cy = (a.y0 + a.y1 + 1) / 2, near = o => Math.abs(o.x - (d.x + 0.5)) < 0.8 && Math.abs(o.y - (d.y + 0.5)) < 0.8;
+  const push = (o, inward) => { const ox = d.x + 0.5 - cx, oy = d.y + 0.5 - cy, l = Math.hypot(ox, oy) || 1, s = inward ? -1 : 1;
+    for (const r of [1.1, 1.5, 2, 2.6]) for (const da of [0, 0.5, -0.5, 1, -1]) { const ang = Math.atan2(oy * s, ox * s) + da, x = d.x + 0.5 + Math.cos(ang) * r, y = d.y + 0.5 + Math.sin(ang) * r;
+      if (freeSpot(x, y, 0.3) && inArena(a, x, y) === inward) { o.x = x; o.y = y; return true; } }
+    return false; };
+  let stuck = false;
+  if (near(P)) stuck = !push(P, true) || stuck;
+  for (const e of ents) if (!e.dead && near(e)) { if (e.arena) { if (!push(e, true)) stuck = true; } else if (!push(e, false) && !push(e, true)) stuck = true; }
+  if (stuck) d.target = 1; // går inte att flytta – hellre öppet än fast
+}
 function arenaLock(a, lock) {
   for (const d0 of a.doors) { const key = d0.x + ',' + d0.y; let d = doors[key];
     if (lock) {
@@ -8985,6 +8997,7 @@ function updateV14(dt) {
       a.state = 'fight'; arenaCur = a; arenaLock(a, true); play('arena_lock', 1); P.shake = Math.max(P.shake, 1); say('ARENAN STÄNGS – ÖVERLEV', 2.5); setMusic(true); a.t = 1; firstHint('arena', 'ARENARUM: GALLREN ÖPPNAS NÄR ALLA VÅGOR ÄR DÖDA – DÅ VÄNTAR EN BELÖNING.'); break; }
     return; }
   const a = arenaCur; a.alive = a.alive.filter(e => !e.dead);
+  for (const q of a.doors) { const d = doors[q.x + ',' + q.y]; if (d && d.arena && d.target === 1 && !occupied(d)) d.target = 0; } // ett galler som fick stå öppet stängs igen
   if (a.alive.length) { // skydd: en våg som inte går att döda (gömd, fast i en vägg) släpper – men bara om ingen tagit skada på länge
     const hp = a.alive.reduce((t, e) => t + e.hp, 0); if (a.hpSum === undefined || hp < a.hpSum - 0.01 || a.alive.length !== a.nAlive) { a.waveT = 0; a.hpSum = hp; a.nAlive = a.alive.length; } else a.waveT = (a.waveT || 0) + dt;
     if (a.waveT > (a.alive.every(e => e.hidden) ? 25 : 90)) { for (const e of a.alive) { e.hidden = false; e.arena = false; } a.alive = []; a.hpSum = undefined; }
