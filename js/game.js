@@ -1337,6 +1337,7 @@ function updateLight() {
   lampLight(flashLight); // ficklampan
   if (lvl.beams) for (const b of lvl.beams) flashLight(b.x + 0.5, b.y + 0.5, 0.5, 3, [255, 230, 170]); // ljusstrålar
   for (const p of portals) flashLight(p.x, p.y, 0.7, 4, p.kind === 'gold' ? [255, 220, 90] : (p.biome && portals.length > 1 && BIOME_TINT[p.biome]) || [190, 130, 255]);
+  for (let i = 0; i < light.length; i++) { const l = light[i]; if (l > 1.3) light[i] = Math.min(1.8, 1.3 + (l - 1.3) * 0.25); } // mjukt tak: många ljuskällor på samma ställe bränner inte ut bilden
 }
 const lightAt = (x, y) => (x < 0 || y < 0 || x >= mw || y >= mh) ? lvl.ambient : light[(y | 0) * mw + (x | 0)];
 
@@ -2666,7 +2667,8 @@ const killTimes = [];
 function multiKill() { // flera dödade inom kort tid: meddelande och lite guld
   killTimes.push(tmr); while (killTimes.length && tmr - killTimes[0] > 1.3) killTimes.shift();
   const n = killTimes.length;
-  if (n >= 2) { const t = n === 2 ? 'DUBBELT!' : n === 3 ? 'TRIPPEL!' : n === 4 ? 'FYRDUBBELT!' : 'MASSAKER!'; say(`${t} +${n * 3} GULD`, 1.2); run.gold += 3; P.multi = Math.max(P.multi || 0, n); }
+  if (n >= 2) { run.gold += 3; // stilmätaren visar FLERDÖD, så inget eget meddelande
+    P.multi = Math.max(P.multi || 0, n); }
 }
 function gib(e) { // köttbitar och ben flyger
   e.gibbed = true; stat('gibs'); play('gib', 0.5, rnd(0.9, 1.1), { x: e.x, y: e.y });
