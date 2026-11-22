@@ -6,16 +6,16 @@ vad nästa planerare ska tänka på. Håll den kort – ta bort det som är gjor
 
 ## Backlogg (känt, inte åtgärdat)
 - Arenavågor kan bli mindre än planerat när få rutor nås från spelaren: reserven utan nåbarhetskrav i `arenaSpawnWave` körs bara om ingen fiende alls placerats. Låg prioritet.
-- `freeSpotFar(4,7)` hittade ingen plats för Stjärnskådaren i arenan `hall`; v19-koden har en egen reserv. Kontrollera andra bossar som använder `freeSpotFar`.
+- `freeSpotFar(4,7)` hittade ingen plats för Stjärnskådaren i arenan `hall`; v19-koden har en egen reserv. I vanliga bossarenor misslyckas den i 2–5 % av spelarrutorna, bara vid kanterna (d.1). Låg prioritet.
 - `t76` (klockutmaningen) är ostadig: "klockan tickar" (startvärdet över 10) och "när tiden tar slut dör man" faller ibland, även på oförändrad HEAD (OK 2 av 3). Båda bygger på väggklockan i klockläget utan boss. Avgör om det är spelet eller testet.
-- Andra bossar kan frysa som mycelmodern gjorde före c.2.1: kontrollera `BOSS_AI` där förflyttningen bara sker över ett visst avstånd medan anfallen kräver `hasLOS` (spegelkungen har en egen reserv, `blink`).
 - `bossChase` (c.2.1) skapar nya arrayer varje bildruta utan sikt, och utan väg till spelaren går bossen rakt mot spelaren och trycker mot väggen. Ofarligt, låg prioritet.
-- Våningsbyten ger enstaka bildrutor på 1,2–1,5 s (Avgrunden, bossjakten). Profilera ett byte innan något ändras.
+- Våningsbyten ger enstaka bildrutor på 1,2–1,5 s (Avgrunden, bossjakten). Återskapades inte i d.1: `loadFloor` 7–35 ms i alla fyra biomen, högst 100 ms per bildruta över 6 hela byten. Mät i bottkörningen där hacket syntes innan något ändras.
 - Väktare: eldklot, frostnova och faraostråle skalas nu (a.2, b.1), men tornador (js/game.js ca rad 7224), kloner, lavavågor och `addHazard`-skador har fortfarande full bosskraft. Ormväktarens dyk, uppdykningsradie och spott har bossens fasta gränser. Väktare stod för 2 av 7 dödsfall före b.1 (mot 4 av 12 före a.2), men före b.2 kunde en kvarglömd `run.cause` bokföra senare dödsstötar på väktaren; mät igen innan mer sänks.
 - `botng.mjs` rad 24 räknar även state `'runover'` (seger) som dödsfall med orsak `'?'`.
 - `hurtPlayer` tömmer inte `run.cause` vid tidiga returer (`P.iframe > 0`, `mod('dodge')`, sköld som ger d ≤ 0); en orsak som sätts då kan fortfarande ärvas av en senare dödsstöt utan källa.
 - Överlevnadsläget: `endRun` når nu sällan reservvärdet `'ÖVERLEVNAD'` (ca rad 6445) eftersom orsaken aldrig är tom – synligt i rundhistoriken.
 - `t92` ("stjärnkartegolvet ger högre och längre hopp") och "starseer: specialanfall" föll var sin gång i c.1.1 utan koppling till ändringen. Kör HEAD flera gånger och avgör om de är ostadiga.
+- Omvägskroken i `updateBoss` (d.1.1) använder `b.d.speed` utan bossens fasfaktor (1,3–1,5 i fas 3), så en boss i fas 3 går långsammare utom synhåll. Den ångrar också en teleport kortare än 1 ruta i neutralt tillstånd (ingen AI gör så i dag).
 - Ingen har lyssnat på ljuden från version 17–20; volymerna är satta efter LUFS-mätningar.
 
 ## Historik
@@ -29,6 +29,7 @@ vad nästa planerare ska tänka på. Håll den kort – ta bort det som är gjor
 - c.1.2: Ökenens kokpannor Ȼ lyser som eldfaten de ersätter (`light: 1.3, lightR: 7`; rekvisita får `r: d.lightR || 4`). Motiv: i samma bana gav eldfatet 0,80/0,34 och kokpannan 0,12/0 i ljus 3/5 rutor bort; ökensalar mätte 30–45 i medelljushet mot 43–77 i frostfästet. Utfall: incheckad c250040; blindtestet `tl_c_1_2` grönt (0,803 mot 0,803), ingen skuld. Granskningen påpekade att testet mätte i `'dungeon'` och missade ökendämpningen (se backloggen).
 - c.2.1: Mycelmodern går runt hinder när hon saknar sikt: `bossChase` följer ett eget avståndsfält `bossFlow` som bara går där hela 3×3-kroppen får plats (byggs om vid rutbyte/våningsbyte och varje halv sekund). Motiv: t75 isolerat 4/4, men t75:s uppställning upprepad gav fastlåsning i 4 av 8: bossen stannade på avståndet 3,99 (rör sig bara vid dist > 4), sporer/rötter/special kräver sikt och slaget räckvidd 3,0, så en svampvägg emellan gav 'idle' för evigt. Utfall: incheckad 14d3343; blindtestet `tl_c_2_1` grönt (går runt väggen, y avviker 2,63, sikt i 62 av 80 prov), riktiga arenan 0 av 8 frös. Skulden låg på koden (spelet), inte på t75.
 - c.2.2: Ökenens kokpannor Ȼ slipper sandstensdämpningen 0,55 i `setupV20` (övrig rekvisita som ljusen 'c' dämpas som förut). Motiv: ökenvåningar mätte 0,53–0,56 i medelljus inomhus mot frostfästet 0,59–0,90; försöket gav 0,60–0,65. Utfall: incheckad e09ff3d; blindtestet `tl_c_2_2` grönt (kokpanna/eldfat 0,99 i öknen, ljus öken/krypta 0,55), ingen skuld.
+- d.1.1: Bossar och väktare går runt hinder utan sikt: en gemensam efterkrok runt `BOSS_AI[b.id]` i `updateBoss` ångrar förflyttningen och kör `bossChase` när bossen är levande, synlig, i neutralt tillstånd (idle/walk/chase/circle), saknar sikt och flyttat under 1 ruta (undantag leviatanen och mycelmodern). Motiv: sonden med `tl_c_2_1`:s uppställning (vägg emellan, 4,5 rutor) på alla 28 bossar: 18 fick aldrig sikt på 15 s (sikt i 0 av 60 prov, bara idle/walk). Utfall: incheckad 6a4ea58; blindtestet `tl_d_1_1` grönt (60 OK; de prövade bossarna får sikt i 83–96 av 100 prov och anfaller, leviatanen står still), ingen skuld.
 
 ## Lärdomar
 - Ett test som ställer en fiende precis på en gräns (t.ex. 1,2 rutor från en sax) går sönder när gränsen ändras – testa beteendet, inte konstanten.
@@ -40,4 +41,5 @@ vad nästa planerare ska tänka på. Håll den kort – ta bort det som är gjor
 - Artefaktbygget måste provas med `tools/artifact/tart2.mjs` och `tartm.mjs` (telefon) före varje publicering.
 - Mät i det sammanhang där problemet rapporterades (samma biom, samma våningstyp). Ett test i en neutral bana går förbi biomspecifika multiplikatorer, så det kan bli grönt utan att det verkliga problemet blir löst. Sök efter `biome ===` i koden innan uppställningen väljs.
 - Ett test som är ostadigt i sviten men grönt isolerat kan dölja ett riktigt spelfel: upprepa testets egen uppställning många gånger direkt och logga tillståndet (state, sikt, cd, avstånd) i de försök som fastnar.
+- När ett fel rättats för en fiende: kör samma uppställning över alla syskon (`?boss=<id>` för alla bossar). Svepet efter c.2.1 hittade 18 av 28 bossar med samma fel, och en gemensam krok rättade alla på en gång.
 - Kör ett ostadigt test även mot oförändrad HEAD (`GAME_JS`) innan ändringen får skulden; faller det där också är det inte ändringen.
