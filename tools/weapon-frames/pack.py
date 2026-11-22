@@ -18,6 +18,9 @@
 # Version 13: runboken (runebook, närstrid: en öppen bok i handen; runan som skjuts iväg ritas in i skjutrutorna, RUNEFLY,
 #   och extra läget ward = boken hålls upp med en virvel av sidor runt sig, WARD) och ångkanonen (steamcannon, extra läget
 #   reload; ångmolnet ur mynningen ritas in i skjutrutorna, STEAMFX). Källor: enkla former i static.html.
+# Version 15: rökelsekaret (censer, närstrid: ett mässingskar i en kedja; handen med ärmen är en egen rendering, censer_h,
+#   som läggs över varje ruta (MERGE); röksvansen efter karet ritas in i skjutrutorna, CENSERFX) och bikastaren
+#   (hivelauncher, extra läget reload; bina som flyger ur pipan ritas in i skjutrutorna, BEEFLY). Källor: enkla former.
 import json, re, sys
 import numpy as np
 from PIL import Image
@@ -29,9 +32,9 @@ TARGET={'pistol':(84,178,24),'shotgun':(112,196,40),'rifle':(112,184,42),'smg':(
         'dbshotgun':(110,194,40),'crossbow':(66,166,14),'flaregun':(80,180,22),'sniper':(118,186,46),
         'flamer':(104,226,34),'launcher':(100,188,30),'nailgun':(96,210,22),'musket':(128,196,40),
         'harpoon':(124,198,40),'prism':(118,196,40),'sawlauncher':(118,198,34),'windgun':(118,206,26),
-        'sporelauncher':(120,204,30),'steamcannon':(122,206,30)}  # höjd i px, mittpunkt x, hur mycket som skärs av nedtill
+        'sporelauncher':(120,204,30),'steamcannon':(122,206,30),'hivelauncher':(114,204,14)}  # höjd i px, mittpunkt x, hur mycket som skärs av nedtill
 HARD={'axe','flamer','launcher','nailgun','staff','bow','knives','hammer','musket','harpoon','boomerang','prism','sawlauncher','windgun','spear',
-      'sporelauncher','mirrorshield','whip','runebook','steamcannon'}   # version 5 och 6: hel eller ingen täckning per pixel
+      'sporelauncher','mirrorshield','whip','runebook','steamcannon','censer','hivelauncher'}   # version 5 och 6: hel eller ingen täckning per pixel
 MUZZLE_IDLE={'bow'}
 PICK={'nailgun':(48,'w'),'staff':(48,'w',-90),'bow':(46,'w',90,'string'),'axe':(44,'w',90),'flamer':(54,'w'),'launcher':(46,'w'),
       'knives':(24,'h',0,'fan'),'hammer':(44,'w',90),'musket':(60,'w'),'harpoon':(58,'w'),'boomerang':(22,'w'),'prism':(54,'w'),
@@ -46,11 +49,14 @@ SAWFLY={'sawlauncher':[None,0.3,0.7,None,None]}     # version 9: klingan på vä
 GUST={'windgun':[(0,12),(1,19),(2,26),(3,31),None]}  # version 9: vindbössans luftstöt (steg, radie i px)
 SPOREFLY={'sporelauncher':[(0,0.0),(1,0.35),(2,0.75),(3,None),None]}   # version 11: sporpuff vid mynningen (steg) och bollen på väg mot siktet (andel, None = ingen)
 LASH={'whip':[0,1,2,3,4]}                             # version 11: piskans snärt per skjutruta (läge 0 = bakåt .. 2 = utsträckt mot siktet .. 4 = faller)
-MERGE={'mirrorshield':'mirrorshield_s'}               # version 11: en andra rendering (skölden) som läggs över rutorna, samma lägen och antal
+MERGE={'mirrorshield':'mirrorshield_s','censer':'censer_h'}   # version 15: rökelsekarets hand               # version 11: en andra rendering (skölden) som läggs över rutorna, samma lägen och antal
 PICK_SIDE={'mirrorshield':'mirrorshield_s'}           # version 11: upplockningsbilden ur en annan sidovy (skölden med svärdet bakom)
 RUNEFLY={'runebook':[(0,0.0),(1,0.3),(2,0.7),None]}   # version 13: runan (steg, andel av sträckan mot siktet, None = ingen)
 WARD={'runebook':[(0,0.55),(1,0.85),(2,1.0)]}         # version 13: sidvirveln runt boken i läget ward (steg, storlek)
 STEAMFX={'steamcannon':[(0,10),(1,18),(2,25),(3,29),None]}   # version 13: ångmolnet ur mynningen (steg, radie i px)
+CENSERFX={'censer':[0,1,2,3,4,5,6,7]}                        # version 15: rökelsekarets röksvans (steg; svansen följer karets tidigare lägen)
+BEEFLY={'hivelauncher':[(0,(0.04,0.1)),(1,(0.08,0.22,0.36)),(2,(0.25,0.45,0.62,0.8)),(3,(0.6,0.8,0.95)),None]}   # version 15: bina (steg, andelar av sträckan mot siktet)
+MZ=[]                                                         # version 15: alla rutors mynningar i vyn (för röksvansen)
 AIM=(176,50)                                        # dit harpunen flyger (strax ovanför och till höger om siktet)
 WAIM=(112,80)                                       # version 11: dit piskans snärt når (till vänster om siktet, där bågen slår)
 OUTC=(37,19,26)
@@ -261,6 +267,54 @@ def steam_draw(d,mx,my,st,X0,Y0,i):
         a=rr.uniform(0,6.283); dd=r*rr.uniform(1.0,1.6); d.point((mx+(ax-mx)*0.15+np.cos(a)*dd,my+np.sin(a)*dd*0.8),fill=sh[3]+(255,))
 
 
+def censer_draw(d,mx,my,k,X0,Y0,i):
+    """Version 15: rökelsekaret: en svans av ljuslila rök längs karets väg från de föregående rutorna, fartstreck och glöd."""
+    import random
+    rr=random.Random(31+i); sm=[(118,112,138),(168,164,188),(206,204,224),(236,236,248)]
+    pts=[(MZ[j][0]-X0,MZ[j][1]-Y0) for j in range(max(1,i-2),i+1)] if i>=1 else [(mx,my)]
+    path=[]
+    for (ax,ay),(bx,by) in zip(pts,pts[1:]):
+        for t in np.linspace(0,1,max(9,int(np.hypot(bx-ax,by-ay)/5)))[:-1]: path.append((ax+(bx-ax)*t,ay+(by-ay)*t))
+    path.append((mx,my))
+    n=len(path); blobs=[]
+    for j,(x,y) in enumerate(path[:-1]):
+        u=j/max(1,n-1)
+        for q in range(2):
+            r=3.5+u*6+rr.uniform(-1.2,1.2)
+            blobs.append((x+rr.uniform(-4,4),y+rr.uniform(-4,3)-5*(1-u),r))
+    for bx,by,br in blobs: d.ellipse((bx-br-1,by-br-1,bx+br+1,by+br+1),fill=OUTC+(255,))
+    for bx,by,br in blobs: d.ellipse((bx-br,by-br,bx+br,by+br),fill=sm[1]+(255,))
+    for bx,by,br in blobs: d.ellipse((bx-br*0.75,by-br*0.8,bx+br*0.4,by+br*0.3),fill=sm[2]+(255,))
+    for bx,by,br in blobs: d.ellipse((bx-br*0.45,by-br*0.6,bx,by-br*0.15),fill=sm[3]+(255,))
+    if len(pts)>1:   # fartstreck längs vägen
+        (ax,ay),(bx,by)=pts[-2],pts[-1]; dx,dy=bx-ax,by-ay; ln=np.hypot(dx,dy) or 1; nx,ny=-dy/ln,dx/ln
+        for o in (-10,0,10):
+            d.line([(ax+nx*o+dx*0.3,ay+ny*o+dy*0.3),(ax+nx*o+dx*0.7,ay+ny*o+dy*0.7)],fill=(250,248,255,255),width=1)
+    for j in range(4):   # glöd som stänker ur karet
+        a=rr.uniform(0,6.283); dd=rr.uniform(6,14); d.point((mx+np.cos(a)*dd,my+np.sin(a)*dd),fill=(255,190,80,255))
+
+
+def bee_draw(d,mx,my,st,X0,Y0,i):
+    """Version 15: bikastaren: bin som surrar ut ur pipan mot siktet i en slingrande svärm, mindre ju längre bort."""
+    import random
+    k,fs=st; rr=random.Random(41+i); ax,ay=AIM[0]-X0,AIM[1]-Y0
+    if k==0:   # vaxsmulor och en honungsdroppe vid mynningen
+        for j in range(6):
+            a=rr.uniform(0,6.283); dd=rr.uniform(3,9); d.point((mx+np.cos(a)*dd,my+np.sin(a)*dd*0.8),fill=(248,216,112,255))
+    for j,f in enumerate(fs):
+        px=mx+(ax-mx)*f+np.sin(f*9+j*2.1)*18*(1-f*0.4); py=my+(ay-my)*f+np.cos(f*7+j*1.7)*10*(1-f*0.4)
+        s=max(1.5,5.5*(1-f)+1.6)
+        d.ellipse((px-s*1.4-1,py-s-1,px+s*1.4+1,py+s+1),fill=OUTC+(255,))
+        d.ellipse((px-s*1.4,py-s,px+s*1.4,py+s),fill=(232,176,30,255))
+        if s>2:
+            for o in (-0.4,0.3): d.line([(px+s*o,py-s+0.5),(px+s*o,py+s-0.5)],fill=(38,30,30,255),width=max(1,int(s/2.2)))
+            d.ellipse((px+s*0.8,py-s*0.6,px+s*1.6,py+s*0.4),fill=(30,22,24,255))
+        w=1 if (i+j)%2 else -1   # vingarna, uppe eller nere
+        d.ellipse((px-s*0.9,py-s*(2.2 if w>0 else 0.4)-1,px+s*0.3,py-s*(0.6 if w>0 else -1.0)),fill=(230,244,255,255),outline=OUTC+(255,))
+        for t in (1,2):   # surrstreck bakom
+            d.point((px-s*1.6-t*2,py+rr.uniform(-1,1)),fill=(255,255,255,255))
+
+
 def fan_pick(im):
     """Upplockningsbilden för kastknivarna: tre knivar i en solfjäder kring handtagen (bladen uppåt)."""
     W,H=im.size; S=H*3; c=Image.new('RGBA',(S,S)); px,py=S//2,S//2+H//2
@@ -345,6 +399,11 @@ for w,st in d.items():
         atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(WARD[w],'ward'),lambda m,st:(max(0,m[0]-130*st[1]),max(0,m[1]-70*st[1]),min(VW,m[0]+130*st[1]),m[1]),ward_draw)
     if w in STEAMFX:
         atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(STEAMFX[w]),lambda m,st:(min(m[0],AIM[0])-st[1]*2-6,min(m[1],AIM[1])-st[1]*2-6,max(m[0],AIM[0])+st[1]*2+6,m[1]+st[1]),steam_draw)
+    if w in CENSERFX:   # version 15
+        MZ[:]=mz
+        atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(CENSERFX[w]),lambda m,k:(max(0,m[0]-20),max(0,m[1]-24),min(VW,m[0]+20),m[1]),censer_draw)
+    if w in BEEFLY:
+        atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(BEEFLY[w]),lambda m,st:(min(m[0],AIM[0])-16,min(m[1],AIM[1])-14,max(m[0],AIM[0])+16,m[1]),bee_draw)
     atlas.save(OUT+f'assets/gfx/fp_{w}.png',optimize=True)
     if w in MUZZLE_IDLE: mz=[mz[0] if i in states['fire'] else m for i,m in enumerate(mz)]   # bågen: utan pil räknas mynningen från vilobilden
     out[w]={'x':x,'y':y,'w':fw,'h':fh,'states':states,'muzzle':mz,'dur':{'fire':round(st['fire_dur'],3),**{k:round(v,3) for k,v in st.get('durs',{}).items()}}}

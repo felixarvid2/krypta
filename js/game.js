@@ -444,10 +444,10 @@ const ENEMY_DEFS = {
   'ư': { name: 'SÖMNGÅNGARE', sheet: 'sleepwalker', move: 'movement', hp: 16, speed: 0.6, melee: true, dmg: 13, range: 1.0, cd: 1.5, size: 1.05, growl: 'sleepwalker', score: 220, atkFps: 9, hitAt: 0.6, ai: 'sleepwalker', tip: 'GÅR INTE ATT SMYGA FÖRBI – OCH SPRICKER I SÖMNPULVER' },
   'Ƒ': { name: 'KORGOSSE', sheet: 'choirboy', move: 'movement', hp: 6, speed: 1.0, melee: false, dmg: 5, range: 9, cd: 2.6, size: 0.85, growl: 'choirboy', score: 220, atkFps: 10, hitAt: 0.5, ai: 'choirboy', kite: 6, tip: 'LÄKER OCH SKYDDAR DE ANDRA – DÖDA HONOM FÖRST' },
   'ƒ': { name: 'BOTGÖRARE', sheet: 'flagellant', move: 'movement', hp: 14, speed: 1.4, melee: true, dmg: 12, range: 1.0, cd: 1.0, size: 1.05, growl: 'flagellant', score: 260, atkFps: 11, hitAt: 0.5, ai: 'flagellant', tip: 'BLIR FARLIGARE JU MER SKADAD DEN ÄR – DÖDA DEN SNABBT' },
-  'Ɯ': { name: 'KERUB', sheet: 'cherub', move: 'movement', hp: 5, speed: 1.8, melee: false, dmg: 6, range: 8, cd: 99, size: 0.7, growl: 'cherub', score: 180, atkFps: 12, hitAt: 0.5, ai: 'cherub', float: true, kite: 4, tip: 'SKRIKET FÅR SIKTET ATT HOPPA – SKJUT DEN FÖRST' },
+  'Ɯ': { name: 'KERUB', sheet: 'cherub', move: 'movement', hp: 5, speed: 1.8, melee: false, dmg: 6, range: 8, cd: 99, size: 0.65, growl: 'cherub', score: 180, atkFps: 12, hitAt: 0.5, ai: 'cherub', float: true, kite: 4, tip: 'SKRIKET FÅR SIKTET ATT HOPPA – SKJUT DEN FÖRST' },
   'Ƙ': { name: 'ARBETSBI', sheet: 'workerbee', move: 'movement', hp: 2, speed: 2.8, melee: true, dmg: 4, range: 0.7, cd: 0.7, size: 0.5, growl: 'workerbee', score: 40, atkFps: 14, hitAt: 0.5, ai: 'workerbee', float: true, tip: 'KOMMER I SVÄRM – HAGEL OCH ELD' },
   'ƙ': { name: 'GADDKRIGARE', sheet: 'stingerknight', move: 'movement', hp: 18, speed: 1.3, melee: true, dmg: 14, range: 1.1, cd: 1.3, size: 1.2, growl: 'stingerknight', score: 380, atkFps: 10, hitAt: 0.55, ai: 'stingerknight', float: true, tip: 'RUSAR MED GADDEN – SIDSTEG NÄR DEN TAR SATS' },
-  'ƚ': { name: 'LARV', sheet: 'larva', move: 'movement', hp: 6, speed: 0.6, melee: false, dmg: 6, range: 8, cd: 99, size: 0.75, growl: 'larva', score: 110, atkFps: 10, hitAt: 0.5, ai: 'larva', tip: 'SPOTTAR SYRA – HÅLL DIG I RÖRELSE' },
+  'ƚ': { name: 'LARV', sheet: 'larva', move: 'movement', hp: 6, speed: 0.6, melee: false, dmg: 6, range: 8, cd: 99, size: 0.65, growl: 'larva', score: 110, atkFps: 10, hitAt: 0.5, ai: 'larva', tip: 'SPOTTAR SYRA – HÅLL DIG I RÖRELSE' },
   'Ƅ': { name: 'SNÖFANTOM', sheet: 'snowwraith', move: 'movement', hp: 9, speed: 1.6, melee: true, dmg: 10, range: 1.0, cd: 1.2, size: 0.95, growl: 'snowwraith', score: 260, atkFps: 10, hitAt: 0.5, ai: 'snowwraith', frostBite: true, float: true, tip: 'SYNS KNAPPT I SNÖN – LYSSNA EFTER YLANDET' },
   'ƅ': { name: 'LAVAORM', sheet: 'lavaworm2', move: 'movement', hp: 14, speed: 1.0, melee: false, dmg: 9, range: 9, cd: 99, size: 1.0, growl: 'lavaworm_growl', score: 320, atkFps: 10, hitAt: 0.5, ai: 'lavaworm', tip: 'DYKER I MARKEN – SKJUT NÄR DEN ÄR UPPE' },
   'Ɔ': { name: 'SKARABÉPRÄST', sheet: 'scarabpriest', move: 'movement', hp: 10, speed: 1.0, melee: false, dmg: 7, range: 10, cd: 2.8, size: 1.05, growl: 'scarabpriest', score: 300, atkFps: 10, hitAt: 0.5, ai: 'scarabpriest', kite: 5, tip: 'VÄCKER SKARABÉER – DÖDA PRÄSTEN FÖRST' },
@@ -742,11 +742,11 @@ async function loadAll(setStatus) {
   for (const k of ['rune_fire', 'rune_ice', 'rune_poison', 'rune_storm', 'rune_blood', 'rune_echo', 'ab_blink', 'ab_slowmo', 'ab_bubble', 'ab_summon', 'ab_quake']) { try { const im = await load(`${A}gfx/${k}.png`); spr[k] = pixels(im); hudImg[k] = im; } catch (e) { /* valfri */ } }
   try { spr.meat = pixels(await load(`${A}gfx/item_meat.png`)); } catch (e) { /* valfri */ }
   for (const [k, f] of [['page', 'item_page'], ['battery', 'item_battery'], ['stone', 'item_stone'], ['tome', 'item_tome'], ['gear', 'item_gear'], ['feather', 'item_feather'], ['sporesack', 'item_sporesack'], ['inkflask', 'item_inkflask'], ['beehive', 'item_beehive'], ['dreamflask', 'item_dreamflask']]) { try { spr[k] = pixels(await load(`${A}gfx/${f}.png`)); } catch (e) { /* valfri */ } }
-  for (const k of ['icon_eye', 'icon_ear', 'icon_air', 'icon_xp', 'icon_wind', 'icon_time', 'icon_spore', 'icon_ink']) { try { hudImg[k] = await load(`${A}gfx/${k}.png`); } catch (e) { /* valfri */ } }
+  for (const k of ['icon_eye', 'icon_ear', 'icon_air', 'icon_xp', 'icon_wind', 'icon_time', 'icon_spore', 'icon_ink', 'icon_bless', 'icon_honey']) { try { hudImg[k] = await load(`${A}gfx/${k}.png`); } catch (e) { /* valfri */ } }
   for (const k of ['potion_heal', 'potion_rage', 'potion_ghost', 'potion_speed', 'potion_ice', 'potion_unknown']) { try { const im = await load(`${A}gfx/${k}.png`); spr[k] = pixels(im); hudImg[k] = im; } catch (e) { /* valfri */ } }
   try { fx.crateBits = strip(await load(A + 'gfx/prop_crate_broken.png'), 4); } catch (e) { fx.crateBits = null; }
   fx.parts = {}; // biompartiklar (tools/props/make.py); saknas en används träffgnistan
-  for (const [n, k] of [['web', 1], ['page', 2], ['ink2', 2], ['steam', 3], ['spore2', 2], ['glassshard', 2], ['whip', 1], ['illusion', 2], ['chain', 1], ['root', 2], ['tongue', 1], ['legend', 2], ['dirt', 2], ['gear', 2], ['spark2', 2], ['feather', 2], ['wind', 3], ['lightning2', 2], ['cloud', 2], ['bubble', 2], ['shard', 2], ['splash_big', 4], ['prismbeam', 1], ['note', 2], ['ink', 2], ['harpoonrope', 1], ['knife', 1], ['bandage', 2], ['sand', 2], ['smoke2', 4], ['beam', 1], ['dust_mote', 1], ['nail', 1], ['arrow', 1], ['lightning', 4], ['ashfall', 2], ['lavadrop', 2], ['heat', 1], ['snow', 2], ['footprint', 1], ['breath', 2], ['icicle', 1], ['flame', 4], ['blood_trail', 2], ['eye', 1], ['leaf', 4], ['firefly', 2], ['drop', 1], ['rain', 1], ['fog', 1], ['bat', 4], ['ember', 2], ['dust', 1], ['wisp', 4], ['shell', 1], ['blood_pool', 3],
+  for (const [n, k] of [['web', 1], ['page', 2], ['ink2', 2], ['steam', 3], ['spore2', 2], ['glassshard', 2], ['whip', 1], ['illusion', 2], ['chain', 1], ['root', 2], ['tongue', 1], ['legend', 2], ['dirt', 2], ['gear', 2], ['spark2', 2], ['feather', 2], ['wind', 3], ['lightning2', 2], ['cloud', 2], ['bubble', 2], ['shard', 2], ['splash_big', 4], ['prismbeam', 1], ['note', 2], ['note2', 2], ['smoke3', 3], ['honey', 2], ['ink', 2], ['harpoonrope', 1], ['knife', 1], ['bandage', 2], ['sand', 2], ['smoke2', 4], ['beam', 1], ['dust_mote', 1], ['nail', 1], ['arrow', 1], ['lightning', 4], ['ashfall', 2], ['lavadrop', 2], ['heat', 1], ['snow', 2], ['footprint', 1], ['breath', 2], ['icicle', 1], ['flame', 4], ['blood_trail', 2], ['eye', 1], ['leaf', 4], ['firefly', 2], ['drop', 1], ['rain', 1], ['fog', 1], ['bat', 4], ['ember', 2], ['dust', 1], ['wisp', 4], ['shell', 1], ['blood_pool', 3],
     ['gib', 4], ['spore', 2], ['webshot', 1], ['scorch', 1], ['hole', 2], ['ash', 2], ['smoke', 4], ['ice', 3], ['gas', 2], ['skull', 2], ['log', 2], ['rock', 1], ['shadow', 1], ['zzz', 1], ['star', 1], ['meteor', 2]]) {
     try { fx.parts[n] = strip(await load(`${A}gfx/part_${n}.png`), k); } catch (e) { /* valfri */ }
   }
@@ -8839,7 +8839,7 @@ function censerSwing(wp) { // rökelsekaret: ett varv runt dig som träffar allt
     if (!e.dead && !e.boss) { const dx = e.x - P.x, dy = e.y - P.y; for (let i = 0; i < 4; i++) tryMove(e, dx / (d || 1) * 0.12, dy / (d || 1) * 0.12, 0.28); }
   }
   if (hits) { heal(Math.min(6, hits) * ((up('cs_heal') ? 2 : 1) + mod('censerHeal')), true); hitMark = 0.1; hitStop = Math.max(hitStop, 0.04); lvlStat.hits++; play('censer_hit', 0.6, rnd(0.9, 1.1)); }
-  for (let i = 0; i < 20; i++) { const a = P.a + i / 20 * TAU, r = reach * rnd(0.5, 1); particles.push({ x: P.x + Math.cos(a) * r, y: P.y + Math.sin(a) * r, z: rnd(0.3, 0.6), vx: -Math.sin(a) * 2, vy: Math.cos(a) * 2, vz: 0.2, life: 0.6, maxLife: 0.6, img: fx.parts.smoke ? fx.parts.smoke[i % fx.parts.smoke.length] : fx.hit[1], size: 0.12, tint: [220, 210, 190] }); }
+  for (let i = 0; i < 20; i++) { const a = P.a + i / 20 * TAU, r = reach * rnd(0.5, 1); particles.push({ x: P.x + Math.cos(a) * r, y: P.y + Math.sin(a) * r, z: rnd(0.3, 0.6), vx: -Math.sin(a) * 2, vy: Math.cos(a) * 2, vz: 0.2, life: 0.6, maxLife: 0.6, img: (fx.parts.smoke3 || fx.parts.smoke) ? (fx.parts.smoke3 || fx.parts.smoke)[i % (fx.parts.smoke3 || fx.parts.smoke).length] : fx.hit[1], size: 0.12, tint: fx.parts.smoke3 ? null : [220, 210, 190] }); }
 }
 function beeFire(wp, base) { // bikastaren: bin som söker upp fiender och sticker flera gånger
   const n = up('hl_swarm') ? 5 : 3;
@@ -8882,8 +8882,8 @@ function larvaHatch(pr) { // larvsäcken kläcks
   const n = 2 + (Math.random() < 0.4 ? 1 : 0); for (let i = 0; i < n; i++) { const a = rnd(0, TAU), x = pr.x + Math.cos(a) * 0.9, y = pr.y + Math.sin(a) * 0.9; if (!freeSpot(x, y, 0.25)) continue; const e = makeEnemy(ENEMY_DEFS['ƚ'] ? 'ƚ' : 'L', x, y); e.alert = true; e.minion = true; ents.push(e); totalEnemies++; }
 }
 function drawV15Hud(g) {
-  if (P.blessT > tmr) { const k = Math.min(1, (P.blessT - tmr) / 1.5); g.fillStyle = `rgba(255,230,160,${0.07 * k})`; g.fillRect(0, 0, W, VH); }
-  if (P.honeyT > 0) { g.fillStyle = 'rgba(230,170,40,0.12)'; g.fillRect(0, VH - 30, W, 30); }
+  if (P.blessT > tmr) { const k = Math.min(1, (P.blessT - tmr) / 1.5); g.fillStyle = `rgba(255,230,160,${0.07 * k})`; g.fillRect(0, 0, W, VH); if (hudImg.icon_bless) g.drawImage(hudImg.icon_bless, 26, VH - 22, 8, 8); }
+  if (P.honeyT > 0) { g.fillStyle = 'rgba(230,170,40,0.12)'; g.fillRect(0, VH - 30, W, 30); if (hudImg.icon_honey) g.drawImage(hudImg.icon_honey, 38, VH - 22, 8, 8); }
 }
 const v15Slow = () => (P.honeyT > 0 ? Math.max(0.35, 0.45 + mod('honeyResist') * 0.5) : 1);
 function v15Dmg(e, dmg, opt) { if (P.blessT > tmr && !opt.infight) dmg *= 1.3 + mod('holyDmg'); if (e.d.ai === 'larva' && mod('larvaDmg')) dmg *= 1 + mod('larvaDmg'); return dmg; }
@@ -8905,7 +8905,7 @@ const AI_V15 = {
   choirboy(e, dt, dist, los) { // sjunger: läker och skyddar fienderna omkring sig
     e.singT = (e.singT ?? rnd(2, 4)) - dt;
     if (e.singT <= 0 && e.state !== 'pain') { e.singT = rnd(4.5, 6); let n = 0; for (const o of ents) if (!o.dead && o !== e && !o.boss && Math.hypot(o.x - e.x, o.y - e.y) < 5) { o.hp = Math.min(o.maxHp, o.hp + o.maxHp * 0.2); o.eshieldMax = Math.max(o.eshieldMax || 0, 4); o.eshield = Math.max(o.eshield || 0, 4); n++; }
-      if (n) { e.state = 'attack'; e.t = 0; e.didHit = true; play('choirboy', 0.7, 1, { x: e.x, y: e.y }); spawnText(e.x, e.y, '♪', '#ffe9a8'); firstHint('choir', 'KORGOSSEN LÄKER OCH SKYDDAR DE ANDRA – DÖDA HONOM FÖRST.'); return true; } }
+      if (n) { e.state = 'attack'; e.t = 0; e.didHit = true; play('choirboy', 0.7, 1, { x: e.x, y: e.y }); spawnText(e.x, e.y, '♪', '#ffe9a8'); if (fx.parts.note2 && !settings.lowfx) for (let i = 0; i < 6; i++) particles.push({ x: e.x + rnd(-0.3, 0.3), y: e.y + rnd(-0.3, 0.3), z: 0.7, vx: rnd(-0.4, 0.4), vy: rnd(-0.4, 0.4), vz: rnd(0.3, 0.7), life: 1.2, maxLife: 1.2, img: fx.parts.note2[i % 2], size: 0.1 }); firstHint('choir', 'KORGOSSEN LÄKER OCH SKYDDAR DE ANDRA – DÖDA HONOM FÖRST.'); return true; } }
     return false;
   },
   flagellant(e, dt) { // blir snabbare och farligare ju mer skadad den är
@@ -8958,7 +8958,7 @@ Object.assign(BOSS_AI, {
     const fast = ph === 3 ? 1.3 : 1;
     if (b.state === 'dash') { const sp = 9 * fast * dt, moved = bossMove(b, b.dA, sp); if (!b.didHit && dist < 2) { b.didHit = true; run.cause = b.d.name; hurtPlayer(b.d.dmg, b.x, b.y, 'melee'); P.poisonT = Math.max(P.poisonT || 0, 4); }
       if (b.t > 0.9 || moved < sp * 0.3) { b.state = 'idle'; b.t = 0; b.cd = rnd(1, 1.5) / fast; } return; }
-    if (b.state === 'honey') { if (b.t < 0.05) { bossWarn(b, 'HONUNGEN RINNER!'); play('honey_splash', 0.9); for (let i = 0; i < 5 + ph * 2; i++) { const a = rnd(0, TAU), r = rnd(0.5, 3.5); const x = P.x + Math.cos(a) * r, y = P.y + Math.sin(a) * r; if (!solid(x, y)) honeyPuddles.push({ x, y, t: 8 }); } }
+    if (b.state === 'honey') { if (b.t < 0.05) { bossWarn(b, 'HONUNGEN RINNER!'); play('honey_splash', 0.9); for (let i = 0; i < 5 + ph * 2; i++) { const a = rnd(0, TAU), r = rnd(0.5, 3.5); const x = P.x + Math.cos(a) * r, y = P.y + Math.sin(a) * r; if (!solid(x, y)) { honeyPuddles.push({ x, y, t: 8 }); if (fx.parts.honey && !settings.lowfx) for (let j = 0; j < 3; j++) particles.push({ x, y, z: 0.6, vx: rnd(-0.5, 0.5), vy: rnd(-0.5, 0.5), vz: rnd(0.5, 1), life: 0.7, maxLife: 0.7, img: fx.parts.honey[j % 2], size: 0.07 }); } } }
       if (b.t > 0.9) { b.state = 'idle'; b.t = 0; b.cd = 0.8; } return; }
     b.cd -= dt;
     if (b.cd <= 0 && hasLOS(b.x, b.y, P.x, P.y)) { b.t = 0; b.didHit = false; if (Math.random() < 0.45) { b.state = 'dash'; b.dA = ang; play('queenbee_buzz', 0.9); bossWarn(b, 'BIDROTTNINGEN RUSAR!'); } else b.state = 'honey'; return; }

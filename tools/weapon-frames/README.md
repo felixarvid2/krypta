@@ -169,3 +169,23 @@ node render-static.mjs side runebook,steamcannon
 python3 pack.py xframes ../../ runebook,steamcannon   # övriga poster i js/weapons.js lämnas orörda
 python3 pack.py pick ../../ steamcannon               # pick_steamcannon (pick_runebook kommer från tools/props10)
 ```
+
+Version 15: rökelsekaret (`censer`) och bikastaren (`hivelauncher`).
+Rökelsekaret har ingen modell (`"model": "none"`, `base: [2,2,2]` så att greppet hamnar i origo och längden blir känd): ett
+mässingskar (klot, band, kupat lock med knopp, `name: pot`, mynningen) i en kedja av omväxlande vridna torusar, med glöd
+(`name: ember`) i hålen. Handen med ärmen är en egen rendering, `censer_h`, som `pack.py` lägger över varje ruta (`MERGE`, som
+spegelskölden), så att karet kan snurra runt handen utan att ärmen följer med. `fire` är ett helt varv (åtta rutor): karet
+lyfts, svänger ut framför, runt åt vänster, svischar förbi tätt framför kameran och kommer tillbaka från höger; `pack.py` ritar
+en röksvans längs karets tidigare lägen (`CENSERFX`): `states: {idle:[0], fire:[1..8]}`, `dur: {fire}`. Ställningarna anges
+som handens läge och kedjans riktning; vinklarna räknas fram i `tools/props12/fp_defs.py`.
+Bikastaren är byggd av enkla former: kolv och grepp av trä, en bikupa av trästavar med mässingsband och ett litet tak
+(`name: lid`), en vaxad front med sexkantiga celler (`name: comb`, lyser i skjutrutorna), honungsdroppar och en mässingspipa med
+utsvängd mynning. `pack.py` ritar bina som surrar ut ur pipan mot `AIM` (`BEEFLY`); `reload` (`extra`) lutar kastaren och lyfter
+taket: `states: {idle:[0], fire:[1..5], reload:[6..10]}`, `dur: {fire, reload}`. Upplockningsbilderna `pick_censer.png` och
+`pick_hivelauncher.png` ritas i `tools/props12/make.py`.
+
+```bash
+cd retrofps/tools/weapon-frames
+node render-static.mjs fp censer,censer_h,hivelauncher
+python3 pack.py xframes ../../ censer,hivelauncher   # censer_h läggs över censer (MERGE); övriga poster i js/weapons.js lämnas orörda
+```
