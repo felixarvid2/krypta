@@ -684,7 +684,7 @@ const PROP_DEFS = {
   'ȸ': { img: 'ratnest', n: 2, size: 0.8, block: true, fb: 'crate' },
   'ȹ': { img: 'cactus', n: 1, size: 0.95, block: true, fb: 'statue' },
   'Ⱥ': { img: 'amphora', n: 2, size: 0.6, block: true, fb: 'crate' },
-  'Ȼ': { img: 'brazier2', n: 2, anim: 4, size: 0.7, block: true, light: 0.55, fb: 'candles' },
+  'Ȼ': { img: 'brazier2', n: 2, anim: 4, size: 0.7, block: true, light: 1.3, lightR: 7, fb: 'candles' },
   // version 19: gruvan och observatoriet
   'ț': { img: 'minecart', n: 2, size: 0.85, block: true, use: 'minecart', fb: 'crate' },
   'Ȝ': { img: 'dynamite', n: 1, size: 0.55, block: true, boom: true, fb: 'powderkeg' },
@@ -1224,7 +1224,7 @@ function startLevel(level) {
       const d = PROP_DEFS[c], frames = fx.props[d.img] || fx.props[d.fb];
       const o = { x: x + 0.5, y: y + 0.5, cx: x, cy: y, ch: c, def: d, frames, img: frames[0], size: d.size, flip: !d.n && !!(h & 16), ph: (h % 100) / 10 };
       props.push(o);
-      if (d.light) torches.push({ x: o.x, y: o.y, ph: o.ph, cells: [], hidden: true, str: d.light, r: 4, prop: o });
+      if (d.light) torches.push({ x: o.x, y: o.y, ph: o.ph, cells: [], hidden: true, str: d.light, r: d.lightR || 4, prop: o });
       if (d.trap || c === 'z') hazGrid[y * mw + x] = 1;
       if (d.web) { o.size = 0.85; o.z = 0.05; continue; } // nätet ligger kvar i kartan (saktar ned, kan brinna)
       if (!d.block) map[y][x] = d.under === 'Đ' ? 'Đ' : d.under === 'auto' && [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([a, b]) => (map[y + b] || '')[x + a] === 'Đ').length >= 2 ? 'Đ' : '.'; // ben, ljus, svamp och fällor går att gå över; bubblor i vattnet ligger kvar i vatten
@@ -3449,7 +3449,7 @@ function addPropAt(ch, x, y) { // ny rekvisita under spelets gång
   const d = PROP_DEFS[ch], frames = fx.props[d.img] || fx.props[d.fb]; if (!frames) return null;
   const o = { x: x + 0.5, y: y + 0.5, cx: x, cy: y, ch, def: d, frames, img: frames[0], size: d.size, flip: false, ph: Math.random() * 10 };
   props.push(o); if (d.block) map[y][x] = ch; flowCell = -1;
-  if (d.light) { const t = { x: o.x, y: o.y, ph: o.ph, cells: [], hidden: true, str: d.light, r: 4, prop: o }; torches.push(t); const keep = torches.slice(); torches.length = 0; torches.push(t); prepareTorchLight(); torches.length = 0; torches.push(...keep); }
+  if (d.light) { const t = { x: o.x, y: o.y, ph: o.ph, cells: [], hidden: true, str: d.light, r: d.lightR || 4, prop: o }; torches.push(t); const keep = torches.slice(); torches.length = 0; torches.push(t); prepareTorchLight(); torches.length = 0; torches.push(...keep); }
   return o;
 }
 function setupNpcFloor(lrng) {
