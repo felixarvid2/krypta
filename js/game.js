@@ -6086,6 +6086,33 @@ function updateBossFx(dt) { // vågor, kloner och spegelbilder
 }
 function bossWarn(b, text) { if ((b.warnT || 0) < tmr) { b.warnT = tmr + 3; say(text, 1.2); play('stinger', 0.25, 1.6); } }
 function bossMove(b, a, sp) { const ox = b.x, oy = b.y; tryMove(b, Math.cos(a) * sp, Math.sin(a) * sp, 0.9); b.mvx = b.x - ox; b.mvy = b.y - oy; return Math.hypot(b.mvx, b.mvy); }
+let bossFlow = null, bossFlowKey = '', bossFlowRef = null;
+function updateBossFlow() { // avståndsfält för stora bossar: bara rutor där hela kroppen (3×3 rutor) får plats, utom närmast spelaren
+  const pc = (P.y | 0) * mw + (P.x | 0), key = pc + ':' + Math.floor(tmr * 2);
+  if (bossFlowRef === flow && key === bossFlowKey) return; bossFlowRef = flow; bossFlowKey = key;
+  if (!bossFlow || bossFlow.length !== mw * mh) bossFlow = new Int16Array(mw * mh);
+  bossFlow.fill(-1); bossFlow[pc] = 0; const q = [pc];
+  const fits = (x, y) => { for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (solid(x + dx + 0.5, y + dy + 0.5)) return false; return true; };
+  for (let h = 0; h < q.length; h++) {
+    const c = q[h], x = c % mw, y = (c / mw) | 0;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nx = x + dx, ny = y + dy; if (nx < 1 || ny < 1 || nx >= mw - 1 || ny >= mh - 1) continue;
+      const n = ny * mw + nx; if (bossFlow[n] >= 0 || !walkableForEnemy(nx, ny) || (bossFlow[c] >= 2 && !fits(nx, ny))) continue;
+      bossFlow[n] = bossFlow[c] + 1; q.push(n);
+    }
+  }
+}
+function bossChase(b, sp) { // utom synhåll: följ bossfältet runt hinder i stället för att stå still
+  updateBossFlow();
+  const cx = b.x | 0, cy = b.y | 0, own = bossFlow[cy * mw + cx]; let best = own, tx = -1, ty = -1;
+  const nb = own < 0 ? [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]] : [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  for (const [dx, dy] of nb) { const nx = cx + dx, ny = cy + dy; if (nx < 0 || ny < 0 || nx >= mw || ny >= mh) continue; const v = bossFlow[ny * mw + nx]; if (v >= 0 && (best < 0 || v < best)) { best = v; tx = nx + 0.5; ty = ny + 0.5; } }
+  if (tx < 0) { // inget bossfält här: vanliga avståndsfältet, annars rakt mot spelaren
+    best = flow[cy * mw + cx];
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = cx + dx, ny = cy + dy; if (nx < 0 || ny < 0 || nx >= mw || ny >= mh) continue; const v = flow[ny * mw + nx]; if (v >= 0 && (best < 0 || v < best)) { best = v; tx = nx + 0.5; ty = ny + 0.5; } }
+  }
+  return bossMove(b, tx < 0 ? Math.atan2(P.y - b.y, P.x - b.x) : Math.atan2(ty - b.y, tx - b.x), sp);
+}
 function freeSpotFar(minD, maxD) { // fri plats på lagom avstånd från spelaren (teleport, framträdanden)
   for (let i = 0; i < 40; i++) {
     const a = rnd(0, TAU), r = rnd(minD, maxD), x = P.x + Math.cos(a) * r, y = P.y + Math.sin(a) * r;
@@ -8528,8 +8555,11 @@ Object.assign(BOSS_AI, {
       if (b.t > 0.9) { b.state = 'idle'; b.t = 0; b.cd = 0.8; } return; }
     b.cd -= dt;
     if (b.cd <= 0 && dist < b.d.range + 0.8) { b.state = 'slam'; b.t = 0; b.didHit = false; return; }
-    if (b.cd <= 0 && hasLOS(b.x, b.y, P.x, P.y)) { b.t = 0; b.didHit = false; b.state = Math.random() < 0.35 ? 'roots' : 'spores'; return; }
-    if (dist > 4) bossMove(b, ang, b.d.speed * fast * dt * (b.slow > 0 ? 0.5 : 1));
+    const los = hasLOS(b.x, b.y, P.x, P.y);
+    if (b.cd <= 0 && los) { b.t = 0; b.didHit = false; b.state = Math.random() < 0.35 ? 'roots' : 'spores'; return; }
+    const sp = b.d.speed * fast * dt * (b.slow > 0 ? 0.5 : 1);
+    if (!los) bossChase(b, sp); // går runt pelare och väggar i stället för att frysa
+    else if (dist > 4) bossMove(b, ang, sp);
   },
   mirrorking(b, dt, dist, ang, ph) { // glasskärvor, speglingen och språng mellan speglarna
     const fast = ph === 3 ? 1.3 : 1;
