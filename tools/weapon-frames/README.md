@@ -250,3 +250,24 @@ cd retrofps/tools/weapon-frames
 node render-static.mjs fp pinthrower,blowgun
 python3 pack.py xframes ../../ pinthrower,blowgun   # övriga poster i js/weapons.js lämnas orörda
 ```
+
+Version 19: hackan (`pickaxe`) och stjärnlansen (`starlance`).
+Båda saknar modell (`"model": "none"`, `base: [1,0.1,0.1]`) och är byggda av enkla former; delarna står i
+`tools/props16/fp_defs.py`. Hackan är ett askskaft med läderlindning och ett järnhuvud med två spetsar som böjer sig lite nedåt
+(`name: pick`), i bumerangens handskklädda hand med ärm, i närstridsläget. `fire` är det tunga slaget: armen häver hackan upp och
+bakåt, svingar den framåt och ned, spetsen tar och armen kommer upp igen; `pack.py` ritar gnistan och stenflisorna där spetsen tar
+(`PICKHIT`): `states: {idle:[0], fire:[1..6]}`, `dur: {fire}`.
+Stjärnlansen är ett mörkt trägrepp med mässingsknopp, ett mässingsskaft med ringar, en krona av fyra mässingsuddar och en
+femuddig kristallstjärna längst fram (`name: star`, mynningen). `charge` (`extra`, fyra rutor) är laddningen medan avtryckaren
+hålls in: lansen dras tillbaka lite och stjärnan växer och lyser starkare för varje ruta (`partPose emissive`, `scale`) och
+`pack.py` ritar en växande ljusring runt den (`LANCEGLOW`); spelet väljer rutan efter laddningen och håller den sista vid full
+laddning. `fire` är tre rutor med ett stjärnblänk vid stjärnan (`LANCEFLASH`; själva strålen ritar spelet, som prismans), och `reload` (`extra`) lutar lansen, släcker och krymper
+stjärnan och tänder den igen: `states: {idle:[0], fire:[1..3], charge:[4..7], reload:[8..11]}`, `dur: {fire, charge, reload}`.
+Upplockningsbilderna `pick_pickaxe.png` och `pick_starlance.png` ritas i `tools/props16/make.py`.
+
+```bash
+python3 tools/props16/fp_defs.py /tmp/defs19.json   # ger posterna pickaxe och starlance (läggs sist i static-defs.json, json indent 1)
+cd retrofps/tools/weapon-frames
+node render-static.mjs fp pickaxe,starlance
+python3 pack.py xframes ../../ pickaxe,starlance   # övriga poster i js/weapons.js lämnas orörda
+```

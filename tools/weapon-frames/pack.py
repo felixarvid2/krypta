@@ -31,6 +31,11 @@
 # Version 18: käglekastaren (pinthrower, närstrid med bumerangens hand; tre jonglörkäglor som snurrar iväg mot siktet ritas in i
 #   skjutrutorna, PINFLY) och blåsröret (blowgun, extra läget reload; andningspuffen och giftpilen mot siktet ritas in, DARTFLY).
 #   Källor: enkla former i static.html, delarna i tools/props15/fp_defs.py.
+# Version 19: hackan (pickaxe, närstrid med bumerangens hand; gnistan och stenflisorna där spetsen tar ritas in i
+#   slagrutorna, PICKHIT) och stjärnlansen (starlance, extra lägena charge = laddningen, fyra rutor där stjärnan växer och
+#   en ljusring runt den växer, LANCEGLOW, och reload; ett stjärnblänk vid stjärnan ritas in i skjutrutorna, LANCEFLASH -
+#   själva strålen ritar spelet, som prismans).
+#   Källor: enkla former i static.html, delarna i tools/props16/fp_defs.py.
 import json, re, sys
 import numpy as np
 from PIL import Image
@@ -43,10 +48,10 @@ TARGET={'pistol':(84,178,24),'shotgun':(112,196,40),'rifle':(112,184,42),'smg':(
         'flamer':(104,226,34),'launcher':(100,188,30),'nailgun':(96,210,22),'musket':(128,196,40),
         'harpoon':(124,198,40),'prism':(118,196,40),'sawlauncher':(118,198,34),'windgun':(118,206,26),
         'sporelauncher':(120,204,30),'steamcannon':(122,206,30),'hivelauncher':(114,204,14),
-        'chaincannon':(118,204,22),'acidsprayer':(110,206,16),'blowgun':(96,210,20)}  # höjd i px, mittpunkt x, hur mycket som skärs av nedtill
+        'chaincannon':(118,204,22),'acidsprayer':(110,206,16),'blowgun':(96,210,20),'starlance':(100,206,18)}  # höjd i px, mittpunkt x, hur mycket som skärs av nedtill
 HARD={'axe','flamer','launcher','nailgun','staff','bow','knives','hammer','musket','harpoon','boomerang','prism','sawlauncher','windgun','spear',
       'sporelauncher','mirrorshield','whip','runebook','steamcannon','censer','hivelauncher','shears','dreamstaff',
-      'chaincannon','acidsprayer','pinthrower','blowgun'}   # version 5 och 6: hel eller ingen täckning per pixel
+      'chaincannon','acidsprayer','pinthrower','blowgun','pickaxe','starlance'}   # version 5 och 6: hel eller ingen täckning per pixel
 MUZZLE_IDLE={'bow'}
 PICK={'nailgun':(48,'w'),'staff':(48,'w',-90),'bow':(46,'w',90,'string'),'axe':(44,'w',90),'flamer':(54,'w'),'launcher':(46,'w'),
       'knives':(24,'h',0,'fan'),'hammer':(44,'w',90),'musket':(60,'w'),'harpoon':(58,'w'),'boomerang':(22,'w'),'prism':(54,'w'),
@@ -75,6 +80,9 @@ CHAINFLY={'chaincannon':[(0,None),(1,0.22),(2,0.5),(3,0.78),(4,0.97)]}   # versi
 ACIDFX={'acidsprayer':[0,1,2,3]}                                # version 17: syrastänket vid munstycket (steg; rutorna går runt)
 PINFLY={'pinthrower':[None,None,0.2,0.55,0.9]}                  # version 18: käglorna (andel av sträckan mot siktet, None = inga)
 DARTFLY={'blowgun':[(0,0.35),(1,0.75),(2,None)]}                # version 18: blåsrörets puff och pil (steg, andel av sträckan mot siktet)
+PICKHIT={'pickaxe':[None,None,None,(0,7),(1,10),None]}          # version 19: gnistan och flisorna där hackans spets tar (steg, radie i px)
+LANCEGLOW={'starlance':[(0,4),(1,7),(2,10),(3,13)]}             # version 19: ljusringen runt stjärnan i laddningsrutorna (steg, radie i px)
+LANCEFLASH={'starlance':[(0,1.0),(1,0.6),(2,0.25)]}             # version 19: stjärnblänket vid stjärnan när strålen släpps (steg, styrka)
 AIM=(176,50)                                        # dit harpunen flyger (strax ovanför och till höger om siktet)
 WAIM=(112,80)                                       # version 11: dit piskans snärt når (till vänster om siktet, där bågen slår)
 OUTC=(37,19,26)
@@ -445,6 +453,43 @@ def dart_draw(d,mx,my,st,X0,Y0,i):
     d.ellipse((tx-2.5,ty-2.5,tx+2.5,ty+2.5),fill=OUTC+(255,)); d.ellipse((tx-1.6,ty-1.6,tx+1.6,ty+1.6),fill=(200,40,30,255))
 
 
+def pickhit_draw(d,mx,my,st,X0,Y0,i):
+    """Version 19: hackan: en vit-gul gnista där spetsen tar och några grå stenflisor som sprätter iväg."""
+    import random
+    k,r=st; rr=random.Random(91+k)
+    for j in range(8):
+        a=rr.uniform(0,6.283); dd=r*rr.uniform(0.5,1.0); x,y=mx+np.cos(a)*dd,my+np.sin(a)*dd*0.8
+        d.line([(mx+np.cos(a)*2,my+np.sin(a)*2),(x,y)],fill=(255,236,150,255) if j%2 else (255,255,230,255))
+    for j in range(5):
+        a=rr.uniform(-3.0,-0.2); dd=r*(0.6+k*0.5)+rr.uniform(0,4); x,y=mx+np.cos(a)*dd,my+np.sin(a)*dd
+        d.rectangle((x-1,y-1,x+1,y+1),fill=OUTC+(255,)); d.point((x,y),fill=(150,140,130,255))
+    d.ellipse((mx-2,my-2,mx+2,my+2),fill=(255,250,220,255))
+
+
+def lanceglow_draw(d,mx,my,st,X0,Y0,i):
+    """Version 19: stjärnlansen: en bruten ring av ljuspunkter runt stjärnan som växer när lansen laddas, och strålar i kors."""
+    k,r=st; n=10+k*4
+    for j in range(n):
+        a=j/n*6.283+k*0.3; x,y=mx+np.cos(a)*r,my+np.sin(a)*r*0.9
+        d.point((x,y),fill=(220,235,255,255) if j%2 else (150,180,240,255))
+    L=3+k*3
+    for a in (0,1.571,3.142,4.712):
+        d.line([(mx+np.cos(a)*2,my+np.sin(a)*2),(mx+np.cos(a)*L,my+np.sin(a)*L)],fill=(240,248,255,255))
+    if k>=2: d.ellipse((mx-2,my-2,mx+2,my+2),fill=(255,255,255,255))
+
+
+def lanceflash_draw(d,mx,my,st,X0,Y0,i):
+    """Version 19: stjärnlansen: ett blåvitt stjärnblänk vid stjärnan när strålen släpps (strålen ritar spelet), med strålar i
+    åtta riktningar som krymper rutan ut."""
+    k,f=st; r=3+6*f
+    pts=[(mx+np.cos(-1.571+j*0.628)*(r if j%2==0 else r*0.45),my+np.sin(-1.571+j*0.628)*(r if j%2==0 else r*0.45)) for j in range(10)]
+    for j in range(8):
+        a=j*0.785; L=r+3+6*f
+        d.line([(mx+np.cos(a)*(r*0.6),my+np.sin(a)*(r*0.6)),(mx+np.cos(a)*L,my+np.sin(a)*L)],fill=(170,200,250,255) if j%2 else (240,248,255,255))
+    d.polygon(pts,fill=(255,255,255,255) if f>0.5 else (200,220,255,255))
+    d.ellipse((mx-r*0.35,my-r*0.35,mx+r*0.35,my+r*0.35),fill=(255,255,255,255))
+
+
 def fan_pick(im):
     """Upplockningsbilden för kastknivarna: tre knivar i en solfjäder kring handtagen (bladen uppåt)."""
     W,H=im.size; S=H*3; c=Image.new('RGBA',(S,S)); px,py=S//2,S//2+H//2
@@ -546,6 +591,12 @@ for w,st in d.items():
         atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(PINFLY[w]),lambda m,f:(min(m[0],AIM[0])-24,min(m[1],AIM[1])-30,max(m[0],AIM[0])+24,m[1]+8),pin_draw)
     if w in DARTFLY:
         atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(DARTFLY[w]),lambda m,st:(min(m[0],AIM[0])-10,min(m[1],AIM[1])-10,max(m[0],AIM[0])+10,m[1]+8),dart_draw)
+    if w in PICKHIT:   # version 19
+        atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(PICKHIT[w]),lambda m,st:(m[0]-st[1]-8,m[1]-st[1]-10,m[0]+st[1]+8,m[1]+st[1]+4),pickhit_draw)
+    if w in LANCEGLOW:
+        atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(LANCEGLOW[w],'charge'),lambda m,st:(m[0]-st[1]-3,m[1]-st[1]-3,m[0]+st[1]+3,m[1]+st[1]+3),lanceglow_draw)
+    if w in LANCEFLASH:
+        atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(LANCEFLASH[w]),lambda m,st:(m[0]-20,m[1]-20,m[0]+20,m[1]+20),lanceflash_draw)
     atlas.save(OUT+f'assets/gfx/fp_{w}.png',optimize=True)
     if w in MUZZLE_IDLE: mz=[mz[0] if i in states['fire'] else m for i,m in enumerate(mz)]   # bågen: utan pil räknas mynningen från vilobilden
     out[w]={'x':x,'y':y,'w':fw,'h':fh,'states':states,'muzzle':mz,'dur':{'fire':round(st['fire_dur'],3),**{k:round(v,3) for k,v in st.get('durs',{}).items()}}}
