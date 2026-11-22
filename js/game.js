@@ -438,9 +438,9 @@ const ENEMY_DEFS = {
   'Ă': { name: 'HÄXA', sheet: 'witch', move: 'movement', hp: 9, speed: 1.1, melee: false, dmg: 5, range: 9, cd: 99, size: 1.05, growl: 'witch', score: 280, atkFps: 10, hitAt: 0.5, ai: 'witch', kite: 5, tip: 'FÖRHÄXAR DIG OCH TELEPORTERAR SIG NÄR HON TRÄFFAS' },
   'ƫ': { name: 'STENÄNGEL', sheet: 'weepingangel', move: 'movement', hp: 22, speed: 3.0, melee: true, dmg: 16, range: 1.0, cd: 1.0, size: 1.1, growl: 'angel_scrape', score: 360, atkFps: 12, hitAt: 0.5, ai: 'weepingangel', stone: true, tip: 'RÖR SIG BARA NÄR DU INTE TITTAR – HÅLL ÖGONEN PÅ DEN' },
   'Ƭ': { name: 'TAGGRANKA', sheet: 'thornvine', move: 'movement', hp: 12, speed: 0, melee: true, dmg: 9, range: 2.8, cd: 1.6, size: 1.1, growl: 'thornvine', score: 180, atkFps: 10, hitAt: 0.55, ai: 'thornvine', tip: 'NÅR LÅNGT MEN RÖR SIG INTE – SKJUT PÅ AVSTÅND ELLER BRÄNN DEN' },
-  'ƭ': { name: 'TRÄDGÅRDSDRÄNG', sheet: 'gardener', move: 'movement', hp: 13, speed: 1.1, melee: true, dmg: 12, range: 1.1, cd: 1.2, size: 1.05, growl: 'gardener', score: 240, atkFps: 10, hitAt: 0.55, ai: 'gardener', tip: 'KLIPPER HÅRT – HÅLL AVSTÅND' },
+  'ƭ': { name: 'TRÄDGÅRDSDRÄNG', sheet: 'gardener', move: 'movement', hp: 13, speed: 1.1, melee: true, dmg: 12, range: 1.1, cd: 1.2, size: 1.0, growl: 'gardener', score: 240, atkFps: 10, hitAt: 0.55, ai: 'gardener', tip: 'KLIPPER HÅRT – HÅLL AVSTÅND' },
   'Ʈ': { name: 'DRÖMÄTARE', sheet: 'dreameater', move: 'movement', hp: 10, speed: 1.3, melee: true, dmg: 9, range: 1.0, cd: 1.3, size: 1.0, growl: 'dreameater', score: 260, atkFps: 10, hitAt: 0.5, ai: 'dreameater', float: true, tip: 'ÄTER LJUS – DÖDA DEN INNAN LAMPAN SLOCKNAR' },
-  'Ư': { name: 'SPEGLING', sheet: 'doppelganger', move: 'movement', hp: 10, speed: 1.4, melee: false, dmg: 7, range: 10, cd: 99, size: 1.05, growl: 'doppelganger', score: 300, atkFps: 10, hitAt: 0.5, ai: 'doppelganger', tip: 'SKJUTER NÄR DU SKJUTER – SIKTA NOGA' },
+  'Ư': { name: 'SPEGLING', sheet: 'shadowtwin', move: 'movement', hp: 10, speed: 1.4, melee: false, dmg: 7, range: 10, cd: 99, size: 1.05, growl: 'doppelganger', score: 300, atkFps: 10, hitAt: 0.5, ai: 'doppelganger', tip: 'SKJUTER NÄR DU SKJUTER – SIKTA NOGA' },
   'ư': { name: 'SÖMNGÅNGARE', sheet: 'sleepwalker', move: 'movement', hp: 16, speed: 0.6, melee: true, dmg: 13, range: 1.0, cd: 1.5, size: 1.05, growl: 'sleepwalker', score: 220, atkFps: 9, hitAt: 0.6, ai: 'sleepwalker', tip: 'GÅR INTE ATT SMYGA FÖRBI – OCH SPRICKER I SÖMNPULVER' },
   'Ƒ': { name: 'KORGOSSE', sheet: 'choirboy', move: 'movement', hp: 6, speed: 1.0, melee: false, dmg: 5, range: 9, cd: 2.6, size: 0.85, growl: 'choirboy', score: 220, atkFps: 10, hitAt: 0.5, ai: 'choirboy', kite: 6, tip: 'LÄKER OCH SKYDDAR DE ANDRA – DÖDA HONOM FÖRST' },
   'ƒ': { name: 'BOTGÖRARE', sheet: 'flagellant', move: 'movement', hp: 14, speed: 1.4, melee: true, dmg: 12, range: 1.0, cd: 1.0, size: 1.05, growl: 'flagellant', score: 260, atkFps: 11, hitAt: 0.5, ai: 'flagellant', tip: 'BLIR FARLIGARE JU MER SKADAD DEN ÄR – DÖDA DEN SNABBT' },
@@ -742,11 +742,11 @@ async function loadAll(setStatus) {
   for (const k of ['rune_fire', 'rune_ice', 'rune_poison', 'rune_storm', 'rune_blood', 'rune_echo', 'ab_blink', 'ab_slowmo', 'ab_bubble', 'ab_summon', 'ab_quake']) { try { const im = await load(`${A}gfx/${k}.png`); spr[k] = pixels(im); hudImg[k] = im; } catch (e) { /* valfri */ } }
   try { spr.meat = pixels(await load(`${A}gfx/item_meat.png`)); } catch (e) { /* valfri */ }
   for (const [k, f] of [['page', 'item_page'], ['battery', 'item_battery'], ['stone', 'item_stone'], ['tome', 'item_tome'], ['gear', 'item_gear'], ['feather', 'item_feather'], ['sporesack', 'item_sporesack'], ['inkflask', 'item_inkflask'], ['beehive', 'item_beehive'], ['dreamflask', 'item_dreamflask']]) { try { spr[k] = pixels(await load(`${A}gfx/${f}.png`)); } catch (e) { /* valfri */ } }
-  for (const k of ['icon_eye', 'icon_ear', 'icon_air', 'icon_xp', 'icon_wind', 'icon_time', 'icon_spore', 'icon_ink', 'icon_bless', 'icon_honey']) { try { hudImg[k] = await load(`${A}gfx/${k}.png`); } catch (e) { /* valfri */ } }
+  for (const k of ['icon_eye', 'icon_ear', 'icon_air', 'icon_xp', 'icon_wind', 'icon_time', 'icon_spore', 'icon_ink', 'icon_bless', 'icon_honey', 'icon_mist', 'icon_thorns']) { try { hudImg[k] = await load(`${A}gfx/${k}.png`); } catch (e) { /* valfri */ } }
   for (const k of ['potion_heal', 'potion_rage', 'potion_ghost', 'potion_speed', 'potion_ice', 'potion_unknown']) { try { const im = await load(`${A}gfx/${k}.png`); spr[k] = pixels(im); hudImg[k] = im; } catch (e) { /* valfri */ } }
   try { fx.crateBits = strip(await load(A + 'gfx/prop_crate_broken.png'), 4); } catch (e) { fx.crateBits = null; }
   fx.parts = {}; // biompartiklar (tools/props/make.py); saknas en används träffgnistan
-  for (const [n, k] of [['web', 1], ['page', 2], ['ink2', 2], ['steam', 3], ['spore2', 2], ['glassshard', 2], ['whip', 1], ['illusion', 2], ['chain', 1], ['root', 2], ['tongue', 1], ['legend', 2], ['dirt', 2], ['gear', 2], ['spark2', 2], ['feather', 2], ['wind', 3], ['lightning2', 2], ['cloud', 2], ['bubble', 2], ['shard', 2], ['splash_big', 4], ['prismbeam', 1], ['note', 2], ['note2', 2], ['smoke3', 3], ['honey', 2], ['ink', 2], ['harpoonrope', 1], ['knife', 1], ['bandage', 2], ['sand', 2], ['smoke2', 4], ['beam', 1], ['dust_mote', 1], ['nail', 1], ['arrow', 1], ['lightning', 4], ['ashfall', 2], ['lavadrop', 2], ['heat', 1], ['snow', 2], ['footprint', 1], ['breath', 2], ['icicle', 1], ['flame', 4], ['blood_trail', 2], ['eye', 1], ['leaf', 4], ['firefly', 2], ['drop', 1], ['rain', 1], ['fog', 1], ['bat', 4], ['ember', 2], ['dust', 1], ['wisp', 4], ['shell', 1], ['blood_pool', 3],
+  for (const [n, k] of [['web', 1], ['page', 2], ['ink2', 2], ['steam', 3], ['spore2', 2], ['glassshard', 2], ['whip', 1], ['illusion', 2], ['chain', 1], ['root', 2], ['tongue', 1], ['legend', 2], ['dirt', 2], ['gear', 2], ['spark2', 2], ['feather', 2], ['wind', 3], ['lightning2', 2], ['cloud', 2], ['bubble', 2], ['shard', 2], ['splash_big', 4], ['prismbeam', 1], ['note', 2], ['note2', 2], ['smoke3', 3], ['honey', 2], ['petal', 2], ['dreamsand', 2], ['ink', 2], ['harpoonrope', 1], ['knife', 1], ['bandage', 2], ['sand', 2], ['smoke2', 4], ['beam', 1], ['dust_mote', 1], ['nail', 1], ['arrow', 1], ['lightning', 4], ['ashfall', 2], ['lavadrop', 2], ['heat', 1], ['snow', 2], ['footprint', 1], ['breath', 2], ['icicle', 1], ['flame', 4], ['blood_trail', 2], ['eye', 1], ['leaf', 4], ['firefly', 2], ['drop', 1], ['rain', 1], ['fog', 1], ['bat', 4], ['ember', 2], ['dust', 1], ['wisp', 4], ['shell', 1], ['blood_pool', 3],
     ['gib', 4], ['spore', 2], ['webshot', 1], ['scorch', 1], ['hole', 2], ['ash', 2], ['smoke', 4], ['ice', 3], ['gas', 2], ['skull', 2], ['log', 2], ['rock', 1], ['shadow', 1], ['zzz', 1], ['star', 1], ['meteor', 2]]) {
     try { fx.parts[n] = strip(await load(`${A}gfx/part_${n}.png`), k); } catch (e) { /* valfri */ }
   }
@@ -1827,6 +1827,8 @@ function weaponFrame() { // bildruta och förskjutning: vapnet sticker rakt fram
   if (WS.shot < f.dur.fire) idx = pick(st.fire, WS.shot / f.dur.fire);
   else if (st.draw && WS.draw > 0) idx = pick(st.draw, WS.draw * 0.999); // bågen spänns
   else if (st.throw && wp.spear && (WS.spearT || 0) > 0) idx = pick(st.throw, clamp(1 - WS.spearT / 0.35, 0, 0.999)); // spjutet kastas
+  else if (st.throw && wp.shears && (WS.shearT || 0) > 0) idx = pick(st.throw, clamp(1 - WS.shearT / 0.4, 0, 0.999)); // saxen kastas
+  else if (st.empty && wp.shears && P.shearOut) idx = st.empty[0]; // saxen i luften
   else if (st.ward && wp.runebook && (P.wardT || 0) > tmr) idx = st.ward[Math.floor(tmr * 8) % st.ward.length]; // sidvirveln
   else if (st.block && wp.mirrorshield && WS.block) idx = pick(st.block, clamp((tmr - (WS.blockAt || 0)) / 0.25, 0, 0.999)); // skölden uppe
   else if (st.empty && (wp.boomerang || wp.spear) && P.mags[P.weapon] <= 0) idx = st.empty[0]; // bumerangen i luften, spjutet på marken
@@ -7592,7 +7594,7 @@ function weaponV9Tick(wp, dt) { // spjutets kast på högerklick
   if (wp.spear && aimDown && !WS.spAim) { WS.spAim = true; spearThrow(wp); }
   if (!aimDown) WS.spAim = false;
   if (wp.spear) WS.aim = 0; // spjutet siktar inte
-  WS.spearT = Math.max(0, (WS.spearT || 0) - dt);
+  WS.spearT = Math.max(0, (WS.spearT || 0) - dt); WS.shearT = Math.max(0, (WS.shearT || 0) - dt);
 }
 
 // ---------- Version 9: tidsbubblor, tomrum, vind, sågspår och åska ----------
@@ -9005,7 +9007,7 @@ function shearSnip(wp) { // saxen: två (tre) snabba klipp framåt
     if (hits) { hitMark = 0.08; lvlStat.hits++; play('shears_hit', 0.6, rnd(0.9, 1.1)); } }, i * 120);
 }
 function shearThrow(wp) { // högerklick: saxen kastas och kommer tillbaka
-  if (P.shearOut || (P.shearCd || 0) > tmr) return; P.shearOut = true; P.shearCd = tmr + 0.4; play('shears_throw', 0.8);
+  if (P.shearOut || (P.shearCd || 0) > tmr) return; P.shearOut = true; P.shearCd = tmr + 0.4; WS.shearT = 0.4; play('shears_throw', 0.8);
   projectiles.push({ x: P.x + Math.cos(P.a) * 0.4, y: P.y + Math.sin(P.a) * 0.4, z: 0.5, vx: Math.cos(P.a) * 12, vy: Math.sin(P.a) * 12, dmg: wp.dmg * meleeMul() * (up('sh_throw') ? 2.2 : 1.4) * (1 + mod('shearDmg')), friendly: true, kind: 'pshears', life: 3, out: 0.45, hit: new Set() });
 }
 function updatePshears(p, dt) {
@@ -9066,9 +9068,9 @@ function updateV16(dt) {
   P.mistT = Math.max(0, (P.mistT || 0) - dt);
   if (P.mistT > 0) { const vis = 4 * (1 + mod('mistSight')); for (const e of ents) if (!e.dead && !e.boss) { const d = Math.hypot(e.x - P.x, e.y - P.y); if (d > vis) e.ghost = Math.max(e.ghost || 0, 0.92); else if (e.d.ai !== 'snowwraith' && e.d.ai !== 'stalker') e.ghost = Math.min(e.ghost || 0, 0.2); } }
 }
-function burnThorns(x, y) { const cx = x | 0, cy = y | 0; if (map[cy] && map[cy][cx] === 'ƥ') { map[cy][cx] = '.'; if (cellFloor) cellFloor[cy * mw + cx] = lvl.floorMask ? (+lvl.floorMask[cy][cx] || 0) : 0; spawnPuff(cx + 0.5, cy + 0.5, 4); if ((P.burnSndT || 0) < tmr) { P.burnSndT = tmr + 0.3; play('thorn_burn', 0.5, 1, { x: cx + 0.5, y: cy + 0.5 }); } stat('thornsBurnt'); } }
+function burnThorns(x, y) { const cx = x | 0, cy = y | 0; if (map[cy] && map[cy][cx] === 'ƥ') { map[cy][cx] = '.'; if (cellFloor) cellFloor[cy * mw + cx] = lvl.floorMask ? (+lvl.floorMask[cy][cx] || 0) : 0; spawnPuff(cx + 0.5, cy + 0.5, 4); if (fx.parts.petal && !settings.lowfx) for (let i = 0; i < 4; i++) particles.push({ x: cx + 0.5 + rnd(-0.3, 0.3), y: cy + 0.5 + rnd(-0.3, 0.3), z: 0.2, vx: rnd(-0.4, 0.4), vy: rnd(-0.4, 0.4), vz: rnd(0.4, 0.9), life: 1, maxLife: 1, img: fx.parts.petal[i % 2], size: 0.08 }); if ((P.burnSndT || 0) < tmr) { P.burnSndT = tmr + 0.3; play('thorn_burn', 0.5, 1, { x: cx + 0.5, y: cy + 0.5 }); } stat('thornsBurnt'); } }
 const v16Slow = () => (P.thornSlow > 0 ? 0.7 : 1) * (P.mistT > 0 ? 0.85 : 1);
-function drawV16Hud(g) { if (P.mistT > 0) { const k = Math.min(1, P.mistT / 1), gr = g.createRadialGradient(W / 2, HORIZON, VH * 0.25, W / 2, HORIZON, W * 0.6); gr.addColorStop(0, 'rgba(120,80,170,0)'); gr.addColorStop(1, `rgba(120,80,170,${0.55 * k})`); g.fillStyle = gr; g.fillRect(0, 0, W, VH); } }
+function drawV16Hud(g) { if (P.mistT > 0) { const k = Math.min(1, P.mistT / 1), gr = g.createRadialGradient(W / 2, HORIZON, VH * 0.25, W / 2, HORIZON, W * 0.6); gr.addColorStop(0, 'rgba(120,80,170,0)'); gr.addColorStop(1, `rgba(120,80,170,${0.55 * k})`); g.fillStyle = gr; g.fillRect(0, 0, W, VH); if (hudImg.icon_mist) g.drawImage(hudImg.icon_mist, 50, VH - 22, 8, 8); } if (P.thornSlow > 0 && hudImg.icon_thorns) g.drawImage(hudImg.icon_thorns, 62, VH - 22, 8, 8); }
 Object.assign(USES, {
   fountain(pr) { pr.used = true; pr.img = pr.frames[1] || pr.img; const h = heal(40 + mod('fountainHeal')); play('fountain_drink', 0.8); say(`FONTÄNEN LÄKER DIG (+${Math.round(h)})`, 2); stat('fountains'); },
   falsedoor(pr) { pr.used = true; pr.img = pr.frames[1] || pr.img; play('falsedoor_open', 0.9); say('DÖRREN VAR INGEN DÖRR', 1.5); P.shake = Math.max(P.shake, 0.8);
@@ -9118,7 +9120,7 @@ Object.assign(BOSS_AI, {
   },
   sandman(b, dt, dist, ang, ph) { // sömnsand, språng mellan drömmarna och mörker
     const fast = ph === 3 ? 1.3 : 1;
-    if (b.state === 'sand') { if (b.t < 0.05 || Math.abs(b.t - 0.4) < dt || (ph >= 2 && Math.abs(b.t - 0.8) < dt)) { for (const s of [-0.3, 0, 0.3]) shootFireball(b, ang + s, 3.6, b.d.dmg * 0.35, false, 'orb'); play('sandman_sand', 0.8); }
+    if (b.state === 'sand') { if (b.t < 0.05 || Math.abs(b.t - 0.4) < dt || (ph >= 2 && Math.abs(b.t - 0.8) < dt)) { for (const s of [-0.3, 0, 0.3]) shootFireball(b, ang + s, 3.6, b.d.dmg * 0.35, false, 'orb'); play('sandman_sand', 0.8); if (fx.parts.dreamsand && !settings.lowfx) for (let i = 0; i < 10; i++) { const q = ang + rnd(-0.5, 0.5); particles.push({ x: b.x + Math.cos(q), y: b.y + Math.sin(q), z: rnd(0.8, 1.6), vx: Math.cos(q) * rnd(1.5, 3), vy: Math.sin(q) * rnd(1.5, 3), vz: rnd(-0.3, 0.3), life: 0.9, maxLife: 0.9, img: fx.parts.dreamsand[i % 2], size: 0.06 }); } }
       if (b.t > 1.2) { b.state = 'idle'; b.t = 0; b.cd = rnd(1, 1.5) / fast; } return; }
     if (b.state === 'blink') { if (b.t < 0.05) { const s = freeSpotFar(3, 7); if (s) { spawnPuff(b.x, b.y, 8); b.x = s[0]; b.y = s[1]; spawnPuff(b.x, b.y, 8); play('sandman_laugh', 0.7); } }
       if (b.t > 0.5) { b.state = 'idle'; b.t = 0; b.cd = 0.6; } return; }

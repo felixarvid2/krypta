@@ -189,3 +189,25 @@ cd retrofps/tools/weapon-frames
 node render-static.mjs fp censer,censer_h,hivelauncher
 python3 pack.py xframes ../../ censer,hivelauncher   # censer_h läggs över censer (MERGE); övriga poster i js/weapons.js lämnas orörda
 ```
+
+Version 16: trädgårdssaxen (`shears`) och drömstaven (`dreamstaff`).
+Båda har ingen modell (`"model": "none"`, `base: [2,2,2]` som rökelsekaret, så att greppet hamnar i origo) och hålls i
+närstridsläget. Saxen är två stålblad med slipad egg, träskaft med mässingshylsor och en mässingsbult i en handskklädd hand
+med en mossgrön ärm. Den övre halvan (bladet, skaftet och hylsan, `name: sb0`–`sb5`) vrids stelt kring bulten per bildruta:
+`static.html` vrider varje del kring sin egen mittpunkt (`partPose.rot`), så `tools/props13/fp_defs.py` ger varje del en egen
+rotation kring bultens axel och den förflyttning (`move`) som för dess mittpunkt runt bulten. `fire` är ett snabbt dubbelklipp
+(sex rutor: upp, klipp, upp, klipp, tillbaka) och `pack.py` ritar ett vitt blänk där eggarna möts i klipprutorna (`SNIP`);
+`throw` (`melee.extra`, fyra rutor) tar sats och kastar saxen (döljs, `hide`) och `empty` är den tomma handen medan saxen är i
+luften: `states: {idle:[0], fire:[1..6], throw:[7..10], empty:[11]}`, `dur: {fire, throw, empty}`.
+Drömstaven är ett mörklila skaft med guldringar, en månskära av sfärer och en femuddig stjärna (fem koner kring en kula,
+`name: star`, mynningen) som lyser upp och växer i skjutrutorna (`partPose emissive`, `scale`); `pack.py` ritar stjärnan som
+flyger mot `AIM` med ett lila stoftspår (`STARFLY`). `reload` (`extra`) lutar staven, släcker stjärnan och tänder den igen:
+`states: {idle:[0], fire:[1..4], reload:[5..9]}`, `dur: {fire, reload}`. Upplockningsbilderna `pick_shears.png` och
+`pick_dreamstaff.png` ritas i `tools/props13/make.py`.
+
+```bash
+python3 tools/props13/fp_defs.py /tmp/defs16.json   # ger posterna shears och dreamstaff (läggs in i static-defs.json, json indent 1)
+cd retrofps/tools/weapon-frames
+node render-static.mjs fp shears,dreamstaff
+python3 pack.py xframes ../../ shears,dreamstaff   # övriga poster i js/weapons.js lämnas orörda
+```
