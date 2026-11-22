@@ -5987,8 +5987,15 @@ function updateBoss(b, dt) {
   if (b.state === 'special') { BOSS_SPECIAL[b.id](b, dt, dist, ang, ph); return; }
   b.spT = (b.spT ?? rnd(6, 9)) - dt;
   if (b.spT <= 0 && b.state !== 'hidden' && b.state !== 'charge' && b.state !== 'sink' && !b.hidden && hasLOS(b.x, b.y, P.x, P.y)) { b.spT = rnd(9, 13) / (ph === 3 ? 1.4 : 1); b.state = 'special'; b.t = 0; b.didHit = false; b.spK = b.spK ? 0 : 1; return; }
+  const ox = b.x, oy = b.y;
   BOSS_AI[b.id](b, dt, dist, ang, ph);
+  // utom synhåll i ett lugnt tillstånd: gå runt hindret via bossfältet i stället för att trycka mot väggen (inte efter språng/teleport)
+  if (!b.dead && !b.dying && !b.hidden && BOSS_NEUTRAL.has(b.state) && !NO_CHASE.has(b.id) && Math.hypot(b.x - ox, b.y - oy) < 1 && !hasLOS(b.x, b.y, P.x, P.y)) {
+    b.x = ox; b.y = oy; bossChase(b, b.d.speed * dt * (b.slow > 0 ? 0.5 : 1));
+  }
 }
+const BOSS_NEUTRAL = new Set(['idle', 'walk', 'chase', 'circle']);
+const NO_CHASE = new Set(['leviathan', 'mycelmother']); // bassängbossen går aldrig; mycelmodern sköter bossChase själv
 function bossStagger(b, dmg) { // många träffar i följd: bossen blir yr
   b.stagAcc = (b.stagAcc || 0) * Math.exp(-(tmr - (b.stagT || tmr)) / 2) + dmg; b.stagT = tmr;
   if (b.stagAcc > b.maxHp * 0.12 && (b.stagCd || 0) < tmr && !b.hidden) { b.stagAcc = 0; b.stagCd = tmr + 9; b.stun = 1.2; b.state = b.id === 'ogre' ? 'walk' : 'idle'; say(b.d.name + ' VACKLAR!', 1.5); play('bigboom', 0.5, 0.8, { x: b.x, y: b.y }); }
