@@ -271,3 +271,24 @@ cd retrofps/tools/weapon-frames
 node render-static.mjs fp pickaxe,starlance
 python3 pack.py xframes ../../ pickaxe,starlance   # övriga poster i js/weapons.js lämnas orörda
 ```
+
+Version 20: kroksabeln (`scimitar`) och fällkastaren (`trapthrower`).
+Båda saknar modell (`"model": "none"`, `base: [1,0.1,0.1]`) och är byggda av enkla former; delarna står i
+`tools/props17/fp_defs.py`. Kroksabeln har ett mörkt läderfäste med mässingsknopp och mässingsparerstång och en stålklinga
+byggd av korta lådor som böjer sig allt mer åt höger och vidgar sig lite före spetsen (`name: blade`), i bumerangens
+handskklädda hand med ärm, i närstridsläget. `fire` är det snabba svepet: klingan tar sats upp åt höger och sveper över till
+nedre vänstra hörnet; `pack.py` ritar ett blekt svep bakom eggen (`SWEEP`). `dash` (`melee.extra`, tre rutor, nytt läge i
+`pack.py`) är utfallet: armen stöter klingan rakt framåt och drar tillbaka den:
+`states: {idle:[0], fire:[1..5], dash:[6..8]}`, `dur: {fire, dash}`.
+Fällkastaren är en björnsax (`name: trap`: en ring av järnkäftar med tänder runt insidan, en mässingsplatta och två
+fjäderarmar) som hålls i sin kedja av samma hand. `fire` är kastet: armen tar sats, svingar framåt, saxen släpps (döljs) och
+handen kommer tillbaka tom; `pack.py` ritar den öppna saxen som snurrar iväg mot `AIM` (`TRAPFLY`). `reload` (`melee.extra`)
+för upp en ny sax i handen underifrån: `states: {idle:[0], fire:[1..4], reload:[5..8]}`, `dur: {fire, reload}`.
+Upplockningsbilderna `pick_scimitar.png` och `pick_trapthrower.png` ritas i `tools/props17/make.py`.
+
+```bash
+python3 -B tools/props17/fp_defs.py /tmp/defs20.json   # ger posterna scimitar och trapthrower (läggs sist i static-defs.json, json indent 1)
+cd retrofps/tools/weapon-frames
+node render-static.mjs fp scimitar,trapthrower
+python3 pack.py xframes ../../ scimitar,trapthrower   # övriga poster i js/weapons.js lämnas orörda
+```

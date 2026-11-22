@@ -36,6 +36,10 @@
 #   en ljusring runt den växer, LANCEGLOW, och reload; ett stjärnblänk vid stjärnan ritas in i skjutrutorna, LANCEFLASH -
 #   själva strålen ritar spelet, som prismans).
 #   Källor: enkla former i static.html, delarna i tools/props16/fp_defs.py.
+# Version 20: kroksabeln (scimitar, närstrid med bumerangens hand; extra läget dash = utfallet, tre rutor; ett blekt svep bakom
+#   eggen ritas in i svepets rutor, SWEEP) och fällkastaren (trapthrower, närstrid med samma hand; extra läget reload; den öppna
+#   björnsaxen som snurrar iväg mot siktet ritas in i kastets rutor, TRAPFLY).
+#   Källor: enkla former i static.html, delarna i tools/props17/fp_defs.py.
 import json, re, sys
 import numpy as np
 from PIL import Image
@@ -51,7 +55,7 @@ TARGET={'pistol':(84,178,24),'shotgun':(112,196,40),'rifle':(112,184,42),'smg':(
         'chaincannon':(118,204,22),'acidsprayer':(110,206,16),'blowgun':(96,210,20),'starlance':(100,206,18)}  # höjd i px, mittpunkt x, hur mycket som skärs av nedtill
 HARD={'axe','flamer','launcher','nailgun','staff','bow','knives','hammer','musket','harpoon','boomerang','prism','sawlauncher','windgun','spear',
       'sporelauncher','mirrorshield','whip','runebook','steamcannon','censer','hivelauncher','shears','dreamstaff',
-      'chaincannon','acidsprayer','pinthrower','blowgun','pickaxe','starlance'}   # version 5 och 6: hel eller ingen täckning per pixel
+      'chaincannon','acidsprayer','pinthrower','blowgun','pickaxe','starlance','scimitar','trapthrower'}   # version 5 och 6: hel eller ingen täckning per pixel
 MUZZLE_IDLE={'bow'}
 PICK={'nailgun':(48,'w'),'staff':(48,'w',-90),'bow':(46,'w',90,'string'),'axe':(44,'w',90),'flamer':(54,'w'),'launcher':(46,'w'),
       'knives':(24,'h',0,'fan'),'hammer':(44,'w',90),'musket':(60,'w'),'harpoon':(58,'w'),'boomerang':(22,'w'),'prism':(54,'w'),
@@ -83,6 +87,8 @@ DARTFLY={'blowgun':[(0,0.35),(1,0.75),(2,None)]}                # version 18: bl
 PICKHIT={'pickaxe':[None,None,None,(0,7),(1,10),None]}          # version 19: gnistan och flisorna där hackans spets tar (steg, radie i px)
 LANCEGLOW={'starlance':[(0,4),(1,7),(2,10),(3,13)]}             # version 19: ljusringen runt stjärnan i laddningsrutorna (steg, radie i px)
 LANCEFLASH={'starlance':[(0,1.0),(1,0.6),(2,0.25)]}             # version 19: stjärnblänket vid stjärnan när strålen släpps (steg, styrka)
+SWEEP={'scimitar':[None,(0,0.6),(1,1.0),(2,0.7),None]}           # version 20: kroksabelns svep bakom eggen (steg, styrka)
+TRAPFLY={'trapthrower':[None,None,0.3,0.75]}                    # version 20: björnsaxen (andel av sträckan mot siktet, None = ingen)
 AIM=(176,50)                                        # dit harpunen flyger (strax ovanför och till höger om siktet)
 WAIM=(112,80)                                       # version 11: dit piskans snärt når (till vänster om siktet, där bågen slår)
 OUTC=(37,19,26)
@@ -490,6 +496,33 @@ def lanceflash_draw(d,mx,my,st,X0,Y0,i):
     d.ellipse((mx-r*0.35,my-r*0.35,mx+r*0.35,my+r*0.35),fill=(255,255,255,255))
 
 
+def sweep_draw(d,mx,my,st,X0,Y0,i):
+    """Version 20: kroksabeln: ett blekt svep (tre tunna bågar) som släpar efter eggen åt höger och uppåt och tunnas ut."""
+    k,f=st; R=18+k*6
+    for j in range(3):
+        r=R-j*4; n=10
+        pts=[(mx+np.cos(a)*r-r,my-np.sin(a)*r*0.7) for a in np.linspace(0,1.3*f,n)]
+        pts=[(x+r,y) for x,y in pts]
+        col=(236,242,250,255) if j==0 else (180,196,220,255)
+        d.line(pts,fill=col,width=2 if j==0 else 1)
+
+
+def trap_draw(d,mx,my,f,X0,Y0,i):
+    """Version 20: fällkastaren: en öppen björnsax (järnring med tänder och en mässingsplatta) som snurrar iväg mot siktet i en
+    båge och krymper med avståndet."""
+    ax,ay=AIM[0]-X0,AIM[1]-Y0
+    px=mx+(ax-mx)*f; py=my+(ay-my)*f-np.sin(f*np.pi)*16; s=max(0.5,1.3-f*0.8); a=f*7
+    rx,ry=10*s,10*s*abs(np.cos(a))+3*s
+    d.ellipse((px-rx-1,py-ry-1,px+rx+1,py+ry+1),fill=OUTC+(255,))
+    d.ellipse((px-rx,py-ry,px+rx,py+ry),fill=(90,90,100,255))
+    d.ellipse((px-rx+2*s,py-ry+2*s*0.6,px+rx-2*s,py+ry-2*s*0.6),fill=OUTC+(255,))
+    for j in range(10):
+        b=j/10*6.283
+        d.point((px+np.cos(b)*(rx-2.5*s),py+np.sin(b)*(ry-1.5*s)),fill=(200,204,214,255))
+    d.ellipse((px-3*s,py-2*s,px+3*s,py+2*s),fill=(150,116,60,255))
+    d.line([(px-rx-3*s,py),(px+rx+3*s,py)],fill=(70,70,80,255),width=max(1,int(2*s)))
+
+
 def fan_pick(im):
     """Upplockningsbilden för kastknivarna: tre knivar i en solfjäder kring handtagen (bladen uppåt)."""
     W,H=im.size; S=H*3; c=Image.new('RGBA',(S,S)); px,py=S//2,S//2+H//2
@@ -530,7 +563,7 @@ if ONLY:
 for w,st in d.items():
     if ONLY and w not in ONLY: continue
     files=[]; states={}
-    for s in ['idle','fire']+[k for k in ('draw','charge','reload','throw','empty','block','ward') if k in st]:   # version 6: draw, 7: charge, 8: reload/empty, 9: throw, 11: block, 13: ward
+    for s in ['idle','fire']+[k for k in ('draw','charge','reload','throw','empty','block','ward','dash') if k in st]:   # version 6: draw, 7: charge, 8: reload/empty, 9: throw, 11: block, 13: ward, 20: dash
         states[s]=[]
         for fr in st[s]: states[s].append(len(files)); files.append(fr)
     ims=[Image.open(f['f']).convert('RGBA') for f in files]
@@ -597,6 +630,10 @@ for w,st in d.items():
         atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(LANCEGLOW[w],'charge'),lambda m,st:(m[0]-st[1]-3,m[1]-st[1]-3,m[0]+st[1]+3,m[1]+st[1]+3),lanceglow_draw)
     if w in LANCEFLASH:
         atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(LANCEFLASH[w]),lambda m,st:(m[0]-20,m[1]-20,m[0]+20,m[1]+20),lanceflash_draw)
+    if w in SWEEP:   # version 20
+        atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(SWEEP[w]),lambda m,st:(m[0]-4,m[1]-40,m[0]+44,m[1]+4),sweep_draw)
+    if w in TRAPFLY:
+        atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(TRAPFLY[w]),lambda m,f:(min(m[0],AIM[0])-16,min(m[1],AIM[1])-30,max(m[0],AIM[0])+16,m[1]+8),trap_draw)
     atlas.save(OUT+f'assets/gfx/fp_{w}.png',optimize=True)
     if w in MUZZLE_IDLE: mz=[mz[0] if i in states['fire'] else m for i,m in enumerate(mz)]   # bågen: utan pil räknas mynningen från vilobilden
     out[w]={'x':x,'y':y,'w':fw,'h':fh,'states':states,'muzzle':mz,'dur':{'fire':round(st['fire_dur'],3),**{k:round(v,3) for k,v in st.get('durs',{}).items()}}}
