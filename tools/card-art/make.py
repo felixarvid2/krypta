@@ -67,6 +67,11 @@ längre, så alla motiv ritas här (sjöstövlar, krutpung, kedjor, kolvar, komp
 oanvända stänk och rök bakom (V17_DRAWN). Pakterna för kedjekulekanonen och syrasprutan ritas som siluetter; uppgraderingarna är
 oanvända stänk och rök med vapnet som bricka i hörnet (V17_UPGRADES).
 
+Version 18: 24 nya kort (cirkus, rampljus, knivar, käglor, giftpilar, idoler och djungeln) – alla motiv ritas här (strålkastare,
+falllucka, käglor, giftpil, hög hatt, piska, solidol, ormens fjäder ...) med de sista oanvända stänken och röken bakom (V18_DRAWN).
+Pakterna för käglekastaren och blåsröret ritas som siluetter; uppgraderingarna är oanvänd rök med vapnet som bricka i hörnet
+(V18_UPGRADES).
+
 Kör från repo-roten: python3 retrofps/tools/card-art/make.py .          (alla)
                      python3 retrofps/tools/card-art/make.py . v5       (bara version 5)
                      python3 retrofps/tools/card-art/make.py . v6       (bara version 6)
@@ -78,6 +83,7 @@ Kör från repo-roten: python3 retrofps/tools/card-art/make.py .          (alla)
                      python3 retrofps/tools/card-art/make.py . v15      (bara version 15)
                      python3 retrofps/tools/card-art/make.py . v16      (bara version 16)
                      python3 retrofps/tools/card-art/make.py . v17      (bara version 17)
+                     python3 retrofps/tools/card-art/make.py . v18      (bara version 18)
 """
 import os
 import sys
@@ -3181,6 +3187,263 @@ def main_v17():
     return n
 
 
+# ---------- version 18: Cirkusen och Djungeltemplet ----------
+# Som version 17: alla 24 motiv ritas här (strålkastare, falllucka, läderväst, käglor, giftpil, motgift, lyckoamulett, machete,
+# clownnäsa, myggnät, affisch, handskar, curare, knivtavla, tempelkarta, ormskinn, trolllåda, hög hatt, piska, jaguartand,
+# solidol, ormhuvud, manegens krona, ormens fjäder) på den mörklila vinjetten. Bakom motiven ligger de sista oanvända stänken ur
+# splat-pack och rök ur smoke-particles (V18_DRAWN). Pakternas vapen (käglekastaren och blåsröret) ritas som siluetter;
+# uppgraderingarna har oanvänd rök med vapnet som bricka i hörnet (V18_UPGRADES, ritas med v16_upgrade).
+V18_DRAWN = {  # kort-id: (ritfunktion, storlek, förskjutning y, [(källa, storlek, dx, dy, färg, vridning)]) – som V17_DRAWN
+    'rampfebern': ('spotlight', 0.86, 0, [('smoke:White puff/whitePuff12', 0.95, 0, 0.04, (255, 236, 170), 0)]),
+    'scenvanan': ('trapdoor', 0.84, 0.02, [('smoke:Black smoke/blackSmoke08', 0.95, 0, 0.06, (120, 90, 60), 0)]),
+    'ladervasten': ('vest', 0.84, 0, [('splat:splat27', 0.9, 0, 0.14, (140, 90, 50), 0)]),
+    'kagelkulan': ('pinball', 0.86, 0.02, [('smoke:White puff/whitePuff13', 0.95, 0, 0, (230, 200, 200), 0)]),
+    'pilspetsen': ('darthead', 0.88, 0, [('splat:splat29', 0.9, 0, 0.12, (90, 200, 70), 0)]),
+    'motgiftet': ('antidote', 0.8, 0.02, [('smoke:Fart/fart01', 0.95, 0, -0.04, (150, 230, 170), 0)]),
+    'lyckoamuletten': ('luckycharm', 0.8, 0, [('smoke:Explosion/explosion05', 0.95, 0, 0, (255, 210, 110), 0)]),
+    'macheten': ('machete', 0.9, 0, [('smoke:Black smoke/blackSmoke09', 0.95, 0, 0.04, (90, 140, 70), 0)]),
+    'clownnasan': ('clownnose', 0.7, 0, [('smoke:White puff/whitePuff15', 0.95, 0, 0, (255, 150, 150), 0)]),
+    'myggnatet': ('mosquitonet', 0.86, 0, [('smoke:Fart/fart02', 0.95, 0, 0.04, (160, 200, 140), 0)]),
+    'cirkusaffischen': ('poster', 0.84, 0, [('smoke:Black smoke/blackSmoke11', 0.95, 0, 0.04, (200, 80, 70), 0)]),
+    'jonglorens_handskar': ('gloves', 0.86, 0, [('smoke:White puff/whitePuff17', 0.95, 0, 0, (210, 200, 255), 0)]),
+    'curaren': ('curare', 0.84, 0.02, [('splat:splat31', 0.9, 0, 0.16, (70, 160, 60), 0)]),
+    'knivtavlan': ('knifeboard', 0.86, 0, [('smoke:Black smoke/blackSmoke12', 0.95, 0, 0.04, (170, 170, 190), 0)]),
+    'tempelkartan': ('templemap', 0.86, 0, [('smoke:Fart/fart03', 0.95, 0, 0.04, (200, 170, 110), 0)]),
+    'ormskinnet': ('snakeskin', 0.86, 0, [('smoke:Fart/fart04', 0.95, 0, 0.02, (110, 170, 90), 0)]),
+    'falska_bottnen': ('falsebox', 0.84, 0.02, [('smoke:Black smoke/blackSmoke13', 0.95, 0, 0.06, (150, 70, 160), 0)]),
+    'direktorens_hatt': ('tophat', 0.84, 0, [('smoke:Explosion/explosion06', 0.95, 0, 0, (255, 120, 90), 0)]),
+    'lejontamjarens_piska': ('tamerwhip', 0.88, 0, [('smoke:Black smoke/blackSmoke14', 0.95, 0, 0.04, (230, 170, 80), 0)]),
+    'jaguartanden': ('fang', 0.8, 0, [('smoke:White puff/whitePuff18', 0.95, 0, 0, (240, 210, 120), 0)]),
+    'solidolen': ('sunidol', 0.84, 0, [('smoke:Explosion/explosion07', 0.95, 0, 0, (255, 200, 80), 0)]),
+    'ormgiftet': ('venomhead', 0.86, 0, [('splat:splat32', 0.9, 0, 0.14, (100, 220, 60), 0)]),
+    'manegens_krona': ('ringcrown', 0.84, 0, [('smoke:White puff/whitePuff20', 0.95, 0, 0, (255, 190, 120), 0),
+                                             ('splat:splat34', 0.6, 0.22, 0.28, (200, 50, 60), 0)]),
+    'ormens_fjader': ('bigfeather', 0.9, 0, [('smoke:White puff/whitePuff21', 0.95, 0, 0, (110, 230, 170), 0),
+                                            ('splat:splat35', 0.6, -0.22, 0.28, (60, 160, 120), 0)]),
+}
+V18_PACTS = {'pakt_kaglekastare': 'pinthrower', 'pakt_blasror': 'blowgun'}
+V18_UPGRADES = {  # kort-id: (vapen, 'splat:'/'smoke:'-bild, färgton, vridning) – ritas med v16_upgrade
+    'studskaglan': ('pinthrower', 'smoke:Explosion/explosion08', (255, 200, 140), 0), 'femte_kaglan': ('pinthrower', 'smoke:White puff/whitePuff23', (230, 220, 255), 0),
+    'eldkaglorna': ('pinthrower', 'smoke:Black smoke/blackSmoke16', (255, 120, 50), 0), 'snabba_hander': ('pinthrower', 'smoke:Fart/fart05', (220, 200, 160), 0),
+    'pilgiftsgrodan': ('blowgun', 'smoke:Fart/fart06', (120, 230, 90), 0), 'smygjagaren': ('blowgun', 'smoke:Black smoke/blackSmoke17', (110, 140, 120), 0),
+    'ornogat': ('blowgun', 'smoke:White puff/whitePuff24', (255, 230, 150), 0), 'lungkraften': ('blowgun', 'smoke:Fart/fart07', (170, 220, 230), 0),
+}
+RED18, WHITE18, GOLD18, GREEN18, LEATHER = (200, 40, 44, 255), (236, 232, 222, 255), (230, 180, 60, 255), (70, 150, 60, 255), (120, 74, 40, 255)
+
+
+def pin18(d, cx, cy, s, col=WHITE18):
+    """En jonglörkägla: rund buk, smal hals, litet huvud och ett rött band."""
+    d.ellipse((cx - 34 * s, cy - 10 * s, cx + 34 * s, cy + 70 * s), fill=col, outline=INK, width=6)
+    d.rectangle((cx - 14 * s, cy - 50 * s, cx + 14 * s, cy), fill=col)
+    d.line((cx - 14 * s, cy - 50 * s, cx - 14 * s, cy - 6 * s), fill=INK, width=6)
+    d.line((cx + 14 * s, cy - 50 * s, cx + 14 * s, cy - 6 * s), fill=INK, width=6)
+    d.ellipse((cx - 22 * s, cy - 86 * s, cx + 22 * s, cy - 42 * s), fill=col, outline=INK, width=6)
+    d.rectangle((cx - 15 * s, cy - 34 * s, cx + 15 * s, cy - 22 * s), fill=RED18)
+
+
+def art18(kind):
+    im = Image.new('RGBA', (400, 400))
+    d = ImageDraw.Draw(im)
+    if kind == 'spotlight':
+        poly(d, [(170, 120), (230, 120), (390, 390), (10, 390)], (255, 240, 180, 110), 2)
+        rrect(d, (130, 30, 270, 140), 30, (60, 60, 70, 255))
+        d.ellipse((150, 100, 250, 160), fill=(255, 250, 210, 255), outline=INK, width=6)
+        d.line((200, 10, 200, 40), fill=INK, width=12)
+    elif kind == 'trapdoor':
+        rrect(d, (40, 160, 360, 360), 10, (24, 16, 12, 255))
+        poly(d, [(40, 160), (200, 160), (240, 40), (80, 40)], WOOD)
+        for x in (90, 140): d.line((x + 20, 50, x, 150), fill=(80, 50, 26, 255), width=6)
+        poly(d, [(200, 160), (360, 160), (360, 360), (200, 360)], (150, 100, 54, 255))
+        d.ellipse((260, 240, 290, 270), fill=BRASS, outline=INK, width=4)
+    elif kind == 'vest':
+        poly(d, [(110, 40), (170, 60), (200, 160), (230, 60), (290, 40), (330, 120), (310, 370), (90, 370), (70, 120)], LEATHER)
+        for y in (200, 260, 320): d.ellipse((190, y, 210, y + 20), fill=BRASS, outline=INK, width=3)
+        d.line((200, 160, 200, 370), fill=INK, width=6)
+    elif kind == 'pinball':
+        pin18(d, 140, 170, 1.6)
+        d.ellipse((220, 230, 370, 380), fill=(40, 40, 60, 255), outline=INK, width=7)
+        for x, y in ((270, 270), (300, 260), (290, 295)): d.ellipse((x - 9, y - 9, x + 9, y + 9), fill=(10, 10, 16, 255))
+    elif kind == 'darthead':
+        d.line((30, 370, 300, 100), fill=(150, 110, 70, 255), width=18)
+        poly(d, [(290, 80), (380, 20), (320, 110)], (90, 210, 70, 255))
+        poly(d, [(30, 370), (20, 300), (70, 340)], (230, 230, 220, 255)); poly(d, [(30, 370), (100, 380), (60, 330)], (230, 230, 220, 255))
+        for x, y in ((360, 70), (370, 110)): d.ellipse((x - 8, y - 8, x + 8, y + 12), fill=(90, 210, 70, 255), outline=INK, width=3)
+    elif kind == 'antidote':
+        rrect(d, (140, 40, 260, 90), 8, (150, 110, 70, 255))
+        rrect(d, (110, 90, 290, 370), 40, (190, 230, 220, 200))
+        d.rectangle((126, 200, 274, 352), fill=(110, 200, 220, 255))
+        d.rectangle((185, 140, 215, 260), fill=WHITE18); d.rectangle((140, 185, 260, 215), fill=WHITE18)
+    elif kind == 'luckycharm':
+        d.arc((80, 60, 320, 330), 200, 340, fill=INK, width=60); d.arc((80, 60, 320, 330), 200, 340, fill=SILVER, width=44)
+        for a in range(4):
+            cx, cy = 200 + 50 * np.cos(a * np.pi / 2), 260 + 50 * np.sin(a * np.pi / 2)
+            d.ellipse((cx - 44, cy - 44, cx + 44, cy + 44), fill=GREEN18, outline=INK, width=6)
+        d.line((200, 300, 220, 380), fill=INK, width=10)
+    elif kind == 'machete':
+        poly(d, [(60, 330), (300, 60), (360, 40), (340, 110), (110, 360)], SILVER)
+        rrect(d, (20, 320, 100, 390), 14, (80, 50, 30, 255))
+        d.line((90, 320, 320, 70), fill=(150, 154, 170, 255), width=6)
+    elif kind == 'clownnose':
+        d.ellipse((60, 60, 340, 340), fill=(220, 30, 40, 255), outline=INK, width=10)
+        d.ellipse((120, 110, 190, 170), fill=(255, 200, 200, 230))
+    elif kind == 'mosquitonet':
+        d.pieslice((40, 60, 360, 380), 180, 360, fill=(220, 230, 210, 90), outline=INK, width=8)
+        for k in range(1, 7): d.line((40 + k * 46, 220, 200, 60), fill=(240, 240, 230, 255), width=3)
+        for r in (60, 110): d.arc((200 - r * 1.6, 220 - r, 200 + r * 1.6, 220 + r), 180, 360, fill=(240, 240, 230, 255), width=3)
+        d.rectangle((40, 220, 360, 240), fill=(120, 90, 60, 255))
+        d.ellipse((260, 120, 290, 140), fill=INK); d.line((250, 115, 300, 145), fill=INK, width=3)
+    elif kind == 'poster':
+        rrect(d, (70, 30, 330, 380), 6, (240, 220, 180, 255))
+        for k in range(5): d.rectangle((70 + k * 52, 30, 96 + k * 52, 90), fill=RED18)
+        pts = [(200 + (70 if i % 2 == 0 else 30) * np.cos(i * np.pi / 5 - np.pi / 2), 220 + (70 if i % 2 == 0 else 30) * np.sin(i * np.pi / 5 - np.pi / 2)) for i in range(10)]
+        poly(d, pts, GOLD18)
+        d.rectangle((110, 320, 290, 340), fill=RED18)
+    elif kind == 'gloves':
+        for x0, rot in ((40, -10), (210, 10)):
+            g = Image.new('RGBA', (180, 300)); gd = ImageDraw.Draw(g)
+            rrect(gd, (20, 110, 160, 280), 40, WHITE18)
+            for k in range(4): rrect(gd, (24 + k * 34, 20 + abs(k - 1.5) * 14, 56 + k * 34, 140), 14, WHITE18)
+            d.line((0, 0, 0, 0), fill=INK); im.alpha_composite(g.rotate(rot, expand=False), (x0, 60))
+            d = ImageDraw.Draw(im)
+    elif kind == 'curare':
+        d.ellipse((90, 140, 310, 380), fill=(170, 130, 70, 255), outline=INK, width=7)
+        d.ellipse((150, 60, 250, 170), fill=(170, 130, 70, 255), outline=INK, width=7)
+        rrect(d, (175, 20, 225, 70), 10, (110, 80, 40, 255))
+        for x, y in ((140, 250), (200, 300), (250, 230)): d.ellipse((x - 14, y - 20, x + 14, y + 14), fill=(90, 210, 70, 255), outline=INK, width=4)
+    elif kind == 'knifeboard':
+        d.ellipse((50, 50, 350, 350), fill=(160, 110, 60, 255), outline=INK, width=8)
+        for r, c in ((110, RED18), (60, WHITE18), (24, RED18)): d.ellipse((200 - r, 200 - r, 200 + r, 200 + r), fill=c, outline=INK, width=5)
+        for a in (0.4, 2.0, 3.7, 5.2):
+            x, y = 200 + 130 * np.cos(a), 200 + 130 * np.sin(a)
+            d.line((x, y, x + 60 * np.cos(a), y + 60 * np.sin(a)), fill=INK, width=16); d.line((x, y, x + 56 * np.cos(a), y + 56 * np.sin(a)), fill=(60, 40, 30, 255), width=10)
+    elif kind == 'templemap':
+        rrect(d, (40, 80, 360, 330), 10, (220, 190, 130, 255))
+        for x in (40, 360): d.ellipse((x - 24, 70, x + 24, 340), fill=(190, 150, 90, 255), outline=INK, width=6)
+        poly(d, [(150, 270), (200, 160), (250, 270)], (150, 140, 120, 255))
+        d.line((90, 140, 140, 200, 180, 150, 230, 230), fill=(150, 40, 30, 255), width=6)
+        d.line((270, 120, 310, 160), fill=RED18, width=10); d.line((310, 120, 270, 160), fill=RED18, width=10)
+    elif kind == 'snakeskin':
+        pts = [(80 + 240 * t, 200 + 120 * np.sin(t * 2 * np.pi * 1.2)) for t in np.linspace(0, 1, 30)]
+        d.line(pts, fill=INK, width=74, joint='curve'); d.line(pts, fill=(110, 160, 70, 255), width=58, joint='curve')
+        for x, y in pts[2:-2:2]: d.ellipse((x - 8, y - 8, x + 8, y + 8), fill=(70, 110, 40, 255))
+    elif kind == 'falsebox':
+        poly(d, [(80, 120), (280, 120), (340, 70), (140, 70)], (110, 40, 120, 255))
+        poly(d, [(80, 120), (280, 120), (280, 360), (80, 360)], (150, 60, 160, 255))
+        poly(d, [(280, 120), (340, 70), (340, 310), (280, 360)], (100, 40, 110, 255))
+        d.ellipse((130, 200, 230, 300), fill=(10, 6, 10, 255), outline=GOLD18, width=6)
+        for x, y in ((110, 150), (250, 330)): d.text((x, y), '*', fill=GOLD18)
+    elif kind == 'tophat':
+        d.ellipse((30, 290, 370, 370), fill=(30, 26, 34, 255), outline=INK, width=7)
+        rrect(d, (100, 40, 300, 330), 12, (36, 32, 42, 255))
+        d.rectangle((104, 250, 296, 296), fill=RED18)
+        d.ellipse((260, 90, 290, 120), fill=(255, 255, 255, 120))
+    elif kind == 'tamerwhip':
+        pts = [(60, 360), (110, 260)] + [(200 + 110 * np.cos(t), 170 + 90 * np.sin(t)) for t in np.linspace(2.4, 2.4 + 2 * np.pi * 1.1, 40)]
+        d.line(pts, fill=INK, width=20, joint='curve'); d.line(pts, fill=(120, 74, 40, 255), width=12, joint='curve')
+        rrect(d, (30, 330, 90, 390), 10, (60, 40, 30, 255))
+        rrect(d, (240, 300, 380, 330), 8, RED18); d.rectangle((260, 330, 270, 390), fill=GOLD18); d.rectangle((350, 330, 360, 390), fill=GOLD18)
+    elif kind == 'fang':
+        poly(d, [(140, 40), (260, 40), (230, 260), (200, 370), (170, 260)], (240, 230, 200, 255), 8)
+        d.line((170, 70, 190, 300), fill=(200, 190, 160, 255), width=8)
+        d.arc((90, 0, 310, 120), 20, 160, fill=INK, width=12)
+    elif kind == 'sunidol':
+        for k in range(12):
+            a = k * np.pi / 6; d.line((200 + 110 * np.cos(a), 200 + 110 * np.sin(a), 200 + 180 * np.cos(a), 200 + 180 * np.sin(a)), fill=GOLD18, width=22)
+        d.ellipse((90, 90, 310, 310), fill=GOLD18, outline=INK, width=8)
+        for x in (160, 240): d.rectangle((x - 22, 170, x + 22, 192), fill=INK)
+        d.rectangle((150, 240, 250, 260), fill=INK)
+    elif kind == 'venomhead':
+        poly(d, [(40, 200), (180, 90), (330, 120), (380, 200), (330, 280), (180, 310)], (80, 140, 60, 255), 8)
+        d.ellipse((240, 140, 280, 180), fill=(255, 220, 60, 255), outline=INK, width=4); d.line((260, 142, 260, 178), fill=INK, width=6)
+        for x in (300, 340): poly(d, [(x, 250), (x + 16, 250), (x + 8, 320)], WHITE18, 4)
+        for x, y in ((312, 340), (330, 375)): d.ellipse((x - 10, y - 12, x + 10, y + 10), fill=(110, 230, 60, 255), outline=INK, width=3)
+    elif kind == 'ringcrown':
+        poly(d, [(60, 320), (60, 140), (130, 220), (200, 100), (270, 220), (340, 140), (340, 320)], GOLD18, 8)
+        d.rectangle((60, 300, 340, 340), fill=RED18)
+        for x, c in ((130, (90, 160, 255, 255)), (200, RED18), (270, (90, 220, 120, 255))): d.ellipse((x - 18, 250, x + 18, 286), fill=c, outline=INK, width=4)
+    elif kind == 'bigfeather':
+        pts = [(80, 370), (320, 40)]
+        poly(d, [(100, 340), (150, 200), (250, 80), (330, 30), (300, 140), (220, 260)], (60, 190, 130, 255), 8)
+        for t in np.linspace(0.15, 0.85, 8):
+            x, y = 80 + 240 * t, 370 - 330 * t; d.line((x, y, x + 60, y + 10), fill=(30, 120, 80, 255), width=4); d.line((x, y, x - 10, y - 60), fill=(30, 120, 80, 255), width=4)
+        d.line(pts, fill=(230, 220, 170, 255), width=8)
+        d.ellipse((270, 50, 310, 90), fill=(230, 60, 60, 255), outline=INK, width=4)
+    return im
+
+
+def draw_pinthrower():
+    """Käglekastaren: en läderslunga med tre jonglörkäglor i en korg av trä."""
+    im = Image.new('RGBA', (520, 320))
+    d = ImageDraw.Draw(im)
+    poly(d, [(10, 170), (120, 150), (140, 160), (140, 200), (110, 204), (20, 224)], WOOD)
+    rrect(d, (120, 150, 330, 214), 20, (150, 100, 56, 255))
+    for x in (160, 220, 280): d.line((x, 156, x, 208), fill=(90, 60, 30, 255), width=6)
+    for k, x in enumerate((360, 420, 480)):
+        pin18(d, x, 160 - k * 20, 0.9)
+    return im.crop(im.getbbox()).rotate(8, resample=Image.BICUBIC, expand=True)
+
+
+def draw_blowgun():
+    """Blåsröret: ett långt bamburör med lindningar och en giftpil framför mynningen."""
+    im = Image.new('RGBA', (560, 200))
+    d = ImageDraw.Draw(im)
+    rrect(d, (10, 80, 430, 120), 18, (190, 170, 100, 255))
+    for x in (60, 150, 260, 360): rrect(d, (x - 10, 74, x + 10, 126), 4, (120, 70, 40, 255))
+    d.line((450, 100, 530, 100), fill=(150, 110, 70, 255), width=8)
+    poly(d, [(530, 88), (555, 100), (530, 112)], (90, 210, 70, 255), 4)
+    poly(d, [(450, 100), (430, 84), (470, 100)], WHITE18, 3); poly(d, [(450, 100), (430, 116), (470, 100)], WHITE18, 3)
+    return im.crop(im.getbbox()).rotate(8, resample=Image.BICUBIC, expand=True)
+
+
+GUNS.update({'pinthrower': draw_pinthrower, 'blowgun': draw_blowgun})
+
+
+def drawn_card18(cid, kind, size, dy, layers):
+    big = purple_bg()
+    for src, sc, px, py, tint, rot in layers:
+        cx, cy = S * 2 + px * S * 4, S * 2 + py * S * 4
+        im = layer15(src, int(S * 4 * sc))
+        if rot:
+            im = im.rotate(rot, resample=Image.BICUBIC, expand=True)
+        lum = im.convert('L')
+        rgb = Image.merge('RGB', [lum.point(lambda v, c=c: v * c // 255) for c in tint])
+        alpha = im.split()[3].point(lambda v: int(v * (0.9 if src.startswith('splat:') else 0.6)))
+        col = Image.merge('RGBA', rgb.split() + (alpha,))
+        big.alpha_composite(col, (int(cx - col.width / 2), int(cy - col.height / 2)))
+    g = art18(kind)
+    g = shade(g.crop(g.getbbox()))
+    k = S * 4 * size / max(g.size)
+    g = g.resize((max(1, int(g.width * k)), max(1, int(g.height * k))), Image.LANCZOS)
+    pos = ((S * 4 - g.width) // 2, int((S * 4 - g.height) / 2 + dy * S * 4))
+    add_glow(big, g, pos, (0, 0, 0), 12)
+    big.alpha_composite(g, pos)
+    save(big, cid)
+
+
+def main_v18():
+    old_layers = ({'part:' + p[0] for t in (V9_DRAWN, V11_DRAWN, V13_DRAWN) for _, _, _, ps in t.values() for p in ps}
+                  | {p[0] for t in (V15_DRAWN, V16_DRAWN, V17_DRAWN) for _, _, _, ps in t.values() for p in ps}
+                  | {s for t in (V9_UPGRADES, V11_UPGRADES, V13_UPGRADES, V15_UPGRADES, V16_UPGRADES, V17_UPGRADES) for _, s, _, _ in t.values() if not s.startswith('vfx:')})
+    layers = [p[0] for _, _, _, ps in V18_DRAWN.values() for p in ps] + [s for _, s, _, _ in V18_UPGRADES.values()]
+    assert len(V18_DRAWN) == 24 and len(V18_UPGRADES) == 8
+    assert all(s.split(':')[0] in ('splat', 'smoke') for s in layers), 'bara stänk och rök'
+    assert len(layers) == len(set(layers)), 'varje stänk och rökbild används bara en gång'
+    assert not old_layers & set(layers), ('stänken och röken är oanvända', old_layers & set(layers))
+    n = 0
+    for cid, (kind, size, dy, ps) in V18_DRAWN.items():
+        drawn_card18(cid, kind, size, dy, ps)
+        n += 1
+    for cid, w in V18_PACTS.items():
+        pact(cid, w)
+        n += 1
+    for cid, (w, src, tint, rot) in V18_UPGRADES.items():
+        v16_upgrade(cid, w, src, tint, rot)
+        n += 1
+    near_dupes(list(V18_DRAWN) + list(V18_PACTS) + list(V18_UPGRADES))
+    return n
+
+
+
 def main():
     assert len(CARDS) == len(set(CARDS)) == 50, len(CARDS)
     srcs = list(V5.values()) + [s for _, s in V5_UPGRADES.values()]
@@ -3213,6 +3476,9 @@ def main():
     if ONLY == 'v17':
         print(main_v17(), 'kortbilder ->', OUT)
         return
+    if ONLY == 'v18':
+        print(main_v18(), 'kortbilder ->', OUT)
+        return
     n = 0
     if not ONLY_V5:
         for cid in CARDS:
@@ -3237,6 +3503,7 @@ def main():
         n += main_v15()
         n += main_v16()
         n += main_v17()
+        n += main_v18()
     print(n, 'kortbilder ->', OUT)
 
 

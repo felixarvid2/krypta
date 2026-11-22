@@ -183,6 +183,15 @@ const MOD_KEYS = {
   transmuteLuck: 'Andel tur med transmutation: fiender är av guld längre och ger mer guld, och cirkelns dryck kommer oftare',
   teslaResist: 'Andel mindre skada från teslaspolarnas blixtar',
   brewLuck: 'Chans att alembiken brygger en stark dryck',
+  // version 18: Cirkusen och Djungeltemplet – rampljus, fallluckor, knivar, käglor, giftpilar, gift, idoler och lianer
+  showtime: 'Andel extra skada när du står i strålkastarens rampljus (utöver de vanliga 25 %)',
+  trapdoorSense: 'Andel längre varning innan fallluckorna öppnas, och mindre skada när du faller genom en',
+  knifeResist: 'Andel mindre skada av knivar (knivkastare, knivkastarhjul och direktörens knivar)',
+  pinDmg: 'Andel extra skada med käglekastarens käglor',
+  dartDmg: 'Andel extra skada med blåsrörets giftpilar',
+  poisonResist: 'Andel mindre gift: giftpilar, giftblommor och giftmoln förgiftar dig kortare tid',
+  idolLuck: 'Andel tur med idoler och lyckohjul: mer guld ur guldidolen, färre i bakhållet och bättre snurr',
+  vineWalk: 'Andel mindre inbromsning i lianer',
 };
 const KEYS = Object.keys(MOD_KEYS);
 
@@ -782,6 +791,46 @@ const DEFS = [
   // legendariska
   ['hollandarens_ror', 'HOLLÄNDARENS ROR', 'legendarisk', { deckGrip: 0.4, cannonDmg: 0.3, chainDmg: 0.3, goldMul: 0.1 }, 1, '40 % MER GREPP PÅ DÄCK\n+30 % SKADA MED KANONER\n+30 % SKADA MED\nKEDJEKULOR\n+10 % GULD', { unlock: 50 }],
   ['smaragdtavlan', 'SMARAGDTAVLAN', 'legendarisk', { acidDmg: 0.3, acidResist: 0.3, transmuteLuck: 0.3, brewLuck: 0.2 }, 1, '+30 % SKADA MED SYRA\n30 % MINDRE SKADA AV SYRA\n+30 % TUR MED\nTRANSMUTATION\n20 % CHANS TILL STARK BRYGD', { unlock: 50 }],
+  // ---- version 18: pakter och uppgraderingar för käglekastaren och blåsröret ----
+  ['pakt_kaglekastare', 'JONGLÖRENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR KÄGLOR\n4 UNIKA UPPGRADERINGAR\nBARA KÄGLEKASTARE RESTEN AV RUNDAN', { pact: 'pinthrower', bad: 1 }],
+  ['pakt_blasror', 'SCHAMANENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR GIFTPILAR\n4 UNIKA UPPGRADERINGAR\nBARA BLÅSRÖR RESTEN AV RUNDAN', { pact: 'blowgun', bad: 1 }],
+  ['studskaglan', 'STUDSKÄGLAN', 'legendarisk', {}, 1, 'KÄGLORNA STUDSAR\nFYRA GÅNGER', { weapon: 'pinthrower', wup: 'pt_bounce' }],
+  ['femte_kaglan', 'FEMTE KÄGLAN', 'sallsynt', {}, 1, 'FEM KÄGLOR PER KAST', { weapon: 'pinthrower', wup: 'pt_split' }],
+  ['eldkaglorna', 'ELDKÄGLORNA', 'sallsynt', {}, 1, 'KÄGLORNA TÄNDER ELD', { weapon: 'pinthrower', wup: 'pt_fire' }],
+  ['snabba_hander', 'SNABBA HÄNDER', 'ovanlig', {}, 1, 'SNABBARE OMLADDNING', { weapon: 'pinthrower', wup: 'pt_fast' }],
+  ['pilgiftsgrodan', 'PILGIFTSGRODAN', 'sallsynt', {}, 1, 'GIFTET VARAR\nDUBBELT SÅ LÄNGE', { weapon: 'blowgun', wup: 'bg_poison' }],
+  ['smygjagaren', 'SMYGJÄGAREN', 'ovanlig', {}, 1, 'TYST SKOTT OCH DUBBEL\nSKADA MOT OVETANDE', { weapon: 'blowgun', wup: 'bg_silent' }],
+  ['ornogat', 'ÖRNÖGAT', 'legendarisk', {}, 1, 'HUVUDTRÄFFAR GER\nTREDUBBEL SKADA', { weapon: 'blowgun', wup: 'bg_crit' }],
+  ['lungkraften', 'LUNGKRAFTEN', 'ovanlig', {}, 1, 'SNABBARE OMLADDNING', { weapon: 'blowgun', wup: 'bg_fast' }],
+  // ---- version 18: rampljus, fallluckor, knivar, käglor, giftpilar, gift, idoler och lianer (Cirkusen och Djungeltemplet) ----
+  // vanliga
+  ['rampfebern', 'RAMPFEBERN', 'vanlig', { showtime: 0.1 }, 3, '+10 % SKADA I RAMPLJUSET'],
+  ['scenvanan', 'SCENVANAN', 'vanlig', { trapdoorSense: 0.2 }, 3, '20 % LÄNGRE VARNING\nFÖR FALLLUCKOR'],
+  ['ladervasten', 'LÄDERVÄSTEN', 'vanlig', { knifeResist: 0.2 }, 3, '20 % MINDRE SKADA\nAV KNIVAR'],
+  ['kagelkulan', 'KÄGELKULAN', 'vanlig', { pinDmg: 0.12 }, 3, '+12 % SKADA MED KÄGLOR'],
+  ['pilspetsen', 'PILSPETSEN', 'vanlig', { dartDmg: 0.12 }, 3, '+12 % SKADA MED\nGIFTPILAR'],
+  ['motgiftet', 'MOTGIFTET', 'vanlig', { poisonResist: 0.2 }, 3, '20 % MINDRE GIFT'],
+  ['lyckoamuletten', 'LYCKOAMULETTEN', 'vanlig', { idolLuck: 0.15 }, 3, '+15 % TUR MED IDOLER\nOCH LYCKOHJUL'],
+  ['macheten', 'MACHETEN', 'vanlig', { vineWalk: 0.25 }, 3, '25 % MINDRE INBROMSNING\nI LIANER'],
+  ['clownnasan', 'CLOWNNÄSAN', 'vanlig', { showtime: 0.06, trapdoorSense: 0.12 }, 2, '+6 % SKADA I RAMPLJUSET\n12 % LÄNGRE VARNING\nFÖR FALLLUCKOR', { unlock: 10 }],
+  ['myggnatet', 'MYGGNÄTET', 'vanlig', { poisonResist: 0.12, vineWalk: 0.12 }, 3, '12 % MINDRE GIFT\n12 % MINDRE INBROMSNING\nI LIANER', { unlock: 10 }],
+  // ovanliga
+  ['cirkusaffischen', 'CIRKUSAFFISCHEN', 'ovanlig', { showtime: 0.15, goldMul: 0.05 }, 2, '+15 % SKADA I RAMPLJUSET\n+5 % GULD'],
+  ['jonglorens_handskar', 'JONGLÖRENS HANDSKAR', 'ovanlig', { pinDmg: 0.2, dmg: 0.04 }, 2, '+20 % SKADA MED KÄGLOR\n+4 % SKADA'],
+  ['curaren', 'CURAREN', 'ovanlig', { dartDmg: 0.2, poisonChance: 0.05 }, 2, '+20 % SKADA MED\nGIFTPILAR\n+5 % CHANS ATT FÖRGIFTA', { unlock: 15 }],
+  ['knivtavlan', 'KNIVTAVLAN', 'ovanlig', { knifeResist: 0.35, meleeResist: 0.05 }, 2, '35 % MINDRE SKADA\nAV KNIVAR\n5 % MINDRE NÄRSTRIDSSKADA'],
+  ['tempelkartan', 'TEMPELKARTAN', 'ovanlig', { idolLuck: 0.25, goldMul: 0.05 }, 2, '+25 % TUR MED IDOLER\nOCH LYCKOHJUL\n+5 % GULD', { unlock: 15 }],
+  ['ormskinnet', 'ORMSKINNET', 'ovanlig', { poisonResist: 0.3, maxHp: 10 }, 2, '30 % MINDRE GIFT\n+10 MAX HP'],
+  ['falska_bottnen', 'DEN FALSKA BOTTNEN', 'ovanlig', { pinDmg: 0.3, trapdoorSense: -0.3 }, 1, '+30 % SKADA MED KÄGLOR\n-30 % LUCKVARNING', { curse: true, bad: 1 }],
+  // sällsynta
+  ['direktorens_hatt', 'DIREKTÖRENS HATT', 'sallsynt', { showtime: 0.25, trapdoorSense: 0.25, goldMul: 0.05 }, 1, '+25 % SKADA I RAMPLJUSET\n25 % LÄNGRE VARNING\nFÖR FALLLUCKOR\n+5 % GULD', { unlock: 25 }],
+  ['lejontamjarens_piska', 'LEJONTÄMJARENS PISKA', 'sallsynt', { knifeResist: 0.25, meleeResist: 0.1 }, 1, '25 % MINDRE SKADA\nAV KNIVAR\n10 % MINDRE NÄRSTRIDSSKADA', { unlock: 30 }],
+  ['jaguartanden', 'JAGUARTANDEN', 'sallsynt', { dartDmg: 0.3, critChance: 0.04 }, 1, '+30 % SKADA MED\nGIFTPILAR\n+4 % KRITCHANS', { unlock: 25 }],
+  ['solidolen', 'SOLIDOLEN', 'sallsynt', { idolLuck: 0.4, goldMul: 0.1, vineWalk: 0.2 }, 1, '+40 % TUR MED IDOLER\nOCH LYCKOHJUL\n+10 % GULD\n20 % MINDRE INBROMSNING\nI LIANER', { unlock: 30 }],
+  ['ormgiftet', 'ORMGIFTET', 'sallsynt', { dartDmg: 0.35, poisonChance: 0.05, poisonResist: -0.3 }, 1, '+35 % SKADA MED\nGIFTPILAR\n+5 % CHANS ATT FÖRGIFTA\n-30 % GIFTSKYDD', { curse: true, bad: 1 }],
+  // legendariska
+  ['manegens_krona', 'MANEGENS KRONA', 'legendarisk', { showtime: 0.3, pinDmg: 0.3, knifeResist: 0.3, trapdoorSense: 0.3 }, 1, '+30 % SKADA I RAMPLJUSET\n+30 % SKADA MED KÄGLOR\n30 % MINDRE SKADA AV KNIVAR\n30 % LÄNGRE LUCKVARNING', { unlock: 50 }],
+  ['ormens_fjader', 'ORMENS FJÄDER', 'legendarisk', { dartDmg: 0.3, poisonResist: 0.3, idolLuck: 0.3, vineWalk: 0.3 }, 1, '+30 % SKADA MED GIFTPILAR\n30 % MINDRE GIFT\n+30 % TUR MED IDOLER\n30 % LÄTTARE I LIANER', { unlock: 50 }],
 ];
 
 // ---------- Set och synergier ----------
@@ -819,6 +868,9 @@ const SETS = {
   tradgarden: { name: 'TRÄDGÅRDENS VÄG', text: '25 % MINDRE SKADA FRÅN TAGGRANKOR\nSTENÄNGLAR STÅR STILLA +1 S EFTER ATT DU TITTAT BORT\n+5 HP FRÅN FONTÄNER', mods: { thornResist: 0.25, angelSight: 1, fountainHeal: 5 } },
   // version 17: SKEPPETS VÄG (Spökskeppet: däck, kanoner och kedjekulor) och LABORATORIETS VÄG (Laboratoriet: syra, transmutation och brygder)
   skeppet: { name: 'SKEPPETS VÄG',    text: '25 % MER GREPP PÅ SKÖLJT DÄCK\n+25 % SKADA MED KANONER\n+20 % SKADA MED KEDJEKULOR', mods: { deckGrip: 0.25, cannonDmg: 0.25, chainDmg: 0.2 } },
+  // version 18: CIRKUSENS VÄG (Cirkusen: rampljus, fallluckor och knivar) och TEMPLETS VÄG (Djungeltemplet: gift, idoler och lianer)
+  cirkusen: { name: 'CIRKUSENS VÄG', text: '+25 % SKADA I RAMPLJUSET\n25 % LÄNGRE VARNING FÖR FALLLUCKOR\n20 % MINDRE SKADA AV KNIVAR', mods: { showtime: 0.25, trapdoorSense: 0.25, knifeResist: 0.2 } },
+  templet: { name: 'TEMPLETS VÄG', text: '25 % MINDRE GIFT\n+25 % TUR MED IDOLER OCH LYCKOHJUL\n25 % MINDRE INBROMSNING I LIANER', mods: { poisonResist: 0.25, idolLuck: 0.25, vineWalk: 0.25 } },
   laboratoriet: { name: 'LABORATORIETS VÄG', text: '25 % MINDRE SKADA AV SYRA\n+25 % TUR MED TRANSMUTATION\n20 % CHANS TILL STARK BRYGD', mods: { acidResist: 0.25, transmuteLuck: 0.25, brewLuck: 0.2 } },
   drommen: { name: 'DRÖMMENS VÄG',    text: '+25 % SIKT I SÖMNENS DIMMA\n25 % MINDRE EFFEKT AV SÖMN\n+20 % SKADA MED DRÖMSTAVEN', mods: { mistSight: 0.25, sleepResist: 0.25, dreamDmg: 0.2 } },
 };
@@ -833,7 +885,8 @@ const SYN = { eld: 'ELD', krit: 'KRIT', gift: 'GIFT', frost: 'FROST', blixt: 'BL
   bok: 'BÖCKER', black: 'BLÄCK', anga: 'ÅNGA', smide: 'SMIDE', metall: 'METALL',
   kyrka: 'KATEDRALEN', helig: 'HELIGT LJUS', klocka: 'KLOCKOR', bi: 'BIN', honung: 'HONUNG', vax: 'VAX',
   tradgard: 'TRÄDGÅRDEN', ros: 'ROSOR', torne: 'TÖRNE', staty: 'STATYER', drom: 'DRÖMMAR', somn: 'SÖMN', mardrom: 'MARDRÖMMAR',
-  skepp: 'SKEPPET', kanon: 'KANONER', pirat: 'PIRATER', syra: 'SYRA', flaska: 'FLASKOR', transmut: 'TRANSMUTATION', tesla: 'TESLASPOLAR' };
+  skepp: 'SKEPPET', kanon: 'KANONER', pirat: 'PIRATER', syra: 'SYRA', flaska: 'FLASKOR', transmut: 'TRANSMUTATION', tesla: 'TESLASPOLAR',
+  cirkus: 'CIRKUSEN', rampljus: 'RAMPLJUSET', kniv: 'KNIVAR', kagla: 'KÄGLOR', pil: 'GIFTPILAR', idol: 'IDOLER', djungel: 'DJUNGELN' };
 // set och syn för alla kort samlas här: id: [set eller '', syn-taggar...]
 const TAGS = {
   // eld och explosioner
@@ -945,6 +998,12 @@ const TAGS = {
   kedjelanken: ['', 'kanon', 'skepp'], syrakolven: ['', 'syra', 'flaska'], jordkabeln: ['', 'tesla', 'blixt'], destillatet: ['', 'flaska', 'dryck'], tjarat_rep: ['', 'skepp', 'kanon'], skyddsglasogonen: ['', 'syra', 'tesla'],
   kaparbrevet: ['', 'pirat', 'kanon', 'guld'], kedjesmeden: ['', 'kanon', 'metall'], syrastanket: ['', 'syra', 'gift'], faradays_bur: ['', 'tesla', 'blixt'], brygdboken: ['', 'flaska', 'dryck', 'transmut'],
   rombuteljen: ['', 'pirat', 'skepp'], vises_sten: ['', 'transmut', 'guld', 'flaska'], kvicksilverbagaren: ['', 'syra', 'transmut', 'flaska'],
+  // version 18: CIRKUSENS VÄG (Cirkusen) och TEMPLETS VÄG (Djungeltemplet); cirkus, rampljus, knivar, käglor, giftpilar, idoler och djungeln
+  rampfebern: ['cirkusen', 'rampljus', 'cirkus'], scenvanan: ['cirkusen', 'cirkus'], cirkusaffischen: ['cirkusen', 'rampljus', 'cirkus', 'guld'], direktorens_hatt: ['cirkusen', 'rampljus', 'cirkus'], manegens_krona: ['cirkusen', 'rampljus', 'kagla', 'kniv'],
+  motgiftet: ['templet', 'gift', 'djungel'], lyckoamuletten: ['templet', 'idol'], ormskinnet: ['templet', 'gift', 'djungel', 'liv'], solidolen: ['templet', 'idol', 'djungel', 'guld'], ormens_fjader: ['templet', 'pil', 'idol', 'djungel'],
+  ladervasten: ['', 'kniv'], kagelkulan: ['', 'kagla', 'cirkus'], pilspetsen: ['', 'pil', 'gift'], macheten: ['', 'djungel'], clownnasan: ['', 'cirkus', 'rampljus'], myggnatet: ['', 'djungel', 'gift'],
+  jonglorens_handskar: ['', 'kagla', 'cirkus'], curaren: ['', 'pil', 'gift'], knivtavlan: ['', 'kniv', 'cirkus'], tempelkartan: ['', 'idol', 'guld'], falska_bottnen: ['', 'kagla', 'cirkus'],
+  lejontamjarens_piska: ['', 'kniv', 'cirkus'], jaguartanden: ['', 'pil', 'djungel', 'krit'], ormgiftet: ['', 'pil', 'gift', 'idol'],
 };
 
 const ALL = DEFS.map(([id, name, rarity, mods, max, text, extra]) => {
@@ -1077,6 +1136,8 @@ const FMT = {
   shiftSense: ['p', 'SNABBARE GLIDANDE VÄGGAR'], sleepResist: ['p', 'SKYDD MOT SÖMN'],
   deckGrip: ['p', 'GREPP PÅ SKÖLJT DÄCK'], cannonDmg: ['p', 'SKADA MED KANONER'], chainDmg: ['p', 'SKADA MED KEDJEKULOR'], acidDmg: ['p', 'SKADA MED SYRA'],
   acidResist: ['p', 'SKYDD MOT SYRA'], transmuteLuck: ['p', 'TUR MED TRANSMUTATION'], teslaResist: ['p', 'SKYDD MOT TESLASPOLAR'], brewLuck: ['p', 'CHANS TILL STARK BRYGD'],
+  showtime: ['p', 'SKADA I RAMPLJUSET'], trapdoorSense: ['p', 'VARNING FÖR FALLLUCKOR'], knifeResist: ['p', 'SKYDD MOT KNIVAR'], pinDmg: ['p', 'SKADA MED KÄGLOR'],
+  dartDmg: ['p', 'SKADA MED GIFTPILAR'], poisonResist: ['p', 'SKYDD MOT GIFT'], idolLuck: ['p', 'TUR MED IDOLER'], vineWalk: ['p', 'LÄTTARE I LIANER'],
 };
 const INVERT = { damageTaken: true };
 const num = v => String(Math.round(v * 100) / 100).replace('.', ',');
@@ -1222,7 +1283,7 @@ function preview(card, mods, ownedIds) {
 // ---------- Dragning ----------
 // Vikten skiftar mot sällsyntare med djup (våning, 0..) och luck (summan av luck-modden, 0.1 per kort).
 const CURSE_WEIGHT = 0.8; // förbannade kort dyker upp ibland
-const PACT_WEIGHT = 0.4, UPGRADE_WEIGHT = 13; // trettiofyra pakter (vikten sänkt så att alla pakter tillsammans syns lika ofta som de fjorton förut; version 13: 0,53 -> 0,49, version 15: 0,49 -> 0,46, version 16: 0,46 -> 0,43, version 17: 0,43 -> 0,4); uppgraderingarna väger lite mer sedan korthögen växt (version 11: 8 -> 9, version 13: 9 -> 10, version 15: 10 -> 11, version 16: 11 -> 12, version 17: 12 -> 13): en pakt i ungefär var fjärde dragning; efter pakten kommer uppgraderingarna tätt
+const PACT_WEIGHT = 0.4, UPGRADE_WEIGHT = 15; // trettiosex pakter (vikten sänkt så att alla pakter tillsammans syns lika ofta som de fjorton förut; version 13: 0,53 -> 0,49, version 15: 0,49 -> 0,46, version 16: 0,46 -> 0,43, version 17: 0,43 -> 0,4, version 18: oförändrad 0,4 med trettiosex pakter); uppgraderingarna väger lite mer sedan korthögen växt (version 11: 8 -> 9, version 13: 9 -> 10, version 15: 10 -> 11, version 16: 11 -> 12, version 17: 12 -> 13, version 18: 13 -> 15): en pakt i ungefär var fjärde dragning; efter pakten kommer uppgraderingarna tätt
 function rarityWeight(rarity, depth, luck) {
   const t = Math.max(0, (depth || 0) * 0.25 + (luck || 0) * 2.5); // 0 = början av rundan
   const base = RARITY[rarity].weight;
@@ -1284,7 +1345,7 @@ const WEAPON_NAME = { pistol: 'PISTOL', shotgun: 'HAGELGEVÄR', rifle: 'GEVÄR',
   knives: 'KASTKNIVAR', hammer: 'STRIDSHAMMARE', musket: 'MUSKÖT', harpoon: 'HARPUN', boomerang: 'BUMERANG', prism: 'PRISMA',
   sawlauncher: 'SÅGBLAD', windgun: 'VINDBÖSSA', spear: 'SPJUT', sporelauncher: 'SPORKASTARE', mirrorshield: 'SPEGELSKÖLD', whip: 'PISKA',
   runebook: 'RUNBOK', steamcannon: 'ÅNGKANON', censer: 'RÖKELSEKAR', hivelauncher: 'BIKASTARE',
-  shears: 'TRÄDGÅRDSSAX', dreamstaff: 'DRÖMSTAV', chaincannon: 'KEDJEKANON', acidsprayer: 'SYRASPRUTA' };
+  shears: 'TRÄDGÅRDSSAX', dreamstaff: 'DRÖMSTAV', chaincannon: 'KEDJEKANON', acidsprayer: 'SYRASPRUTA', pinthrower: 'KÄGLEKASTARE', blowgun: 'BLÅSRÖR' };
 // etikett ovanför kortets namn: förbannelse, pakt, aktiv förmåga ('AKTIV · 8 S'), vilket vapen uppgraderingen hör till eller sammansmält
 const activeTag = card => 'AKTIV · ' + num(card.cd || 0) + ' S';
 function tag(card) {

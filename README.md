@@ -1261,6 +1261,44 @@ Version 7 lägger till 200 förbättringar:
 
 Kombinerade utmaningar multiplicerar själarna. Sparplatsen väljs på startskärmen, och `?fro=XXXX` i adressen fyller i ett delat frö.
 
+## Version 18: Cirkusen och Djungeltemplet
+
+- **Den övergivna cirkusen (`circus`):** inomhus under randiga tält, med tältduk (Ǯ) och djurburar (ǯ) som väggar och sågspån och manegens röda matta på golvet.
+  - Fallluckor (Ǳ) öppnas 1,5 s var sjätte sekund, och varje lucka har sin egen fas. En halv sekund innan skakar de. Står du på en lucka när den öppnas tar du 10 skada och hamnar på senaste säkra ruta. Fiender som står där faller och dör, men inte bossar, väktare eller flygande.
+  - Strålkastare (ǲ) sätter dig i rampljuset: du gör 25 % mer skada, men så länge du står där vet alla fiender på våningen var du är.
+  - Knivkastarhjul (ǳ) skjuter fyra knivar var andra sekund och vrider sig 45° mellan kasten (6 skada). Hjulet går sönder av 40 skada.
+  - Lyckohjulet (Ǵ) kostar 10 guld och kan snurras högst tre gånger. Det ger guld, en dryck, ammo eller ett kort, eller så hoppar en clown fram.
+  - Ballongklasar (ǵ) smäller när du skjuter dem och släpper ett föremål. Girlanger av glödlampor (Ƕ) lyser.
+- **Djungeltemplet (`jungle`):** utomhus, med mossig tempelsten (ǿ) och tät djungel (Ȁ).
+  - Pirayavatten (Ȃ) ger 3 skada var halv sekund och saktar ned 30 %. Fiender som inte flyger tar också skada.
+  - Lianer (ȃ) saktar ned 40 % och brinner bort av eld, precis som taggrankorna.
+  - Guldidolen (Ȅ) ger 40 guld, men utlöser ett bakhåll: 3–5 fiender ur våningens egen pool dyker upp runt dig. Har bangeneratorn lagt ett stenblock i närheten börjar det också rulla.
+  - Pilidoler (ȅ) skjuter en giftpil när du står i linje med dem (räckvidd 8, var 1,5 s).
+  - Giftblommor (Ȇ) sprutar ett giftmoln när du kommer närmare än 1,5 rutor. Tikifacklor (ȇ) lyser.
+  - Cirkusen och djungeltemplet är sena biomer, som trädgården, drömriket och laboratoriet: de kommer aldrig först i en omgång eller i Avgrundens sexvåningsvarv.
+- **Vapen:**
+  - **Käglekastaren (ǽ, ammo kägellådor Ǿ):** kastar tre jonglörkäglor (18 skada var) som studsar två gånger mot väggarna.
+  - **Blåsröret (Ȏ, ammo pilkoger ȏ):** en tyst och snabb giftpil (12 skada och gift i 3 s). En träff nära mitten av fienden är en huvudträff och gör dubbel skada.
+  - Båda har pakter med fyra uppgraderingar var.
+- **Fiender i cirkusen:**
+  - Clownen (Ƿ) tutar och släpper två ballonger när den dör. Ballongerna flyger mot dig och smäller i konfetti, men du kan skjuta ned dem.
+  - Jonglören (Ǹ) kastar tre käglor som studsar en gång.
+  - Styltgångaren (ǹ) sparkar hårt. Skjuter du på benen på nära håll tar den dubbel skada och faller omkull i 2 s.
+  - Knivkastaren (Ǻ) kastar tre knivar i solfjäder.
+  - Cirkuslejonet (ǻ) tar sats och flyger mot dig i ett långt språng.
+  - Marionetten (Ǽ) rycker fram i sina trådar. När den dör faller den ihop och reser sig en gång efter 3 s, om du inte skjuter den medan den ligger.
+- **Fiender i templet:**
+  - Ödlekrigaren (Ȉ) har en sköld som tar halva skadan framifrån.
+  - Blåsrörsjägaren (ȉ) är nästan osynlig tills den skjuter giftpilar.
+  - Apan (Ȋ) stjäl fem ammo till vapnet du håller och flyr. Dödar du den får du tillbaka dubbelt.
+  - Jaguaren (ȋ) är osynlig på mer än fem rutors avstånd och tar språng.
+  - Myggsvärmen (Ȍ) flyger, suger 2 hp per bett och läker sig själv.
+  - Tempelväktaren (ȍ) är en stenstaty som står still tills du kommer nära. Sedan glöder ögonen, och efter en varning kommer en laserstråle som varar 1 s.
+- **Bossar:**
+  - **Cirkusdirektören:** smäller med piskan och kastar knivar. En strålkastare följer dig och sätter eld på marken där ljuset står. Han kallar fram nummer (clowner, lejon och knivkastare) och öppnar fallluckor i manegen runt dig.
+  - **Den fjädrade ormen:** dyker ned i marken och kommer upp under dig, där en ring varnar först. Den spottar gift i bågar, sveper med svansen och kallar på myggsvärmar.
+- **Kort:** 24 nya kort, åtta nya kortnycklar och två set: CIRKUSENS VÄG och TEMPLETS VÄG.
+
 ## Version 17: Spökskeppet och Laboratoriet
 
 - **Spökskeppet (`ship`):** ett skepp på ett nattsvart hav, med däck under himlen och kajutor och lastrum under däck. Väggarna är skrov (ǒ) och master med rigg (Ǔ).
