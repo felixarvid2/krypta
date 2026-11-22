@@ -145,10 +145,10 @@ Spelare och gränssnitt
 
 ## Förbättringsloopen
 
-Spelet har en självförbättrande loop för Claude Code: **mät → planera → bygg och testa → granska → slå ihop → lär**.
+Spelet har en självförbättrande loop för Claude Code i grafform: **mät → planera → (bygg ∥ testa blint) → sammanför och revidera → granska → checka in → lär**.
 
 - **Mät:** `node tools/playtest/measure.mjs` kör bangeneratorns och kortens tester, hela speltestsviten och spelrobotar utan gudläge i varje biom, och skriver `tools/playtest/out/report.md`.
-- **Planera, bygga, granska, slå ihop:** arbetsflödet `.claude/workflows/forbattra.js` (skillen `forbattra`) låter en planerare välja små, testbara förbättringar ur rapporten, en byggare genomföra dem en i taget med ett eget test, en oberoende granskare läsa diffen, och checkar bara in det som är grönt. Underkända ändringar sparas som patch och återställs.
+- **Planera, bygga, granska, slå ihop:** arbetsflödet `.claude/workflows/forbattra.js` (skillen `forbattra`) låter en planerare välja små, testbara förbättringar ur rapporten. För varje förbättring skriver en byggare koden medan en annan agent samtidigt skriver acceptanstestet utan att se koden; en sammanförare kör testet mot koden och skickar tillbaka till byggaren vid rött (högst två varv); en oberoende granskare läser diffen, och bara det som är grönt checkas in. Underkända ändringar sparas som patch och återställs.
 - **Lär:** loopens minne är `tools/playtest/LOOP_NOTES.md` (backlogg, historik, lärdomar), som varje runda läser och uppdaterar.
 - **Testriggen:** `tools/playtest/` (Playwright-tester, bottar), `tools/artifact/` (bygget av claude.ai-artefakten med stabila paket och tester för dator och telefon).
 
