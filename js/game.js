@@ -5683,12 +5683,13 @@ function updateEnemy(e, dt) {
   if (!want) return;
   const sp = e.d.speed * diff().speed * dt * (e.slow > 0 ? 0.5 : 1) * (e.haste > 0 ? 1.45 : 1) * (dmod('swift') ? 1.25 : 1) * (cellAt(e.x, e.y) === ':' && e.d.ai !== 'fly' && e.type !== 'É' ? rnd(0.6, 1.6) : 1) * (cellAt(e.x, e.y) === '-' && e.d.ai !== 'fly' ? 0.65 : 1) * (cellAt(e.x, e.y) === '"' && e.type !== 'U' ? 0.5 : 1);
   let tx = P.x, ty = P.y;
+  // grannrutan med lägst värde i avståndsfältet (behövs även med sikt, som reserv när väggen är i vägen)
+  const cx = e.x | 0, cy = e.y | 0; let best = flow[cy * mw + cx], bx = -1, by = -1;
+  for (const [ddx, ddy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+    const nx = cx + ddx, ny = cy + ddy; if (nx < 0 || ny < 0 || nx >= mw || ny >= mh) continue;
+    const v = flow[ny * mw + nx]; if (v >= 0 && (best < 0 || v < best)) { best = v; bx = nx; by = ny; }
+  }
   if (!los || dist > 6) { // följ avståndsfältet runt hörn
-    const cx = e.x | 0, cy = e.y | 0; let best = flow[cy * mw + cx], bx = -1, by = -1;
-    for (const [ddx, ddy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-      const nx = cx + ddx, ny = cy + ddy; if (nx < 0 || ny < 0 || nx >= mw || ny >= mh) continue;
-      const v = flow[ny * mw + nx]; if (v >= 0 && (best < 0 || v < best)) { best = v; bx = nx; by = ny; }
-    }
     if (bx >= 0) {
       tx = bx + 0.5; ty = by + 0.5;
       const d = doors[bx + ',' + by]; // fiender öppnar dörrar
@@ -5697,13 +5698,18 @@ function updateEnemy(e, dt) {
   }
   let ang = Math.atan2(ty - e.y, tx - e.x);
   const fleeing = e.d.kite && e.hp < e.maxHp * 0.3; // skadade magiker och shamaner flyr
-  if (e.burn > 0 && !e.elite && e.d.melee && e.panic) ang = e.panic; // brinnande fiender springer i panik
-  else if (e.d.kite && los && dist < e.d.kite * (fleeing ? 2 : 1)) ang += Math.PI; // magiker och shamaner håller avstånd
+  const panicked = e.burn > 0 && !e.elite && e.d.melee && e.panic, backing = e.d.kite && los && dist < e.d.kite * (fleeing ? 2 : 1);
+  if (panicked) ang = e.panic; // brinnande fiender springer i panik
+  else if (backing) ang += Math.PI; // magiker och shamaner håller avstånd
   else if (e.d.ai === 'blink' && los) ang += Math.sin(e.t * 5 + e.x * 3) * 0.7; // smådjävulen sicksackar
   else if (los && e.d.melee && dist > 1.8 && dist < 7) ang += (e.flank || 0) * clamp((dist - 1.8) / 4, 0, 1) * 0.6; // grupper sprider sig och kommer från sidorna
   const ox = e.x, oy = e.y;
   tryMove(e, Math.cos(ang) * sp, Math.sin(ang) * sp, 0.28);
-  if (Math.hypot(e.x - ox, e.y - oy) < sp * 0.3) tryMove(e, Math.cos(ang + 1.2) * sp, Math.sin(ang + 1.2) * sp, 0.28);
+  if (Math.hypot(e.x - ox, e.y - oy) < sp * 0.3) { // blockerad: följ avståndsfältet först, vrid åt båda hållen bara som sista utväg
+    if (bx >= 0 && !panicked && !backing) { const fa = Math.atan2(by + 0.5 - e.y, bx + 0.5 - e.x); tryMove(e, Math.cos(fa) * sp, Math.sin(fa) * sp, 0.28); }
+    if (Math.hypot(e.x - ox, e.y - oy) < sp * 0.3) tryMove(e, Math.cos(ang + 1.2) * sp, Math.sin(ang + 1.2) * sp, 0.28);
+    if (Math.hypot(e.x - ox, e.y - oy) < sp * 0.3) tryMove(e, Math.cos(ang - 1.2) * sp, Math.sin(ang - 1.2) * sp, 0.28);
+  }
   for (const o of ents) if (o !== e && !o.dead) pushOut(e, o.x, o.y, o.boss ? 1.2 : 0.55);
   e.mvx = e.x - ox; e.mvy = e.y - oy;
 }
