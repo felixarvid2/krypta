@@ -1374,10 +1374,11 @@ function makeElite(rng, x, y) {
   e.d = Object.assign({}, e.d, { size: e.d.size * 1.3, speed: e.d.speed * (m.id === 'fast' ? 1.7 : 1), dmg: e.d.dmg * (m.id === 'brute' ? 1.8 : 1.2) * (asc() >= 4 ? 1.2 : 1), cd: e.d.cd * (m.id === 'fast' ? 0.7 : 1) });
   return e;
 }
+const GUARD_DMG = 0.7; // väktarens skadefaktor mot bossen (närstrid via d.dmg, fasta skott via bossShotDmg)
 function makeGuardian(x, y) { // väktaren: en mindre version av en boss, vaktar sitt rum på vanliga våningar
   const id = lvl.guardian; if (!BOSSES[id]) return null;
   const def = BOSSES[id], hp = def.hp * 0.32 * diff().hp * depthHp() * (1 + 0.4 * cycleOf(run.depth));
-  const d = { ...def, name: 'VÄKTAREN ' + def.name, size: def.size * 0.72, dmg: def.dmg * 0.7, range: def.range * 0.8, melee: true, score: 1500, growl: 'bossroar', cd: 2,
+  const d = { ...def, name: 'VÄKTAREN ' + def.name, size: def.size * 0.72, dmg: def.dmg * GUARD_DMG, range: def.range * 0.8, melee: true, score: 1500, growl: 'bossroar', cd: 2,
     phaseMsg: def.phaseMsg.map(m => m.replace(def.name, 'VÄKTAREN')) };
   return { type: 'B', boss: true, guardian: true, id, d, x, y, hp, maxHp: hp, state: 'idle', t: 0, cd: 2.5, alert: false, asleep: true, flip: false, dead: false, flash: 0, growlT: 6, phase: 1, summonT: 14, burn: 0, slow: 0, burnAcc: 0, dying: 0 };
 }
@@ -6090,6 +6091,7 @@ function freeSpotFar(minD, maxD) { // fri plats på lagom avstånd från spelare
   }
   return null;
 }
+const bossShotDmg = (b, n) => n * (b.guardian ? GUARD_DMG : 1); // väktaren: fasta skottskador skalas som närstriden i makeGuardian
 const BOSS_AI = {
   // Bendemonen: eldfläktar och vingslag, kallar på skelett från fas 2, snabbare i fas 3
   demon(b, dt, dist, ang, ph) {
@@ -6099,7 +6101,7 @@ const BOSS_AI = {
       const k = Math.floor(b.t * 12);
       if (k >= 6 && k <= 14 && k !== b.lastShot && k % 2 === 0) {
         b.lastShot = k; const n = ph === 3 ? 7 : 5;
-        for (let i = 0; i < n; i++) shootFireball(b, ang + (i - (n - 1) / 2) * 0.16 + rnd(-0.03, 0.03), 5.5 + ph * 0.5, 9, true);
+        for (let i = 0; i < n; i++) shootFireball(b, ang + (i - (n - 1) / 2) * 0.16 + rnd(-0.03, 0.03), 5.5 + ph * 0.5, bossShotDmg(b, 9), true);
         play('whoosh', 0.7, 0.6, { x: b.x, y: b.y });
       }
       if (b.t > 1.5) { b.state = 'idle'; b.t = 0; b.cd = rnd(1.4, 2.2) / fast; }
@@ -6110,7 +6112,7 @@ const BOSS_AI = {
         b.didHit = true; P.shake = Math.max(P.shake, 2.5); play('bigboom', 0.7, 0.8);
         if (dist < b.d.range) hurtPlayer(b.d.dmg, b.x, b.y, 'melee');
         const n = ph === 3 ? 14 : 10;
-        if (ph >= 2) for (let i = 0; i < n; i++) shootFireball(b, i / n * TAU + b.t, 4.2, 8, true);
+        if (ph >= 2) for (let i = 0; i < n; i++) shootFireball(b, i / n * TAU + b.t, 4.2, bossShotDmg(b, 8), true);
       }
       if (b.t > 1.3) { b.state = 'idle'; b.t = 0; b.cd = rnd(1.2, 2) / fast; }
       return;
@@ -6128,7 +6130,7 @@ const BOSS_AI = {
   beast(b, dt, dist, ang, ph) {
     if (b.state === 'breath') {
       const k = Math.floor(b.t / 0.22);
-      if (k >= 1 && k <= 3 + (ph === 3 ? 2 : 0) && k !== b.lastShot) { b.lastShot = k; shootFireball(b, ang + rnd(-0.05, 0.05), 6.5, 10, true); play('whoosh', 0.6, 0.7, { x: b.x, y: b.y }); }
+      if (k >= 1 && k <= 3 + (ph === 3 ? 2 : 0) && k !== b.lastShot) { b.lastShot = k; shootFireball(b, ang + rnd(-0.05, 0.05), 6.5, bossShotDmg(b, 10), true); play('whoosh', 0.6, 0.7, { x: b.x, y: b.y }); }
       if (b.t > 1.3) { b.state = 'idle'; b.t = 0; b.cd = rnd(1.3, 2) / (ph === 3 ? 1.4 : 1); }
       return;
     }
@@ -6146,7 +6148,7 @@ const BOSS_AI = {
       if (b.t > 1.4) {
         const spot = freeSpotFar(5, 9); if (spot) [b.x, b.y] = spot;
         b.hidden = false; b.state = 'idle'; b.t = 0; b.cd = 0.4; spawnPuff(b.x, b.y, 12); play('bossroar', 0.8, 0.8);
-        if (ph === 3) for (let i = 0; i < 10; i++) shootFireball(b, i / 10 * TAU, 4.5, 8, true);
+        if (ph === 3) for (let i = 0; i < 10; i++) shootFireball(b, i / 10 * TAU, 4.5, bossShotDmg(b, 8), true);
       }
       return;
     }
@@ -6174,7 +6176,7 @@ const BOSS_AI = {
     b.cd -= dt; b.shotT = (b.shotT ?? 1.2) - dt; b.state = 'circle';
     const want = 6, side = ang + Math.PI / 2 * (b.dir || 1) + (dist > want ? -0.6 : 0.6) * (b.dir || 1);
     if (bossMove(b, side, b.d.speed * sp * dt) < b.d.speed * sp * dt * 0.3) b.dir = -(b.dir || 1);
-    if (b.shotT <= 0 && hasLOS(b.x, b.y, P.x, P.y)) { b.shotT = ph === 3 ? 0.8 : 1.2; shootFireball(b, ang + rnd(-0.04, 0.04), 6, 9, false, 'blue'); play('whoosh', 0.5, 1.1, { x: b.x, y: b.y }); }
+    if (b.shotT <= 0 && hasLOS(b.x, b.y, P.x, P.y)) { b.shotT = ph === 3 ? 0.8 : 1.2; shootFireball(b, ang + rnd(-0.04, 0.04), 6, bossShotDmg(b, 9), false, 'blue'); play('whoosh', 0.5, 1.1, { x: b.x, y: b.y }); }
     if (b.cd <= 0 && hasLOS(b.x, b.y, P.x, P.y)) { b.state = 'windup'; b.t = 0; b.didHit = false; b.charges = ph >= 2 ? 2 : 1; play('bossroar', 0.9, 1.4); bossWarn(b, 'MARDRÖMMEN STAMPAR – GÅ ÅT SIDAN!'); }
   },
   // Ogern: kliver fram och krossar marken (stötvåg av stenar), kastar block på håll, kallar på orkkrigare i fas 2
@@ -6187,8 +6189,8 @@ const BOSS_AI = {
           P.shake = Math.max(P.shake, 3); play('bigboom', 0.9, 0.6);
           if (dist < b.d.range + 0.3) hurtPlayer(b.d.dmg, b.x, b.y, 'melee');
           const n = ph === 3 ? 18 : 12;
-          for (let i = 0; i < n; i++) shootFireball(b, i / n * TAU + rnd(-0.1, 0.1), 4.5, 10, false, 'rock');
-        } else { shootFireball(b, ang, 7.5, 18, true, 'rock'); play('whoosh', 0.8, 0.5, { x: b.x, y: b.y }); }
+          for (let i = 0; i < n; i++) shootFireball(b, i / n * TAU + rnd(-0.1, 0.1), 4.5, bossShotDmg(b, 10), false, 'rock');
+        } else { shootFireball(b, ang, 7.5, bossShotDmg(b, 18), true, 'rock'); play('whoosh', 0.8, 0.5, { x: b.x, y: b.y }); }
       }
       if (b.t > 1.1) { b.state = 'walk'; b.t = 0; b.cd = rnd(1, 1.8) / fast; }
       return;
@@ -6205,7 +6207,7 @@ const BOSS_AI = {
     if (ph >= 2) { P.slowT = Math.max(P.slowT, 0.15); if (!settings.lowfx && Math.random() < dt * 25) particles.push({ x: P.x + rnd(-3, 3), y: P.y + rnd(-3, 3), z: 1, vx: 2, vy: rnd(-0.5, 0.5), vz: -1, life: 1, maxLife: 1, frames: fx.parts.snow || fx.hit, img: (fx.parts.snow || fx.hit)[0], size: 0.04, drift: true }); } // snöstorm
     if (b.state === 'shards') {
       const k = Math.floor(b.t / 0.18);
-      if (k >= 1 && k <= 3 + ph && k !== b.lastShot) { b.lastShot = k; const n = 3 + ph; for (let i = 0; i < n; i++) shootFireball(b, ang + (i - (n - 1) / 2) * 0.14, 6, 8, false, 'ice'); play('wisp', 0.6, 0.8, { x: b.x, y: b.y }); }
+      if (k >= 1 && k <= 3 + ph && k !== b.lastShot) { b.lastShot = k; const n = 3 + ph; for (let i = 0; i < n; i++) shootFireball(b, ang + (i - (n - 1) / 2) * 0.14, 6, bossShotDmg(b, 8), false, 'ice'); play('wisp', 0.6, 0.8, { x: b.x, y: b.y }); }
       if (b.t > 1.4) { b.state = 'idle'; b.t = 0; b.cd = rnd(1.2, 2) / fast; }
       return;
     }
@@ -6238,7 +6240,7 @@ const BOSS_AI = {
     }
     if (b.state === 'orbs') {
       const k = Math.floor(b.t / 0.3);
-      if (k >= 1 && k <= (ph === 3 ? 5 : 3) && k !== b.lastShot) { b.lastShot = k; shootFireball(b, ang + rnd(-0.4, 0.4), 3.4, 9, false, 'orb'); play('hiss', 0.5, 0.7, { x: b.x, y: b.y }); }
+      if (k >= 1 && k <= (ph === 3 ? 5 : 3) && k !== b.lastShot) { b.lastShot = k; shootFireball(b, ang + rnd(-0.4, 0.4), 3.4, bossShotDmg(b, 9), false, 'orb'); play('hiss', 0.5, 0.7, { x: b.x, y: b.y }); }
       if (b.t > 1.8) { b.state = 'chase'; b.t = 0; b.cd = rnd(1.4, 2.2); }
       return;
     }
@@ -7151,7 +7153,7 @@ Object.assign(BOSS_AI, {
     if (ph >= 2) { b.poolT = (b.poolT ?? 3) - dt; if (b.poolT <= 0) { b.poolT = rnd(3, 5) / fast; for (let i = 0; i < 2 + ph; i++) { const a = rnd(0, TAU), r = rnd(1.5, 4); const x = P.x + Math.cos(a) * r, y = P.y + Math.sin(a) * r; if (!solid(x, y)) groundFires.push({ x, y, t: 5, acc: 0 }); } } }
     if (b.state === 'volley') {
       const k = Math.floor(b.t / 0.22);
-      if (k >= 1 && k <= 2 + ph && k !== b.lastShot) { b.lastShot = k; for (const s of [-0.18, 0, 0.18]) shootFireball(b, ang + s + rnd(-0.05, 0.05), 7, 9, k === 2 + ph); play('fireburst', 0.6, 0.8, { x: b.x, y: b.y }); }
+      if (k >= 1 && k <= 2 + ph && k !== b.lastShot) { b.lastShot = k; for (const s of [-0.18, 0, 0.18]) shootFireball(b, ang + s + rnd(-0.05, 0.05), 7, bossShotDmg(b, 9), k === 2 + ph); play('fireburst', 0.6, 0.8, { x: b.x, y: b.y }); }
       if (b.t > 1.5) { b.state = 'idle'; b.t = 0; b.cd = rnd(1.1, 1.8) / fast; }
       return;
     }
