@@ -25,6 +25,9 @@
 #   där eggarna möts ritas in när saxen klipper, SNIP; extra lägena throw = kastet och empty = tom hand) och drömstaven
 #   (dreamstaff, närstrid: stav med månskära och stjärna; stjärnan som flyger mot siktet ritas in i skjutrutorna, STARFLY;
 #   extra läget reload). Källor: enkla former i static.html, ställningarna räknas fram i tools/props13/fp_defs.py.
+# Version 17: kedjekulekanonen (chaincannon, extra läget reload; kedjekulan som snurrar iväg mot siktet och krutröken vid
+#   mynningen ritas in i skjutrutorna, CHAINFLY) och syrasprutan (acidsprayer, fyra skakrutor som går runt som eldkastarens;
+#   ett grönt syrastänk vid munstycket ritas in, ACIDFX). Källor: enkla former i static.html, delarna i tools/props14/fp_defs.py.
 import json, re, sys
 import numpy as np
 from PIL import Image
@@ -36,9 +39,11 @@ TARGET={'pistol':(84,178,24),'shotgun':(112,196,40),'rifle':(112,184,42),'smg':(
         'dbshotgun':(110,194,40),'crossbow':(66,166,14),'flaregun':(80,180,22),'sniper':(118,186,46),
         'flamer':(104,226,34),'launcher':(100,188,30),'nailgun':(96,210,22),'musket':(128,196,40),
         'harpoon':(124,198,40),'prism':(118,196,40),'sawlauncher':(118,198,34),'windgun':(118,206,26),
-        'sporelauncher':(120,204,30),'steamcannon':(122,206,30),'hivelauncher':(114,204,14)}  # höjd i px, mittpunkt x, hur mycket som skärs av nedtill
+        'sporelauncher':(120,204,30),'steamcannon':(122,206,30),'hivelauncher':(114,204,14),
+        'chaincannon':(118,204,22),'acidsprayer':(110,206,16)}  # höjd i px, mittpunkt x, hur mycket som skärs av nedtill
 HARD={'axe','flamer','launcher','nailgun','staff','bow','knives','hammer','musket','harpoon','boomerang','prism','sawlauncher','windgun','spear',
-      'sporelauncher','mirrorshield','whip','runebook','steamcannon','censer','hivelauncher','shears','dreamstaff'}   # version 5 och 6: hel eller ingen täckning per pixel
+      'sporelauncher','mirrorshield','whip','runebook','steamcannon','censer','hivelauncher','shears','dreamstaff',
+      'chaincannon','acidsprayer'}   # version 5 och 6: hel eller ingen täckning per pixel
 MUZZLE_IDLE={'bow'}
 PICK={'nailgun':(48,'w'),'staff':(48,'w',-90),'bow':(46,'w',90,'string'),'axe':(44,'w',90),'flamer':(54,'w'),'launcher':(46,'w'),
       'knives':(24,'h',0,'fan'),'hammer':(44,'w',90),'musket':(60,'w'),'harpoon':(58,'w'),'boomerang':(22,'w'),'prism':(54,'w'),
@@ -63,6 +68,8 @@ BEEFLY={'hivelauncher':[(0,(0.04,0.1)),(1,(0.08,0.22,0.36)),(2,(0.25,0.45,0.62,0
 MZ=[]                                                         # version 15: alla rutors mynningar i vyn (för röksvansen)
 SNIP={'shears':[None,(0,9),None,(1,9),None,None]}             # version 16: blänket där saxens eggar möts (steg, radie i px)
 STARFLY={'dreamstaff':[(0,0.0),(1,0.3),(2,0.65),(3,0.95)]}     # version 16: drömstjärnan (steg, andel av sträckan mot siktet)
+CHAINFLY={'chaincannon':[(0,None),(1,0.22),(2,0.5),(3,0.78),(4,0.97)]}   # version 17: kedjekulan (steg, andel av sträckan mot siktet, None = ingen)
+ACIDFX={'acidsprayer':[0,1,2,3]}                                # version 17: syrastänket vid munstycket (steg; rutorna går runt)
 AIM=(176,50)                                        # dit harpunen flyger (strax ovanför och till höger om siktet)
 WAIM=(112,80)                                       # version 11: dit piskans snärt når (till vänster om siktet, där bågen slår)
 OUTC=(37,19,26)
@@ -355,6 +362,51 @@ def star_draw(d,mx,my,st,X0,Y0,i):
     d.polygon([(px+(x-px)*0.55,py+(y-py)*0.55) for x,y in pts],fill=(255,244,190,255))
 
 
+def chain_draw(d,mx,my,st,X0,Y0,i):
+    """Version 17: kedjekulekanonen: krutrök och en eldblixt vid mynningen, och kedjekulan (två järnkulor med en kedja emellan)
+    som snurrar iväg mot siktet och krymper med avståndet."""
+    import random
+    k,f=st; rr=random.Random(61+i); ax,ay=AIM[0]-X0,AIM[1]-Y0
+    if k<=3:   # krutrök som väller ut och glesnar
+        r=7+k*4; sh=[(120,116,114),(160,156,150),(198,194,186)] if k<2 else [(104,102,104),(134,132,132),(160,158,156)]
+        blobs=[(mx+rr.uniform(-r*0.6,r*0.6)-k*2,my+rr.uniform(-r*0.5,r*0.3)-k*3,max(3,r*rr.uniform(0.45,0.7))) for _ in range(3+k)]
+        for bx,by,br in blobs: d.ellipse((bx-br-1,by-br-1,bx+br+1,by+br+1),fill=OUTC+(255,))
+        for bx,by,br in blobs: d.ellipse((bx-br,by-br,bx+br,by+br),fill=sh[0]+(255,))
+        for bx,by,br in blobs: d.ellipse((bx-br*0.75,by-br*0.8,bx+br*0.45,by+br*0.3),fill=sh[1]+(255,))
+        for bx,by,br in blobs: d.ellipse((bx-br*0.45,by-br*0.6,bx,by-br*0.1),fill=sh[2]+(255,))
+    if k==0:   # eldblixten
+        for j in range(8):
+            a=j/8*6.283+0.3; r0,r1=3,(12 if j%2 else 7)
+            d.line([(mx+np.cos(a)*r0,my+np.sin(a)*r0),(mx+np.cos(a)*r1,my+np.sin(a)*r1)],fill=(255,200,90,255),width=2)
+        d.ellipse((mx-4,my-4,mx+4,my+4),fill=(255,236,170,255)); d.ellipse((mx-2,my-2,mx+2,my+2),fill=(255,255,240,255))
+    if f is None: return
+    px,py=mx+(ax-mx)*f,my-4+(ay-my+4)*f; r=max(2.0,7*(1-f)+2); sp=r*2.2; a=i*1.25+0.4
+    b1=(px+np.cos(a)*sp,py+np.sin(a)*sp*0.7); b2=(px-np.cos(a)*sp,py-np.sin(a)*sp*0.7)
+    for j in range(3):   # fartstrimmor
+        q=a+3.1416/2+(j-1)*0.5; d.arc((px-sp-3,py-sp*0.7-3,px+sp+3,py+sp*0.7+3),np.degrees(q)-30,np.degrees(q)+10,fill=(230,232,236,255))
+    d.line([b1,b2],fill=OUTC+(255,),width=max(2,int(r*0.7)+2)); d.line([b1,b2],fill=(150,154,162,255),width=max(1,int(r*0.7)))
+    for j in range(1,6):   # kedjelänkarna
+        t=j/6; x=b1[0]+(b2[0]-b1[0])*t; y=b1[1]+(b2[1]-b1[1])*t; d.point((x,y),fill=(206,210,218,255) if j%2 else (90,94,102,255))
+    for bx,by in (b1,b2):
+        d.ellipse((bx-r-1,by-r-1,bx+r+1,by+r+1),fill=OUTC+(255,)); d.ellipse((bx-r,by-r,bx+r,by+r),fill=(58,60,68,255))
+        d.ellipse((bx-r*0.7,by-r*0.75,bx+r*0.2,by+r*0.1),fill=(96,100,110,255)); d.point((bx-r*0.35,by-r*0.4),fill=(220,224,232,255))
+
+
+def acid_draw(d,mx,my,k,X0,Y0,i):
+    """Version 17: syrasprutan: ett grönt stänk och droppar vid munstycket (strålen ritar spelet själv, som eldkastarens låga)."""
+    import random
+    rr=random.Random(71+k); G=[(28,90,14),(70,180,30),(150,240,70),(226,255,170)]
+    r=5+(k%2)*2
+    for j in range(5):   # stänket: små klumpar framåt-uppåt från munstycket
+        a=-2.2+rr.uniform(-0.6,0.6); dd=rr.uniform(2,r+4); bx,by=mx+np.cos(a)*dd,my+np.sin(a)*dd; br=rr.uniform(1.5,3.2)
+        d.ellipse((bx-br-1,by-br-1,bx+br+1,by+br+1),fill=OUTC+(255,)); d.ellipse((bx-br,by-br,bx+br,by+br),fill=G[1]+(255,))
+        d.point((bx-br*0.3,by-br*0.4),fill=G[3]+(255,))
+    d.ellipse((mx-r*0.6,my-r*0.6,mx+r*0.6,my+r*0.6),fill=G[2]+(255,)); d.ellipse((mx-1,my-1,mx+1,my+1),fill=G[3]+(255,))
+    for j in range(4):   # droppar som faller från munstycket
+        x=mx+rr.uniform(-4,3); y=my+4+((j*5+k*3)%12)
+        d.line([(x,y-1),(x,y+1)],fill=G[1]+(255,)); d.point((x,y+2),fill=G[0]+(255,))
+
+
 def fan_pick(im):
     """Upplockningsbilden för kastknivarna: tre knivar i en solfjäder kring handtagen (bladen uppåt)."""
     W,H=im.size; S=H*3; c=Image.new('RGBA',(S,S)); px,py=S//2,S//2+H//2
@@ -448,6 +500,10 @@ for w,st in d.items():
         atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(SNIP[w]),lambda m,st:(m[0]-st[1]-10,m[1]-st[1]-12,m[0]+st[1]+10,m[1]+st[1]),snip_draw)
     if w in STARFLY:
         atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(STARFLY[w]),lambda m,st:(min(m[0],AIM[0])-18,min(m[1],AIM[1])-18,max(m[0],AIM[0])+18,m[1]+14),star_draw)
+    if w in CHAINFLY:   # version 17
+        atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(CHAINFLY[w]),lambda m,st:(min(m[0],AIM[0])-24,min(m[1],AIM[1])-26,max(m[0],AIM[0])+24,m[1]+8),chain_draw)
+    if w in ACIDFX:
+        atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(ACIDFX[w]),lambda m,k:(m[0]-14,m[1]-14,m[0]+12,m[1]+18),acid_draw)
     atlas.save(OUT+f'assets/gfx/fp_{w}.png',optimize=True)
     if w in MUZZLE_IDLE: mz=[mz[0] if i in states['fire'] else m for i,m in enumerate(mz)]   # bågen: utan pil räknas mynningen från vilobilden
     out[w]={'x':x,'y':y,'w':fw,'h':fh,'states':states,'muzzle':mz,'dur':{'fire':round(st['fire_dur'],3),**{k:round(v,3) for k,v in st.get('durs',{}).items()}}}

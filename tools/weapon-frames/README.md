@@ -211,3 +211,23 @@ cd retrofps/tools/weapon-frames
 node render-static.mjs fp shears,dreamstaff
 python3 pack.py xframes ../../ shears,dreamstaff   # övriga poster i js/weapons.js lämnas orörda
 ```
+
+Version 17: kedjekulekanonen (`chaincannon`) och syrasprutan (`acidsprayer`).
+Båda är skjutvapen utan modell (`"model": "none"`, `base: [1,0.1,0.1]` som ångkanonen och bikastaren) byggda av enkla former;
+delarna står i `tools/props14/fp_defs.py`. Kedjekulekanonen är en kort järnkanon på en ekstock med pistolgrepp: en tjock svart
+pipa med bronsringar, en utsvängd mynning (`name: muzzle`) och en kedjekula (två järnkulor med en kedja, `name: ball`) i
+mynningen. Skjutrutorna döljer kulan och `pack.py` ritar krutröken, eldblixten och kedjekulan som snurrar iväg mot `AIM`
+(`CHAINFLY`); `reload` (`extra`) lutar kanonen och sänker ned en ny kedjekula i mynningen:
+`states: {idle:[0], fire:[1..5], reload:[6..10]}`, `dur: {fire, reload}`.
+Syrasprutan är en mässingsspruta med en grön glastank (`name: tank`, syran lyser med `partPose emissive` i skjutrutorna), en
+pumpstång, en slangrulle och ett långt munstycke med grön spets (`name: muzzle`). Den är automatisk som eldkastaren: fyra små
+skakrutor där den sista leder tillbaka till den första, och spelet ritar själva strålen; `pack.py` ritar ett litet grönt stänk vid
+munstycket (`ACIDFX`): `states: {idle:[0], fire:[1..4]}`, `dur: {fire}`. Upplockningsbilderna `pick_chaincannon.png` och
+`pick_acidsprayer.png` ritas i `tools/props14/make.py`.
+
+```bash
+python3 tools/props14/fp_defs.py /tmp/defs17.json   # ger posterna chaincannon och acidsprayer (läggs sist i static-defs.json, json indent 1)
+cd retrofps/tools/weapon-frames
+node render-static.mjs fp chaincannon,acidsprayer
+python3 pack.py xframes ../../ chaincannon,acidsprayer   # övriga poster i js/weapons.js lämnas orörda
+```
