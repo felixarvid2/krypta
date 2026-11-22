@@ -188,7 +188,7 @@ const ACH = [
   ['infight20', 'SPLIT OCH HÄRSKA', 'FÅ FIENDER ATT SLÅSS MOT VARANDRA 20 GÅNGER', p => (p.infights || 0) >= 20, p => [p.infights || 0, 20]],
   ['legend1', 'LEGENDEN', 'HITTA ETT LEGENDARISKT VAPEN', p => (p.legendsFound || []).length >= 1],
   ['legend6', 'SAMLAREN AV LEGENDER', 'HITTA ALLA SEX LEGENDARISKA VAPEN', p => (p.legendsFound || []).length >= 6, p => [(p.legendsFound || []).length, 6]],
-  ['allbosses12', 'ALLA FJORTON', 'BESEGRA ALLA FJORTON BOSSAR', p => BOSS_IDS.every(id => (p.bossWins || {})[id]), p => [BOSS_IDS.filter(id => (p.bossWins || {})[id]).length, BOSS_IDS.length]],
+  ['allbosses12', 'ALLA BOSSAR', 'BESEGRA VARJE BOSS I SPELET', p => BOSS_IDS.every(id => (p.bossWins || {})[id]), p => [BOSS_IDS.filter(id => (p.bossWins || {})[id]).length, BOSS_IDS.length]],
 ];
 function checkAch() {
   profile.ach = profile.ach || [];
@@ -499,6 +499,7 @@ const BOSSES = {
   ghost: { title: 'DEN SOM ALDRIG SOVER', name: 'VÅLNADEN', hp: 260, speed: 1.6, size: 2.3, dmg: 14, range: 1.4, arena: 'swamp', phaseMsg: ['VÅLNADEN VÄCKER DE DÖDA', 'VÅLNADENS SKRIK FYLLER LUFTEN!'] },
 };
 const BOSS_IDS = Object.keys(BOSSES).filter(id => !BOSSES[id].secret); // den hemliga slutbossen är inte med i rotationen
+const bossPool = () => BOSS_IDS.filter(id => !window.Gen || !Gen.ARENAS || Gen.ARENAS.includes(BOSSES[id].arena)); // bara bossar vars arena bangeneratorn kan bygga
 // föremål i rummen: bild (prop_<img>.png), antal rutor, höjd, blockerar, ljus, hur de används
 const PROP_DEFS = {
   c: { img: 'candles', n: 3, size: 0.78, anim: 7, light: 0.75 },
@@ -571,7 +572,7 @@ const PROP_DEFS = {
   '²': { img: 'sarcophagus', n: 2, size: 0.75, block: true, use: 'sarco', fb: 'coffin' },
   '÷': { img: 'stairs', size: 0.8, block: true, use: 'stairs', light: 0.4, fb: 'well' },
 };
-const bossFor = depth => run && run.practice && run.practice.boss ? run.practice.boss : BOSSES[params.get('boss')] ? params.get('boss') : RNG(run.seed).fork('bossar').shuffle(BOSS_IDS.slice())[cycleOf(depth) % BOSS_IDS.length]; // ?boss=id för test
+const bossFor = depth => run && run.practice && run.practice.boss ? run.practice.boss : BOSSES[params.get('boss')] ? params.get('boss') : RNG(run.seed).fork('bossar').shuffle(bossPool())[cycleOf(depth) % BOSS_IDS.length]; // ?boss=id för test
 const ELITE_MODS = [
   { id: 'fast', name: 'SNABB', tint: [120, 220, 255] },
   { id: 'tough', name: 'SEG', tint: [180, 180, 180] },
@@ -940,7 +941,7 @@ let practice = null; // övningsläge: { biome } eller { boss }
 const biomeFor = depth => run && run.practice && run.practice.biome ? run.practice.biome : BIOME_IDS.includes(params.get('biome')) ? params.get('biome') : run && run.biomeChoice && run.biomeChoice[depth] ? run.biomeChoice[depth]
   : RNG(run.seed).fork('biom' + cycleOf(depth)).shuffle(BIOME_IDS.slice())[(cyclePos(depth) - 1) % BIOME_IDS.length];
 // väktaren på varje vanlig våning: en annan boss än varvets egen, i mindre format
-const guardianFor = depth => { const own = bossFor((cycleOf(depth) + 1) * (FLOORS + 1)); return RNG(run.seed).fork('väktare' + depth).pick(BOSS_IDS.filter(b => b !== own)); };
+const guardianFor = depth => { const own = bossFor((cycleOf(depth) + 1) * (FLOORS + 1)); return RNG(run.seed).fork('väktare' + depth).pick(bossPool().filter(b => b !== own)); };
 function loadFloor(depth) {
   run.depth = depth;
   if (run.campaign) { startLevel(campaignLevel(depth)); P.armor = Math.min(200, P.armor + mod('armorPerFloor')); if (mod('floorHeal')) heal(mod('floorHeal'), true); saveRun(); return; }
@@ -4394,7 +4395,7 @@ function bossHuntPick() {
   const left = run.hunt.left;
   if (!left.length) { const t = Math.round(run.time); profile.huntBest = Math.min(profile.huntBest || 1e9, t); stat('huntsWon'); endRun(true); return; }
   P.hp = maxHp(); P.grenades = Math.min(GREN_MAX(), P.grenades + 2);
-  openUI(() => CardUI.choice({ title: 'BOSSJAKTEN', subtitle: `${BOSS_IDS.length - left.length} AV ${BOSS_IDS.length} BESEGRADE · TID ${fmtTime(run.time)}. VÄLJ NÄSTA BOSS.`,
+  openUI(() => CardUI.choice({ title: 'BOSSJAKTEN', subtitle: `${bossPool().length - left.length} AV ${bossPool().length} BESEGRADE · TID ${fmtTime(run.time)}. VÄLJ NÄSTA BOSS.`,
     options: left.map(id => ({ label: BOSSES[id].name, text: BOSSES[id].title || '' })) }, i => {
     closeUI(); const id = left.splice(i, 1)[0]; run.hunt.cur = id;
     const L = Gen.boss(RNG.hash(run.seed + ':jakt:' + id), { arena: BOSSES[id].arena, boss: id }); L.bossId = id; run.depth = FLOORS + 1; startLevel(L); lockPointer();
@@ -4402,7 +4403,7 @@ function bossHuntPick() {
 }
 function beginBossHunt() {
   document.getElementById('title').hidden = true; canvas.focus(); ensureAudio(); practice = null;
-  newRun(RNG.randomSeed(), false); run.cmode = ''; P.hp = maxHp(); run.bossrush = true; run.hunt = { left: BOSS_IDS.slice() };
+  newRun(RNG.randomSeed(), false); run.cmode = ''; P.hp = maxHp(); run.bossrush = true; run.hunt = { left: bossPool() };
   for (let i = 1; i <= 4; i++) { P.has[i] = true; P.mags[i] = WEAPONS[i].mag; } P.ammo = Object.assign(NOAMMO(), { p9: 120, r556: 90, shells: 30, bolts: 20, flares: 10 });
   state = 'play'; bossHuntPick();
 }
@@ -6084,9 +6085,9 @@ function missionProgress() { return run.mission ? (profile[run.mission.k] || 0) 
 function newMission() { const m = MISSIONS[(Math.random() * MISSIONS.length) | 0]; run.mission = { ...m, start: profile[m.k] || 0 }; }
 function bossRushNext() { // bossrush: nästa boss direkt, med ett kort och full hälsa emellan
   const n = (run.rushN || 0) + 1; run.rushN = n;
-  if (n >= BOSS_IDS.length) { endRun(true); return; }
+  if (n >= bossPool().length) { endRun(true); return; }
   P.hp = maxHp(); P.grenades = Math.min(GREN_MAX(), P.grenades + 2);
-  openUI(() => draftUI(drawCards(3, { luck: 1 }), { title: `BOSSRUSH ${n} AV ${BOSS_IDS.length}`, subtitle: 'VÄLJ ETT KORT INFÖR NÄSTA BOSS', skipLabel: 'INGET KORT' }, card => { if (card) gainCard(card); loadFloor((n + 1) * (FLOORS + 1)); lockPointer(); }));
+  openUI(() => draftUI(drawCards(3, { luck: 1 }), { title: `BOSSRUSH ${n} AV ${bossPool().length}`, subtitle: 'VÄLJ ETT KORT INFÖR NÄSTA BOSS', skipLabel: 'INGET KORT' }, card => { if (card) gainCard(card); loadFloor((n + 1) * (FLOORS + 1)); lockPointer(); }));
 }
 function enterGoldRoom() { // hemlig nivå: guldkammaren
   logEvent('GULDKAMMAREN'); stat('goldRooms'); play('secret', 1, 0.8);
@@ -6359,9 +6360,9 @@ function startMode(mode) { // bekräfta innan en ny runda skriver över en påg�
   begin(mode);
 }
 function openPractice() {
-  const biomes = BIOME_IDS.map(b => ({ label: BIOME_NAME[b] || b, text: 'ÖVA PÅ VÅNINGAR I DEN HÄR BIOMEN' })), bosses = BOSS_IDS.map(b => ({ label: BOSSES[b].name, text: 'MÖT BOSSEN DIREKT' }));
+  const biomes = BIOME_IDS.map(b => ({ label: BIOME_NAME[b] || b, text: 'ÖVA PÅ VÅNINGAR I DEN HÄR BIOMEN' })), bosses = bossPool().map(b => ({ label: BOSSES[b].name, text: 'MÖT BOSSEN DIREKT' }));
   CardUI.list('ÖVNING', 'INGA SJÄLAR ELLER PRESTATIONER. VÄLJ EN BIOM ELLER EN BOSS.', [{ label: 'BIOMER', head: true, color: '#ffd24a' }, ...biomes.map((r, i) => ({ ...r, onClick: () => { CardUI.close(); practice = { biome: BIOME_IDS[i] }; begin('practice'); } })),
-    { label: 'BOSSAR', head: true, color: '#ffd24a' }, ...bosses.map((r, i) => ({ ...r, onClick: () => { CardUI.close(); practice = { boss: BOSS_IDS[i] }; begin('practice'); } })),
+    { label: 'BOSSAR', head: true, color: '#ffd24a' }, ...bosses.map((r, i) => ({ ...r, onClick: () => { CardUI.close(); practice = { boss: bossPool()[i] }; begin('practice'); } })),
     { label: 'FIENDER (OÄNDLIG AMMO OCH HÄLSA)', head: true, color: '#ffd24a' }, ...Object.keys(profile.bestiary || {}).filter(t => ENEMY_DEFS[t]).map(t => ({ img: enemyIcon(t), label: ENEMY_DEFS[t].name, text: 'ÖVA MOT TRE I TAGET', onClick: () => { CardUI.close(); beginEnemyPractice(t); } }))], () => refreshTitle());
 }
 function begin(mode) { // mode: 'new' | 'daily' | 'continue' | 'bossrush' | 'practice'
@@ -7366,7 +7367,7 @@ Object.assign(USES, {
 function abyssLevel(depth) { // Avgrunden: oändlig nedstigning
   const n = depth, r = RNG(RNG.hash(run.seed + ':avgrund:' + n)), bossFloor = n % 6 === 0;
   let L;
-  if (bossFloor) { const id = r.pick(BOSS_IDS); L = Gen.boss(RNG.hash(run.seed + ':avgrundboss:' + n), { arena: BOSSES[id].arena, boss: id }); L.bossId = id; }
+  if (bossFloor) { const id = r.pick(bossPool()); L = Gen.boss(RNG.hash(run.seed + ':avgrundboss:' + n), { arena: BOSSES[id].arena, boss: id }); L.bossId = id; }
   else L = Gen.floor(RNG.hash(run.seed + ':avgrund:' + n), Math.min(5, 1 + Math.floor(n / 2)), { shop: n % 5 === 2, weapon: n % 3 === 1 ? r.pick(Object.keys(WEAPON_CHAR)).toString() : null, biome: r.pick(BIOME_IDS), guardian: n % 4 === 3 ? r.pick(BOSS_IDS) : undefined });
   return L;
 }
