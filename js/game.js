@@ -638,6 +638,7 @@ async function loadAll(setStatus) {
     'floor_ground_grass', 'floor_ground_dirt', 'floor_grass_dead', 'floor_gravel', 'floor_cave', 'floor_mud', 'ceil_cave', ...BOSS_IDS.map(b => 'floor_boss_' + b), 'floor_swamp', 'floor_water', 'floor_water2', 'floor_lava', 'floor_lava2', 'floor_ice', 'floor_snow', 'floor_frost_stone', 'floor_ash', 'floor_basalt', 'floor_pit', 'floor_crack', 'floor_boss_volcano', 'floor_sand', 'floor_gold_tiles', 'floor_quicksand', 'floor_crystal', 'floor_sunken_tiles', 'floor_deepwater', 'floor_deepwater2', 'floor_shallow', 'floor_brass', 'floor_cloud', 'floor_sawtrack', 'floor_void', 'floor_wind', 'floor_moss', 'floor_marble', 'floor_bouncepad', 'floor_sporepool', 'floor_teleport', 'floor_carpet', 'floor_irongrate', 'floor_ink', 'floor_conveyor', 'floor_conveyor2', 'floor_molten', 'floor_vent', 'floor_cathedral', 'floor_hivefloor', 'floor_lightbeam', 'floor_honey', 'floor_garden', 'floor_dream', 'floor_thorns', 'floor_dreammist'];
   const OPTIONAL = /_boss_|swamp|water|lava|ice|cracked|locked|frost|snow|obsidian|ash|basalt|pit|crack|sand|hieroglyph|gold_tiles|crystal|sunken|deepwater|shallow|coral|ruin|brass|gear|cloud|storm|sawtrack|void|wind|mycel|mushroom|marble|mirror|moss|bouncepad|sporepool|teleport|bookshelf|libpanel|ironplate|furnace|carpet|irongrate|ink|conveyor|molten|vent|cathedral|stainedglass|wax|honeycomb|hivefloor|lightbeam|honey|hedge|gardenwall|dream|garden|thorns/;
   for (const n of walls.concat(floors)) { try { tex[n] = pixels(await load(A + 'wall/' + n + '.png')); } catch (e) { if (!OPTIONAL.test(n)) throw e; } }
+  for (const [n, k] of [['wall_wax', 0.66], ['wall_honeycomb', 0.7], ['floor_hivefloor', 0.62], ['floor_boss_queenbee', 0.68]]) { const t = tex[n]; if (!t) continue; const d = t.data; for (let i = 0; i < d.length; i++) { const v = d[i]; d[i] = (v & 0xff000000) | (Math.round(((v >>> 16) & 255) * k) << 16) | (Math.round(((v >>> 8) & 255) * k) << 8) | Math.round((v & 255) * k); } } // bikupans vax är mycket ljusare än de andra biomernas
   tex.wall_swamp = tex.wall_swamp || tex.wall_forest; tex.wall_cracked = tex.wall_cracked || tex.wall_brick_stone_center; tex.door_locked = tex.door_locked || tex.door_wood;
   tex.floor_swamp = tex.floor_swamp || tex.floor_mud; tex.floor_water = tex.floor_water || tex.floor_tiles_blue; tex.floor_water2 = tex.floor_water2 || tex.floor_water;
   tex.wall_frost = tex.wall_frost || tex.wall_stone; tex.floor_snow = tex.floor_snow || tex.floor_tiles_blue; tex.floor_frost_stone = tex.floor_frost_stone || tex.floor_stone;
@@ -1356,7 +1357,7 @@ const BIOME_FX = {
   courtyard: { grade: [1.0, 0.95, 1.02], fogK: 0.075, amb: [['amb_rain', 0.32, 1], ['drone', 0.12, 1.2]], weather: 'rain' },
   clock: { grade: [1.12, 1.0, 0.82], fogK: 0.085, amb: [['gear_tick', 0.3, 1], ['drone', 0.18, 1.2]], weather: 'dust' },
   garden: { grade: [0.96, 1.05, 0.92], fogK: 0.07, amb: [['garden_hum', 0.3, 1], ['amb_wind', 0.15, 1.1]], weather: 'leaves' },
-  dream: { grade: [1.05, 0.9, 1.2], fogK: 0.11, amb: [['dream_hum', 0.35, 1], ['drone', 0.12, 0.7]], weather: 'sparkle' },
+  dream: { grade: [0.92, 0.82, 1.02], fogK: 0.12, amb: [['dream_hum', 0.35, 1], ['drone', 0.12, 0.7]], weather: 'sparkle' },
   cathedral: { grade: [1.1, 0.94, 0.96], fogK: 0.09, amb: [['cathedral_hum', 0.3, 1], ['drone', 0.12, 0.8]], weather: 'dust' },
   hive: { grade: [0.8, 0.7, 0.55], fogK: 0.12, amb: [['hive_hum', 0.35, 1], ['amb_drip', 0.12, 0.9]], weather: 'spores' },
   library: { grade: [1.08, 1.0, 0.92], fogK: 0.095, amb: [['library_hum', 0.3, 1], ['drone', 0.1, 1.3]], weather: 'dust' },
@@ -8757,8 +8758,11 @@ function updateV14(dt) {
       a.state = 'fight'; arenaCur = a; arenaLock(a, true); play('arena_lock', 1); P.shake = Math.max(P.shake, 1); say('ARENAN STÄNGS – ÖVERLEV', 2.5); setMusic(true); a.t = 1; firstHint('arena', 'ARENARUM: GALLREN ÖPPNAS NÄR ALLA VÅGOR ÄR DÖDA – DÅ VÄNTAR EN BELÖNING.'); break; }
     return; }
   const a = arenaCur; a.alive = a.alive.filter(e => !e.dead);
-  if (a.alive.length) { a.waveT = (a.waveT || 0) + dt; if (a.waveT > 45) { for (const e of a.alive) { e.hidden = false; e.arena = false; } a.alive = []; } return; } // skydd: en våg som inte går att döda släpper efter 45 s
-  a.waveT = 0;
+  if (a.alive.length) { // skydd: en våg som inte går att döda (gömd, fast i en vägg) släpper – men bara om ingen tagit skada på länge
+    const hp = a.alive.reduce((t, e) => t + e.hp, 0); if (a.hpSum === undefined || hp < a.hpSum - 0.01 || a.alive.length !== a.nAlive) { a.waveT = 0; a.hpSum = hp; a.nAlive = a.alive.length; } else a.waveT = (a.waveT || 0) + dt;
+    if (a.waveT > (a.alive.every(e => e.hidden) ? 25 : 90)) { for (const e of a.alive) { e.hidden = false; e.arena = false; } a.alive = []; a.hpSum = undefined; }
+    return; }
+  a.waveT = 0; a.hpSum = undefined;
   a.t -= dt; if (a.t > 0) return;
   if (a.wave < a.waves) { arenaSpawnWave(a); a.t = 1.2; return; }
   // klart: gallren går upp och belöningen kommer
