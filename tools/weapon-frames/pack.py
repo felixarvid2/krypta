@@ -15,6 +15,9 @@
 #   spegelskölden (mirrorshield, närstrid: svärdet i högerhanden; skölden i vänsterhanden är en egen rendering,
 #   mirrorshield_s, som läggs över varje ruta (MERGE); extra läget block = skölden uppe framför kameran) och piskan
 #   (whip, närstrid; snärten ritas från skaftets spets ut i bilden, LASH). Källor: KayKit sword_B (CC0), övrigt enkla former.
+# Version 13: runboken (runebook, närstrid: en öppen bok i handen; runan som skjuts iväg ritas in i skjutrutorna, RUNEFLY,
+#   och extra läget ward = boken hålls upp med en virvel av sidor runt sig, WARD) och ångkanonen (steamcannon, extra läget
+#   reload; ångmolnet ur mynningen ritas in i skjutrutorna, STEAMFX). Källor: enkla former i static.html.
 import json, re, sys
 import numpy as np
 from PIL import Image
@@ -26,14 +29,14 @@ TARGET={'pistol':(84,178,24),'shotgun':(112,196,40),'rifle':(112,184,42),'smg':(
         'dbshotgun':(110,194,40),'crossbow':(66,166,14),'flaregun':(80,180,22),'sniper':(118,186,46),
         'flamer':(104,226,34),'launcher':(100,188,30),'nailgun':(96,210,22),'musket':(128,196,40),
         'harpoon':(124,198,40),'prism':(118,196,40),'sawlauncher':(118,198,34),'windgun':(118,206,26),
-        'sporelauncher':(120,204,30)}  # höjd i px, mittpunkt x, hur mycket som skärs av nedtill
+        'sporelauncher':(120,204,30),'steamcannon':(122,206,30)}  # höjd i px, mittpunkt x, hur mycket som skärs av nedtill
 HARD={'axe','flamer','launcher','nailgun','staff','bow','knives','hammer','musket','harpoon','boomerang','prism','sawlauncher','windgun','spear',
-      'sporelauncher','mirrorshield','whip'}   # version 5 och 6: hel eller ingen täckning per pixel
+      'sporelauncher','mirrorshield','whip','runebook','steamcannon'}   # version 5 och 6: hel eller ingen täckning per pixel
 MUZZLE_IDLE={'bow'}
 PICK={'nailgun':(48,'w'),'staff':(48,'w',-90),'bow':(46,'w',90,'string'),'axe':(44,'w',90),'flamer':(54,'w'),'launcher':(46,'w'),
       'knives':(24,'h',0,'fan'),'hammer':(44,'w',90),'musket':(60,'w'),'harpoon':(58,'w'),'boomerang':(22,'w'),'prism':(54,'w'),
       'sawlauncher':(50,'w'),'windgun':(46,'w'),'spear':(60,'w',-90),
-      'sporelauncher':(50,'w'),'mirrorshield':(40,'h'),'whip':(40,'h')}  # upplockningsbildens storlek (höjd eller bredd i px)
+      'sporelauncher':(50,'w'),'mirrorshield':(40,'h'),'whip':(40,'h'),'steamcannon':(52,'w')}  # upplockningsbildens storlek (höjd eller bredd i px)
 
 
 SMOKE={'musket':[(0,5),(1,10),(2,14),(3,17),(4,18),(5,17)]}   # version 7: rökpuff vid mynningen per skjutruta (steg, radie i px)
@@ -45,6 +48,9 @@ SPOREFLY={'sporelauncher':[(0,0.0),(1,0.35),(2,0.75),(3,None),None]}   # version
 LASH={'whip':[0,1,2,3,4]}                             # version 11: piskans snärt per skjutruta (läge 0 = bakåt .. 2 = utsträckt mot siktet .. 4 = faller)
 MERGE={'mirrorshield':'mirrorshield_s'}               # version 11: en andra rendering (skölden) som läggs över rutorna, samma lägen och antal
 PICK_SIDE={'mirrorshield':'mirrorshield_s'}           # version 11: upplockningsbilden ur en annan sidovy (skölden med svärdet bakom)
+RUNEFLY={'runebook':[(0,0.0),(1,0.3),(2,0.7),None]}   # version 13: runan (steg, andel av sträckan mot siktet, None = ingen)
+WARD={'runebook':[(0,0.55),(1,0.85),(2,1.0)]}         # version 13: sidvirveln runt boken i läget ward (steg, storlek)
+STEAMFX={'steamcannon':[(0,10),(1,18),(2,25),(3,29),None]}   # version 13: ångmolnet ur mynningen (steg, radie i px)
 AIM=(176,50)                                        # dit harpunen flyger (strax ovanför och till höger om siktet)
 WAIM=(112,80)                                       # version 11: dit piskans snärt når (till vänster om siktet, där bågen slår)
 OUTC=(37,19,26)
@@ -202,6 +208,59 @@ def lash_draw(d,mx,my,k,X0,Y0,i):
         d.ellipse((ex-2,ey-2,ex+2,ey+2),fill=(255,255,255,255))
 
 
+def rune_draw(d,mx,my,st,X0,Y0,i):
+    """Version 13: runboken: ett gyllene sken över boken och runan (en lysande skiva med ett tecken) på väg mot siktet."""
+    import random
+    k,f=st; rr=random.Random(11+i); G=[(120,64,16),(222,150,40),(255,214,100),(255,248,214)]
+    if k==0:   # skenet över sidorna när runan väcks
+        for j in range(10):
+            a=j/10*6.283; r0,r1=6,(16 if j%2 else 11)
+            d.line([(mx+np.cos(a)*r0,my+np.sin(a)*r0*0.7),(mx+np.cos(a)*r1,my+np.sin(a)*r1*0.7)],fill=G[2]+(255,),width=1)
+    ax,ay=AIM[0]-X0,AIM[1]-Y0; px,py=mx+(ax-mx)*f,my-6+(ay-my+6)*f; r=max(3.0,10*(1-f)+3)
+    for j in range(5):   # gnistspår bakom runan
+        t=(j+1)/6; d.point((px+(mx-px)*t*0.4+rr.uniform(-2,2),py+(my-py)*t*0.4+rr.uniform(-2,2)),fill=G[2 if j%2 else 3]+(255,))
+    d.ellipse((px-r-1,py-r-1,px+r+1,py+r+1),fill=OUTC+(255,)); d.ellipse((px-r,py-r,px+r,py+r),fill=G[2]+(255,))
+    d.ellipse((px-r+1.5,py-r+1.5,px+r-1.5,py+r-1.5),fill=(64,30,10,255))
+    s_=r*0.55; w=2 if r>6 else 1   # tecknet: en lodrät stav med två snedstreck
+    d.line([(px,py-s_),(px,py+s_)],fill=G[3]+(255,),width=w)
+    d.line([(px,py-s_*0.2),(px+s_*0.8,py-s_*0.8)],fill=G[3]+(255,),width=w); d.line([(px,py+s_*0.4),(px-s_*0.8,py-s_*0.2)],fill=G[3]+(255,),width=w)
+
+
+def ward_draw(d,mx,my,st,X0,Y0,i):
+    """Version 13: runbokens värn: lösa sidor som virvlar i en ellips runt boken, med fartstreck mellan dem."""
+    k,s=st; rx,ry=118*s,44*s; n=10
+    for j in range(n):   # fartstrecken (bågar) bakom sidorna
+        a0=j/n*6.283+k*0.5; pts=[(mx+np.cos(a0+t*0.35)*rx,my-16+np.sin(a0+t*0.35)*ry) for t in np.linspace(0,1,6)]
+        d.line(pts,fill=(236,226,196,255),width=1)
+    for j in range(n):
+        a=j/n*6.283+k*0.5+0.4; cx,cy=mx+np.cos(a)*rx,my-16+np.sin(a)*ry; w,h=9*s+3,7*s+2; t=a*1.7
+        q=[(cx+np.cos(t)*w-np.sin(t)*h*0.5,cy+np.sin(t)*w*0.5+np.cos(t)*h),(cx-np.cos(t)*w-np.sin(t)*h*0.5,cy-np.sin(t)*w*0.5+np.cos(t)*h),
+           (cx-np.cos(t)*w+np.sin(t)*h*0.5,cy-np.sin(t)*w*0.5-np.cos(t)*h),(cx+np.cos(t)*w+np.sin(t)*h*0.5,cy+np.sin(t)*w*0.5-np.cos(t)*h)]
+        d.polygon([(x+(1 if x>cx else -1),y+(1 if y>cy else -1)) for x,y in q],fill=OUTC+(255,)); d.polygon(q,fill=(232,218,180,255))
+        d.line([q[0],q[1]],fill=(250,242,214,255)); d.line([q[2],q[3]],fill=(170,146,104,255))
+        for l in (0.35,0.65):   # skrivrader
+            a_=(q[1][0]+(q[2][0]-q[1][0])*l,q[1][1]+(q[2][1]-q[1][1])*l); b_=(q[0][0]+(q[3][0]-q[0][0])*l,q[0][1]+(q[3][1]-q[0][1])*l)
+            d.line([(a_[0]*0.8+b_[0]*0.2,a_[1]*0.8+b_[1]*0.2),(a_[0]*0.2+b_[0]*0.8,a_[1]*0.2+b_[1]*0.8)],fill=(150,124,90,255))
+
+
+def steam_draw(d,mx,my,st,X0,Y0,i):
+    """Version 13: ångkanonens stöt: vita ångpuffar som väller ut ur mynningen mot siktet och glesnar."""
+    import random
+    k,r=st; rr=random.Random(23+i); ax,ay=AIM[0]-X0,AIM[1]-Y0
+    sh=[(160,166,178),(204,210,218),(232,236,242),(250,252,254)] if k<3 else [(130,136,148),(170,176,186),(200,204,212),(226,230,236)]
+    blobs=[]
+    for j in range(4+k):
+        t=rr.uniform(0,1)*(0.3+0.15*k); bx=mx+(ax-mx)*t+rr.uniform(-r*0.7,r*0.7); by=my+(ay-my)*t+rr.uniform(-r*0.5,r*0.3)
+        blobs.append((by,bx,max(3,r*rr.uniform(0.5,0.85))))
+    blobs.sort()
+    for by,bx,br in blobs: d.ellipse((bx-br-1,by-br-1,bx+br+1,by+br+1),fill=OUTC+(255,))
+    for by,bx,br in blobs: d.ellipse((bx-br,by-br,bx+br,by+br),fill=sh[0]+(255,))
+    for by,bx,br in blobs: d.ellipse((bx-br*0.8,by-br*0.85,bx+br*0.55,by+br*0.4),fill=sh[1]+(255,))
+    for by,bx,br in blobs: d.ellipse((bx-br*0.55,by-br*0.7,bx+br*0.05,by-br*0.1),fill=sh[2]+(255,))
+    for j in range(5+k*2):   # heta droppar
+        a=rr.uniform(0,6.283); dd=r*rr.uniform(1.0,1.6); d.point((mx+(ax-mx)*0.15+np.cos(a)*dd,my+np.sin(a)*dd*0.8),fill=sh[3]+(255,))
+
+
 def fan_pick(im):
     """Upplockningsbilden för kastknivarna: tre knivar i en solfjäder kring handtagen (bladen uppåt)."""
     W,H=im.size; S=H*3; c=Image.new('RGBA',(S,S)); px,py=S//2,S//2+H//2
@@ -242,7 +301,7 @@ if ONLY:
 for w,st in d.items():
     if ONLY and w not in ONLY: continue
     files=[]; states={}
-    for s in ['idle','fire']+[k for k in ('draw','charge','reload','throw','empty','block') if k in st]:   # version 6: draw, 7: charge, 8: reload/empty, 9: throw, 11: block
+    for s in ['idle','fire']+[k for k in ('draw','charge','reload','throw','empty','block','ward') if k in st]:   # version 6: draw, 7: charge, 8: reload/empty, 9: throw, 11: block, 13: ward
         states[s]=[]
         for fr in st[s]: states[s].append(len(files)); files.append(fr)
     ims=[Image.open(f['f']).convert('RGBA') for f in files]
@@ -266,8 +325,8 @@ for w,st in d.items():
         atlas.paste(hard(fr) if w in HARD else fr,(i*fw,0))
     mz=[[round(x+(f['muzzle'][0]-bb[0])*sc,1),round(y+(f['muzzle'][1]-bb[1])*sc,1)] for f in files]
     if w in SMOKE: atlas,x,y,fw,fh=smoke_frames(atlas,len(ims),x,y,fw,fh,mz,[None]+SMOKE[w])
-    def steps_for(tab):   # version 8: effekten bara i skjutrutorna
-        f_=states['fire']; return [tab[f_.index(i)] if i in f_ and f_.index(i)<len(tab) else None for i in range(len(ims))]
+    def steps_for(tab,st_='fire'):   # version 8: effekten bara i skjutrutorna (version 13: eller i ett annat läge, st_)
+        f_=states[st_]; return [tab[f_.index(i)] if i in f_ and f_.index(i)<len(tab) else None for i in range(len(ims))]
     if w in ROPE:
         atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(ROPE[w]),lambda m,k:(min(m[0],AIM[0])-6,min(m[1],AIM[1])-10,max(m[0],AIM[0])+6,m[1]),rope_draw)
     if w in FLASH:
@@ -280,6 +339,12 @@ for w,st in d.items():
         atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(SPOREFLY[w]),lambda m,st:(min(m[0],AIM[0])-22,min(m[1],AIM[1])-22,max(m[0],AIM[0])+22,m[1]),spore_draw)
     if w in LASH:
         atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(LASH[w]),lambda m,k:(max(0,min(m[0],WAIM[0])-110),max(0,m[1]-30),min(VW,m[0]+80),m[1]+110),lash_draw)
+    if w in RUNEFLY:   # version 13
+        atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(RUNEFLY[w]),lambda m,st:(min(m[0],AIM[0])-24,min(m[1],AIM[1])-24,max(m[0],AIM[0])+24,m[1]),rune_draw)
+    if w in WARD:
+        atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(WARD[w],'ward'),lambda m,st:(max(0,m[0]-130*st[1]),max(0,m[1]-70*st[1]),min(VW,m[0]+130*st[1]),m[1]),ward_draw)
+    if w in STEAMFX:
+        atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(STEAMFX[w]),lambda m,st:(min(m[0],AIM[0])-st[1]*2-6,min(m[1],AIM[1])-st[1]*2-6,max(m[0],AIM[0])+st[1]*2+6,m[1]+st[1]),steam_draw)
     atlas.save(OUT+f'assets/gfx/fp_{w}.png',optimize=True)
     if w in MUZZLE_IDLE: mz=[mz[0] if i in states['fire'] else m for i,m in enumerate(mz)]   # bågen: utan pil räknas mynningen från vilobilden
     out[w]={'x':x,'y':y,'w':fw,'h':fh,'states':states,'muzzle':mz,'dur':{'fire':round(st['fire_dur'],3),**{k:round(v,3) for k,v in st.get('durs',{}).items()}}}

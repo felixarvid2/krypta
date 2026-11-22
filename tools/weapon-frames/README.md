@@ -146,3 +146,26 @@ node render-static.mjs side sporelauncher,mirrorshield,mirrorshield_s,whip
 python3 pack.py xframes ../../ sporelauncher,mirrorshield,whip   # övriga poster i js/weapons.js lämnas orörda
 python3 pack.py pick ../../ sporelauncher,mirrorshield,whip      # pick_sporelauncher/_mirrorshield/_whip
 ```
+
+Version 13: runboken (`runebook`) och ångkanonen (`steamcannon`).
+Runboken har ingen modell (`"model": "none"`): en öppen grimoar av enkla former (två läderpärmar i ett grunt V, tjocka
+sidblock, guldhörn, ett bokmärke och gyllene runstreck, `name: rune`, som tänds med `partPose emissive`) som vilar i en
+handskklädd hand med ärmen bakåt mot kameran. Den hålls i närstridsläget; mynningen är sidornas mitt (`nozzle: pages`).
+`fire` lyfter och tänder boken och `pack.py` ritar runan (en lysande skiva med ett tecken) som far mot `AIM` (`RUNEFLY`).
+Läget `ward` (`melee.extra`, tre rutor, den sista är den hållna posen) lyfter upp boken mitt framför kameran och `pack.py`
+ritar en virvel av lösa sidor runt den (`WARD`, effekten ritas nu även i andra lägen än `fire`, `steps_for(tab, 'ward')`):
+`states: {idle:[0], fire:[1..4], ward:[5..7]}`, `dur: {fire, ward}`. Upplockningsbilden `pick_runebook.png` ritas i
+`tools/props10/make.py` (sidovyn visar bara bokens kant).
+Ångkanonen är byggd av enkla former: kolv och pistolgrepp av trä, en kopparpanna med järnband, en mässingspipa med
+kopparband och en utsvängd mynning (`name: muzzle`), en tryckmätare ovanpå med en visare (`name: needle`, vriden med
+`partPose rot`), en röd ventil (`name: valve`) och en hoprullad slang. `pack.py` ritar ångmolnet ur mynningen (`STEAMFX`);
+`reload` (`extra`) lutar kanonen, vrider ventilen och låter visaren stiga: `states: {idle:[0], fire:[1..5], reload:[6..10]}`,
+`dur: {fire, reload}`.
+
+```bash
+cd retrofps/tools/weapon-frames     # via symlänken, så att render-static.mjs hittar assets/3d-models
+node render-static.mjs fp runebook,steamcannon
+node render-static.mjs side runebook,steamcannon
+python3 pack.py xframes ../../ runebook,steamcannon   # övriga poster i js/weapons.js lämnas orörda
+python3 pack.py pick ../../ steamcannon               # pick_steamcannon (pick_runebook kommer från tools/props10)
+```
