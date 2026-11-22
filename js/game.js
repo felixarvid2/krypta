@@ -3500,10 +3500,11 @@ const VIB = { pickup: [12], kill: [18, 30, 18], boss: [90, 40, 140], potion: [25
 function vib(k) { if (settings.vibrate === false || !navigator.vibrate || !VIB[k] || !isTouch()) return; try { navigator.vibrate(VIB[k]); } catch (e) { /* ingen vibration */ } }
 // dödsrapporten: vem skadade dig mest
 function noteDamage(d, fx0, fy0, kind) {
-  if (!run || !(d > 0)) return;
+  if (!run || !(d > 0)) return '';
   let who = kind === 'trap' ? 'FÄLLOR' : 'MILJÖN';
   if (fx0 !== undefined) { let best = null, bd = 3.5; for (const e of ents) { const dd = Math.hypot(e.x - fx0, e.y - fy0); if (!e.dead && dd < bd) { bd = dd; best = e; } } if (best) who = best.boss ? best.d.name : best.d.name; else if (kind === 'proj') who = 'PROJEKTILER'; }
   run.dmgBy = run.dmgBy || {}; run.dmgBy[who] = (run.dmgBy[who] || 0) + d;
+  return who;
 }
 // rekord: jämför med profilen när rundan tar slut
 function recordCheck(r) {
@@ -4945,18 +4946,19 @@ function hurtPlayer(d, fx0, fy0, kind) {
   if (hadArmor && P.armor <= 0.5) { P.armor = 0; play('ice_break', 0.7, 0.8); say('RUSTNINGEN BRAST', 1.5); for (let i = 0; i < 8; i++) particles.push({ x: P.x + Math.cos(P.a) * 0.5, y: P.y + Math.sin(P.a) * 0.5, z: 0.4, vx: rnd(-1.5, 1.5), vy: rnd(-1.5, 1.5), vz: rnd(0.5, 2), life: 0.8, img: fx.hit[2], size: 0.06, add: true, tint: [140, 190, 255], grav: true }); }
 
   if (fx0 !== undefined && (boss || guardianE)) { const b = boss || guardianE; if (Math.hypot(b.x - fx0, b.y - fy0) < 3) taunt(b); }
-  noteDamage(d, fx0, fy0, kind);
+  const who = noteDamage(d, fx0, fy0, kind);
   if (run && run.practice && run.practice.god) d = Math.min(d, Math.max(0, P.hp - 1)); // övning: du kan inte dö
   P.hp -= d; P.hurt = 0.35; P.shake = Math.max(P.shake, 1.2); lvlStat.taken += d; talentHooksHurt(); style.v = Math.max(0, style.v - 6 - d * 0.6); // skada sänker stilen
   { const c = run.cause || ''; P.hurtCol = /LAVA|ELD|BRAND|HETTA|SOL|BOMB|EXPLOS/.test(c) ? '230,110,20' : /GIFT|SLEM|SPINDEL|SKARAB/.test(c) ? '60,170,40' : /IS|FROST|KYL|SNÖ/.test(c) ? '60,140,230' : /BLIXT|STORM/.test(c) ? '170,120,255' : '190,0,0'; }
   if (settings.vibrate !== false && navigator.vibrate) try { navigator.vibrate(Math.min(120, 20 + d * 4)); } catch (e) { /* ingen vibration */ }
   play('hurt', 0.8, rnd(0.9, 1.1)); rumble(Math.min(1, 0.3 + d / 30), 160);
   if (fx0 !== undefined) hurtDir.push({ ang: Math.atan2(fy0 - P.y, fx0 - P.x), t: 1, col: kind === 'proj' ? '255,120,0' : kind === 'melee' ? '220,0,0' : '200,60,200' });
-  if (P.hp <= 0 && fx0 !== undefined) run.cause = (ents.find(e => !e.dead && Math.abs(e.x - fx0) < 0.01 && Math.abs(e.y - fy0) < 0.01) || {}).d?.name || run.cause || '';
+  if (P.hp <= 0) run.cause = (fx0 !== undefined && ents.find(e => !e.dead && Math.abs(e.x - fx0) < 0.01 && Math.abs(e.y - fy0) < 0.01) || {}).d?.name || run.cause || who || (kind === 'proj' ? 'PROJEKTILER' : kind === 'trap' ? 'FÄLLOR' : 'MILJÖN');
   if (P.hp <= 0) {
     if (run.livesUsed < mod('extraLife')) { // återupplivning från ett kort
       run.livesUsed++; P.hp = maxHp() * 0.5; P.hurt = 1; say('DU VÄGRAR DÖ!', 3); play('secret', 0.8, 1.4);
       for (const e of ents) if (!e.dead && Math.hypot(e.x - P.x, e.y - P.y) < 3) hurtEnemy(e, 8, e.x, e.y, { noProc: true });
+      run.cause = ''; // överlevde: orsaken ska inte hänga kvar till nästa träff
       return;
     }
     state = 'dead'; P.hp = 0; P.deadT = 0; play('lose', 0.8);
@@ -4964,7 +4966,7 @@ function hurtPlayer(d, fx0, fy0, kind) {
     stopAmbient(); setMusic(false);
     if (breathSnd) { breathSnd.s.stop(); breathSnd = null; }
     endRun(false);
-  }
+  } else run.cause = ''; // överlevde träffen: töm orsaken så den inte tillskrivs en senare dödsstöt
 }
 
 
