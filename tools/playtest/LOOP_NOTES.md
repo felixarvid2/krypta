@@ -7,14 +7,14 @@ vad nästa planerare ska tänka på. Håll den kort – ta bort det som är gjor
 ## Backlogg (känt, inte åtgärdat)
 - Arenavågor kan bli mindre än planerat när få rutor nås från spelaren: reserven utan nåbarhetskrav i `arenaSpawnWave` körs bara om ingen fiende alls placerats. Låg prioritet.
 - `freeSpotFar(4,7)` hittade ingen plats för Stjärnskådaren i arenan `hall`; v19-koden har en egen reserv. Kontrollera andra bossar som använder `freeSpotFar`.
-- Stjärnlansen använder hammarens laddgren (`WS.hcharge`) och darrar nära full laddning.
 - `t75` (mycelmodern byter anfall: "idle") och `t76` (klockutmaningen, inbördes strid) är ostadiga i hela sviten. Avgör om det är spelet eller testet.
 - Våningsbyten ger enstaka bildrutor på 1,2–1,5 s (Avgrunden, bossjakten). Profilera ett byte innan något ändras.
 - Väktare: eldklot, frostnova och faraostråle skalas nu (a.2, b.1), men tornador (js/game.js ca rad 7224), kloner, lavavågor och `addHazard`-skador har fortfarande full bosskraft. Ormväktarens dyk, uppdykningsradie och spott har bossens fasta gränser. Väktare stod för 2 av 7 dödsfall före b.1 (mot 4 av 12 före a.2), men före b.2 kunde en kvarglömd `run.cause` bokföra senare dödsstötar på väktaren; mät igen innan mer sänks.
 - `botng.mjs` rad 24 räknar även state `'runover'` (seger) som dödsfall med orsak `'?'`.
 - `hurtPlayer` tömmer inte `run.cause` vid tidiga returer (`P.iframe > 0`, `mod('dodge')`, sköld som ger d ≤ 0); en orsak som sätts då kan fortfarande ärvas av en senare dödsstöt utan källa.
 - Överlevnadsläget: `endRun` når nu sällan reservvärdet `'ÖVERLEVNAD'` (ca rad 6445) eftersom orsaken aldrig är tom – synligt i rundhistoriken.
-- Ökenens ruinsalar är mörka.
+- Öknen dämpar fortfarande rekvisitaljuset: `setupV20` (js/game.js ca rad 10698) multiplicerar allt rekvisitaljus i biome `'desert'` med 0,55 (`t.v20dim`). Kokpannan Ȼ ger därför ca 55 % av ett eldfat i öknen, trots c.1.2. Mät ljuset i en riktig ökensal innan något ändras.
+- `t92` ("stjärnkartegolvet ger högre och längre hopp") och "starseer: specialanfall" föll var sin gång i c.1.1 utan koppling till ändringen. Kör HEAD flera gånger och avgör om de är ostadiga.
 - Ingen har lyssnat på ljuden från version 17–20; volymerna är satta efter LUFS-mätningar.
 
 ## Historik
@@ -24,6 +24,8 @@ vad nästa planerare ska tänka på. Håll den kort – ta bort det som är gjor
 - b.1.1: Isdrakens frostnova och Faraonens stråle går genom `bossShotDmg(b, n)` som väktare (10 → 7, 7 → 4,9). Motiv: väktare 2 av 7 dödsfall och backloggens fasta bosskador förbi `GUARD_DMG`. Utfall: incheckad 5bb480a; blindtestet `tl_b_1_1` grönt (kvot 0,700 i båda), ingen skuld.
 - b.1.2: Ormväktarens svanssvep skalas med `reach = b.d.range / BOSSES.serpent.range` (start 3,6 → 2,88, träff 3,8 → 3,04 rutor). Motiv: Den fjädrade ormen var enda väktaren som dödade (lab, ship) men svepte lika långt som bossen. Utfall: incheckad f9c6702; blindtestet `tl_b_1_2` grönt, ingen skuld.
 - b.2.1: Dödsorsaken blir aldrig tom eller kvarglömd. `noteDamage` returnerar sin tillskrivning; dödsraden i `hurtPlayer` tar exakt källträff || `run.cause` || tillskrivningen || PROJEKTILER/FÄLLOR/MILJÖN, och `run.cause` töms när spelaren överlever träffen. Motiv: mätningen gav `'?'` för 3 av 13 dödsfall (dream ×2, ship ×1); explosioner, chockvågor, faror m.m. gav `''`, och en gammal orsak (t.ex. väktarhugg) kunde ärvas av en senare dödsstöt. Utfall: incheckad e74e6d1; blindtestet `tl_b_2_1` grönt (16/16, fall A–G), ingen skuld.
+- c.1.1: Stjärnlansen darrar inte längre vid laddning: darrningen i `weaponFrame()` gäller bara `wp.hammer` (ny krok `__game.weaponFrame`). Motiv: lansen fick `WS.hcharge = lcharge/1,2` och skakade från 70 % laddning (dx varierade 2,39 bildpunkter) fast den saknar hammarens tröskel vid 0,7. Utfall: incheckad cafe6ac; blindtestet `tl_c_1_1` grönt (lansen 0,000, hammaren 2,39), ingen skuld.
+- c.1.2: Ökenens kokpannor Ȼ lyser som eldfaten de ersätter (`light: 1.3, lightR: 7`; rekvisita får `r: d.lightR || 4`). Motiv: i samma bana gav eldfatet 0,80/0,34 och kokpannan 0,12/0 i ljus 3/5 rutor bort; ökensalar mätte 30–45 i medelljushet mot 43–77 i frostfästet. Utfall: incheckad c250040; blindtestet `tl_c_1_2` grönt (0,803 mot 0,803), ingen skuld. Granskningen påpekade att testet mätte i `'dungeon'` och missade ökendämpningen (se backloggen).
 
 ## Lärdomar
 - Ett test som ställer en fiende precis på en gräns (t.ex. 1,2 rutor från en sax) går sönder när gränsen ändras – testa beteendet, inte konstanten.
@@ -33,3 +35,4 @@ vad nästa planerare ska tänka på. Håll den kort – ta bort det som är gjor
 - För en räckviddsändring: kräv ett motfaktiskt utfall på samma avstånd (väktaren missar på 3,4 rutor, bossens räckvidd träffar där) plus en kontroll att det fortfarande träffar nära. Då visar testet att det är skalningen som avgör, inte slumpen eller ett trasigt anfall.
 - När mätningens orsaker är tomma eller kan vara inaktuella: rätta mätinstrumentet innan fler balansändringar väljs efter det, och kräv fallvisa scenarier (en per skadekälla, plus överlevnad följd av död) så att testet visar vilken orsak som bokförs.
 - Artefaktbygget måste provas med `tools/artifact/tart2.mjs` och `tartm.mjs` (telefon) före varje publicering.
+- Mät i det sammanhang där problemet rapporterades (samma biom, samma våningstyp). Ett test i en neutral bana går förbi biomspecifika multiplikatorer, så det kan bli grönt utan att det verkliga problemet blir löst. Sök efter `biome ===` i koden innan uppställningen väljs.
