@@ -292,3 +292,15 @@ cd retrofps/tools/weapon-frames
 node render-static.mjs fp scimitar,trapthrower
 python3 pack.py xframes ../../ scimitar,trapthrower   # övriga poster i js/weapons.js lämnas orörda
 ```
+
+Version 21: pixelstil. De formbyggda vapnen (version 5 och framåt) körs genom `pixelstyle.py`, som ger dem de äldre vapnens
+grova, slitna look: gryn, repor, rost, träådring, mörk kontur, kantglans, ordnad dithering och en fast smutsig palett.
+Bara RGB ändras – storlek, rutor och alfa är orörda, så `js/weapons.js` behöver inte ändras. De ostilade originalen ligger i
+`orig_v20/`; filtret är inte idempotent, så kör alltid därifrån. Se filhuvudet i `pixelstyle.py` för alla flaggor.
+
+```bash
+python3 pixelstyle.py --all                                                   # orig_v20/{fp,pick}_*.png -> assets/gfx/
+python3 pixelstyle.py orig_v20/fp_axe.png ../../assets/gfx/fp_axe.png         # ett vapen
+python3 pixelstyle.py ny/fp_x.png ../../assets/gfx/fp_x.png --opts smoke      # inritad krutrök lämnas ren
+```
+Kontaktark före/efter ligger i `pixelstyle_ark/`, skärmbilder ur spelet tas med `node tools/gfx/vapen/stil.mjs`.
