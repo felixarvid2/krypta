@@ -4934,10 +4934,12 @@ function openAltar() {
 function heal(n, silent) { if (dmod('gold')) n *= 0.7; const before = P.hp; if (!silent) lvlStat.healed = (lvlStat.healed || 0) + 1; P.hp = Math.max(P.hp, Math.min(maxHp(), P.hp + n)); return P.hp - before; }
 // kind: 'melee' | 'proj' | undefined
 function hurtPlayer(d, fx0, fy0, kind) {
-  if (params.has('god') || state !== 'play' || P.iframe > 0) return;
-  if (Math.random() < mod('dodge')) { say('UNDVEK!', 0.8); play('whoosh', 0.4, 1.5); return; }
+  if (params.has('god') || state !== 'play') return;
+  // träffar som studsar av glömmer sin orsak, så en senare dödsstöt inte ärver den
+  if (P.iframe > 0) { run.cause = ''; return; }
+  if (Math.random() < mod('dodge')) { run.cause = ''; say('UNDVEK!', 0.8); play('whoosh', 0.4, 1.5); return; }
   d *= diff().dmg * Math.max(0.15, 1 + mod('damageTaken')) * (dmod('glass') ? 1.5 : 1);
-  d = shieldDmg(d, fx0, fy0, kind); if (d <= 0) return;
+  d = shieldDmg(d, fx0, fy0, kind); if (d <= 0) { if (state === 'play') run.cause = ''; return; }
   if (kind === 'proj') d *= Math.max(0, 1 - mod('projectileResist'));
   if (kind === 'melee') d *= Math.max(0, 1 - mod('meleeResist'));
   P.shieldT = 4;
