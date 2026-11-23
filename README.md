@@ -150,6 +150,16 @@ Spelare och gränssnitt
 - **Menyer:** startskärmen är en lodrät lista (PLAY, MODES, CUSTOMIZE, COLLECTIONS, SETTINGS) med undermenyer; CUSTOMIZE har en rad per inställning med ◀ ▶; pausen sex val; dödsskärm med RETRY/MENU; nivåslut med uppräkning och betyg; affär, kortval och andra dialoger visar ikon + namn + pris och beskrivningen bara för det markerade valet.
 - **Verktyg:** `node tools/ui/shots.mjs <etikett>` tar skärmdumpar på dator, liggande och stående telefon (`LANG_UI=sv` för svenska). Tester: t97 (HUD), t98 (pek), t99 (menyer), t100 (dialoger), t101 (lägen och tillbaka-flöden), t102 (språket).
 
+## Grafik och animationer
+
+All rörelse är procedurell eller ritad i kod (inga nya renderingar). Varje del har ett eget block i `js/game.js` och en egen krok i `window.__game` med tillstånd, av/på och mätning. Allt det tunga stängs av med `settings.lowfx` (och det automatiska lågeffektläget); `noFlash`, `shake`, `bob` och minskad rörelse respekteras.
+
+- **Vapnen (`__game.wfx`, `wproj`):** omladdning per vapentyp (magasin ut/in, pump med patroner, bruten pipa, tunga vapen, armborst, musköt), aktiv omladdning med snärt, vapenbyte med överslag, hylsor (röda för hagel), mynningsrök och glödande pipa, landningsdipp, språng- och sidledslutning, inspektion, svepspår för närstridsvapen och viloliv (glöd vid magiska vapens spets, vibrerande sågar, tändlåga, guldglimt på legendariska). Explosioner i flera steg (blixt, eldklot, rökmoln som dröjer, chockvåg, skräp, ljus som falnar), rök- och ljusspår på projektiler, fiendeskott med svans i sin färg och nedslag efter väggens material.
+- **Fienderna (`__game.gfxE`):** squash & stretch och knuff vid träff, glöd före skott, andning och gångstuds, dödsglid med blodpöl, gibs efter material (kött, ben, slem, metall), spawn ur golvet, flygarskuggor, synliga statuseffekter (brinner, fryst, gift, blöder, rädd, bedövad, el), kontur på eliter, frysta fiender splittras i is och brinnande förkolnas. Bossar: tyngre träffar, fasbyte med chockvåg, död i flera steg och ett intro med band och namn som slår in.
+- **Världen (`__game.gfxW`):** rinnande och pulserande vätskor, fladdrande ljus (styrka och radie), åska, luftpartiklar per biom, föremål som snurrar och glimtar, kistlock, dörr- och väggdamm, fällor, spakar och tryckplattor som rör sig, fotsteg som plaskar och dammar, en vajande fana, sotmärken efter explosioner, utgången som en ljuspelare och fiender som plaskar eller fräser när de dör i vätska.
+- **Skärmen och menyerna (`__game.meny`):** levande kameraflykt genom en riktig bana bakom startskärmen, toning mellan våningar, HUD-juice (blink, skak, "+N"), skadebåge åt rätt håll, pulserande vinjett vid låg hälsa, färgade kanter vid upplockning, fartlinjer, gift/eld/under ytan, dödskamera som glider ned och lägger sig på sidan, "YOU DIED" som slår in, uppräkning och betygsstämpel, kort som delas ut och lyfts.
+- **Verktyg och tester:** skript för före/efter-bilder och mätning i `tools/gfx/<del>/` (bilderna hamnar i `out/`, som inte checkas in). Tester: t103 (vapen), t104 (fiender), t105 (världen), t106 (skärmen och menyerna), t107 (projektiler och explosioner).
+
 ## Förbättringsloopen
 
 Spelet har en självförbättrande loop för Claude Code i grafform: **mät → planera → (bygg ∥ testa blint) → sammanför och revidera → granska → checka in → lär**.
