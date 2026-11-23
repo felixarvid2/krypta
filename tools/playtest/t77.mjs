@@ -45,6 +45,10 @@ ok(idx.runebook >= 0 && idx.steamcannon >= 0, 'de två nya vapnen finns ' + JSON
 await ev(i => { const g = __game; for (const k of Object.values(i)) { g.P.has[k] = true; g.P.mags[k] = g.WEAPONS[k].mag; } g.P.ammo.ink = 30; g.P.ammo.fuel = 100; }, idx);
 await ev(i => { const g = __game, e = g.ents().find(o => o.type === 'ų' && !o.dead); g.P.x = e.x - 3; g.P.y = e.y; g.P.a = 0; g.P.inkT = 0; g.switchWeapon(i.runebook); e.alert = true; window.__s = e; }, idx);
 await wait(800); const sh0 = await ev(() => window.__s.hp);
+// testsöm: T77_BOK=1 ställer den flygande boken på skottlinjen
+if (process.env.T77_BOK) await ev(() => { const P = __game.P, b = __game.ents().find(o => o.type === 'Ų' && !o.dead); if (b) { b.x = P.x + 1.5; b.y = P.y; } });
+// ingen annan fiende nära spelaren får fånga eller locka runan (ž sparas till ångkanonen)
+await ev(() => { const P = __game.P; for (const e of __game.ents()) if (e !== window.__s && e.type !== 'ž' && !e.dead && Math.hypot(e.x - P.x, e.y - P.y) <= 6) e.dead = true; });
 await ev(() => { __game.WS.cd = 0; __game.fire(); }); await wait(700);
 ok(await ev(() => window.__s.hp < window.__s.maxHp || window.__s.dead), 'runan träffar');
 await ev(() => { __game.P.wardCd = 0; __game.setMouse(false, true); }); await wait(200); await ev(() => __game.setMouse(false, false));
