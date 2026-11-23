@@ -3,7 +3,9 @@
 // Varje runda: genererade våningar (Gen), kort som ger bonusar (Cards/CardUI), guld, butik, elitfiender
 // och en boss på sista våningen. Döden avslutar rundan; själar ger upplåsningar till nästa.
 (() => {
-const W = 320, H = 200, HUD_H = 34, VH = H - HUD_H, HORIZON = VH >> 1;
+const W = 320, H = 200, HUD_H = 0, VH = H - HUD_H, HORIZON = VH >> 1;
+const WOY = HORIZON - 83; // vapnen sänks lika mycket som horisonten
+const PSC = 166; // projektionens skala (den gamla vyhöjden): vyn fyller hela höjden utan att väggarna sträcks
 const HUD_CELLS = [0, 60, 112, 198, 266]; // statuslistens fält: hälsa, skydd, ammo, vapen, våning
 let BASE_PLANE = 0.75; // sätts från synfältet (FOV) i inställningarna
 const applyFov = () => { BASE_PLANE = Math.tan(clamp(settings.fov, 60, 100) * Math.PI / 360); };
@@ -1691,7 +1693,7 @@ function render() {
   for (let y = 0; y < VH; y++) {
     const isFloor = y > hor;
     if (y === hor) { for (let x = 0; x < W; x++) px[y * W + x] = 0xff000000 | (fogB << 16) | (fogG << 8) | fogR; continue; }
-    const rowDist = isFloor ? VH * camZ / (y - hor) : VH * (1 - camZ) / (hor - y);
+    const rowDist = isFloor ? PSC * camZ / (y - hor) : PSC * (1 - camZ) / (hor - y);
     const dim = isFloor ? 1 : 0.62;
     const x0 = P.x + (dirX - plX) * rowDist, y0 = P.y + (dirY - plY) * rowDist;
     const stx = (2 * plX * rowDist) / W, sty = (2 * plY * rowDist) / W;
@@ -1717,7 +1719,7 @@ function render() {
     const hit = cast(P.x, P.y, rdx, rdy, 48, true);
     const perp = Math.max(0.05, hit.dist);
     zbuf[x] = perp;
-    const scale = VH / perp;
+    const scale = PSC / perp;
     const top = hor - scale * (1 - camZ), lh = scale;
     const t = hit.cell === 'D' ? tex.door_wood : hit.cell === 'G' || hit.cell === '|' ? tex.door_metal_gate : hit.cell === ']' ? tex.door_locked : hit.cell === '*' ? tex[wallTexFor[lvl.secretWall] || wallTexFor[1]]
       : hit.cell === '9' && (hit.mx * 7 + hit.my * 3) % 3 === 0 ? tex.wall_house_window : tex[wallTexFor[hit.cell]]; // vart tredje hus har ett upplyst fönster
@@ -1901,7 +1903,7 @@ function drawSprite(img, wx, wy, size, z, flip, fixedLight, whiteFlash = 0, minL
   const inv = 1 / (plX * dirY - dirX * plY);
   const tx = inv * (dirY * rx - dirX * ry), ty = inv * (-plY * rx + plX * ry);
   if (ty < 0.12) return;
-  const scale = VH / ty;
+  const scale = PSC / ty;
   const sh = scale * size, sw = sh * img.w / img.h;
   const cx = (W / 2) * (1 + tx / ty);
   const bottom = hor + scale * (camZ - z);
@@ -1946,7 +1948,7 @@ function project(wx, wy, z) {
   if (ty < 0.2) return null;
   const sx = Math.round((W / 2) * (1 + tx / ty));
   if (sx < 0 || sx >= W || zbuf[sx] < ty) return null;
-  return { sx, sy: hor + (VH / ty) * (camZ - z), scale: VH / ty };
+  return { sx, sy: hor + (PSC / ty) * (camZ - z), scale: PSC / ty };
 }
 function enemyFrame(e) {
   const set = enemyFrames[e.type];
@@ -2058,6 +2060,7 @@ function drawWeapon() {
   const breathe = settings.bob === false ? 0 : Math.sin(tmr * 1.7) * 1.3 * (1 - Math.min(1, amp)); // vapnet andas i vila
   const insp = WS.inspect > 0 ? Math.sin(Math.min(1, (1.6 - WS.inspect) / 1.6) * Math.PI) : 0;
   const ox = Math.round(Math.sin(P.bob) * 4 * amp * (settings.bob === false ? 0.3 : 1) - WS.swayX + dx - insp * 34), oy = Math.round(P.runK * 12 + insp * 10 + P.jv * -2 + Math.abs(Math.cos(P.bob)) * 3 * amp * (settings.bob === false ? 0.3 : 1) - WS.swayY + dy + breathe + shakeAmt() * 4 * Math.sin(tmr * 41) + P.pitch * 0.6 + Math.sin(Math.min(1, WS.kick / 0.3) * Math.PI) * 14);
+  const oy2 = oy + WOY; // vapenbladen ritades för den gamla vyhöjden
   const img = WF[WEAPONS[P.weapon].id] ? (legendOf(WEAPONS[P.weapon].id) && wimg[WEAPONS[P.weapon].id + '_legend']) || wimg[WEAPONS[P.weapon].id] : wimg.pistol;
   const L = clamp(lightAt(P.x, P.y) * 1.05 + P.flash * 4, 0.28, 1.25);
   if (wcan.width !== f.w || wcan.height !== f.h) { wcan.width = f.w; wcan.height = f.h; }
@@ -2067,11 +2070,11 @@ function drawWeapon() {
   else if (L > 1) { wctx.globalCompositeOperation = 'source-atop'; wctx.fillStyle = `rgba(255,190,120,${((L - 1) * 0.6).toFixed(3)})`; wctx.fillRect(0, 0, f.w, f.h); }
   { const rs = curRunes(); if (rs.length) { const t = RUNES[rs[(tmr | 0) % rs.length]].tint; wctx.globalCompositeOperation = 'source-atop'; wctx.fillStyle = `rgba(${t[0]},${t[1]},${t[2]},${(0.1 + 0.07 * Math.sin(tmr * 4)).toFixed(3)})`; wctx.fillRect(0, 0, f.w, f.h); } } // runans glöd
   if (settings.skin && SKINS[settings.skin] && skinOpen(settings.skin)) { wctx.globalCompositeOperation = 'source-atop'; wctx.fillStyle = SKINS[settings.skin].col; wctx.fillRect(0, 0, f.w, f.h); } // vapenfärg
-  ctx.drawImage(wcan, f.x + ox, f.y + oy);
+  ctx.drawImage(wcan, f.x + ox, f.y + oy2);
   if (WS.shot < 0.06 && state === 'play') { // mynningsflamma vid mynningen i just den här bildrutan
     const wp = WEAPONS[P.weapon], m = f.muzzle[idx], s = 34 * wp.flash * (1 - WS.shot / 0.06 * 0.4);
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
-    ctx.translate(m[0] + ox, m[1] + oy); ctx.rotate(Math.random() * TAU);
+    ctx.translate(m[0] + ox, m[1] + oy2); ctx.rotate(Math.random() * TAU);
     ctx.drawImage(wimg.flash, -s / 2, -s / 2, s, s);
     ctx.restore();
   }
