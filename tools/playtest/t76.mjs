@@ -4,8 +4,9 @@ const PORT = 8900 + Math.floor(Math.random() * 90);
 const { pg, shot, ev, wait, ok, done } = await setup(PORT, 'out/t76');
 await pg.goto(`http://localhost:${PORT}/index.html?nolock=1`); await pg.waitForFunction('!document.getElementById("start").disabled', { timeout: 90000 });
 const open = () => ev(() => { const g = __game, P = g.P, m = g.mapRef(); const ok = (x, y) => g.freeSpot(x, y, 0.35);
-  for (let y = 2; y < m.length - 2; y++) for (let x = 2; x < m[0].length - 2; x++) { const px = x + 0.5, py = y + 0.5; if (!ok(px, py)) continue; if (ok(px + 3, py) && g.hasLOS(px, py, px + 3, py) && ok(px + 1.5, py)) { P.x = px; P.y = py; P.a = 0; return true; } } return false; });
-await ev(() => { __game.profile.tutDone = true; __game.profile.runs = 3; __game.settings.cmode = ''; __game.begin('new'); }); await wait(1200); await pg.keyboard.press('Escape'); await wait(1200);
+  const firm = (px, py) => { for (let x = px; x <= px + 3; x += 0.25) if (g.voidAt(x, py) || g.deepAt(x, py)) return false; return true; }; // hela sträckan utan tomrum och djupt vatten
+  for (let y = 2; y < m.length - 2; y++) for (let x = 2; x < m[0].length - 2; x++) { const px = x + 0.5, py = y + 0.5; if (!ok(px, py)) continue; if (ok(px + 3, py) && g.hasLOS(px, py, px + 3, py) && ok(px + 1.5, py) && firm(px, py)) { P.x = px; P.y = py; P.a = 0; return true; } } return false; });
+await ev(s => { __game.profile.tutDone = true; __game.profile.runs = 3; __game.settings.cmode = ''; if (s) document.getElementById('seed').value = s; __game.begin('new'); }, process.env.T76_SEED1 || ''); await wait(1200); await pg.keyboard.press('Escape'); await wait(1200);
 await ev(() => { for (const e of __game.ents()) e.dead = true; });
 ok(await open(), 'en öppen plats hittades');
 // avrättning: vacklande fiende + spark
