@@ -1090,7 +1090,7 @@ function recomputeMods() {
 }
 const up = k => UP.has(k) && !!run && WEAPONS[P.weapon].id === run.pact;
 
-const plain = s => String(s).normalize('NFC').replace(/[^\u0000-\u007fÅÄÖåäö]/g, ch => ch.normalize('NFD').replace(/[\u0300-\u036f]/g, '')); // å, ä och ö finns i fonten och behålls; andra accenter tas bort
+const plain = s => String(window.I18N ? I18N.t(s) : s).normalize('NFC').replace(/[^\u0000-\u007fÅÄÖåäö]/g, ch => ch.normalize('NFD').replace(/[\u0300-\u036f]/g, '')); // å, ä och ö finns i fonten och behålls; andra accenter tas bort
 function say(t, d = 2.5) { const pt = plain(t), ex = msgs.find(m => m.text === pt); if (ex) { ex.t = Math.max(ex.t, d); return; } msgs.push({ text: pt, t: d, d }); if (msgs.length > 3) msgs.splice(1, msgs.length - 3); /* kö: det första syns, de två senaste väntar */ if (settings.tts && t && d >= 2.5 && state !== 'title') speak(t); }
 
 // ---------- Runda och våningar ----------
@@ -2120,17 +2120,22 @@ function enemyUnderCrosshair() {
 let HL = null, hudGoldV = null, hudGoldRun = null, goldPop = null, fxIcons = []; const fxMax = {};
 const hudTxtCol = () => ({ blue: '#b0ccff', green: '#b0e8b0', gold: '#ffd890' })[settings.hudTheme] || '#e8d9b0'; // HUD-temat färgar siffrorna
 function mapTop() { return isTouch() ? 3 + (settings.bigHud ? 30 : 22) + 3 : 4; } // minikartan: under ammo-hörnet på pekskärm
+let hudIX = 0, hudIXT = -9;
+function hudInset() { // stående telefon: bilden är bredare än skärmen och kanterna beskärs (index.html), så HUD:en flyttas in lika mycket
+  if (Math.abs(tmr - hudIXT) > 0.5) { hudIXT = tmr; try { const r = canvas.getBoundingClientRect(); hudIX = r.width > innerWidth + 2 ? Math.ceil((r.width - innerWidth) / 2 / r.width * W) : 0; } catch (e) { hudIX = 0; } }
+  return hudIX;
+}
 function hudLay() { // hörnens rutor i spelkoordinater (320×200); pekskärm: överst så att nedre delen är fri för tummarna
   const t = isTouch(), big = !!settings.bigHud, w = big ? 112 : 80, h = big ? 30 : 22, y = t ? 3 : H - 2 - h, ss = big ? 2 : 1;
-  const ms = settings.mapScale || 3, size = (2 * Math.round(24 / ms) + 1) * ms;
-  const L = { t, big, hp: { x: 4, y, w, h }, ammo: { x: W - 4 - w, y, w, h }, map: { x: W - 4 - size, y: mapTop(), w: size, h: size } };
+  const ms = settings.mapScale || 3, size = (2 * Math.round(24 / ms) + 1) * ms, ix = hudInset();
+  const L = { t, big, ix, hp: { x: 4 + ix, y, w, h }, ammo: { x: W - 4 - w - ix, y, w, h }, map: { x: W - 4 - size - ix, y: mapTop(), w: size, h: size } };
   const potOn = !!(P.potions && P.potions.length) || !!settings.potHud, lampOn = P.battery !== undefined && (P.lamp || P.battery < 15);
   let c; // vänster stapel: drycker, lampa, effekter (uppåt från hälsan på dator, nedåt på pekskärm)
   if (t) { c = y + h + 3; L.potY = c; if (potOn) c += 14; L.lampY = c; if (lampOn) c += 7; L.fxY = c; }
   else { c = y - 2; if (potOn) c -= 13; L.potY = c; if (lampOn) c -= 7; L.lampY = c + 1; L.fxY = c - 12; }
   if (t) { L.exY = y + 2; L.exR = L.ammo.x - 4; L.noteR = L.ammo.x - 4; L.noteY = y + 13; L.ab = { x: L.map.x - 22, y: L.map.y + 2 }; L.st = { x: L.map.x - 34, y: L.map.y + 34 }; }
   else { L.exY = y - 9 * ss - 1; L.exR = W - 5; L.ab = { x: W - 22, y: L.exY - 21 }; L.st = { x: W - 64, y: L.ab.y + 14 }; L.noteR = W - 5; L.noteY = L.ab.y - 11; }
-  L.msgY = t ? y + h + 3 : 5; L.row2 = L.msgY + 11; L.msgW = t ? 23 : 25; L.styleY = L.map.y + L.map.h + 42; // överst i mitten: meddelanderaden och en andra rad (nivå, våg, arena, rampljus …)
+  L.msgY = t ? y + h + 3 : 5; L.row2 = L.msgY + 11; L.msgW = t ? 23 - Math.ceil(ix / 4) : 25; L.styleY = L.map.y + L.map.h + 42; // överst i mitten: meddelanderaden och en andra rad (nivå, våg, arena, rampljus …)
   return L;
 }
 function hudIcon(g, kind, x, y, col, s = 1) { // små pixelikoner: kors, sköld, granat, nyckel, stjärna, omladdning
@@ -2172,17 +2177,32 @@ function drawAmmoCorner(g, L) { // magasinet stort + "/reserv" litet; granater, 
   else if (run.gold !== hudGoldV) { const d = run.gold - hudGoldV; hudGoldV = run.gold; if (d > 0) goldPop = { v: (goldPop && goldPop.t > 0.3 ? goldPop.v : 0) + d, t: 1.8 }; }
   if (goldPop && goldPop.t > 0) { goldPop.t -= 1 / 60; const s = `+${goldPop.v}`; txt(s, Math.round(L.noteR - textW(s)), Math.round(L.noteY - (L.t ? 0 : (1.8 - goldPop.t) * 5)), '#ffd24a', 1, true, Math.min(1, goldPop.t * 1.5)); }
 }
-function drawFxRow(g, L) { // aktiva effekter: små färgade ikoner/förkortningar med nedräkningsstapel vid hälsan, högst fyra
+const FX_BITS = { // effektradens egna små symboler (i stället för bokstavsförkortningar) när det inte finns någon ikonbild
+  fart: ['#..#...', '.#..#..', '..#..#.', '...#..#', '..#..#.', '.#..#..', '#..#...'], // »
+  snigel: ['....###.', '...#...#', '#..#.#.#', '.#.#..##', '.##.###.', '########'], // långsam
+  sikte: ['..###..', '.#.#.#.', '#..#..#', '####.##', '#..#..#', '.#.#.#.', '..###..'], // teleskopet
+  skold: ['.#####.', '#######', '#######', '#######', '.#####.', '..###..', '...#...'], // osårbar
+  tid: ['#######', '.#...#.', '..#.#..', '...#...', '..###..', '.#####.', '#######'], // tidsstopp
+  gift: ['...#...', '..###..', '.#####.', '.#####.', '#######', '#######', '.#####.'],
+};
+function fxSym(g, k, x, y, col) { const b = FX_BITS[k], w = b[0].length, x0 = x + ((17 - w) >> 1), y0 = y + ((8 - b.length) >> 1); for (const [c, d] of [['#000', 1], [col, 0]]) { g.fillStyle = c; b.forEach((r, j) => { for (let i = 0; i < w; i++) if (r[i] === '#') g.fillRect(x0 + i + d, y0 + j + d, 1, 1); }); } }
+const tintCache = new Map();
+function tintImg(im, col) { // vit ikon i effektens färg (en kopia per ikon och färg)
+  const k = im.src + col; let c = tintCache.get(k);
+  if (!c) { c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const t = c.getContext('2d'); t.drawImage(im, 0, 0); t.globalCompositeOperation = 'source-in'; t.fillStyle = col; t.fillRect(0, 0, c.width, c.height); tintCache.set(k, c); }
+  return c;
+}
+function drawFxRow(g, L) { // aktiva effekter: små färgade ikoner med nedräkningsstapel vid hälsan, högst fyra
   const ch = [], add = (k, t, col, ic) => { if (!(t > 0)) { fxMax[k] = 0; return; } fxMax[k] = Math.max(fxMax[k] || 0, t); ch.push({ t, m: fxMax[k], col, ic }); };
-  add('haste', P.haste, '#9fe060', 'FA'); add('rage', P.rageT, POTIONS.rage.color, 'potion_rage'); add('ghost', P.ghostT, POTIONS.ghost.color, 'potion_ghost'); add('speed', P.speedT, POTIONS.speed.color, 'potion_speed');
-  add('slow', P.slowT, '#80b0ff', 'LÅ'); add('scope', P.scopeT, '#c0b0ff', 'TE'); if (!hudImg.icon_poison2) add('poison', P.poisonT, '#9fe060', 'GI'); // TE = teleskopet
-  if (up('bullettime') && WS.aim > 0.8) ch.push({ col: '#80b0ff', ic: hudImg.icon_time ? 'icon_time' : 'TS' });
-  if (P.iframe > 0) ch.push({ col: '#ffffff', ic: 'OS' });
+  add('haste', P.haste, '#9fe060', hudImg.icon_wind ? '~icon_wind' : 'fart'); add('rage', P.rageT, POTIONS.rage.color, 'potion_rage'); add('ghost', P.ghostT, POTIONS.ghost.color, 'potion_ghost'); add('speed', P.speedT, POTIONS.speed.color, 'potion_speed');
+  add('slow', P.slowT, '#80b0ff', 'snigel'); add('scope', P.scopeT, '#c0b0ff', 'sikte'); if (!hudImg.icon_poison2) add('poison', P.poisonT, '#9fe060', 'gift'); // ~ = vit ikon som färgas
+  if (up('bullettime') && WS.aim > 0.8) ch.push({ col: '#80b0ff', ic: hudImg.icon_time ? 'icon_time' : 'tid' });
+  if (P.iframe > 0) ch.push({ col: '#ffe9a8', ic: 'skold' });
   for (const im of fxIcons) ch.push({ img: im });
   ch.slice(0, 4).forEach((c, i) => {
-    const x = L.hp.x + i * 19, y = L.fxY, im = c.img || hudImg[c.ic];
+    const x = L.hp.x + i * 19, y = L.fxY, tint = c.ic && c.ic[0] === '~', im0 = c.img || hudImg[tint ? c.ic.slice(1) : c.ic], im = im0 && tint ? tintImg(im0, c.col) : im0;
     g.fillStyle = 'rgba(0,0,0,0.45)'; g.fillRect(x, y - 1, 17, 11);
-    if (im) { if (im.height > im.width) g.drawImage(im, x + 5, y - 1, 6, 9); else g.drawImage(im, x + 4, y, 8, 8); } else txt(c.ic, x + 1, y + 1, c.col, 1, true, 0.95);
+    if (im) { if (im.height > im.width) g.drawImage(im, x + 5, y - 1, 6, 9); else g.drawImage(im, x + 4, y, 8, 8); } else if (FX_BITS[c.ic]) fxSym(g, c.ic, x, y, c.col);
     if (c.m) { g.fillStyle = '#000a'; g.fillRect(x, y + 9, 17, 1); g.fillStyle = c.col; g.fillRect(x, y + 9, Math.round(17 * c.t / c.m), 1); }
   });
 }
@@ -2240,7 +2260,7 @@ function drawHUD() {
   if (levelBanner > 0 && bossBanner <= 0 && state === 'play') { // titelkortet: namnet stort, våningen litet och högst en kort rad till
     const a = Math.min(1, levelBanner, (3 - levelBanner) * 3), sub = lvl.hub ? 'MELLAN RUNDORNA' : run.abyss ? `AVGRUND ${run.depth}` : (cycleOf(run.depth) ? `VARV ${cycleOf(run.depth) + 1} · ` : '') + `VÅNING ${run.depth}`;
     ctx.font = '16px "PressStart2P"'; const w = ctx.measureText(plain(lvl.name)).width;
-    if (w < W - 8) txt(lvl.name, (W - w) / 2, 40, '#e8d9b0', 2, true, a); else txt(lvl.name, (W - textW(lvl.name)) / 2, 44, '#e8d9b0', 1, true, a);
+    if (w < W - 124 - 2 * hudIX) txt(lvl.name, (W - w) / 2, 40, '#e8d9b0', 2, true, a); else txt(lvl.name, (W - textW(lvl.name)) / 2, 44, '#e8d9b0', 1, true, a);
     txt(sub, (W - textW(sub)) / 2, 60, '#c9a87a', 1, true, a * 0.9);
     const ex = floorEvent ? [EVENTS[floorEvent].name, '#ff7060'] : run.floorCurse ? ['FÖRBANNAD VÅNING', '#c080ff'] : (!run.practice && run.depth > profile.bestDepth && profile.bestDepth > 1) ? ['DJUPARE ÄN NÅGONSIN!', '#9fe0a0'] : run.depth === 1 && run.modifier ? [run.modifier.name + (run.modifier2 ? ' · ' + run.modifier2.name : ''), '#ff9050'] : null;
     if (ex) txt(ex[0], (W - textW(ex[0])) / 2, 72, ex[1], 1, true, a);
@@ -2252,7 +2272,7 @@ function drawHUD() {
   { const m = msgs[0], big = !!settings.bigHud; // meddelanden: högst en rad åt gången överst i mitten; långa bläddras rad för rad
     if (m && (state === 'play' || big) && (big || (levelBanner <= 0.5 && bossBanner <= 0.5))) {
       const k = big ? 2 : 1, my = hb && state === 'play' ? L.bossMsgY : L.msgY + (cmode('clock') || (run && run.maze) ? 20 : 0);
-      const lines = wrapText(m.text, big ? (L.t ? 17 : 19) : L.msgW), n = lines.length, d = m.d || 2.5, ln = lines[Math.min(n - 1, Math.floor(clamp(1 - m.t / d, 0, 0.999) * n))] || '', w = textW(ln) * k, a = Math.min(1, m.t * 2);
+      const lines = wrapText(m.text, big ? (L.t ? 17 - Math.ceil(L.ix / 8) : 19) : L.msgW), n = lines.length, d = m.d || 2.5, ln = lines[Math.min(n - 1, Math.floor(clamp(1 - m.t / d, 0, 0.999) * n))] || '', w = textW(ln) * k, a = Math.min(1, m.t * 2);
       if (big) { g.fillStyle = `rgba(0,0,0,${0.55 * a})`; g.fillRect(Math.round((W - w) / 2) - 3, my - 2, w + 6, 19); }
       txt(ln, Math.round((W - w) / 2), my, '#ffe9a8', k, true, a);
     } }
@@ -2307,8 +2327,8 @@ function drawHudExtras(g) { // uthållighet, granater, nycklar, mål, pilar och 
   if (settings.objective !== false && showMap !== 2 && levelBanner <= 0 && bossBanner <= 0 && !(boss && !boss.dead) && !(guardianE && !guardianE.dead && !guardianE.dying)) { const obj = objective(); if (obj) { // målet: smal text under kartan, 4 s när våningen börjar och 2 s när det gör framsteg, sedan borta
     const key = /INOM|VÅG OM/.test(obj) ? obj.replace(/\d/g, '') : obj; // nedräkningar räknas inte som framsteg varje sekund
     if (key !== objLast || objLvl !== lvl) { objDur = objLast === '' || objLvl !== lvl ? 4 : 2; objLast = key; objT = tmr; objLvl = lvl; }
-    const a = clamp((objDur - (tmr - objT)) * 2, 0, 0.95); if (a > 0) { const s = shortObjective(obj), x = W - 4 - textW(s); txt(s, x, oy, '#e8d9b0', 1, true, a); g.globalAlpha = a; g.fillStyle = '#ffd24a'; g.fillRect(x - 6, oy + 2, 3, 3); g.fillRect(x - 5, oy + 1, 1, 5); g.fillRect(x - 7, oy + 3, 5, 1); g.globalAlpha = 1; } } } // EN kort rad med en liten målmarkör
-  if (settings.timer) { const t = fmtTime(levelTime); txt(t, W - 4 - textW(t), oy + 10, '#c9a87a', 1, true, 0.8); }
+    const a = clamp((objDur - (tmr - objT)) * 2, 0, 0.95); if (a > 0) { const s = shortObjective(obj), x = W - 4 - hudIX - textW(s); txt(s, x, oy, '#e8d9b0', 1, true, a); g.globalAlpha = a; g.fillStyle = '#ffd24a'; g.fillRect(x - 6, oy + 2, 3, 3); g.fillRect(x - 5, oy + 1, 1, 5); g.fillRect(x - 7, oy + 3, 5, 1); g.globalAlpha = 1; } } } // EN kort rad med en liten målmarkör
+  if (settings.timer) { const t = fmtTime(levelTime); txt(t, W - 4 - hudIX - textW(t), oy + 10, '#c9a87a', 1, true, 0.8); }
   if (challenge) { const t = challenge.wave ? `VÅG ${challenge.wave}/${challenge.max} · ${challenge.alive.filter(e => !e.dead).length} KVAR` : 'GÖR DIG REDO'; txt(t, (W - textW(t)) / 2, HL.row2, '#ff9050'); } // under meddelanderaden
   // pilar vid kanten mot väktare, eliter och bytet utanför bilden
   for (const e of ents) {
@@ -2365,14 +2385,24 @@ function screenshot() { // sparar bilden som PNG
 function textW(s) { ctx.font = '8px "PressStart2P"'; return ctx.measureText(plain(s)).width; }
 function txt(s, x, y, col, scale = 1, shadow = true, alpha = 1) {
   const g = ctx; s = plain(s); g.font = `${8 * scale}px "PressStart2P"`; g.globalAlpha = alpha;
-  if (shadow) { g.fillStyle = '#000'; g.fillText(s, x + 1, y + 1); }
-  g.fillStyle = col; g.fillText(s, x, y); g.globalAlpha = 1;
+  const ring = /[Åå]/.test(s) ? ringFix(g, s, x, y, scale) : null; if (ring) s = s.replace(/Å/g, ' ').replace(/å/g, 'a');
+  if (shadow) { g.fillStyle = '#000'; g.fillText(s, x + 1, y + 1); if (ring) ring(1); }
+  g.fillStyle = col; g.fillText(s, x, y); if (ring) ring(0); g.globalAlpha = 1;
+}
+function ringFix(g, s, x, y, u) { // Å/å: fontens ring är en enda pixel som smälter ihop med A:t i 320×200; här ritas A:t från Ä (utan prickarna) och en egen ring ovanför med en rads mellanrum
+  const al = g.textAlign, bl = g.textBaseline, w = g.measureText(s).width;
+  const x0 = x - (al === 'center' ? w / 2 : al === 'right' || al === 'end' ? w : 0), y0 = y - (bl === 'middle' ? 4 * u : bl === 'top' || bl === 'hanging' ? 0 : 8 * u);
+  const xs = []; for (let i = 0; i < s.length; i++) if (s[i] === 'Å' || s[i] === 'å') xs.push([x0 + g.measureText(s.slice(0, i)).width, s[i] === 'Å']); // monospace: 8·skala px per tecken
+  return d => xs.forEach(([px, big]) => {
+    if (big) { g.save(); g.beginPath(); g.rect(px - 1, y0 + u + d, 8 * u + 2, 8 * u); g.clip(); g.textAlign = 'left'; g.fillText('Ä', px + d, y + d); g.restore(); }
+    g.fillRect(px + 2 * u + d, y0 - 2 * u + d, 3 * u, u); g.fillRect(px + 2 * u + d, y0 - u + d, u, u); g.fillRect(px + 4 * u + d, y0 - u + d, u, u); g.fillRect(px + 2 * u + d, y0 + d, 3 * u, u);
+  });
 }
 function drawMap(mini) {
   if (mini && settings.mapRotate) { // minikartan roterar med spelaren
-    const s = settings.mapScale || 3, r = Math.round(24 / s), size = (2 * r + 1) * s, mt = mapTop(), cx = W - 4 - size / 2, cy = mt + size / 2;
-    ctx.save(); ctx.beginPath(); ctx.rect(W - 4 - size - 2, mt - 2, size + 4, size + 4); ctx.clip();
-    ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(W - 4 - size - 2, mt - 2, size + 4, size + 4);
+    const s = settings.mapScale || 3, r = Math.round(24 / s), size = (2 * r + 1) * s, mt = mapTop(), cx = W - 4 - size / 2 - hudIX, cy = mt + size / 2;
+    ctx.save(); ctx.beginPath(); ctx.rect(W - 4 - size - 2 - hudIX, mt - 2, size + 4, size + 4); ctx.clip();
+    ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(W - 4 - size - 2 - hudIX, mt - 2, size + 4, size + 4);
     ctx.translate(cx, cy); ctx.rotate(-P.a - Math.PI / 2); ctx.translate(-(P.x * s), -(P.y * s));
     drawMapCells(true, s, 0, 0, Math.max(0, (P.x | 0) - r - 4), Math.max(0, (P.y | 0) - r - 4), Math.min(mw, (P.x | 0) + r + 5), Math.min(mh, (P.y | 0) + r + 5));
     ctx.restore(); return;
@@ -2385,13 +2415,13 @@ function drawMapBox(mini) { // automap: bara rutor man har sett. mini = liten ka
     s = settings.mapScale || 3; const r = Math.round(24 / s);
     x0 = clamp((P.x | 0) - r, 0, Math.max(0, mw - 2 * r - 1)); y0 = clamp((P.y | 0) - r, 0, Math.max(0, mh - 2 * r - 1));
     x1 = Math.min(mw, x0 + 2 * r + 1); y1 = Math.min(mh, y0 + 2 * r + 1);
-    ox = W - 4 - (x1 - x0) * s - x0 * s; oy = mapTop() - y0 * s;
+    ox = W - 4 - hudIX - (x1 - x0) * s - x0 * s; oy = mapTop() - y0 * s;
     ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(ox + x0 * s - 2, oy + y0 * s - 2, (x1 - x0) * s + 4, (y1 - y0) * s + 4);
   } else {
-    s = clamp(Math.floor(Math.min((W - 10) / mw, (VH - 10) / mh)), 2, 5); ox = (W - mw * s) / 2 | 0; oy = (VH - mh * s) / 2 | 0;
+    s = clamp(Math.floor(Math.min((W - 10 - 2 * hudIX) / mw, (VH - 10) / mh)), 2, 5); ox = (W - mw * s) / 2 | 0; oy = (VH - mh * s) / 2 | 0;
     ctx.fillStyle = 'rgba(0,0,0,0.72)'; ctx.fillRect(ox - 3, oy - 3, mw * s + 6, mh * s + 6);
     const leg = [['#60d060', 'UTGÅNG'], ['#c080ff', 'PORTAL'], ['#ffe070', 'ANVÄNDBART'], ['#ff6030', 'KRUTFAT'], ['#ffd24a', 'GULD'], ['#ff4030', 'FIENDE'], ['#40ffff', 'MARKÖR (B)']];
-    if (W - (ox + mw * s) > 70) leg.forEach(([c, t], i) => { ctx.fillStyle = c; ctx.fillRect(ox + mw * s + 8, oy + 4 + i * 10, 4, 4); txt(t, ox + mw * s + 15, oy + 2 + i * 10, '#c9a87a', 1, true, 0.9); }); // teckenförklaring
+    if (W - hudIX - (ox + mw * s) > 70) leg.forEach(([c, t], i) => { ctx.fillStyle = c; ctx.fillRect(ox + mw * s + 8, oy + 4 + i * 10, 4, 4); txt(t, ox + mw * s + 15, oy + 2 + i * 10, '#c9a87a', 1, true, 0.9); }); // teckenförklaring
   }
   if (mini) { ctx.save(); ctx.beginPath(); ctx.rect(ox + x0 * s - 2, oy + y0 * s - 2, (x1 - x0) * s + 4, (y1 - y0) * s + 4); ctx.clip(); } // rumsramar får inte rita utanför minikartan
   drawMapCells(mini, s, ox, oy, x0, y0, x1, y1);
@@ -3100,7 +3130,7 @@ function useProp() { // brunnen helar en gång, altaret ger ett förbannat kort 
     }
     if (pr.def.use === 'altar') {
       const curses = Cards.ALL.filter(c => c.curse && !run.owned.includes(c.id));
-      openUI(() => CardUI.choice({ title: 'DET FÖRBANNADE ALTARET', subtitle: 'BLOD FÖR GULD. ALTARET GER 60 GULD OCH ETT SLUMPAT FÖRBANNAT KORT.', cancel: 1,
+      openUI(() => CardUI.choice({ title: 'DET FÖRBANNADE ALTARET', subtitle: 'BLOD FÖR GULD', cancel: 1,
         options: [{ label: 'OFFRA', text: '+60 GULD, +1 FÖRBANNELSE' }, { label: 'GÅ DÄRIFRÅN', text: '' }] }, i => {
         if (i === 0) {
           pr.used = true; run.gold += 60; play('bigboom', 0.4, 1.6); play('coin', 0.8, 0.8); P.flash = 0.2;
@@ -3130,7 +3160,7 @@ const USES = {
     const wp = WEAPONS[P.weapon], lv = wlvl(wp.id), price = [60, 110, 170][lv];
     const bag = (run.runeBag || []).length;
     if (lv >= 3 && !bag) { say(wp.name + ' ÄR REDAN FULLT SMIDD', 2); return; }
-    openUI(() => CardUI.choice({ title: 'SMEDJAN', subtitle: `${wp.name}: NIVÅ ${lv} AV 3. NÄSTA NIVÅ GER +12 % SKADA. DU HAR ${run.gold} GULD.`, cancel: 2,
+    openUI(() => CardUI.choice({ title: 'SMEDJAN', subtitle: `${wp.name} · NIVÅ ${lv}/3 · ${run.gold} GULD`, cancel: 2,
       options: [{ label: lv >= 3 ? 'FULLT SMIDD' : `SMID (${price} GULD)`, text: lv >= 3 ? '' : run.gold >= price ? '+12 % SKADA FÖR ALLTID' : 'FÖR LITE GULD' }, { label: `FÄST EN RUNA (${bag})`, text: bag ? 'RUNAN SÄTTS I VAPNET DU HÅLLER' : 'DU HAR INGA RUNOR' }, { label: 'GÅ DÄRIFRÅN', text: '' }] }, i => {
       if (i === 1) { closeUI(); if (bag) setTimeout(openRuneSocket, 50); return; }
       if (lv >= 3) { closeUI(); return; }
@@ -3150,7 +3180,7 @@ const USES = {
   },
   prisoner(pr) { // fången: befria för guld och granater, eller ta med fången som allierad på våningen
     const g = 30 + run.depth * 6;
-    openUI(() => CardUI.choice({ title: 'FÅNGEN', subtitle: '"SLÄPP UT MIG! JAG KAN BETALA – ELLER SLÅSS VID DIN SIDA."', cancel: 3,
+    openUI(() => CardUI.choice({ title: 'FÅNGEN', subtitle: '"SLÄPP UT MIG!"', cancel: 3,
       options: [{ label: 'TA BELÖNINGEN', text: `+${g} GULD OCH 2 GRANATER` }, { label: 'FÖLJ MED MIG', text: 'FÅNGEN SLÅSS FÖR DIG RESTEN AV VÅNINGEN' }, { label: 'GE DRICKS (10 GULD)', text: 'FÅNGEN BERÄTTAR NÅGOT OM VÅNINGEN' }, { label: 'INTE NU', text: '' }] }, i => {
       closeUI(); if (i === 2) { if (run.gold >= 10) { run.gold -= 10; play('coin', 0.6); setTimeout(() => say('FÅNGEN VISKAR: ' + floorHint(pr), 4), 300); } else say('FÖR LITE GULD', 1.2); return; }
       if (i === 3 || pr.used) return;
@@ -3163,14 +3193,14 @@ const USES = {
   },
   challenge(pr) { // utmaningsaltaret: överlev vågor
     if (challenge) return;
-    openUI(() => CardUI.choice({ title: 'UTMANINGEN', subtitle: 'BLÅS I HORNET OCH ÖVERLEV VÅGOR AV FIENDER. DÖRRARNA STÄNGS. VÄLJ SVÅRIGHET.', cancel: 3,
+    openUI(() => CardUI.choice({ title: 'UTMANINGEN', subtitle: 'ÖVERLEV VÅGORNA · DÖRRARNA STÄNGS', cancel: 3,
       options: [{ label: 'LÄTT: 2 VÅGOR', text: 'GULD OCH ETT KORTVAL' }, { label: 'NORMAL: 3 VÅGOR', text: 'EN KISTA, GULD OCH ETT KORTVAL' }, { label: 'SVÅR: 5 VÅGOR', text: 'EN GLITTRANDE KISTA, MYCKET GULD, ETT BÄTTRE KORTVAL OCH EN DRYCK' }, { label: 'INTE NU', text: '' }] },
       i => { closeUI(); if (i < 3) startChallenge(pr, [2, 3, 5][i]); }));
   },
   bowl(pr) { // offerskålen: betala hälsa för ett kort
     if (P.hp <= 25) { say('DU HAR FÖR LITE BLOD ATT OFFRA', 2); return; }
     const petGift = !run.pet && P.hp > 35;
-    openUI(() => CardUI.choice({ title: 'OFFERSKÅLEN', subtitle: 'SKÅLEN TÖRSTAR. OFFRA HÄLSA FÖR ETT KORT' + (petGift ? ' ELLER EN FÖLJESLAGARE.' : '.'), cancel: petGift ? 2 : 1,
+    openUI(() => CardUI.choice({ title: 'OFFERSKÅLEN', subtitle: 'SKÅLEN TÖRSTAR EFTER BLOD', cancel: petGift ? 2 : 1,
       options: [{ label: 'OFFRA 20 HP', text: 'VÄLJ 1 AV 3 KORT' }, ...(petGift ? [{ label: 'OFFRA 30 HP', text: 'EN FÖLJESLAGARE FÖR RESTEN AV RUNDAN' }] : []), { label: 'GÅ DÄRIFRÅN', text: '' }] }, i => {
       if (petGift && i === 1) { closeUI(); pr.used = true; P.hp -= 30; P.hurt = 0.5; play('splat', 0.8, 0.7); givePet(PET_IDS[(Math.random() * PET_IDS.length) | 0], 'SKÅLEN GAV DIG'); return; }
       if (i !== 0) { closeUI(); return; }
@@ -3457,7 +3487,7 @@ function openPriest(pr) {
   const curses = [...new Set(run.owned)].map(id => Cards.byId(id)).filter(c => c && c.curse);
   const cPrice = Math.round((50 + 12 * run.depth) * (1 - npcDisc())), bPrice = Math.round(40 * (1 - npcDisc()));
   play('npc_priest', 0.6);
-  openUI(() => CardUI.choice({ title: 'PRÄSTEN', subtitle: `"MÅ LJUSET VAKA ÖVER DIG." DU HAR ${run.gold} GULD.`, cancel: 2,
+  openUI(() => CardUI.choice({ title: 'PRÄSTEN', subtitle: `"MÅ LJUSET VAKA ÖVER DIG." · ${run.gold} GULD`, cancel: 2,
     options: [
       { label: `LYFT EN FÖRBANNELSE (${cPrice} GULD)`, text: curses.length ? `TA BORT ETT FÖRBANNAT KORT (${curses.length} I LEKEN)` : 'DU BÄR INGA FÖRBANNELSER' },
       { label: run.blessed ? 'REDAN VÄLSIGNAD' : `VÄLSIGNELSE (${bPrice} GULD)`, text: run.blessed ? 'EN VÄLSIGNELSE PER RUNDA' : '+20 MAX HP RESTEN AV RUNDAN, OCH FULL HÄLSA' },
@@ -3476,8 +3506,8 @@ function openPriest(pr) {
 }
 function openPetCage(pr) {
   const have = run.pet, pool = PET_IDS.filter(id => id !== have), id = pool[RNG(RNG.hash(run.seed + ':bur:' + run.depth)).int(0, pool.length - 1)];
-  openUI(() => CardUI.choice({ title: 'DJURBUREN', subtitle: `${PETS[id].name} SITTER INSPÄRRAD. ${PETS[id].text}.${have ? ` DIN ${PETS[have].name} ÅKER HEM.` : ''}`, cancel: 1,
-    options: [{ label: 'BEFRIA ' + PETS[id].name, text: 'FÖLJER DIG RESTEN AV RUNDAN' }, { label: 'LÅT DEN VARA', text: '' }] }, i => {
+  openUI(() => CardUI.choice({ title: 'DJURBUREN', subtitle: `${PETS[id].name} SITTER INSPÄRRAD`, cancel: 1,
+    options: [{ label: 'BEFRIA ' + PETS[id].name, text: `${PETS[id].text} · RESTEN AV RUNDAN${have ? ` · DIN ${PETS[have].name} ÅKER HEM` : ''}` }, { label: 'LÅT DEN VARA', text: '' }] }, i => {
     closeUI(); if (i !== 0) return;
     pr.used = true; play('gate', 0.6, 1.4, { x: pr.x, y: pr.y }); run.petXp = Math.max(run.petXp || 0, 6);
     givePet(id, 'DU BEFRIADE'); if (pet) { pet.x = pr.x; pet.y = pr.y; if (solid(pet.x, pet.y)) { pet.x = P.x; pet.y = P.y; } }
@@ -3620,7 +3650,7 @@ function headshotCheck(e, perp, wp) { // träff mitt i fienden (huvudet) med ett
   if ((P.hsT || 0) < tmr) { P.hsT = tmr + 0.4; spawnText(e.x, e.y, '★ HUVUDTRÄFF', '#ffe070'); play('headshot', 0.55, rnd(0.95, 1.1)); vib('headshot'); }
   return 1.5 + mod('headshot');
 }
-function wrapText(t, max) { const out = []; let line = ''; for (const w of t.split(' ')) { if ((line + ' ' + w).trim().length > max) { if (line) out.push(line); line = w; } else line = (line + ' ' + w).trim(); } if (line) out.push(line); return out; }
+function wrapText(t, max) { t = window.I18N ? I18N.t(t) : t; const out = []; let line = ''; for (const w of t.split(' ')) { if ((line + ' ' + w).trim().length > max) { if (line) out.push(line); line = w; } else line = (line + ' ' + w).trim(); } if (line) out.push(line); return out; }
 // ett mönster på enhanden: gå framåt automatiskt
 let autoWalk = false;
 // ---------- Version 6: spikgeväret, blixtstaven och långbågen ----------
@@ -3950,7 +3980,7 @@ function giveRune(id, why) {
   run.runeBag = run.runeBag || []; run.runeBag.push(id); play('rune_proc', 0.7); stat('runesFound');
   say(`${why || 'DU HITTADE'} ${RUNES[id].name}: ${RUNES[id].text}`, 3);
   const wp = WEAPONS[P.weapon];
-  if (!wp.melee || true) setTimeout(() => { if (state !== 'play') return; openUI(() => CardUI.choice({ title: RUNES[id].name, subtitle: `${RUNES[id].text}. FÄST DEN I ${wp.name} NU, ELLER SPARA DEN TILL SMEDJAN.`, cancel: 1,
+  if (!wp.melee || true) setTimeout(() => { if (state !== 'play') return; openUI(() => CardUI.choice({ title: RUNES[id].name, subtitle: RUNES[id].text, cancel: 1,
     options: [{ label: 'FÄST I ' + wp.name, text: runesOf(wp.id).length >= runeSlots() ? 'ERSÄTTER ' + RUNES[runesOf(wp.id)[0]].name : `${runesOf(wp.id).length + 1} AV ${runeSlots()} RUNPLATSER` }, { label: 'SPARA', text: 'FÄST DEN VID EN SMEDJA SENARE' }] },
     i => { closeUI(); if (i === 0) socketRune(id, wp.id); })); }, 400);
 }
@@ -3995,7 +4025,7 @@ function openCampfire(pr) {
   const wp = WEAPONS[P.weapon], lv = wlvl(wp.id), healN = Math.round(maxHp() * 0.4 * (1 + mod('campfireHeal'))), meat = run.meat || 0;
   const canRefine = window.Cards && Cards.refine && run.owned.some(id => Cards.refine(id));
   play('campfire', 0.6); play('rest', 0.5);
-  openUI(() => CardUI.choice({ title: 'LÄGERELDEN', subtitle: 'ELDEN SPRAKAR. DU HAR TID FÖR EN SAK INNAN DU MÅSTE GÅ VIDARE.', cancel: 4,
+  openUI(() => CardUI.choice({ title: 'LÄGERELDEN', subtitle: 'TID FÖR EN SAK', cancel: 4,
     options: [
       { label: `VILA (+${healN} HP)`, text: P.hp >= maxHp() ? 'DU ÄR REDAN UTVILAD' : 'LÄK DINA SÅR' },
       { label: 'SMIDA', text: lv >= 3 ? `${wp.name} ÄR FULLT SMIDD` : `${wp.name} NIVÅ ${lv} → ${lv + 1} (+12 % SKADA)` },
@@ -4062,8 +4092,8 @@ function questFloorEnd() { // vid våningens slut: uppdraget utan drycker klaras
 // ---------- Version 6: hemliga trappor ----------
 function enterSecretStairs(pr) {
   if (!Gen.secret) { say('TRAPPAN ÄR RASAD', 1.5); return; }
-  openUI(() => CardUI.choice({ title: 'DEN HEMLIGA TRAPPAN', subtitle: 'EN TRAPPA LEDER NED I MÖRKRET. DÄR NERE FINNS SKATTER – MEN VÅNINGEN HÄR LÄMNAR DU UTAN BONUS.', cancel: 1,
-    options: [{ label: 'GÅ NED', text: 'TILL DEN HEMLIGA VÅNINGEN' }, { label: 'INTE NU', text: '' }] }, i => {
+  openUI(() => CardUI.choice({ title: 'DEN HEMLIGA TRAPPAN', subtitle: 'SKATTER I MÖRKRET', cancel: 1,
+    options: [{ label: 'GÅ NED', text: 'TILL DEN HEMLIGA VÅNINGEN – UTAN VÅNINGSBONUS' }, { label: 'INTE NU', text: '' }] }, i => {
     closeUI(); if (i !== 0) return;
     pr.used = true; play('secret_stairs', 0.9); stat('secretFloors'); logEvent('HEMLIG VÅNING');
     const L = Gen.secret(RNG.hash(run.seed + ':hemlig:' + run.depth), { biome: lvl.biome });
@@ -4508,7 +4538,7 @@ function narrate() { // berättaren vid nya biomer första gången
 }
 function speak(t) { // talsyntes (inställning)
   if (!settings.tts || !window.speechSynthesis) return;
-  try { const u = new SpeechSynthesisUtterance(String(t).toLowerCase()); u.lang = 'sv-SE'; u.rate = 1.05; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (e) { /* ingen talsyntes */ }
+  try { const u = new SpeechSynthesisUtterance(String(window.I18N ? I18N.t(t) : t).toLowerCase()); u.lang = window.I18N && I18N.lang() === 'en' ? 'en-US' : 'sv-SE'; u.rate = 1.05; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (e) { /* ingen talsyntes */ }
 }
 // ---------- Version 7: smyg – synlighet, ljud, upptäckt, stenar och larmklockor ----------
 let noiseLvl = 0;
@@ -4618,7 +4648,7 @@ function drawLampHud(g) {
 function openGambler(pr) {
   const luck = mod('gambleLuck'), win = p => Math.random() < clamp(p + luck * 0.5, 0.05, 0.9);
   play('gamble_dice', 0.6);
-  openUI(() => CardUI.choice({ title: 'SPELAREN', subtitle: `"SATSA, VANDRARE. TURVEN ÄR EN KVINNA – OCH JAG ÄR HENNES BROR." DU HAR ${run.gold} GULD.`, cancel: 3,
+  openUI(() => CardUI.choice({ title: 'SPELAREN', subtitle: `"SATSA, VANDRARE." · ${run.gold} GULD`, cancel: 3,
     options: [{ label: 'TÄRNINGAR (20 GULD)', text: 'HÖGRE SUMMA VINNER DUBBELT' }, { label: 'HÖGRE ELLER LÄGRE (15 GULD)', text: 'GISSA RÄTT TRE GÅNGER: 80 GULD' }, { label: 'LYCKOHJULET (40 GULD)', text: 'GULD, KORT, RUNA, DRYCK – ELLER EN FÖRBANNELSE' }, { label: 'GÅ DÄRIFRÅN', text: '' }] }, i => {
     closeUI(); if (i === 3) return;
     const cost = [20, 15, 40][i]; if (run.gold < cost) { say('FÖR LITE GULD', 1.2); return; }
@@ -4639,8 +4669,8 @@ function openGambler(pr) {
 function openBanker(pr) {
   const g = run.gold, rate = Math.round(5 * (1 + mod('bankInterest')));
   play('wanderer', 0.4, 1.3);
-  openUI(() => CardUI.choice({ title: 'BANKIREN', subtitle: `"HOS MIG ÄR GULDET TRYGGT – ÄVEN OM DU DÖR." I BANKEN: ${run.bank || 0} GULD (${rate} % RÄNTA PER VÅNING). VID RUNDANS SLUT BLIR VARJE 10 GULD EN SJÄL.`, cancel: 3,
-    options: [{ label: `SÄTT IN HÄLFTEN (${Math.floor(g / 2)})`, text: '' }, { label: `SÄTT IN ALLT (${g})`, text: '' }, { label: 'TA UT ALLT', text: run.bank ? `${run.bank} GULD (BANKIREN TAR 10 %)` : 'BANKEN ÄR TOM' }, { label: 'GÅ DÄRIFRÅN', text: '' }] }, i => {
+  openUI(() => CardUI.choice({ title: 'BANKIREN', subtitle: `I BANKEN: ${run.bank || 0} GULD · ${rate} % RÄNTA/VÅNING`, cancel: 3,
+    options: [{ label: `SÄTT IN HÄLFTEN (${Math.floor(g / 2)})`, text: 'TRYGGT ÄVEN OM DU DÖR · VID RUNDANS SLUT: 10 GULD = 1 SJÄL' }, { label: `SÄTT IN ALLT (${g})`, text: 'TRYGGT ÄVEN OM DU DÖR · VID RUNDANS SLUT: 10 GULD = 1 SJÄL' }, { label: 'TA UT ALLT', text: run.bank ? `${run.bank} GULD (BANKIREN TAR 10 %)` : 'BANKEN ÄR TOM' }, { label: 'GÅ DÄRIFRÅN', text: '' }] }, i => {
     closeUI(); if (i === 3) return;
     if (i === 2) { if (!run.bank) return; const out = Math.floor(run.bank * 0.9); run.gold += out; run.bank = 0; play('coin', 0.8); say(`DU TOG UT ${out} GULD`, 2); return; }
     const n = i === 0 ? Math.floor(g / 2) : g; if (n <= 0) return;
@@ -4659,7 +4689,7 @@ function openWanderer(pr) {
   const st = WANDER_STEPS[w.step];
   if (w.active && st.check()) { const r = st.reward(); w.step++; w.active = false; play('quest_done', 0.8); say(`VANDRAREN: "BRA GJORT!" – ${r}`, 3); stat('wanderSteps'); checkAch(); return; }
   if (w.active) { say(`VANDRAREN: "${st.text} – SEN HITTAR JAG DIG IGEN."`, 3); return; }
-  openUI(() => CardUI.choice({ title: 'VANDRAREN', subtitle: `"JAG LETAR EFTER VÄGEN TILL BORGEN. HJÄLP MIG, SÅ HJÄLPER JAG DIG." STEG ${w.step + 1} AV 3.`, cancel: 1,
+  openUI(() => CardUI.choice({ title: 'VANDRAREN', subtitle: `"HJÄLP MIG TILL BORGEN." · STEG ${w.step + 1}/3`, cancel: 1,
     options: [{ label: 'JAG HJÄLPER DIG', text: `${st.text} – PRATA MED VANDRAREN IGEN NÄR DU MÖTER HONOM` }, { label: 'INTE NU', text: '' }] }, i => {
     closeUI(); if (i !== 0) return; w.active = true; run.wanderElite = 0; run.wanderSecret = 0; run.wanderGuard = 0; play('quest_new', 0.7); say('UPPDRAG: ' + st.text, 2.5);
   }));
@@ -4719,7 +4749,7 @@ function bossHuntPick() {
   const left = run.hunt.left;
   if (!left.length) { const t = Math.round(run.time); profile.huntBest = Math.min(profile.huntBest || 1e9, t); stat('huntsWon'); endRun(true); return; }
   P.hp = maxHp(); P.grenades = Math.min(GREN_MAX(), P.grenades + 2);
-  openUI(() => CardUI.choice({ title: 'BOSSJAKTEN', subtitle: `${bossPool().length - left.length} AV ${bossPool().length} BESEGRADE · TID ${fmtTime(run.time)}. VÄLJ NÄSTA BOSS.`,
+  openUI(() => CardUI.choice({ title: 'BOSSJAKTEN', subtitle: `${bossPool().length - left.length} AV ${bossPool().length} BESEGRADE · ${fmtTime(run.time)}`,
     options: left.map(id => ({ label: BOSSES[id].name, text: BOSSES[id].title || '' })) }, i => {
     closeUI(); const id = left.splice(i, 1)[0]; run.hunt.cur = id;
     const L = Gen.boss(RNG.hash(run.seed + ':jakt:' + id), { arena: BOSSES[id].arena, boss: id }); L.bossId = id; run.depth = FLOORS + 1; startLevel(L); lockPointer();
@@ -6547,8 +6577,8 @@ function nextFloor() { // efter statistiken: välj ett kort, sedan nästa vånin
   const depth = run.depth + 1;
   run.floorCurse = false;
   if (!isBossDepth(depth) && depth > 2 && Math.random() < 0.3 && !run.practice) { // ibland: förbanna nästa våning för en belöning
-    openUI(() => CardUI.choice({ title: 'EN RÖST I MÖRKRET', subtitle: 'FÖRBANNA NÄSTA VÅNING? FIENDERNA SLÅR 30 % HÅRDARE OCH HAR MER HÄLSA, MEN DU FÅR 60 GULD NÄR DU KLARAR DEN.', cancel: 1,
-      options: [{ label: 'TA FÖRBANNELSEN', text: '+60 GULD EFTERÅT' }, { label: 'NEJ TACK', text: '' }] }, i => { run.floorCurse = i === 0; setTimeout(() => floorDraft(depth), 50); }));
+    openUI(() => CardUI.choice({ title: 'EN RÖST I MÖRKRET', subtitle: 'FÖRBANNA NÄSTA VÅNING?', cancel: 1,
+      options: [{ label: 'TA FÖRBANNELSEN', text: 'FIENDERNA: +30 % SKADA OCH MER HÄLSA · +60 GULD NÄR DU KLARAR DEN' }, { label: 'NEJ TACK', text: '' }] }, i => { run.floorCurse = i === 0; setTimeout(() => floorDraft(depth), 50); }));
     return;
   }
   floorDraft(depth);
@@ -6690,6 +6720,7 @@ function syncEndScreens() { // körs varje bildruta och från showTitle: visar/d
   const st = !!map && state === 'stats' && !!stats && !endDetails;
   if (st) { if (fe.hidden) showFloorEnd(); else tickFloorEnd(); } else if (!fe.hidden) { fe.hidden = true; endScr.fe = null; }
   if (state !== 'stats' && state !== 'dead' && state !== 'runover') endDetails = false;
+  document.body.classList.toggle('endscr-on', state === 'stats' || state === 'dead' || state === 'runover'); // döljer helskärmsknappen (#touch .fsbtn) på dödsskärmen och nivåslutet
 }
 function showRunOver(win) {
   const r = run, ro = document.getElementById('runover'), cause = document.getElementById('ro-cause');
@@ -6713,7 +6744,11 @@ function tickRunOver() { // själarna räknas upp
 }
 function retryRun() { // FÖRSÖK IGEN: en ny runda direkt med samma inställningar (samma som Enter)
   if (!((state === 'dead' && P.deadT > 0.8) || (state === 'runover' && P.deadT > 0.3))) return;
-  showTitle(); document.getElementById('seed').value = ''; begin('new');
+  const r = run || {}; showTitle(); document.getElementById('seed').value = '';
+  const pr = r.practice, ed0 = r.custom ? store.get('editor', null) : null;
+  if (ed0 && ed0.grid) playCustom({ biome: 'dungeon', ...ed0 }); else if (pr && (pr.biome || pr.boss)) { practice = { ...pr }; begin('practice'); } // egen bana och övning: samma igen
+  else if (r.hunt) beginBossHunt(); else if (r.campaign) beginCampaign(r.campaign.ch | 0); else if (r.survival) beginSurvival(); else if (r.maze) beginMaze(); else if (r.abyss) beginAbyss(!!r.abyssDaily); // speciallägena börjar om i samma läge
+  else begin(r.weekly ? 'weekly' : r.monthly ? 'monthly' : r.daily ? 'daily' : r.bossrush ? 'bossrush' : 'new');
 }
 function showFloorEnd() {
   const s = stats, fe = document.getElementById('floorend');
@@ -6875,11 +6910,11 @@ function resetProfile(done) { // återställ profilen, med två bekräftelser
     });
   });
 }
-function openSettingsUI() { const back = state; openUI(() => openSettings(() => closeUI(back === 'pause' ? 'pause' : 'play'))); }
+function openSettingsUI() { const back = state; openUI(() => openSettings(() => { closeUI(back === 'pause' ? 'pause' : 'play'); if (back === 'pause') pauseMenu(); })); } // från pausen: tillbaka till pausmenyn
 function abandonRun() { // ge upp rundan från pausen
-  openUI(() => CardUI.choice({ title: 'GE UPP RUNDAN?', subtitle: 'RUNDAN AVSLUTAS SOM EN FÖRLUST. SJÄLARNA DU HAR SAMLAT FÅR DU BEHÅLLA.', cancel: 1,
+  openUI(() => CardUI.choice({ title: 'GE UPP RUNDAN?', subtitle: 'DU BEHÅLLER SJÄLARNA', cancel: 1,
     options: [{ label: 'GE UPP', text: 'TILLBAKA TILL STARTSKÄRMEN' }, { label: 'FORTSÄTT SPELA', text: '' }] }, i => {
-    if (i === 0) { stopAmbient(); setMusic(false); run.cause = 'GAV UPP'; endRun(false); showTitle(); } else closeUI('pause');
+    if (i === 0) { stopAmbient(); setMusic(false); run.cause = 'GAV UPP'; endRun(false); showTitle(); } else { closeUI('pause'); pauseMenu(); }
   }));
 }
 // ---------- Inställningar (startskärmen och pausen) ----------
@@ -6891,6 +6926,7 @@ function openSettings(onClose) {
     const select = (label, key, opts, after) => { const sel = document.createElement('select'); for (const [v, t] of opts) { const o = document.createElement('option'); o.value = v; o.textContent = t; if (String(settings[key]) === String(v)) o.selected = true; sel.appendChild(o); }
       row(label, sel); sel.onchange = () => { const v = sel.value; settings[key] = isNaN(+v) || v === '' ? v : +v; saveSettings(); if (after) after(); }; };
     const check = (label, key, after) => { const i = document.createElement('input'); i.type = 'checkbox'; i.checked = !!settings[key]; row(label, i); i.onchange = () => { settings[key] = i.checked; saveSettings(); if (after) after(); }; };
+    select('SPRÅK / LANGUAGE', 'lang', [['en', 'ENGLISH'], ['sv', 'SVENSKA']], () => { saveSettings(); setTimeout(() => location.reload(), 150); }); // språket byts genom att sidan laddas om
     range('KÄNSLIGHET', 'sens', 0.2, 3, 0.1, v => v.toFixed(1));
     range('SYNFÄLT', 'fov', 60, 100, 2, v => v + '°', applyFov);
     range('VOLYM', 'vol', 0, 1, 0.05, v => Math.round(v * 100) + '%', applyVolume);
@@ -7002,6 +7038,17 @@ function settingsTabs(c) { // MENY: inställningarna i flikar (BILD, LJUD, SPEL,
   if (c.parentNode) c.parentNode.insertBefore(bar, c);
   show(tabs.includes(settingsTab) ? settingsTab : tabs[0]);
 }
+function listPager() { // MENY2: långa listor (handboken, nyheterna) ett avsnitt i taget med < RUBRIK > i stället för en textvägg; raderna ligger kvar i DOM
+  const ul = document.querySelector('#cardui .cu-panel .cu-list'); if (!ul || ul.dataset.paged) return; ul.dataset.paged = '1';
+  const groups = []; for (const li of [...ul.children]) { const h = li.classList.contains('head'); if (h || !groups.length) groups.push({ head: h ? li : null, items: [] }); if (!h) groups[groups.length - 1].items.push(li); }
+  if (groups.length < 2 || !ul.parentNode || !ul.parentNode.parentNode) return;
+  const bar = CardUI.el('div', 'cu-pager'), pv = CardUI.el('button', 'cu-btn cu-pv'), nm = CardUI.el('span', 'cu-pn'), nx = CardUI.el('button', 'cu-btn cu-nx'); pv.type = nx.type = 'button'; pv.textContent = '<'; nx.textContent = '>'; pv.setAttribute('aria-label', 'FÖRRA'); nx.setAttribute('aria-label', 'NÄSTA');
+  let i = 0; const show = j => { i = (j + groups.length) % groups.length; groups.forEach((g, k) => { if (g.head) g.head.hidden = true; for (const li of g.items) li.hidden = k !== i; });
+    const h = groups[i].head && groups[i].head.querySelector('.cu-ll'); nm.textContent = (h ? h.textContent : '') + ' · ' + (i + 1) + '/' + groups.length; nm.style.color = h ? h.style.color : ''; ul.parentNode.scrollTop = 0; };
+  pv.onclick = e => { e.stopPropagation(); show(i - 1); }; nx.onclick = e => { e.stopPropagation(); show(i + 1); };
+  bar.append(pv, nm, nx); ul.parentNode.parentNode.insertBefore(bar, ul.parentNode); show(0);
+  if (!isTouch()) try { nx.focus({ preventScroll: true }); } catch (e) { /* ingen fokus */ } // tangentbord: Enter = nästa avsnitt, Tab växlar mellan < > och STÄNG (CardUI sväljer pilarna)
+}
 function exportProfile() { // profilen som en JSON-fil
   try { const b = new Blob([JSON.stringify({ profile, settings }, null, 1)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'krypta-profil.json'; document.body.appendChild(a); a.click(); a.remove(); } catch (e) { /* hämtning stöds inte */ }
 }
@@ -7044,9 +7091,9 @@ function openPadMap(onClose) {
   }, onClose);
 }
 function applyTouchLayout() { const ui = document.getElementById('touch'); if (!ui) return;
-  ui.classList.toggle('all', !!settings.allButtons); for (const b of ui.querySelectorAll('.tb')) { const pos = (settings[touchPosKey()] || {})[b.dataset.act]; if (pos) { b.style.left = pos.x + '%'; b.style.top = pos.y + '%'; b.style.right = 'auto'; b.style.bottom = 'auto'; } else b.style.left = b.style.top = b.style.right = b.style.bottom = ''; } ui.classList.toggle('lefty', !!settings.lefty); ui.classList.toggle('onehand', !!settings.oneHand); if (!settings.oneHand) autoWalk = false; ui.style.setProperty('--bs', settings.btnScale || 1); applyDisplay(); }
+  ui.classList.toggle('all', !!settings.allButtons); for (const b of ui.querySelectorAll('.tb')) { const pos = (settings[touchPosKey()] || {})[b.dataset.act]; if (pos) { b.style.left = pos.x + '%'; b.style.top = pos.y + '%'; b.style.right = 'auto'; b.style.bottom = 'auto'; } else b.style.left = b.style.top = b.style.right = b.style.bottom = ''; } ui.classList.toggle('lefty', !!settings.lefty); ui.classList.toggle('onehand', !!settings.oneHand); if (!settings.oneHand) autoWalk = false; ui.style.setProperty('--bs', settings.btnScale || 1); document.documentElement.style.setProperty('--bs', settings.btnScale || 1); /* stående: bildens höjd beror på knappstorleken (index.html) */ applyDisplay(); }
 function pause() { if (state === 'play') { state = 'pause'; mouseDown = false; aimDown = false; for (const k in keys) keys[k] = false; if (actx) actx.suspend(); } }
-function resume() { if (state === 'pause') { state = 'play'; if (actx) actx.resume(); lockPointer(); } }
+function resume() { if (state === 'pause') { state = 'play'; pauseMap = false; if (actx) actx.resume(); lockPointer(); } }
 let pauseMap = false;
 let deathMap = false;
 function shareSeed() { // dela fröet som en länk
@@ -7055,7 +7102,7 @@ function shareSeed() { // dela fröet som en länk
 }
 function replaySeed() { if (!run) return; const sd = seedText(run.seed); showTitle(); document.getElementById('seed').value = sd; begin('new'); }
 function leaveRunScreen() { if ((state === 'dead' && P.deadT > 1.2) || (state === 'runover' && P.deadT > 1)) showTitle(); }
-function showDeck() { const back = state; openUI(() => CardUI.deck(run.owned, () => closeUI(back === 'pause' ? 'pause' : 'play'), { stats: cardStats(), onFuse: fuseCard, mods: Object.assign({}, M) })); }
+function showDeck() { const back = state; openUI(() => CardUI.deck(run.owned, () => { closeUI(back === 'pause' ? 'pause' : 'play'); if (back === 'pause') pauseMenu(); }, { stats: cardStats(), onFuse: fuseCard, mods: Object.assign({}, M) })); }
 // ---------- Tangentbyte: spelaren kan byta tangent för varje handling ----------
 const ACTIONS = [['KeyW', 'FRAMÅT'], ['KeyS', 'BAKÅT'], ['KeyA', 'VÄNSTER'], ['KeyD', 'HÖGER'], ['KeyE', 'ANVÄND'], ['Space', 'HOPPA'], ['ControlLeft', 'DUCKA'], ['ShiftLeft', 'SPRING'], ['KeyZ', 'RUSA'],
   ['KeyF', 'GRANAT'], ['KeyR', 'LADDA OM'], ['KeyV', 'SPARKA'], ['KeyQ', 'FÖRRA VAPNET'], ['KeyM', 'KARTA'], ['KeyC', 'KORTEN'], ['KeyX', 'INSPEKTERA'], ['KeyB', 'MARKÖR'], ['KeyK', 'FOTOLÄGE'], ['KeyH', 'DRICK'], ['KeyJ', 'BYT DRYCK'], ['KeyT', 'FÖRMÅGA'], ['KeyL', 'LAMPA'], ['KeyG', 'KASTA STEN']];
@@ -7085,7 +7132,7 @@ addEventListener('keydown', e0 => {
   const e = keyEv(e0);
   if (state === 'title' || (window.CardUI && CardUI.isOpen())) return;
   if (state === 'ui') return;
-  if (e.code === 'Escape' || e.code === 'KeyP') { if (state === 'play') pause(); else if (state === 'pause' && e.code === 'KeyP') resume(); else if ((state === 'dead' || state === 'runover') && e.code === 'Escape') leaveRunScreen(); return; }
+  if (e.code === 'Escape' || e.code === 'KeyP') { if (state === 'play') pause(); else if (state === 'pause' && e.code === 'KeyP') resume(); else if (state === 'pause') { pauseMap = false; pauseMenu(); } /* Escape i pausen (eller på pauskartan): pausmenyn */ else if ((state === 'dead' || state === 'runover') && e.code === 'Escape') leaveRunScreen(); return; }
   if (state === 'pause' && e.code === 'KeyI') { openSettingsUI(); return; }
   if (state === 'pause' && (e.code === 'Enter' || e.code === 'NumpadEnter')) { pauseMenu(); return; }
   if (state === 'stats' && e.code === 'KeyD' && settings.diff < 3 && run.diff !== 4) { settings.diff = (settings.diff + 1) % 3; run.diff = settings.diff; saveSettings(); say('SVÅRIGHET: ' + DIFF[settings.diff].name, 1.5); return; } // byt svårighet mellan våningarna
@@ -7421,6 +7468,69 @@ function refreshTitle() {
   { const so = document.getElementById('souls'); so.textContent = String(profile.souls); so.title = 'SJÄLAR'; } { const ub = document.getElementById('unlocks'); if (ub) ub.textContent = locked ? `LÅS UPP KORT (${locked})` : 'LÅS UPP KORT'; }
   const lr = (profile.history || [])[0];
   document.getElementById('best').textContent = profile.runs ? `RUNDOR ${profile.runs} · SEGRAR ${profile.wins} · BÄSTA VÅNING ${profile.bestDepth} · REKORD ${profile.bestScore}` + (lr ? ` · SENAST: VÅNING ${lr.depth}${lr.win ? ', SEGER' : lr.cause ? ', ' + lr.cause : ''}` : '') : '';
+  setupRows();
+}
+// ANPASSA som genrens inställningsskärmar: en rad per inställning med ◀ VÄRDE ▶ och en rad beskrivning för det markerade.
+// De gamla knapparna (#diff, #classes, #pets, #cmodes, #slots, #asc) byggs fortfarande av refreshTitle och ligger dolda i DOM (köp av klass går via dem).
+const DIFF_TEXT = ['FIENDERNA SLÅR LÖSARE · MER AMMO · SJÄLAR ×0,7', 'SOM SPELET ÄR TÄNKT', 'HÅRDARE OCH SNABBARE FIENDER · MINDRE AMMO · SJÄLAR ×1,5', 'FÖR DE MODIGA – GER UPPSTIGNINGAR · SJÄLAR ×2,2', 'FÖR HISTORIEN – NÄSTAN INGEN FARA · SJÄLAR ×0,4'];
+const setupUI = { k: 'cls', cls: '', combo: false, msg: '' };
+function setupDefs() {
+  const cls = settings.cls || 'vandrare'; if (!setupUI.cls || !CLASSES[setupUI.cls] || classOpen(setupUI.cls)) setupUI.cls = cls; // bläddrar man till en låst klass visas den, men vald klass ändras inte
+  const cm = (settings.cmode || '').split('+').filter(x => x && CMODES[x]), runs = profile.runs || 0, amax = Math.min(5, profile.ascMax || 0);
+  return [
+    { k: 'diff', label: 'SVÅRIGHET', cur: settings.diff, opts: [4, 0, 1, 2, 3].map(i => ({ id: i, name: DIFF[i].name, text: DIFF_TEXT[i] })) },
+    { k: 'asc', label: 'UPPSTIGNING', hide: settings.diff !== 3, cur: settings.asc || 0, opts: Array.from({ length: amax + 1 }, (_, i) => ({ id: i, name: i ? 'NIVÅ ' + i : 'GRUND', text: ASC_TEXT[i] + (amax ? '' : ' · VINN PÅ MARDRÖM FÖR NIVÅ 1') })) },
+    { k: 'cls', label: 'KLASS', cur: setupUI.cls, opts: Object.entries(CLASSES).map(([id, c]) => { const open = classOpen(id); return { id, name: c.name, locked: !open, small: open ? '' : c.cost + ' SJÄLAR', text: open ? c.text : (profile.souls >= c.cost ? `LÅST · TRYCK FÖR ATT KÖPA (${c.cost} AV ${profile.souls} SJÄLAR)` : `LÅST · KOSTAR ${c.cost} SJÄLAR (DU HAR ${profile.souls})`) + ' – ' + c.text }; }) },
+    { k: 'pet', label: 'FÖLJESLAGARE', hide: !PET_IDS.some(petOpen), cur: settings.pet || '', opts: ['', ...PET_IDS.filter(petOpen)].map(id => ({ id, name: id ? PETS[id].name : 'INGEN', text: id ? PETS[id].text : 'DU GÅR ENSAM' })) },
+    { k: 'slot', label: 'SPARPLATS', hide: runs < 1, cur: settings.slot || 0, opts: [0, 1, 2].map(i => { const sv = store.get('run' + (i ? '.' + i : ''), null); return { id: i, name: 'PLATS ' + (i + 1), small: sv ? 'VÅNING ' + sv.run.depth : 'TOM', text: sv ? `SPARAD RUNDA: VÅNING ${sv.run.depth}` + (sv.run.cls && CLASSES[sv.run.cls] ? ' · ' + CLASSES[sv.run.cls].name : '') : 'TOM PLATS – NYA RUNDAN SPARAS HÄR' }; }) },
+    { k: 'cmode', label: 'UTMANING', hide: runs < 1, cur: cm.length > 1 ? null : (cm[0] || ''), opts: Object.entries(CMODES).map(([id, c]) => ({ id, name: id ? c.name : 'INGEN', text: c.text })) }, // sist: kombinationspanelen (#cmodes) visas direkt under
+  ];
+}
+function setupStep(k, d) { // ◀ ▶ (pilarna, styrkorset, tryck på pilarna)
+  const r = setupDefs().find(x => x.k === k); if (!r || r.hide || !r.opts.length) return;
+  const n = r.opts.length; let i = r.opts.findIndex(o => o.id === r.cur); i = i < 0 ? (d > 0 ? 0 : n - 1) : (i + d + n) % n; const o = r.opts[i];
+  setupUI.k = k; setupUI.msg = '';
+  if (k === 'diff') settings.diff = o.id; else if (k === 'asc') settings.asc = o.id; else if (k === 'pet') settings.pet = o.id; else if (k === 'cmode') settings.cmode = o.id; else if (k === 'slot') settings.slot = o.id;
+  else if (k === 'cls') { setupUI.cls = o.id; if (!o.locked) settings.cls = o.id; }
+  saveSettings(); play('ui_hover', 0.3); refreshTitle();
+}
+function setupAct(k) { // Enter / tryck mitt på raden
+  setupUI.k = k; setupUI.msg = '';
+  if (k === 'cmode') { setupUI.combo = !setupUI.combo; play('ui_hover', 0.3); setupRows(); return; } // visa/dölj kombinationerna (de gamla knapparna i #cmodes)
+  if (k === 'cls') { const id = setupUI.cls, c = CLASSES[id];
+    if (c && !classOpen(id)) { if (profile.souls < c.cost) { setupUI.msg = `${c.name} KOSTAR ${c.cost} SJÄLAR – DU HAR ${profile.souls}`; setupRows(); return; }
+      const b = document.querySelectorAll('#classes button')[Object.keys(CLASSES).indexOf(id)]; if (b) b.click(); return; } // köp med den befintliga logiken
+    const ids = Object.keys(CLASSES).filter(classOpen), j = ids.indexOf(settings.cls || 'vandrare'); settings.cls = setupUI.cls = ids[(j + 1) % ids.length] || 'vandrare'; saveSettings(); play('ui_hover', 0.3); refreshTitle(); return; } // mitten hoppar bara mellan öppna klasser – köper aldrig av misstag
+  setupStep(k, 1);
+}
+function setupStart() { // START längst ned i ANPASSA
+  if (CLASSES[setupUI.cls] && !classOpen(setupUI.cls)) { setupUI.msg = 'KLASSEN ÄR LÅST – KÖP DEN ELLER VÄLJ EN ANNAN'; setupUI.k = 'cls'; setupUI.cls = settings.cls || 'vandrare'; setupRows(); return; }
+  const s = document.getElementById('start'); if (s && !s.disabled) s.click();
+}
+function setupRows() {
+  const box = document.getElementById('srows'); if (!box) return;
+  const defs = setupDefs();
+  for (const r of defs) {
+    let row = box.querySelector(`[data-k="${r.k}"]`);
+    if (!row) { row = document.createElement('button'); row.type = 'button'; row.className = 'srow'; row.dataset.k = r.k; row.innerHTML = '<span class="sk"></span><span class="sa l"></span><span class="sv"></span><span class="sa r"></span>';
+      row.addEventListener('click', e => { const a = e.target && e.target.closest ? e.target.closest('.sa') : null; if (a) setupStep(r.k, a.classList.contains('l') ? -1 : 1); else setupAct(r.k); });
+      row.addEventListener('focus', () => { if (setupUI.k !== r.k) { setupUI.k = r.k; setupUI.msg = ''; setupDesc(); } });
+      box.appendChild(row); }
+    row.hidden = !!r.hide; const o = r.opts.find(x => x.id === r.cur);
+    row.querySelector('.sk').textContent = r.label;
+    const sv = row.querySelector('.sv'); sv.textContent = o ? o.name : r.k === 'cmode' ? cmodeNames(settings.cmode) : '';
+    if (o && o.small) sv.appendChild(Object.assign(document.createElement('small'), { textContent: o.small }));
+    row.classList.toggle('locked', !!(o && o.locked)); row.setAttribute('aria-label', r.label + ': ' + sv.textContent);
+  }
+  const setup = document.getElementById('setup'), cmr = defs.find(x => x.k === 'cmode'); if (setup) setup.classList.toggle('combo', setupUI.combo && !cmr.hide);
+  setupDesc(defs);
+}
+function setupDesc(defs) {
+  const d = document.getElementById('setupdesc'); if (!d) return; defs = defs || setupDefs();
+  if (setupUI.msg) { d.textContent = setupUI.msg; return; }
+  const r = defs.find(x => x.k === setupUI.k && !x.hide) || defs.find(x => x.k === 'cls'), o = r.opts.find(x => x.id === r.cur);
+  d.textContent = o ? o.text : r.k === 'cmode' ? 'KOMBINERADE UTMANINGAR – SJÄLARNA MULTIPLICERAS' : '';
+  if (r.k === 'cmode') d.textContent += ' · TRYCK FÖR ATT KOMBINERA';
 }
 function openUnlocks() {
   const items = Cards.ALL.filter(c => c.unlock).sort((a, b) => a.unlock - b.unlock).map(card => ({ kind: 'card', card, price: card.unlock, owned: profile.unlocked.includes(card.id) }));
@@ -7916,7 +8026,7 @@ Object.assign(USES, {
   },
   talent(pr) { pr.used = true; pr.img = pr.frames[1] || pr.img; run.talentQ = (run.talentQ || 0) + 1; play('talent_altar', 0.8); say('TALANGALTARET GLÖDER', 1.5); stat('talentAltars'); talentPick(); },
   cartographer(pr) { // kartografen säljer kartor och hemligheter
-    openUI(() => CardUI.choice({ title: 'KARTOGRAFEN', subtitle: `"JAG HAR RITAT VARJE GÅNG HÄR NERE." DU HAR ${run.gold} GULD.`, cancel: 3,
+    openUI(() => CardUI.choice({ title: 'KARTOGRAFEN', subtitle: `"JAG HAR RITAT VARJE GÅNG." · ${run.gold} GULD`, cancel: 3,
       options: [{ label: 'KARTA (35 GULD)', text: 'HELA VÅNINGEN PÅ KARTAN' }, { label: 'HEMLIGHETER (60 GULD)', text: 'VISAR HEMLIGA VÄGGAR OCH SKATTER' }, { label: 'BERÄTTA', text: 'OM DJUPET' }, { label: 'GÅ', text: '' }] }, i => {
       closeUI();
       if (i === 0) { if (run.gold < 35) { say('FÖR LITE GULD', 1.2); return; } run.gold -= 35; run.goldSpent = (run.goldSpent || 0) + 35; seen.fill(1); run.mapRevealed = true; if (!showMap) showMap = 1; play('map_unroll', 0.8); say('KARTOGRAFEN RITAR VÅNINGEN', 2); }
@@ -8314,7 +8424,8 @@ function beginCampaign(ch) {
   for (const k in AMMO) if (k !== 'none' && k !== 'mana') P.ammo[k] = Math.round(AMMO[k].max * (0.2 + ch * 0.06));
   run.gold += ch * 60; run.lvl = 1 + ch * 2; run.talentQ = ch * 2; // och med talanger att välja
   loadFloor(1); lockPointer(); if (window.Music) Music.sting('chapter');
-  openUI(() => CardUI.list(CAMPAIGN[ch].name, '', [{ label: CAMPAIGN[ch].text, text: 'TRYCK FÖR ATT BÖRJA' }], () => { closeUI(); openUI(() => draftUI(drawCards(3 + meta('choice')), { title: CAMPAIGN[ch].name, subtitle: 'VÄLJ ETT STARTKORT', skipLabel: 'INGET KORT' }, card => { gainCard(card); closeUI(); })); }));
+  const go = () => { closeUI(); openUI(() => draftUI(drawCards(3 + meta('choice')), { title: CAMPAIGN[ch].name, subtitle: 'VÄLJ ETT STARTKORT', skipLabel: 'INGET KORT' }, card => { gainCard(card); closeUI(); })); };
+  openUI(() => CardUI.list(CAMPAIGN[ch].name, '', [{ label: CAMPAIGN[ch].text, text: 'TRYCK FÖR ATT BÖRJA', onClick: () => { CardUI.close(); go(); } }], go)); // raden (som texten säger) eller STÄNG går vidare till kortvalet
 }
 function campaignLevel(depth) {
   const c = CAMPAIGN[run.campaign.ch];
@@ -8361,7 +8472,7 @@ Object.assign(USES, {
     const opts = LEGEND_IDS.filter(id => P.has[weaponIndex(LEGENDS[id].base)] && legendOf(LEGENDS[id].base) !== id);
     if (!opts.length) { say('ALTARET SVARAR INTE – DU BÄR INGET VAPEN DET KAN FÖRVANDLA', 2.5); return; }
     const gp = 120 + run.depth * 10;
-    openUI(() => CardUI.choice({ title: 'LEGENDALTARET', subtitle: `"GE MIG GULD ELLER SJÄLAR, SÅ VAKNAR DITT VAPEN." DU HAR ${run.gold} GULD OCH ${profile.souls} SJÄLAR.`, cancel: opts.length,
+    openUI(() => CardUI.choice({ title: 'LEGENDALTARET', subtitle: `${run.gold} GULD · ${profile.souls} SJÄLAR`, cancel: opts.length,
       options: opts.map(id => ({ label: `${LEGENDS[id].name} (${gp} GULD ELLER 50 SJÄLAR)`, text: LEGENDS[id].text })).concat({ label: 'GÅ', text: '' }) }, i => {
       closeUI(); if (i >= opts.length) return;
       if (run.gold >= gp) { run.gold -= gp; run.goldSpent = (run.goldSpent || 0) + gp; } else if (profile.souls >= 50) { profile.souls -= 50; saveProfile(); } else { say('DU HAR FÖR LITE GULD OCH SJÄLAR', 2); return; }
@@ -9005,7 +9116,7 @@ const LOOP_MAGNET = new Set(['health', 'ammo', 'armor', 'gold', 'goldpile', 'gea
 function drawLoopHud(g) {
   if (cmode('clock') && run && lvl && !lvl.hub) { const t = Math.max(0, run.clockT || 0), s = t.toFixed(1), w = textW(s) * 2; txt(s, Math.round((W - w) / 2), 4, t < 3 ? (tmr % 0.4 < 0.2 ? '#ff4030' : '#a02010') : run.clockFlash > 0 ? '#9fe060' : '#ffe9a8', 2); }
   if (settings.styleMeter === false || style.v < 0.5) return;
-  const r = styleRank(), R = STYLE_RANKS[r], x0 = W - 76, y0 = HL ? HL.styleY : 72, nx = STYLE_RANKS[r + 1], k = nx ? (style.v - R[3]) / (nx[3] - R[3]) : 1, lines = style.feed.slice(0, 3); // smal, i högerkanten (utanför bildens mitt)
+  const r = styleRank(), R = STYLE_RANKS[r], x0 = W - 76 - hudIX, y0 = HL ? HL.styleY : 72, nx = STYLE_RANKS[r + 1], k = nx ? (style.v - R[3]) / (nx[3] - R[3]) : 1, lines = style.feed.slice(0, 3); // smal, i högerkanten (utanför bildens mitt)
   g.fillStyle = 'rgba(0,0,0,0.45)'; g.fillRect(x0 - 3, y0 - 3, 75, 26 + lines.length * 9);
   txt(R[0], x0, y0, R[2], 2);
   g.fillStyle = '#2a2018'; g.fillRect(x0, y0 + 18, 72, 2); g.fillStyle = R[2]; g.fillRect(x0, y0 + 18, Math.round(72 * clamp(k, 0, 1)), 2);
@@ -11250,10 +11361,11 @@ const v20api = () => ({ sluices: v20sl, sprays: v20sprays, oases: v20oases, mira
   if (params.has('autostart')) begin('new');
 })();
 document.getElementById('start').addEventListener('click', () => startMode('new'));
+document.getElementById('setupstart').addEventListener('click', () => setupStart());
 document.getElementById('daily').addEventListener('click', () => startMode('daily'));
 document.getElementById('practicebtn').addEventListener('click', () => openPractice());
-document.getElementById('newsbtn').addEventListener('click', () => showNews());
-document.getElementById('manualbtn').addEventListener('click', () => showManual());
+document.getElementById('newsbtn').addEventListener('click', () => { showNews(); listPager(); });
+document.getElementById('manualbtn').addEventListener('click', () => { showManual(); listPager(); });
 document.getElementById('continue').addEventListener('click', () => begin('continue'));
 document.getElementById('unlocks').addEventListener('click', () => { ensureAudio(); openUnlocks(); });
 document.getElementById('altar').addEventListener('click', () => { ensureAudio(); openAltar(); });
@@ -11281,14 +11393,17 @@ if (params.has('fro')) document.getElementById('seed').value = params.get('fro')
 document.getElementById('editorbtn').addEventListener('click', () => { if (!document.getElementById('start').disabled) openEditor(); });
 if (params.has('bana')) { const t = setInterval(() => { if (!document.getElementById('start').disabled) { clearInterval(t); openEditor(params.get('bana')); } }, 300); } // delad bana
 addEventListener('keydown', e => { // siffertangenterna väljer klass på startskärmen
-  if (state !== 'title' || CardUI.isOpen() || document.activeElement?.tagName === 'INPUT' || !/^Digit[0-9]$/.test(e.code)) return;
+  if (state !== 'title' || CardUI.isOpen() || document.getElementById('editor') || document.activeElement?.tagName === 'INPUT' || !/^Digit[0-9]$/.test(e.code)) return;
   const ids = Object.keys(CLASSES), id = ids[e.code === 'Digit0' ? 9 : +e.code.slice(5) - 1]; if (!id) return;
   if (!classOpen(id)) { document.getElementById('status').textContent = `${CLASSES[id].name} ÄR LÅST (${CLASSES[id].cost} SJÄLAR)`; return; }
   settings.cls = id; saveSettings(); refreshTitle(); document.getElementById('status').textContent = `${CLASSES[id].name}: ${CLASSES[id].text}`;
 });
 addEventListener('keydown', e => { // startskärmen: pilarna flyttar markeringen, Enter väljer, Escape går tillbaka (handkontrollen skickar samma tangenter)
+  if (state === 'title' && document.getElementById('editor')) { if (e.code === 'Escape' && !CardUI.isOpen()) { const b = [...document.querySelectorAll('#editor button')].find(x => x.textContent === 'STÄNG'); if (b) b.click(); } return; } // banbyggaren ligger över: Escape = STÄNG, övriga tangenter är dess
   if (state !== 'title' || CardUI.isOpen() || document.getElementById('title').hidden) return;
   const a = document.activeElement, inInput = !!a && a.tagName === 'INPUT', items = titleItems(), i = items.indexOf(a);
+  if ((e.code === 'ArrowLeft' || e.code === 'ArrowRight') && a && a.classList && a.classList.contains('srow')) { e.preventDefault(); setupStep(a.dataset.k, e.code === 'ArrowRight' ? 1 : -1); return; } // ANPASSA: vänster/höger byter värde
+  if (e.code === 'Escape' && titleSub === 'setup' && setupUI.combo) { e.preventDefault(); setupUI.combo = false; setupRows(); try { document.querySelector('#srows [data-k=cmode]').focus(); } catch (er) { /* ingen fokus */ } return; }
   if (e.code === 'ArrowDown' || e.code === 'ArrowUp' || (!inInput && (e.code === 'ArrowLeft' || e.code === 'ArrowRight'))) {
     e.preventDefault(); const n = items.length, d = e.code === 'ArrowDown' || e.code === 'ArrowRight' ? 1 : -1; if (!n) return;
     try { items[i < 0 ? (d > 0 ? 0 : n - 1) : (i + d + n) % n].focus(); } catch (er) { /* ingen fokus */ } play('ui_hover', 0.3); return;
@@ -11302,6 +11417,7 @@ addEventListener('keydown', e => { // startskärmen: pilarna flyttar markeringen
 let titleSub = ''; // öppen undermeny på startskärmen: '' (huvudlistan), 'moremodes', 'setup' eller 'collections'
 function titleMenu(sub) { // visa huvudlistan eller en undermeny i samma stil
   const prev = titleSub; titleSub = sub || '';
+  if (titleSub === 'setup' && prev !== 'setup') { setupUI.cls = ''; setupUI.combo = false; setupUI.msg = ''; setupUI.k = 'diff'; setupRows(); } // ANPASSA öppnas alltid med vald klass och utan kombinationspanelen
   document.getElementById('mainmenu').hidden = !!titleSub;
   for (const box of ['moremodes', 'setup', 'collections']) document.getElementById(box).hidden = box !== titleSub;
   for (const [b, box] of [['moremodesbtn', 'moremodes'], ['setupbtn', 'setup'], ['collbtn', 'collections']]) document.getElementById(b).setAttribute('aria-expanded', String(box === titleSub));

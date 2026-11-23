@@ -143,6 +143,13 @@ Spelare och gränssnitt
 53. Positionsljud i stereo som dämpas bakom väggar.
 54. Fotsteg i takt med farten.
 
+## Gränssnittet och språket (efter moderna boomer shooters)
+- **Språk:** spelet är på engelska som standard; svenska väljs under INSTÄLLNINGAR → SPRÅK / LANGUAGE (sidan laddas om). Källtexten är fortfarande svensk: `js/i18n.js` översätter varje text när den visas (canvas via `plain()`/`wrapText()`, DOM via en MutationObserver) med ordlistan `js/i18n_en.js`, först hela strängen och sedan bit för bit, så att sammansatta texter också blir engelska. Ordlistan byggs med `node tools/i18n/build.mjs` av `tools/i18n/en/part_*.json` (översatta bitar ur `node tools/i18n/extract.mjs`) och `tools/i18n/en/manual.json` (rättelser, vinner). `node tools/i18n/coverage.mjs` och `coverage_play.mjs` listar texter som fortfarande är svenska. Testerna kör på svenska (`?nolock=1` utan `&lang=en`).
+- **HUD:** ingen statuslist; hälsa (kors + siffra) och skydd (sköld) i ena hörnet, ammo i det andra, inga etiketter. Ett kort meddelande i taget, fiendepresentationer bara "NEW ENEMY: NAMN", målet som en kort rad under minikartan, effekter som ikoner. På pekskärm ligger hörnen uppe.
+- **Telefonen:** fem fasta knappar (avfyra, alt, hoppa, rusa, paus); ANVÄND, LADDA OM, GRANAT, DRYCK, FÖRMÅGA och LAMPA dyker upp när de går att använda. Tryck på ammo byter vapen, tryck på minikartan visar kartan. "ALLA KNAPPAR" i inställningarna ger tillbaka den gamla layouten.
+- **Menyer:** startskärmen är en lodrät lista (PLAY, MODES, CUSTOMIZE, COLLECTIONS, SETTINGS) med undermenyer; CUSTOMIZE har en rad per inställning med ◀ ▶; pausen sex val; dödsskärm med RETRY/MENU; nivåslut med uppräkning och betyg; affär, kortval och andra dialoger visar ikon + namn + pris och beskrivningen bara för det markerade valet.
+- **Verktyg:** `node tools/ui/shots.mjs <etikett>` tar skärmdumpar på dator, liggande och stående telefon (`LANG_UI=sv` för svenska). Tester: t97 (HUD), t98 (pek), t99 (menyer), t100 (dialoger), t101 (lägen och tillbaka-flöden), t102 (språket).
+
 ## Förbättringsloopen
 
 Spelet har en självförbättrande loop för Claude Code i grafform: **mät → planera → (bygg ∥ testa blint) → sammanför och revidera → granska → checka in → lär**.

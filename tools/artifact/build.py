@@ -166,7 +166,7 @@ html = re.sub(r'(<style>)(.*?)(</style>)', lambda m: m.group(1) + fix_css(m.grou
 html = html.replace('<link rel="stylesheet" href="css/cards.css">', '<link rel="stylesheet" href="data:text/css,/*cards.css*/">\n<style>\n' + css + '\n</style>')  # cardui.js letar efter en länk till cards.css
 shim = SHIM.replace('__PACKS__', json.dumps(info)).replace('__BIN__', 'true' if FMT == 'bin' else 'false')
 html = html.replace('<script src="js/rng.js"></script>', '<script>\n' + shim + '\n</script>\n<script src="js/rng.js"></script>', 1)
-for js in ['rng', 'gen', 'cards', 'cardui', 'music', 'weapons', 'game']:  # körs av shimmen, i denna ordning, när paketen är inne
+for js in ['rng', 'gen', 'cards', 'cardui', 'music', 'weapons', 'i18n_en', 'i18n', 'game']:  # körs av shimmen, i denna ordning, när paketen är inne
     src = open(ROOT + '/js/%s.js' % js, encoding='utf-8').read().replace('</script', '<\\/script')
     tag = '<script src="js/%s.js"></script>' % js
     assert tag in html, tag

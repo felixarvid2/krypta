@@ -1,5 +1,6 @@
 /* KRYPTA – kortgränssnitt (draft, butik, kortlek, toast). Allt prefixat med cu-. */
 @font-face { font-family: "CUPress"; src: local("Press Start 2P"), url(../assets/font/PressStart2P.ttf); font-display: swap; }
+@font-face { font-family: "CUPress"; src: url(../assets/font/KryptaRing.ttf); unicode-range: U+00C5, U+00E5; font-display: swap; } /* Å och å med tydlig ring */
 
 #cardui {
   position: fixed; inset: 0; z-index: 1000; pointer-events: none;
@@ -657,3 +658,160 @@
   .cu-tico { width: 56px; }
   .cu-tcard { grid-template-columns: 56px minmax(0, 1fr); }
 }
+
+/* ---------- Kompakta dialoger: rutor med ikon + namn + pris/sällsynthet, beskrivningen bara för det markerade valet ---------- */
+#cardui .cu-desc {
+  align-self: center; width: min(760px, 100%); height: 5.9em; overflow: hidden; flex: none;
+  padding: .55em .9em; font-size: 8px; line-height: 1.55; text-align: center; color: var(--muted);
+  background: rgba(10,7,5,.8); border: 2px solid var(--edge); box-shadow: 2px 2px 0 #000;
+  display: flex; flex-direction: column; justify-content: center; justify-content: safe center; gap: .15em; overflow-y: auto;
+}
+#cardui .cu-desc .cu-dh { color: var(--ink); }
+#cardui .cu-desc .cu-dr { color: var(--dim); }
+#cardui .cu-desc .cu-dsale { color: #6fc26a; }
+#cardui .cu-desc .cu-fx { font-size: 1em; line-height: 1.55; text-align: center; }
+#cardui .cu-desc .cu-fx div { display: inline; margin: 0; }
+#cardui .cu-desc .cu-fx div + div::before { content: ' · '; color: var(--dim); }
+#cardui .cu-desc .cu-dsyn { color: #9fe08a; }
+#cardui .cu-desc .cu-cmp { display: block; padding: 0; background: none; border: 0; box-shadow: none; font-size: 1em; text-align: center; }
+#cardui .cu-desc .cu-cmph { display: none; }
+#cardui .cu-desc .cu-cl { display: inline; }
+#cardui .cu-desc .cu-cl + .cu-cl::before { content: ' · '; color: var(--dim); }
+#cardui .cu-desc .cu-cll::after { content: ' '; }
+#cardui .cu-desc .cu-again { color: var(--gold); animation: cu-blink 1s steps(2) infinite; }
+#cardui .cu-desc.msg .cu-dmsg { color: var(--muted); }
+#cardui .cu-desc.ok .cu-dmsg { color: #6fc26a; }
+#cardui .cu-desc.bad .cu-dmsg { color: #ff7a5e; }
+@keyframes cu-blink { 50% { opacity: .45; } }
+
+/* kortval och kistor: små kort utan effekttext */
+#cardui .cu-draft > .cu-wrap { gap: 10px; }
+#cardui .cu-draft .cu-cards, #cardui .cu-draft .cu-cards.extra { --cw: min(168px, calc((100vw - 48px - (var(--n, 3) - 1) * 12px) / var(--n, 3))); gap: 12px; align-items: stretch; }
+#cardui .cu-draft .cu-card { aspect-ratio: auto; font-size: 8px; }
+#cardui .cu-draft .cu-inner { height: auto; }
+#cardui .cu-draft .cu-front { height: auto; gap: 6px; padding: 7px 7px 8px; }
+#cardui .cu-draft .cu-front > .cu-fx, #cardui .cu-draft .cu-sep, #cardui .cu-draft .cu-own,
+#cardui .cu-draft .cu-slot > .cu-extra, #cardui .cu-draft .cu-slot > .cu-cmp, #cardui .cu-draft .cu-hint { display: none; }
+#cardui .cu-draft .cu-art { width: 62%; }
+#cardui .cu-draft .cu-name { font-size: 8px; min-height: 2.8em; display: flex; align-items: center; justify-content: center; }
+#cardui .cu-draft .cu-rar { font-size: 6px; }
+#cardui .cu-draft .cu-card.sel { transform: translateY(-6px); }
+#cardui .cu-draft .cu-card.sel .cu-front { box-shadow: 0 0 0 2px #000, 0 0 0 4px #ffe9a8, 0 0 22px 4px var(--glow), 5px 5px 0 #000; }
+#cardui .cu-draft .cu-foot { gap: 8px; }
+#cardui .cu-draft .cu-foot .cu-btn { padding: 9px 12px; font-size: 9px; }
+#cardui .cu-draft .cu-foot .cu-gold { background: none; border: 0; box-shadow: none; padding: 0 6px; align-self: center; } /* guldet är en etikett, inte en knapp */
+#cardui .cu-draft .cu-foot .cu-gold .cu-coin { width: 10px; height: 10px; border-radius: 50%; }
+#cardui .cu-draft .cu-cards { padding-top: 12px; } /* plats för NY-märkena under undertiteln */
+#cardui .cu-draft .cu-new { top: -11px; right: auto; left: 50%; transform: translateX(-50%) rotate(-4deg); } /* mitt på överkanten: täcker varken sällsyntheten eller [1] */
+
+/* affären: tät rutnät, LÄMNA i rubrikraden */
+#cardui .cu-shop .cu-shopbox { width: min(1100px, 100%); gap: 10px; }
+#cardui .cu-shophead { flex-wrap: nowrap; }
+#cardui .cu-shophead .cu-title { margin-right: auto; text-align: left; }
+#cardui .cu-shophead .cu-gold { padding: 6px 10px; font-size: 10px; }
+#cardui .cu-shopbox { position: relative; }
+#cardui .cu-leave { padding: 8px 12px; font-size: 9px; position: absolute; top: 0; right: 0; }
+#cardui .cu-items { grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: 8px; }
+#cardui .cu-item { flex-direction: row; align-items: center; gap: 8px; padding: 6px 8px; min-height: 52px; }
+#cardui .cu-item:hover, #cardui .cu-item:focus-visible { transform: none; }
+#cardui .cu-item .cu-top { flex: 1; min-width: 0; gap: 8px; }
+#cardui .cu-item .cu-art, #cardui .cu-item .cu-ico { width: 38px; height: 38px; }
+#cardui .cu-item .cu-ico svg { width: 24px; height: 24px; }
+#cardui .cu-item .cu-iname { font-size: 8px; line-height: 1.4; }
+#cardui .cu-item .cu-irar { font-size: 6px; margin-top: 2px; }
+#cardui .cu-item .cu-price { margin: 0; border: 0; padding: 0; flex: none; flex-direction: column; align-items: flex-end; gap: 3px; font-size: 10px; }
+#cardui .cu-item .cu-num { font-size: 6px; }
+#cardui .cu-item.sel { background: #2a1d12; box-shadow: 0 0 0 2px #ffe9a8, 0 0 14px var(--glow), 4px 4px 0 #000; }
+#cardui .cu-shop .cu-desc { width: 100%; max-width: none; height: 5.9em; }
+#cardui .cu-draft .cu-name.long { font-size: 7px; }
+
+/* val (lägerelden, präst, händelser): bara namnen i listan, förklaringen under */
+#cardui .cu-choice .cu-deckbox { gap: 10px; }
+#cardui .cu-choice .cu-choices { gap: 6px; margin: .3em 0 0; width: min(30em, 92vw); }
+#cardui .cu-choice .cu-choices { width: min(440px, 92vw); }
+#cardui .cu-choice:not(.menulist) .cu-opt { text-align: center; padding: .85em 1em; background: rgba(27,20,16,.9); border: 2px solid var(--edge); color: var(--ink); box-shadow: 2px 2px 0 #000; }
+#cardui .cu-choice:not(.menulist) .cu-opt.sel, #cardui .cu-choice:not(.menulist) .cu-opt:focus-visible { background: linear-gradient(90deg, #4a160c, #7c2616 50%, #4a160c); border-color: #d8a24a; color: #ffd24a; outline: none; }
+#cardui .cu-choice .cu-desc { width: min(760px, 92vw); height: 5.1em; }
+#cardui .cu-draft .cu-desc { height: 10.6em; width: min(880px, 100%); }
+#cardui .cu-choice .cu-sub { line-height: 1.7; }
+
+/* liggande telefon och låga fönster */
+@media (max-height: 520px) {
+  #cardui .cu-screen { padding: 8px 14px; }
+  #cardui .cu-title { font-size: 15px; }
+  #cardui .cu-sub { font-size: 7px; line-height: 1.6; }
+  #cardui .cu-desc { font-size: 7px; }
+  #cardui .cu-draft > .cu-wrap { gap: 7px; }
+  #cardui .cu-draft .cu-cards, #cardui .cu-draft .cu-cards.extra { --cw: min(140px, calc((100vw - 48px - (var(--n, 3) - 1) * 10px) / var(--n, 3))); gap: 10px; }
+  #cardui .cu-draft .cu-art { width: 56%; }
+  #cardui .cu-draft .cu-name { font-size: 7px; }
+  #cardui .cu-shop .cu-shopbox { gap: 6px; }
+  #cardui .cu-items { grid-template-columns: repeat(auto-fill, minmax(164px, 1fr)); gap: 5px; }
+  #cardui .cu-item { min-height: 38px; padding: 3px 6px; gap: 6px; }
+  #cardui .cu-item .cu-top { gap: 6px; }
+  #cardui .cu-item .cu-art, #cardui .cu-item .cu-ico { width: 28px; height: 28px; }
+  #cardui .cu-item .cu-ico svg { width: 18px; height: 18px; }
+  #cardui .cu-item .cu-iname { font-size: 7px; }
+  #cardui .cu-choice .cu-deckbox { gap: 6px; }
+  #cardui .cu-choice .cu-choices { gap: 4px; }
+  #cardui .cu-choice .cu-opt { padding: .6em 1em; }
+}
+@media (max-width: 720px) {
+  #cardui .cu-items { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #cardui .cu-draft .cu-card, #cardui .cu-draft .cu-inner, #cardui .cu-draft .cu-front { min-height: 0; }
+  #cardui .cu-draft .cu-front .cu-art { width: 44px; }
+  #cardui .cu-draft .cu-name { justify-content: flex-start; min-height: 0; }
+  #cardui .cu-draft .cu-card.sel { transform: none; }
+  #cardui .cu-draft .cu-new { top: -5px; right: -5px; left: auto; transform: rotate(8deg); } /* korten i en kolumn: märket i hörnet */
+}
+
+/* dator och höga fönster: lite större */
+@media (min-height: 600px) and (min-width: 900px) {
+  #cardui .cu-desc { font-size: 9px; }
+  #cardui .cu-draft .cu-cards, #cardui .cu-draft .cu-cards.extra { --cw: min(200px, calc((100vw - 48px - (var(--n, 3) - 1) * 14px) / var(--n, 3))); gap: 14px; }
+  #cardui .cu-draft .cu-name { font-size: 9px; }
+  #cardui .cu-draft .cu-rar { font-size: 7px; }
+  #cardui .cu-draft .cu-foot .cu-btn { font-size: 10px; padding: 10px 14px; }
+  #cardui .cu-items { grid-template-columns: repeat(auto-fill, minmax(206px, 1fr)); gap: 10px; }
+  #cardui .cu-item { min-height: 60px; }
+  #cardui .cu-item .cu-art, #cardui .cu-item .cu-ico { width: 44px; height: 44px; }
+  #cardui .cu-item .cu-ico svg { width: 28px; height: 28px; }
+  #cardui .cu-item .cu-iname { font-size: 9px; }
+  #cardui .cu-item .cu-irar { font-size: 7px; }
+  #cardui .cu-item .cu-price { font-size: 12px; }
+  #cardui .cu-shophead .cu-gold { font-size: 12px; }
+  #cardui .cu-leave { font-size: 10px; }
+  #cardui .cu-choice:not(.menulist) .cu-opt { font-size: 11px; }
+  #cardui .cu-choice .cu-choices { width: min(520px, 92vw); }
+}
+@media (max-height: 520px) { #cardui .cu-draft .cu-name.long { font-size: 6px; } }
+@media (min-height: 600px) and (min-width: 900px) { #cardui .cu-draft .cu-name.long { font-size: 8px; } }
+/* talangvalet i liggande telefon: mindre kort så att knapparna under syns utan rullning */
+@media (max-height: 520px) and (min-width: 721px) {
+  #cardui .cu-talents { padding: 8px 14px; }
+  #cardui .cu-talents > .cu-wrap { gap: 8px; }
+  #cardui .cu-thead { gap: 10px; }
+  #cardui .cu-tlvl { min-width: 50px; padding: 4px 6px; }
+  #cardui .cu-tlvn { font-size: 16px; }
+  #cardui .cu-trow { --tw: min(240px, calc((100vw - 40px - (var(--n, 3) - 1) * 12px) / var(--n, 3))); gap: 12px; }
+  #cardui .cu-tcard { min-height: 0; gap: 5px; padding: 7px 8px 8px; }
+  #cardui .cu-tico:not(.sm) { width: 64px; }
+  #cardui .cu-tbody { gap: 4px; }
+  #cardui .cu-tname { font-size: 10px; }
+  #cardui .cu-ttop { font-size: 7px; }
+  #cardui .cu-ttext { font-size: 7px; line-height: 1.6; }
+  #cardui .cu-talents .cu-foot .cu-btn { font-size: 9px; padding: 8px 12px; }
+}
+#cardui .cu-item.owned .cu-pv { font-size: 7px; color: #6fc26a; }
+@media (max-width: 720px) {
+  #cardui .cu-shophead { flex-wrap: wrap; row-gap: 6px; }
+  #cardui .cu-shophead .cu-title { font-size: 12px; flex: 1 1 100%; }
+}
+@media (min-height: 600px) and (min-width: 900px) { #cardui .cu-draft .cu-desc { height: 13em; } }
+/* om en dialog ändå måste rulla (många kort/varor, små telefoner) stannar beskrivningen synlig längst ned */
+#cardui .cu-desc { position: sticky; bottom: 0; z-index: 3; background: #0d0907; }
+/* val med många alternativ (bossjakten: alla bossar) som ett rutnät, så att listan får plats utan rullning */
+#cardui .cu-choice .cu-choices.many { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); width: min(900px, 96vw); gap: 4px; }
+#cardui .cu-choice:not(.menulist) .cu-choices.many .cu-opt { padding: .55em .4em; font-size: 8px; }
+/* kortleken, kortarkivet och förfiningen rullar som en lång sida: STÄNG stannar synlig längst ned (telefon: annars ~1700 px ned) */
+#cardui .cu-deck:not(.cu-panel):not(.cu-choice) .cu-deckbox > .cu-foot { position: sticky; bottom: 0; z-index: 4; padding: 6px 0; background: linear-gradient(rgba(13,9,7,0), #0d0907 45%); align-self: stretch; }

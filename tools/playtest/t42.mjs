@@ -5,6 +5,7 @@ await pg.goto('http://localhost:8862/index.html?nolock=1'); await pg.waitForFunc
 await ev(() => { const g = __game; g.profile.runs = Math.max(1, g.profile.runs); g.profile.tutDone = true; g.settings.cmode = ''; g.refreshTitle(); });
 await pg.click('#setupbtn'); await wait(200); // utmaningarna ligger under ANPASSA RUNDAN
 ok(await ev(() => /NORMAL|LÄTT|SVÅR|BERÄTTELSE|MARDRÖM/.test(document.getElementById('setupsum').textContent)), 'sammanfattningen visar svårigheten (' + await ev(() => document.getElementById('setupsum').textContent) + ')');
+await pg.click('#srows [data-k=cmode]'); await wait(150); // ANPASSA: raden UTMANING öppnar kombinationerna (#cmodes)
 await pg.click('#cmodes button:has-text("ETT SLAG")'); await pg.click('#cmodes button:has-text("MÖRKER")'); await wait(200);
 ok(await ev(() => __game.settings.cmode) === 'onehit+dark', 'två utmaningar kombineras (' + await ev(() => __game.settings.cmode) + ')');
 ok(await ev(() => /ETT SLAG/.test(document.getElementById('setupsum').textContent)), 'sammanfattningen visar utmaningarna');

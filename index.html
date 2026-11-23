@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="css/cards.css">
 <style>
   @font-face { font-family: "PressStart2P"; src: url(assets/font/PressStart2P.ttf); }
+  @font-face { font-family: "PressStart2P"; src: url(assets/font/KryptaRing.ttf); unicode-range: U+00C5, U+00E5; } /* Å och å med tydlig ring (fontens egen syns inte) */
   :root { --bg: #0b0806; --ink: #e8d9b0; --muted: #c9a87a; --dim: #8a7550; --blood: #d8442a; --btn: #5a1a10; --btn-hi: #7c2616; --edge: #d8a24a; --soul: #c0a0ff; color-scheme: dark; }
   [hidden] { display: none !important; }
   html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; font-family: "PressStart2P", monospace; color: var(--ink); }
@@ -98,6 +99,10 @@
   @media (orientation: portrait) {
     #wrap { align-items: flex-start; padding-top: env(safe-area-inset-top, 0px); }
     #touch { --b: calc(min(17vw, 10vh) * var(--bs, 1)); --cb: calc(env(safe-area-inset-top, 0px) + 62.5vw); --p: 4vw; --bot: calc(5vh + env(safe-area-inset-bottom, 0px)); }
+    /* bilden upp till 25 % större med beskurna kanter (HUD:en flyttas in, hudIX i game.js), men aldrig ned till de övre knapparna (--bs sätts även på :root). ALLA KNAPPAR: som förr */
+    body.touch:not(:has(#touch.all)) { --ch: clamp(62.5vw, calc(95vh - 9vw - 10px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 4.4 * min(17vw, 10vh) * var(--bs, 1)), 78.125vw); }
+    body.touch:not(:has(#touch.all)) canvas { width: calc(var(--ch) * 1.6); height: var(--ch); flex: none; }
+    body.touch:not(:has(#touch.all)) #touch { --cb: calc(env(safe-area-inset-top, 0px) + var(--ch)); }
     #touch .fire { right: var(--p); bottom: var(--bot); }
     #touch .aim { right: calc(var(--p) + var(--b) * 1.6 + 3vw); bottom: var(--bot); }
     #touch .reload { right: calc(var(--p) + var(--b) * .3); bottom: calc(var(--bot) + var(--b) * 1.6 + 3vw); }
@@ -208,8 +213,31 @@
   #title #dailyinfo { font-size: 7px; line-height: 1.7; text-align: center; margin: -2px auto 6px; max-width: 64em; }
   #title #best { font-size: 7px; line-height: 1.7; color: var(--dim); text-align: center; margin-top: 4px; }
   #title .seedbox { justify-content: center; margin-top: 4px; }
-  #title #setup { display: flex; flex-direction: column; align-items: center; gap: 6px; width: min(52em, 96vw); }
-  #title #setup .mi.back, #title #setup #fullscreen { align-self: stretch; }
+  /* ANPASSA: en rad per inställning med ◀ VÄRDE ▶, en rad beskrivning, START längst ned (de gamla knappraderna ligger kvar dolda i DOM) */
+  #title #setup { display: flex; flex-direction: column; align-items: stretch; gap: 4px; width: min(38em, 94vw); }
+  #title #setup > .label:not(#setupdesc), #title #setup > .row, #title #setup > #fullscreen { display: none !important; }
+  #title #setup:not([hidden]) ~ #status { display: none; }
+  #srows { display: flex; flex-direction: column; gap: 2px; }
+  #title .srow { display: grid; grid-template-columns: minmax(6em, 1fr) 3em minmax(9em, 1.5fr) 3em; align-items: center; background: transparent; border: 0; padding: clamp(4px, 1.2vh, 9px) 6px; font-size: clamp(9px, min(1.4vw, 2.8vh), 14px); color: #e8d9b0; letter-spacing: 1px; text-shadow: 2px 2px #000; line-height: 1.3; text-align: left; }
+  #title .srow[hidden] { display: none; }
+  #title .srow .sk { color: var(--dim); font-size: .8em; letter-spacing: 2px; padding-left: 1.2em; }
+  #title .srow .sv { text-align: center; color: #ffe9a8; }
+  #title .srow .sv small { display: block; font-size: 7px; color: var(--soul); margin-top: 3px; letter-spacing: 1px; text-shadow: none; }
+  #title .srow.locked .sv { color: var(--muted); }
+  #title .srow .sa { align-self: stretch; display: flex; align-items: center; justify-content: center; min-height: 2.2em; cursor: pointer; }
+  #title .srow .sa::before { content: ''; width: 0; height: 0; border-top: .5em solid transparent; border-bottom: .5em solid transparent; opacity: .45; }
+  #title .srow .sa.l::before { border-right: .65em solid currentColor; } #title .srow .sa.r::before { border-left: .65em solid currentColor; }
+  #title .srow:hover, #title .srow:focus { background: linear-gradient(90deg, transparent, rgba(124,38,22,.9) 12%, rgba(124,38,22,.9) 88%, transparent); outline: none; }
+  #title .srow:hover .sk, #title .srow:focus .sk { color: #ffd24a; }
+  #title .srow:focus .sk::before { content: '>'; position: absolute; margin-left: -1.2em; color: #ffd24a; }
+  #title .srow:hover .sa::before, #title .srow:focus .sa::before { opacity: 1; color: #ffd24a; }
+  #title #setupdesc { min-height: 3.4em; font-size: 8px; line-height: 1.7; color: var(--muted); text-align: center; padding: 2px 8px; }
+  #title #setup.combo > #setupdesc { display: none; }
+  #title #setup.combo > #cmodes:not([hidden]) { display: flex !important; flex-wrap: wrap; justify-content: center; gap: 4px; }
+  #title #setup.combo > #cmodes button { font-size: 8px; padding: 7px 9px; }
+  #title #setup .sbtns { display: flex; gap: 10px; justify-content: center; margin-top: 2px; }
+  #title #setup .sbtns .mi { flex: 1; max-width: 14em; margin-top: 0; }
+  #title #setup #setupstart { color: #ffe9a8; border: 2px solid #7c2616; font-size: clamp(12px, min(1.8vw, 3.6vh), 18px); }
   #title #version { position: fixed; right: calc(8px + env(safe-area-inset-right, 0px)); bottom: 6px; font-size: 7px; color: var(--dim); opacity: .7; }
   #title #status { font-size: 8px; max-width: 40em; }
   #title #status:empty { display: none; }
@@ -224,6 +252,7 @@
   /* ---- dödsskärmen och nivåslutet: DOM-skärmar ovanför pekknapparna ---- */
   .endscr { position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(6px, 2vh, 14px); padding: 12px 16px; text-align: center; background: radial-gradient(rgba(20,4,2,.35), rgba(8,2,1,.85) 75%); animation: es-in .35s ease-out both; user-select: none; -webkit-user-select: none; }
   @keyframes es-in { from { opacity: 0; } to { opacity: 1; } }
+  body.endscr-on #touch .tb.fsbtn { display: none !important; } /* helskärm nås via inställningarna/pausen */
   .endscr .es-big { font-size: clamp(30px, min(8vw, 13vh), 76px); color: var(--blood); letter-spacing: 6px; text-shadow: 4px 4px #000, 0 0 28px #6a1408; }
   .endscr.win .es-big { color: #9fe0a0; text-shadow: 4px 4px #000, 0 0 28px #1f6a20; }
   .endscr .es-line { font-size: clamp(9px, min(1.3vw, 2.6vh), 13px); color: var(--muted); letter-spacing: 1px; }
@@ -264,6 +293,15 @@
   #cardui .cu-tab { font-size: .7em; padding: .7em .9em; background: transparent; border-color: #4a3a28; color: var(--muted, #c9a87a); }
   #cardui .cu-tab[aria-pressed="true"] { background: #5a1a10; border-color: #d8a24a; color: #ffd24a; }
   @media (max-height: 520px) { #cardui .cu-panel .cu-pbody { max-height: 52vh; } #cardui .cu-tab { padding: .5em .7em; } }
+  /* handboken och nyheterna: ett avsnitt i taget med < RUBRIK > */
+  #cardui .cu-pager { display: flex; align-items: center; justify-content: center; gap: 10px; align-self: stretch; }
+  #cardui .cu-pager .cu-pn { flex: 0 1 30em; text-align: center; font-size: clamp(8px, min(1.3vw, 2.6vh), 12px); letter-spacing: 1px; line-height: 1.5; }
+  #cardui .cu-pager .cu-btn { min-width: 3.2em; padding: .6em .8em; }
+  @media (max-height: 520px) { #cardui .cu-panel:has(.cu-pager) .cu-deckbox { max-height: calc(100vh - 16px); gap: 6px; } #cardui .cu-panel:has(.cu-pager) .cu-pbody { flex: 1 1 auto; min-height: 0; max-height: none; margin: 4px 0; } #cardui .cu-panel:has(.cu-pager) .cu-sub { display: none; } }
+  @media (max-height: 520px) { /* inställningarna i liggande telefon: kroppen krymper så att STÄNG alltid syns */
+    #cardui .cu-panel:has(.cu-tabs) .cu-deckbox { max-height: calc(100vh - 16px); gap: 6px; }
+    #cardui .cu-panel:has(.cu-tabs) .cu-title { font-size: clamp(14px, 5vh, 22px); }
+    #cardui .cu-panel:has(.cu-tabs) .cu-pbody { flex: 1 1 auto; min-height: 0; max-height: none; margin: 4px 0; gap: 2px; } }
 </style>
 </head>
 <body>
@@ -301,6 +339,8 @@
   </div>
   <div class="menu sub" id="setup" hidden>
     <div class="subhead">ANPASSA</div>
+    <div id="srows"></div>
+    <div id="setupdesc" class="label" aria-live="polite"></div>
     <div class="label">SVÅRIGHETSGRAD</div>
     <div class="row" id="diff"></div>
     <div class="row" id="asc" hidden></div>
@@ -313,7 +353,7 @@
     <div class="label" id="slotlabel">SPARPLATS</div>
     <div class="row" id="slots" hidden></div>
     <button id="fullscreen" class="mi fsonly" type="button">HELSKÄRM</button>
-    <button class="mi back" type="button" data-back>TILLBAKA</button>
+    <div class="sbtns"><button class="mi back" type="button" data-back>TILLBAKA</button><button id="setupstart" class="mi" type="button">START</button></div>
   </div>
   <div class="menu sub" id="collections" hidden>
     <div class="subhead">SAMLINGAR</div>
@@ -360,6 +400,8 @@
 <script src="js/cardui.js"></script>
 <script src="js/music.js"></script>
 <script src="js/weapons.js"></script>
+<script src="js/i18n_en.js"></script>
+<script src="js/i18n.js"></script>
 <script src="js/game.js"></script>
 </body>
 </html>

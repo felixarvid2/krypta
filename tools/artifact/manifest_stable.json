@@ -2759,6 +2759,12 @@
 "assets/wall/wall_timber.png",
 "assets/wall/wall_wax.png"
 ]
+},
+"p-misc-2": {
+"group": "misc",
+"files": [
+"assets/font/KryptaRing.ttf"
+]
 }
 }
 }
