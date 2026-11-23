@@ -1886,7 +1886,8 @@ function render() {
   if (P.hp < maxHp() * 0.3 && state === 'play' && settings.lowHpGray !== false) desaturate(0.55 * (1 - P.hp / (maxHp() * 0.3))); // låg HP: bilden gråas
   if (Math.abs(P.roll) > 0.002 && (state === 'play' || state === 'dead')) { // lutning vid sidosteg och fall vid döden
     rollCtx.putImageData(frame, 0, 0);
-    ctx.save(); ctx.translate(W / 2, VH / 2); ctx.rotate(P.roll); { const rs = 1.05 + Math.max(0, Math.abs(P.roll) - 0.1) * 0.75; ctx.scale(rs, rs); } ctx.drawImage(rollCan, -W / 2, -VH / 2); ctx.restore(); // större lutning (döden): förstora så att hörnen täcks
+    if (Math.abs(P.roll) > 0.05) { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, VH); } // stor lutning: hörnen som bilden inte täcker blir svarta (inte gamla bildrutor)
+    ctx.save(); ctx.translate(W / 2, VH / 2); ctx.rotate(P.roll); { const ar = Math.abs(P.roll), rs = Math.max(1.05, Math.min(1.35, Math.cos(ar) + (W / VH) * Math.sin(ar))); ctx.scale(rs, rs); } ctx.drawImage(rollCan, -W / 2, -VH / 2); ctx.restore(); // större lutning (döden): förstora så att hörnen täcks
   } else ctx.putImageData(frame, 0, 0);
   if (photo) { ctx.fillStyle = '#000'; ctx.fillRect(0, VH, W, HUD_H); }
 }
@@ -2173,6 +2174,7 @@ function wfxPose(f) { // anropas en gång per bildruta från drawWeapon: tillst�
   WA.prevShot = WS.shot;
   // spring: bärs lägre och lutat; inspektion: visas från sidan och vänds
   o.rot += P.runK * 0.1 * mo; o.dx += P.runK * 7 * mo;
+  waIdlePose(o, wp, mo); // viloliv: motorvapen vibrerar, båge/armborst andas (omgång 3)
   // sidled: vapnet lutar lite åt rörelsen; glidning: vapnet läggs ned åt vänster; rusning: dras bakåt/ned
   const lat = -Math.sin(P.a) * P.vx + Math.cos(P.a) * P.vy; WA.lean += (clamp(lat / 3.1, -1.2, 1.2) * 0.07 - WA.lean) * Math.min(1, dt * 8);
   WA.slideK += ((P.slide > 0 ? 1 : 0) - WA.slideK) * Math.min(1, dt * 12);
@@ -2276,12 +2278,62 @@ function wfxBlit(f, idx, ox, oy2) { // ritar vapnet (ev. vridet) med spår före
   // varm pipa: vapenpixlarna nära mynningen blir röda/orange
   if (on && WA.heat > 0.3) { const k = (WA.heat - 0.3) / 0.7, s = Math.max(16, f.w * 0.5); wctx.globalCompositeOperation = 'source-atop'; wctx.globalAlpha = Math.min(0.8, k * 0.9); wctx.drawImage(waGlowCan(), m[0] - f.x - s / 2, m[1] - f.y - s * 0.35, s, s); wctx.globalAlpha = 1; wctx.globalCompositeOperation = 'source-over'; }
   if (on && WA.glint > 0) { wctx.globalCompositeOperation = 'source-atop'; wctx.fillStyle = `rgba(255,225,120,${(WA.glint / 0.3 * 0.45).toFixed(3)})`; wctx.fillRect(0, 0, f.w, f.h); wctx.globalCompositeOperation = 'source-over'; } // perfekt omladdning: guldglimt
+  waLegendGlint(f, wp); // legendarisk guldglimt (omgång 3)
+  if (wp.id in WA_MAGIC) { const t = waTop(wp.id, idx, f), q = wfxPt(t[0] + fx0, t[1] + fy0); WA.tx = q[0]; WA.ty = q[1]; } else WA.tx = WA.ty = undefined; // magiska vapen: glöden vid spetsen
   if (WA.rot) { ctx.save(); ctx.translate(WA.px, WA.py); ctx.rotate(WA.rot); ctx.drawImage(wcan, fx0 - WA.px, fy0 - WA.py); ctx.restore(); }
   else ctx.drawImage(wcan, fx0, fy0);
   drawTrail();
   if (on && WA.heat > 0.3 && !settings.noFlash) { const k = (WA.heat - 0.3) / 0.7, s = 10 + 8 * k; ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = k * (0.32 + 0.06 * Math.sin(tmr * 9)); ctx.drawImage(waGlowCan(), WA.mx - s / 2, WA.my - s / 2, s, s); ctx.restore(); }
 }
+// viloliv per vapentyp (omgång 3): magi glöder och svävande korn, motor/såg vibrerar, båge/armborst andas, eldvapen har en liten låga, legendariska glimtar
+const WA_MAGIC = { staff: [150, 190, 255], prism: null, dreamstaff: [200, 160, 255], runebook: [255, 200, 120], starlance: [255, 240, 170] }; // null = regnbåge
+const WA_MOTOR = { sawlauncher: 1, chaincannon: 1, steamcannon: 1 }, WA_BREATH = { bow: 1, crossbow: 1 }, WA_PILOT = { flamer: 1, flaregun: 1 };
+WA.motes = []; WA.glowC = {}; WA.gl = 0;
+const waIdleOn = () => !WA.off && !settings.lowfx && !settings.reduceMotion && state === 'play' && WS.state === 'idle' && WS.shot > 0.4;
+function waGlowCol(c) { // förritad glöd i en färg (en gång per färg)
+  const k = c.join(','); if (WA.glowC[k]) return WA.glowC[k]; const cv = document.createElement('canvas'); cv.width = cv.height = 16; const g = cv.getContext('2d'), gr = g.createRadialGradient(8, 8, 0, 8, 8, 8);
+  gr.addColorStop(0, `rgba(${k},1)`); gr.addColorStop(0.5, `rgba(${k},0.45)`); gr.addColorStop(1, `rgba(${k},0)`); g.fillStyle = gr; g.fillRect(0, 0, 16, 16); return (WA.glowC[k] = cv);
+}
+const waRainbow = () => { const h = (tmr * 0.4) % 1, i = (h * 6) | 0, f = h * 6 - i, q = Math.round(255 * (1 - f)), t = Math.round(255 * f); return [[255, t, 90], [q, 255, 90], [90, 255, t], [90, q, 255], [t, 90, 255], [255, 90, q]][i]; };
+function waIdlePose(o, wp, mo) { // vibration och andning (bara i vila)
+  if (!waIdleOn()) return;
+  if (WA_MOTOR[wp.id]) { o.dx += Math.sin(tmr * 63) * 0.7 * mo; o.dy += Math.sin(tmr * 51 + 1) * 0.6 * mo; }
+  else if (WA_BREATH[wp.id]) { o.rot += Math.sin(tmr * 1.3) * 0.018 * mo; o.dy += Math.sin(tmr * 1.3 + 0.6) * 1.2 * mo; }
+}
+function waIdleDraw(f, wp) { // glöd, korn, låga och legendarisk glimt i skärmen
+  const dt = clamp(tmr - (WA.idT || 0), 0, 0.05); WA.idT = tmr;
+  for (let i = WA.motes.length - 1; i >= 0; i--) { const m = WA.motes[i]; m.t += dt; m.y += m.vy * dt; m.x += Math.sin(m.t * 4 + m.ph) * 6 * dt; if (m.t >= m.life) WA.motes.splice(i, 1); }
+  if (!waIdleOn() || WA.mx === undefined) { if (!waIdleOn()) WA.motes.length = 0; return; }
+  const magic = wp.id in WA_MAGIC, col = magic ? WA_MAGIC[wp.id] || waRainbow() : null;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  if (magic) { // pulserande glöd vid spetsen och svävande korn
+    const tx = WA.tx ?? WA.mx, ty = WA.ty ?? WA.my, s = 20 + Math.sin(tmr * 3) * 4; ctx.globalAlpha = 0.42 + 0.16 * Math.sin(tmr * 2.3); ctx.drawImage(waGlowCol(col), tx - s / 2, ty - s / 2, s, s);
+    if (WA.motes.length < 8 && Math.random() < dt * 5) WA.motes.push({ x: tx + rnd(-8, 8), y: ty + rnd(-2, 8), vy: -rnd(6, 14), t: 0, life: rnd(0.8, 1.4), ph: rnd(0, 6), col: col.slice() });
+    for (const m of WA.motes) { const a = Math.sin(m.t / m.life * Math.PI); ctx.globalAlpha = a * 0.9; ctx.fillStyle = `rgb(${m.col[0]},${m.col[1]},${m.col[2]})`; ctx.fillRect(Math.round(m.x), Math.round(m.y), 1 + (m.t < 0.3 ? 1 : 0), 1); }
+  } else if (WA_PILOT[wp.id]) { // liten låga/glöd vid mynningen
+    const fl = 0.75 + 0.25 * Math.sin(tmr * 23) * Math.sin(tmr * 7.1), s = (wp.id === 'flamer' ? 9 : 6) * fl;
+    ctx.globalAlpha = 0.55; ctx.drawImage(waGlowCol(wp.id === 'flamer' ? [90, 140, 255] : [255, 110, 60]), WA.mx - s / 2, WA.my - s / 2, s, s);
+    ctx.globalAlpha = 0.5 * fl; ctx.drawImage(waGlowCol([255, 170, 70]), WA.mx - s * 0.35, WA.my - s * 1.1, s * 0.7, s * 0.9);
+  }
+  ctx.restore();
+}
+WA.tops = {};
+function waTop(id, idx, f) { // vapenbildens översta ogenomskinliga pixel (spetsen), en gång per vapen och ruta; läses från en egen duk
+  const key = id + ':' + idx; if (WA.tops[key]) return WA.tops[key];
+  let r = [f.w * 0.5, 4];
+  try { if (!WA.tcan) { WA.tcan = document.createElement('canvas'); WA.tctx = WA.tcan.getContext('2d', { willReadFrequently: true }); }
+    WA.tcan.width = f.w; WA.tcan.height = f.h; WA.tctx.drawImage(wcan, 0, 0); const d = WA.tctx.getImageData(0, 0, f.w, f.h).data;
+    find: for (let y = 0; y < f.h; y++) for (let x = 0; x < f.w; x++) if (d[(y * f.w + x) * 4 + 3] > 128) { let x2 = x; while (x2 + 1 < f.w && d[(y * f.w + x2 + 1) * 4 + 3] > 128) x2++; r = [(x + x2) / 2, y + 3]; break find; } } catch (e) { /* t.ex. otillgänglig bild */ }
+  return (WA.tops[key] = r);
+}
+function waLegendGlint(f, wp) { // legendariska vapen: en guldglimt sveper över vapnet då och då (på wcan, innan det ritas)
+  if (!legendOf(wp.id) || !waIdleOn() || settings.noFlash) return;
+  const u = (tmr % 3.6) / 0.45; if (u >= 1) return; WA.gl++;
+  const x = -f.w * 0.3 + u * f.w * 1.6; wctx.save(); wctx.globalCompositeOperation = 'source-atop'; wctx.globalAlpha = 0.55 * Math.sin(u * Math.PI);
+  wctx.fillStyle = '#fff0b0'; wctx.beginPath(); wctx.moveTo(x, 0); wctx.lineTo(x + 7, 0); wctx.lineTo(x + 7 - f.h * 0.5, f.h); wctx.lineTo(x - f.h * 0.5, f.h); wctx.closePath(); wctx.fill(); wctx.restore();
+}
 function wfxAfter() { // rök och hylsor ovanpå vapnet
+  waIdleDraw(null, WEAPONS[P.weapon]); // viloliv (omgång 3)
   if (!WA.off && WS.state === 'reload' && WS.shellPhase === 'step' && WEAPONS[P.weapon].shellReload) { // hagelpatronen trycks upp i magasinet
     const k = clamp(WS.t / shellSeg('step'), 0, 1); if (k < 0.62) { const x = Math.round(WA.ex - 10 - k * 4), y = Math.round(VH + 6 - Math.sin(k / 0.62 * Math.PI * 0.5) * 30);
       ctx.fillStyle = '#9c1e18'; ctx.fillRect(x, y, 4, 9); ctx.fillStyle = '#e0503a'; ctx.fillRect(x, y, 1, 9); ctx.fillStyle = '#d8b050'; ctx.fillRect(x, y + 7, 4, 3); }
@@ -2303,6 +2355,7 @@ const wfxApi = {
   state: () => ({ off: WA.off, rot: WA.rot, ly: WA.ly, heat: WA.heat, shells: WA.shells.length, smoke: WA.smoke.length, trail: WA.trail.length, n: Object.assign({}, WA.n), glint: WA.glint, flick: WA.flick }),
   pose: () => ({ dx: waOut.dx, dy: waOut.dy, rot: WA.rot }),
   setOff: v => { WA.off = !!v; },
+  idle: () => ({ on: waIdleOn(), motes: WA.motes.length, glints: WA.gl }),
   caps: () => Object.assign({}, WA_CAP),
   fill: () => { for (let i = 0; i < WA_CAP.shells; i++) waShellScreen(i & 1, 1); for (let i = 0; i < WA_CAP.smoke; i++) waPuff(W / 2, VH * 0.6, 1); WA.heat = 1; }, // prov: fyll till taket
   bench: (n = 300) => { const ts = [], T0 = performance.now(); for (let i = 0; i < n; i++) { const t0 = performance.now(); drawWeapon(); ts.push(performance.now() - t0); } const mean = (performance.now() - T0) / n; ts.sort((a, b) => a - b); return { mean, med: ts[n >> 1], p90: ts[(n * 0.9) | 0] }; }
@@ -2364,9 +2417,20 @@ function wpBoom(x, y, r, big) { // explosionens steg; den gamla blixten, eldklot
   WP.sched.push({ t: 0.14, fn: () => { for (let i = 0; i < 2; i++) wpPart({ x: x + rnd(-0.2, 0.2), y: y + rnd(-0.2, 0.2), z: 0.55, vx: 0, vy: 0, vz: 0.7, life: 0.55, frames: fx.fireball, img: fx.fireball[0], size: 0.95 * k, add: true, drift: true }, true); } });
   WP.sched.push({ t: 0.32, fn: () => { const f = fx.parts.smoke2 || fx.parts.smoke || fx.hit; for (let i = 0; i < (big ? 6 : 4); i++) if (wpPart({ x: x + rnd(-0.5, 0.5) * k, y: y + rnd(-0.5, 0.5) * k, z: rnd(0.35, 0.8), vx: rnd(-0.2, 0.2), vy: rnd(-0.2, 0.2), vz: rnd(0.22, 0.4), life: rnd(1.9, 2.8), frames: f, img: f[0], size: rnd(0.36, 0.55) * k, drift: true, tint: [135, 128, 120] }, true)) WP.n.smoke++; } }); // rökmolnet stiger, dröjer kvar och löses upp (rutorna följer livet)
 }
+const WP_TEXMAT = {}; // väggtecken → material efter texturens namn (räknas en gång per tecken)
+function wpTexMat(cell) {
+  const c = cell === '*' && lvl ? lvl.secretWall : cell; if (c in WP_TEXMAT) return WP_TEXMAT[c];
+  const n = wallTexFor[c] || ''; let m = null;
+  if (/frost|ice/.test(n)) m = 'ice';
+  else if (/crystal|mirror|stainedglass|jars|dream/.test(n)) m = 'glass';
+  else if (/iron|brass|gear|pipe|cage|furnace|plate/.test(n)) m = 'metal';
+  else if (/forest|house|bookshelf|libpanel|timber|hull|rigging|tent|wood|hedge/.test(n)) m = 'wood';
+  else if (n && !/boss/.test(n)) m = 'stone';
+  return (WP_TEXMAT[c] = m);
+}
 function wpImpact(x, y, z, cell, dx, dy) { // kulnedslag efter väggens material
   if (!wpOn() || particles.length >= WP_HARD) return;
-  let mat = wallMat(cell); if (mat === 'stone' && lvl && WP_BIOME_MAT[lvl.biome]) mat = WP_BIOME_MAT[lvl.biome]; // vanliga väggar: biomens material
+  let mat = wallMat(cell); if (mat === 'stone') mat = wpTexMat(cell) || (lvl && WP_BIOME_MAT[lvl.biome]) || 'stone'; // vanliga väggar: texturens namn, annars biomens material
   const glass = mat === 'glass'; if (glass) mat = 'ice'; // glas/kristall splittras som is, men glittrar i biomens färg
   WP.n.impacts[mat]++;
   if (glass) for (let i = 0; i < 3; i++) wpPart({ x, y, z, vx: -dx * rnd(0.5, 1.5) + rnd(-0.8, 0.8), vy: -dy * rnd(0.5, 1.5) + rnd(-0.8, 0.8), vz: rnd(0.4, 1.6), life: 0.4, img: fx.hit[2], size: 0.025, add: true, grav: true, tint: BIOME_TINT[lvl.biome] || [220, 230, 255] }, true);
@@ -2394,6 +2458,7 @@ function wpProjDie(p) { // fiendeskott som slocknar: gnistor i skottets färg
 }
 const wpApi = { state: () => ({ sched: WP.sched.length, lights: WP.lights.length, parts: particles.length, n: JSON.parse(JSON.stringify(WP.n)) }), impact: (mat) => { const c = { metal: 'G', wood: 'D', stone: '#' }[mat] || '#'; wpImpact(P.x + Math.cos(P.a), P.y + Math.sin(P.a), 0.5, c, Math.cos(P.a), Math.sin(P.a)); },
   setOff: v => { WP.off = !!v; }, // prov: stäng av bara det här blocket (A/B-mätning)
+  texMat: c => wpTexMat(c),
   bench: (n = 120) => { const ts = []; for (let i = 0; i < n; i++) { const t0 = performance.now(); tmr += 1 / 60; updateProjectiles(1 / 60); updateParticles(1 / 60); updateLight(); render(); ts.push(performance.now() - t0); } ts.sort((a, b) => a - b); return { med: ts[n >> 1], p90: ts[(n * 0.9) | 0], parts: particles.length, proj: projectiles.length }; } }; // projektiler + partiklar + ljus + bild
 
 // ---------- HUD ----------
@@ -9658,7 +9723,7 @@ const LOOP_MAGNET = new Set(['health', 'ammo', 'armor', 'gold', 'goldpile', 'gea
 function drawLoopHud(g) {
   if (cmode('clock') && run && lvl && !lvl.hub) { const t = Math.max(0, run.clockT || 0), s = t.toFixed(1), w = textW(s) * 2; txt(s, Math.round((W - w) / 2), 4, t < 3 ? (tmr % 0.4 < 0.2 ? '#ff4030' : '#a02010') : run.clockFlash > 0 ? '#9fe060' : '#ffe9a8', 2); }
   if (settings.styleMeter === false || style.v < 0.5) return;
-  const r = styleRank(), R = STYLE_RANKS[r], x0 = W - 76 - hudIX, y0 = HL ? HL.styleY : 72, nx = STYLE_RANKS[r + 1], k = nx ? (style.v - R[3]) / (nx[3] - R[3]) : 1, lines = style.feed.slice(0, 3); // smal, i högerkanten (utanför bildens mitt)
+  const r = styleRank(), R = STYLE_RANKS[r], x0 = W - 76 - hudIX, y0 = HL ? HL.styleY : 72, nx = STYLE_RANKS[r + 1], k = nx ? (style.v - R[3]) / (nx[3] - R[3]) : 1, lines = style.feed.slice(0, HL && HL.t ? clamp(Math.floor((VH - 44 - y0 - 23) / 9), 0, 3) : 3); // MENY: pekskärm – listan slutar ovanför tipsraden längst ned // smal, i högerkanten (utanför bildens mitt)
   g.fillStyle = 'rgba(0,0,0,0.45)'; g.fillRect(x0 - 3, y0 - 3, 75, 26 + lines.length * 9);
   txt(R[0], x0, y0, R[2], 2);
   g.fillStyle = '#2a2018'; g.fillRect(x0, y0 + 18, 72, 2); g.fillStyle = R[2]; g.fillRect(x0, y0 + 18, Math.round(72 * clamp(k, 0, 1)), 2);
@@ -12108,8 +12173,9 @@ function gfxESubA() { // undertiteln tonar in först när namnet har landat (eft
 function gfxEBossName(s, a) { // bossens namn slår in: stort → normalt, med en kort skakning (reduceMotion: som förut)
   const g = ctx; g.font = '16px "PressStart2P"'; const w = g.measureText(plain(s)).width, t = gfxE.on && gfxEIntro.t >= 0 ? gfxEIntro.t : 9, rm = !!settings.reduceMotion;
   const k = rm ? 1 : 1 + 1.6 * Math.max(0, 1 - t / 0.22) ** 2, sh = rm ? 0 : clamp(settings.shake ?? 1, 0, 1) * (t > 0.22 && t < 0.6 ? (0.6 - t) * 8 : 0);
-  if (k === 1 && !sh) { txt(s, (W - w) / 2, 50, '#ff5030', 2, true, a); return; }
-  g.save(); g.translate(W / 2 + Math.sin(tmr * 90) * sh, 44 + Math.cos(tmr * 70) * sh * 0.6); g.scale(k, k); g.translate(-W / 2, -44); txt(s, (W - w) / 2, 50, '#ff5030', 2, true, a * Math.min(1, 0.3 + t * 4)); g.restore();
+  const mp = HL && showMap && HL.map.y < 66 ? HL.map.x - 4 - W / 2 : W / 2, fit = Math.min(1, (W - 2 * hudIX - 8) / w, 2 * Math.min(mp, W / 2 - hudIX - 4) / w); // MENY: krymps så att namnet varken klipps (stående) eller hamnar under minikartan // MENY: stående telefon – långa namn krymps så att de inte klipps vid kanterna
+  if (k === 1 && !sh && fit === 1) { txt(s, (W - w) / 2, 50, '#ff5030', 2, true, a); return; }
+  g.save(); g.translate(W / 2 + Math.sin(tmr * 90) * sh, 44 + Math.cos(tmr * 70) * sh * 0.6); g.scale(k * fit, k * fit); g.translate(-W / 2, -44); txt(s, (W - w) / 2, 50, '#ff5030', 2, true, a * Math.min(1, 0.3 + t * 4)); g.restore();
 }
 // ---------- Grafik: världen (VÄRLD) – rinnande vätskor, levande ljus, luftpartiklar, glimtande föremål, kistor, dörrdamm och sotmärken ----------
 // Vätskorna animeras i texturrymden (egna buffertar, 15 gånger/s) så golvloopen i render() är orörd. settings.lowfx (och gfxW.off) stänger av allt.

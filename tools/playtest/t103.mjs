@@ -87,6 +87,17 @@ ok(rCalm < rNorm * 0.6, `reduceMotion dämpar vridningen (${rNorm.toFixed(2)} �
 await ev(() => { __game.settings.noFlash = true; __game.P.mags[__game.P.weapon] = 3; __game.startReload(); __game.WS.t = __game.WEAPONS[__game.P.weapon].reload * 0.37; });
 await pg.keyboard.press('KeyR'); await wait(40); const nf = await S(); await ev(() => { __game.settings.noFlash = false; });
 ok(nf.flick > 0 && nf.glint === 0, `noFlash: snärten finns men ingen guldglimt (glimt ${nf.glint})`);
+// omgång 3: viloliv – magiska vapen glöder med svävande korn, motorvapen vibrerar, legendariska glimtar; av med lowfx och reduceMotion
+const I = () => ev(() => __game.wfx.idle());
+await ev(() => new Promise(r => { const t = setInterval(() => { if (__game.WS.state === 'idle') { clearInterval(t); r(); } }, 30); setTimeout(r, 3000); }));
+const idleW = async id => { await ev(id => { const P = __game.P, WS = __game.WS, i = __game.WEAPONS.findIndex(w => w.id === id); P.has[i] = true; P.weapon = i; WS.state = 'idle'; WS.shot = 99; }, id); await wait(1500); };
+await idleW('staff'); let iv = await I(); ok(iv.on && iv.motes > 0, `staven glöder i vila med svävande korn (${iv.motes})`);
+await ev(() => { __game.settings.lowfx = true; }); await wait(200); iv = await I(); ok(iv.motes === 0 && !iv.on, 'lowfx: inget viloliv'); await ev(() => { __game.settings.lowfx = false; });
+await ev(() => { __game.settings.reduceMotion = true; }); await wait(200); iv = await I(); ok(iv.motes === 0 && !iv.on, 'reduceMotion: inget viloliv'); await ev(() => { __game.settings.reduceMotion = false; });
+await idleW('sawlauncher'); const vib = []; for (let i = 0; i < 6; i++) { await wait(37); vib.push(await ev(() => __game.wfx.pose().dx)); }
+ok(Math.max(...vib) - Math.min(...vib) > 0.3, `sågbladskastaren vibrerar i vila (dx ${Math.min(...vib).toFixed(2)}…${Math.max(...vib).toFixed(2)})`);
+const legOk = await ev(() => { const L = __game.LEGENDS; const id = Object.keys(L).find(k => __game.WEAPONS.some(w => w.id === L[k].base)); if (!id) return false; __game.giveLegend(id, 'TEST'); const P = __game.P, i = __game.WEAPONS.findIndex(w => w.id === L[id].base); P.weapon = i; __game.WS.state = 'idle'; __game.WS.shot = 99; return true; });
+if (legOk) { const g0 = (await I()).glints; await wait(4200); ok((await I()).glints > g0, 'legendariska vapen glimtar i guld då och då'); }
 ok(await ev(() => __game.state()) === 'play', 'spelet är fortfarande igång');
 ok(cerr.length === 0, 'inga fel i bildrutorna ' + cerr.slice(0, 3).join(' | '));
 await done();

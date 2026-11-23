@@ -74,6 +74,9 @@ await wait(600); s1 = await S(); ok(s1.n.smoke === s0.n.smoke, 'lowfx: inget rö
 s0 = await S(); await ev(D => { const P = __game.P; __game.projectiles().push({ x: P.x + Math.cos(P.a) * D, y: P.y + Math.sin(P.a) * D, z: 0.5, vx: 0, vy: 0, kind: 'orb2', dmg: 0, src: { x: P.x, y: P.y }, life: 0.4 }); }, D); await wait(300); s1 = await S();
 ok(s1.n.trail === s0.n.trail, 'lowfx: inga spår');
 await ev(() => { __game.settings.lowfx = false; });
+// omgång 3: nedslagets material efter väggtexturens namn
+const tm = await ev(() => ['ũ', 'Ø', 'ŵ', 'Ą', '4', 'Ȑ'].map(c => __game.wproj.texMat(c)));
+ok(JSON.stringify(tm) === JSON.stringify(['wood', 'ice', 'metal', 'glass', 'stone', 'wood']), `materialet följer väggtexturen (bokhylla, frost, järnplåt, kristall, sten, timmer → ${tm.join(',')})`);
 ok(await ev(() => __game.state()) === 'play', 'spelet är fortfarande igång');
 ok(cerr.length === 0, 'inga fel i bildrutorna ' + cerr.slice(0, 3).join(' | '));
 await done();
