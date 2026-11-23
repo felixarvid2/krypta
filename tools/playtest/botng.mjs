@@ -2,7 +2,7 @@
 // node bot.mjs <minuter> [extra-query, t.ex. "&biome=crystal"] [läge: new|abyss|hunt]
 import { setup } from './head.mjs';
 const MIN = +(process.argv[2] || 3), Q = process.argv[3] || '', MODE = process.argv[4] || 'new', SEGER = +(process.env.BOTNG_SEGER || 0) || 0; // BOTNG_SEGER: testsöm, vinn rundan efter så många sekunders speltid
-const PORT = 8900 + Math.floor(Math.random() * 90);
+const PORT = +process.env.BOT_PORT || 8900 + Math.floor(Math.random() * 90); // BOT_PORT: measure.mjs ger varje bott en egen ledig port
 const { pg, errs, ev, wait, shot, done } = await setup(PORT, 'out/bot');
 await pg.goto(`http://localhost:${PORT}/index.html?nolock=1${Q}`);
 await pg.waitForFunction('!document.getElementById("start").disabled', { timeout: 90000 });
