@@ -3,7 +3,7 @@
 
 SÅ KÖR DU DET
     cd tools/weapon-frames
-    python3 pixelstyle.py IN.png UT.png [--id VAPEN] [--fw BREDD] [--strength 1.0] [--pick] [--opts nowood,smoke]
+    python3 pixelstyle.py IN.png UT.png [--id VAPEN] [--fw BREDD] [--strength 0.8] [--pick] [--opts nowood,smoke]
 
     python3 pixelstyle.py orig_v20/fp_axe.png ../../assets/gfx/fp_axe.png          # id läses ur filnamnet
     python3 pixelstyle.py min/fp_flail.png ../../assets/gfx/fp_flail.png --fw 180  # nytt vapen som inte står i weapons.js
@@ -13,7 +13,10 @@ SÅ KÖR DU DET
 
   --opts smoke   om krutrök/ånga är inritad i skjutrutorna (annars får röken kontur och smuts som en sten)
   --opts nowood  om orangebruna ytor är koppar, tegel eller läder (annars får de träådring)
-  --strength     0.6 = lättare slitage, 1.0 = standard, 1.3 = hårt
+  --strength     0.6 = lättare slitage, 0.8 = standard (valt i spelet mot gamla pistol/shotgun/smg), 1.3 = hårt
+
+Vapen med handgjorda detaljer (nitar, band, skåror, glansstrimmor) står i tabellen DETAILS längre ned. Detaljerna
+ritas i vilorutans koordinater och passas in i övriga rutor (skala + vridning kring mynningspunkten).
 
 VIKTIGT
   * Filtret är INTE idempotent. Kör alltid från en ostilad originalbild (spara den, t.ex. i orig_v20/) till
@@ -212,7 +215,7 @@ def wrap90(a):
 
 
 # ---------------------------------------------------------------- en bildruta
-def style_frame(rgb, alpha, tiles, off=(0, 0), ang0=None, wood0=None, strength=1.0, small=False, opts=()):
+def style_frame(rgb, alpha, tiles, off=(0, 0), ang0=None, wood0=None, strength=1.0, small=False, opts=(), det=None, aff=None):
     """rgb (h,w,3) uint8, alpha (h,w) uint8 -> (ny rgb, silhuettvinkel, trävinkel)."""
     h, w = alpha.shape
     m = alpha > 0
@@ -229,6 +232,11 @@ def style_frame(rgb, alpha, tiles, off=(0, 0), ang0=None, wood0=None, strength=1
         d = wrap90(ang - ang0)
         if abs(d) > np.radians(7):
             rot = d
+    dx_ = dy_ = None
+    if aff is not None:                         # detaljlagret passas in mot vilorutan (skala + vridning)
+        A, pf, p0 = aff[:3]
+        dx_ = np.rint(A[0, 0] * (xx - pf[0]) + A[0, 1] * (yy - pf[1]) + p0[0]).astype(np.int32)
+        dy_ = np.rint(A[1, 0] * (xx - pf[0]) + A[1, 1] * (yy - pf[1]) + p0[1]).astype(np.int32)
     if rot:
         cx, cy = xx[m].mean(), yy[m].mean()
         cs, sn = np.cos(-rot), np.sin(-rot)
@@ -246,7 +254,7 @@ def style_frame(rgb, alpha, tiles, off=(0, 0), ang0=None, wood0=None, strength=1
                 ((val > 0.97) & (sat < 0.12) & (box((cool & (sat > 0.4) & m).astype(np.float32), 2) > 0.15)))
     emis = emis | (m & (lum > 0.93))            # vitglödgat (avfyrningsglöd) lämnas rent
     if 'smoke' in opts:
-        emis = emis | (m & (val > 0.48) & (sat < 0.17))
+        emis = emis | (m & (val > 0.40) & (sat < 0.17))
     metal = m & ~emis & ((sat < 0.24) | ((sat < 0.42) & cool & (val < 0.75)))
     wood = m & ~emis & ~metal & (hue >= 8) & (hue <= 46) & (sat > 0.28) & (val < 0.80) & ~((hue > 34) & (sat > 0.6) & (val > 0.6))
     if 'nowood' in opts:                        # orangebrunt är koppar/läder här, inte trä
@@ -325,6 +333,18 @@ def style_frame(rgb, alpha, tiles, off=(0, 0), ang0=None, wood0=None, strength=1
     rust = rust * (0.55 + 0.45 * np.clip((4.5 - dist) / 3, 0, 1)) * min(S, 1.2)
 
     # fogar och kontur
+    # handgjorda detaljer (nitar, band, skåror) ritade i vilorutans koordinater, se DETAILS
+    dcol = None
+    if det is not None:
+        kd, cd, ref0 = det
+        hh, ww = kd.shape
+        if dx_ is None:
+            dx_, dy_ = xx, yy
+        ok = m & (dx_ >= 0) & (dx_ < ww) & (dy_ >= 0) & (dy_ < hh)
+        sx, sy = np.clip(dx_, 0, ww - 1), np.clip(dy_, 0, hh - 1)
+        ok &= np.abs(c - ref0[sy, sx]).sum(-1) < 0.26          # bara där rutan ser ut som vilorutan (samma del)
+        k = np.where(ok, k * kd[sy, sx], k)
+        dcol = np.where(ok[..., None], cd[sy, sx], 0)
     k = np.where(seam_m, k * (1 - 0.34 * S), k)
     k = np.where(lit_seam & ~seam_m, k * (1 + 0.16 * S), k)
     rim = dirty & thick & (dist == 2) & (ndl > 0.30)
@@ -334,6 +354,10 @@ def style_frame(rgb, alpha, tiles, off=(0, 0), ang0=None, wood0=None, strength=1
     if small:                                   # upplockningsbilder: för små för kontur + glans, håll det lätt
         k = np.where(outline, np.maximum(k, 0.72), k)
 
+    if dcol is not None:
+        out = out * (1 - dcol[..., 3:]) + dcol[..., :3] * dcol[..., 3:]
+        dm = dcol[..., 3] > 0.5
+        rust = np.where(dm, rust * 0.4, rust)
     col = out * k[..., None]
     # rost: dra mot rostbrunt, repor i målad yta visar metall
     rc = np.array([0.42, 0.20, 0.09], np.float32) * (0.70 + 0.35 * lum[..., None])
@@ -357,9 +381,258 @@ def style_frame(rgb, alpha, tiles, off=(0, 0), ang0=None, wood0=None, strength=1
     col = np.clip(col, 0, 1) * 255.0
     col += (by * np.where(emis, 5.0, 7.0))[..., None]
     flat = col[m].astype(np.float32) if 'legend' in opts else nearest(col[m].astype(np.float32))
+    if 'legend' not in opts:
+        # målade ytor (mässing, koppar, grönt, rött): håll nyansen ren - samma ramp över hela ytan i stället för
+        # närmaste palettfärg, som annars hoppar mellan olika ramper och ger fläckar
+        clean = (paint & (rust < 0.25) & ~chip)[m]
+        if dcol is not None:
+            clean &= ~(dcol[..., 3] > 0.5)[m]
+        if clean.any():
+            pc = col[m][clean] / 255.0
+            ph, ps, pv = rgb2hsv(pc)
+            oh, osat, _ = rgb2hsv(out[m][clean])                 # nyans/mättnad från den dämpade originalfärgen
+            t = np.clip(pv, 0, 1)
+            warm = ~((oh > 60) & (oh < 240))
+            hq = oh + np.where(warm, -1, 1) * 14 * (0.5 - t)      # skugga mot rött/blått, ljus mot gult
+            hq = np.round(hq / 4.0) * 4.0
+            sq = np.clip(np.round(osat * (1.12 - 0.35 * t * t) * 12) / 12, 0, 1)
+            vq = np.round(t * 20) / 20
+            hi_ = (hq % 360) / 60.0
+            ii = np.floor(hi_).astype(int) % 6
+            ff = hi_ - np.floor(hi_)
+            p_, q_, t_ = vq * (1 - sq), vq * (1 - sq * ff), vq * (1 - sq * (1 - ff))
+            tab = np.stack([np.stack([vq, t_, p_], -1), np.stack([q_, vq, p_], -1), np.stack([p_, vq, t_], -1),
+                            np.stack([p_, q_, vq], -1), np.stack([t_, p_, vq], -1), np.stack([vq, p_, q_], -1)], 0)
+            flat[clean] = tab[ii, np.arange(len(ii))] * 255.0
     res = rgb.copy()
     res[m] = np.clip(np.rint(flat), 0, 255).astype(np.uint8)
     return res, (ang if ang0 is None else ang0), wang
+
+
+# ---------------------------------------------------------------- handgjorda detaljer per vapen
+IRON = (0.20, 0.19, 0.18)
+BRASS = (0.62, 0.47, 0.16)
+# Koordinater är pixlar i vilorutan (ruta 0). Varje form klipps till den del av vapnet som har samma färg som
+# formens mittpunkt (eller 'at'), så linjer får gärna sticka ut över kanten.
+#   ('band', punkter, bredd, färg)   rem/klämma i egen färg med ljus överkant, mörk underkant och skugga
+#   ('groove', punkter)              mörk skåra med ljus kant (paneldelning)
+#   ('hi', punkter, bredd)           glansstrimma        ('sh', punkter, bredd)  skuggstrimma
+#   ('rivets', punkter, avstånd)     nitar längs en linje ('rivet', x, y)
+#   ('ell', cx, cy, rx, ry, vinkel, typ, ...)  ellips som 'groove' eller 'rivets'
+DETAILS = {
+    'launcher': [
+        ('band', [(0, 27), (13, 19), (30, 15)], 4, IRON, {'rivets': 7, 'at': (12, 20)}),
+        ('hi', [(8, 8), (11, 17)], 3, {'at': (9, 12)}),
+        ('hi', [(11, 24), (13, 30)], 3, {'at': (12, 27)}),
+        ('sh', [(24, 6), (33, 28)], 4, {'at': (26, 12)}),
+        ('ell', 22, 51, 14, 17, -20, 'groove', {'at': (12, 52)}),
+        ('ell', 22, 51, 17, 20, -20, 'rivets', 9, {'at': (12, 52)}),
+    ],
+    'nailgun': [
+        ('groove', [(46, 55), (74, 96)], {'at': (60, 80)}),
+        ('groove', [(38, 66), (62, 66)], {'at': (50, 70)}),
+        ('rivets', [(37, 58), (58, 96)], 9, {'at': (60, 80)}),
+        ('rivets', [(54, 57), (80, 93)], 9, {'at': (60, 80)}),
+        ('hi', [(60, 60), (76, 86)], 2, {'at': (60, 80)}),
+        ('hi', [(13, 50), (27, 90)], 2, {'at': (16, 60)}),
+        ('groove', [(2, 66), (16, 72), (33, 70)], {'at': (16, 62)}),
+    ],
+    'flamer': [
+        ('rivets', [(33, 33), (41, 27), (55, 25), (64, 27), (74, 36), (84, 48), (93, 62)], 8),
+        ('rivets', [(33, 57), (41, 48), (52, 42), (68, 42), (78, 47), (90, 60)], 8, {'at': (60, 41)}),
+        ('hi', [(45, 62), (60, 100)], 4, {'at': (60, 70)}),
+        ('hi', [(40, 30), (43, 40)], 3, {'at': (60, 34)}),
+        ('sh', [(86, 68), (98, 100)], 5, {'at': (80, 80)}),
+        ('groove', [(66, 46), (86, 100)], {'at': (70, 70)}),
+        ('band', [(6, 42), (28, 37)], 3, BRASS, {'at': (17, 40)}),
+        ('band', [(10, 78), (34, 73)], 3, BRASS, {'at': (22, 76)}),
+        ('hi', [(13, 30), (24, 98)], 1, {'at': (18, 60)}),
+    ],
+    'steamcannon': [
+        ('band', [(46, 108), (72, 104), (97, 95)], 4, IRON, {'at': (70, 100), 'rivets': 7}),
+        ('hi', [(58, 80), (66, 98)], 3, {'at': (62, 90)}),
+        ('hi', [(70, 108), (76, 122)], 3, {'at': (72, 114)}),
+        ('sh', [(84, 82), (98, 108)], 4, {'at': (88, 92)}),
+        ('rivets', [(66, 136), (78, 192)], 9, {'at': (80, 150)}),
+        ('rivets', [(128, 152), (154, 190)], 9, {'at': (120, 160)}),
+        ('groove', [(62, 148), (84, 160), (112, 164)], {'at': (80, 150)}),
+        ('hi', [(84, 140), (96, 190)], 3, {'at': (80, 150)}),
+    ],
+    'hivelauncher': [
+        ('band', [(10, 60), (25, 59), (42, 50)], 2, IRON, {'at': (25, 55), 'rivets': 6}),
+        ('hi', [(19, 42), (26, 56)], 3, {'at': (22, 50)}),
+        ('sh', [(33, 40), (42, 56)], 3, {'at': (36, 48)}),
+    ],
+    'sporelauncher': [
+        ('band', [(60, 137), (80, 144), (102, 139)], 2, BRASS, {'at': (80, 140), 'rivets': 7}),
+        ('hi', [(68, 124), (67, 152)], 3, {'at': (70, 140)}),
+        ('sh', [(92, 128), (92, 150)], 3, {'at': (90, 140)}),
+        ('rivets', [(8, 62), (20, 55), (38, 53)], 7, {'at': (20, 60)}),
+        ('hi', [(12, 100), (22, 125)], 3, {'at': (15, 110)}),
+        ('groove', [(22, 112), (40, 104), (62, 100)], {'at': (40, 100)}),
+    ],
+    'sawlauncher': [
+        ('rivets', [(68, 113), (90, 117)], 7, {'at': (75, 112)}),
+        ('rivets', [(112, 117), (131, 113)], 7, {'at': (120, 114)}),
+        ('rivets', [(66, 93), (80, 91)], 7, {'at': (70, 95)}),
+        ('ell', 80, 92, 50, 11, 3, 'groove', {'at': (40, 92)}),
+        ('ell', 80, 92, 34, 7, 3, 'rivets', 10, {'at': (40, 92)}),
+    ],
+}
+
+
+def _raster(shape, pts, width):
+    from PIL import ImageDraw
+    im = Image.new('L', (shape[1], shape[0]), 0)
+    d = ImageDraw.Draw(im)
+    pts = [tuple(p) for p in pts]
+    if len(pts) == 1:
+        d.point(pts, fill=255)
+    else:
+        d.line(pts, fill=255, width=width)
+    return np.array(im) > 0
+
+
+def _along(pts, step):
+    out, carry = [], 0.0
+    for (x0, y0), (x1, y1) in zip(pts[:-1], pts[1:]):
+        ln = float(np.hypot(x1 - x0, y1 - y0))
+        t = carry
+        while t <= ln:
+            out.append((int(round(x0 + (x1 - x0) * t / max(ln, 1e-6))), int(round(y0 + (y1 - y0) * t / max(ln, 1e-6)))))
+            t += step
+        carry = t - ln
+    return out
+
+
+def _ell(cx, cy, rx, ry, ang, n=40):
+    a = np.radians(ang)
+    return [(cx + rx * np.cos(t) * np.cos(a) - ry * np.sin(t) * np.sin(a), cy + rx * np.cos(t) * np.sin(a) + ry * np.sin(t) * np.cos(a))
+            for t in np.linspace(0, 2 * np.pi, n + 1)]
+
+
+def build_details(spec, rgb0, alpha0):
+    """Rita detaljlagret för vilorutan: (ljushetsfaktor, färglager RGBA, originalfärg)."""
+    h, w = alpha0.shape
+    c0 = rgb0.astype(np.float32) / 255.0
+    m0 = alpha0 > 0
+    nrm = c0 / (c0.sum(-1, keepdims=True) + 0.10)
+    kd = np.ones((h, w), np.float32)
+    cd = np.zeros((h, w, 4), np.float32)
+    lum0 = c0 @ np.array([0.30, 0.59, 0.11], np.float32)
+
+    def part(x, y):
+        x, y = int(np.clip(round(x), 0, w - 1)), int(np.clip(round(y), 0, h - 1))
+        return m0 & (np.abs(nrm - nrm[y, x]).sum(-1) < 0.15) & (np.abs(lum0 - lum0[y, x]) < 0.45) if m0[y, x] else np.zeros_like(m0)
+
+    def mid(pts):
+        q = _along(pts, 1.0)
+        return q[len(q) // 2]
+
+    def rivet(x, y, pm):
+        for dx, dy, f in ((0, 0, 1.75), (1, 0, 1.2), (0, 1, 1.05), (1, 1, 0.5), (2, 2, 0.72), (2, 1, 0.8), (1, 2, 0.8)):
+            xx, yy = x + dx, y + dy
+            if 0 <= xx < w and 0 <= yy < h and pm[yy, xx] and pm[min(y + 1, h - 1), min(x + 1, w - 1)] and pm[y, x]:
+                kd[yy, xx] = f
+
+    def draw(it):
+        kind = it[0]
+        if kind == 'ell':
+            pts = _ell(*it[1:6])
+            sub = it[6]
+            return draw((sub, pts) + tuple(it[7:]))
+        opt = it[-1] if isinstance(it[-1], dict) else {}
+        if kind == 'rivet':
+            return rivet(it[1], it[2], part(it[1], it[2]))
+        pts = it[1]
+        at = opt.get('at') or mid(pts)
+        pm = part(*at)
+        if kind == 'rivets':
+            for x, y in _along(pts, it[2]):
+                rivet(x, y, pm)
+        elif kind == 'groove':
+            r = _raster((h, w), pts, 1) & pm
+            kd[r] *= 0.50
+            lt = shift(r, 1, 1) & ~r & pm
+            kd[lt] *= 1.20
+        elif kind in ('hi', 'sh'):
+            r = _raster((h, w), pts, it[2]) & pm
+            core = _raster((h, w), pts, max(1, it[2] - 2)) & pm
+            if kind == 'hi':
+                kd[r] *= 1.16
+                kd[core] *= 1.14
+            else:
+                kd[r] *= 0.84
+                kd[core] *= 0.88
+        elif kind == 'band':
+            r = _raster((h, w), pts, it[2]) & pm
+            if not r.any():
+                return
+            col = np.array(it[3], np.float32)
+            sh_ = np.clip(lum0 / max(float(lum0[r].mean()), 0.05), 0.55, 1.6)
+            cd[r, :3] = col * sh_[r, None]
+            cd[r, 3] = 1.0
+            kd[r] = 1.0
+            top = r & ~shift(r, 0, 1)
+            bot = r & ~shift(r, 0, -1)
+            kd[top] = 1.45
+            kd[bot] = 0.62
+            under = shift(r, 0, 1) & ~r & pm
+            kd[under] *= 0.66
+            under2 = shift(r, 0, 2) & ~r & ~under & pm
+            kd[under2] *= 0.86
+            for x, y in _along(pts, opt.get('rivets', 0) or 9999)[1:] if opt.get('rivets') else []:
+                if 0 <= x < w - 1 and 0 <= y < h - 1 and r[y, x]:
+                    kd[y, x], kd[y + 1, x + 1] = 1.9, 0.45
+
+    for it in spec:
+        draw(it)
+    return kd, cd, c0
+
+
+def register(c0, m0, cf, mf, p0, pf):
+    """Passa in rutan mot vilorutan med en likformig avbildning kring mynningspunkten (skala, vridning, liten
+    förskjutning). Returnerar (A 2x2, pf, p0): vilorutans koordinat = A @ (p - pf) + p0."""
+    h, w = mf.shape
+    ys, xs = np.nonzero(mf)
+    if len(xs) < 30:
+        return None
+    st = max(1, int(len(xs) // 2500))
+    xs, ys = xs[::st].astype(np.float32), ys[::st].astype(np.float32)
+    cf_s = cf[ys.astype(int), xs.astype(int)]
+    h0, w0 = m0.shape
+
+    def cost(sc, th, tx, ty):
+        cs, sn = np.cos(th) / sc, np.sin(th) / sc
+        dx, dy = xs - pf[0] - tx, ys - pf[1] - ty
+        qx = np.rint(cs * dx - sn * dy + p0[0]).astype(int)
+        qy = np.rint(sn * dx + cs * dy + p0[1]).astype(int)
+        inb = (qx >= 0) & (qx < w0) & (qy >= 0) & (qy < h0)
+        qx, qy = np.clip(qx, 0, w0 - 1), np.clip(qy, 0, h0 - 1)
+        d = np.minimum(np.abs(c0[qy, qx] - cf_s).sum(-1), 0.6)
+        d = np.where(m0[qy, qx], d, 0.6)
+        d = np.where(inb, d, 0.25)
+        return float(d.mean())
+
+    best = (cost(1, 0, 0, 0) - 0.004, 1.0, 0.0, 0.0, 0.0)
+    for sc in np.arange(0.70, 1.55, 0.05):
+        for th in np.radians(np.arange(-24, 25, 3.0)):
+            for tx in (-3, 0, 3):
+                for ty in (-3, 0, 3):
+                    cst = cost(sc, th, tx, ty)
+                    if cst < best[0]:
+                        best = (cst, sc, th, tx, ty)
+    _, sc0, th0, tx0, ty0 = best
+    for sc in sc0 + np.arange(-0.04, 0.041, 0.02):
+        for th in th0 + np.radians(np.arange(-2, 2.1, 1.0)):
+            for tx in tx0 + np.arange(-2, 3):
+                for ty in ty0 + np.arange(-2, 3):
+                    cst = cost(sc, th, tx, ty)
+                    if cst < best[0]:
+                        best = (cst, sc, th, tx, ty)
+    cst, sc, th, tx, ty = best
+    cs, sn = np.cos(th) / sc, np.sin(th) / sc
+    return np.array([[cs, -sn], [sn, cs]], np.float32), (pf[0] + tx, pf[1] + ty), p0, cst
 
 
 # ---------------------------------------------------------------- hela remsan
@@ -399,14 +672,27 @@ def style_image(im, wid=None, fw=None, strength=1.0, pick=False, wf=None, base_i
     n = W // fw
     muz = ent.get('muzzle') if ent else None
     tiles = make_tiles(zlib.crc32(base.encode()) & 0xffff)
+    orig_rgb = rgb.copy()
     ang0 = wood0 = None
+    det = None
+    if base in DETAILS and not pick and base_im is None:
+        det = build_details(DETAILS[base], rgb[:, :fw], work[:, :fw])
+    c0f = rgb[:, :fw].astype(np.float32) / 255.0
     for f in range(n):
         off = (0, 0)
         if muz and f < len(muz):
             off = (muz[f][0] - muz[0][0], muz[f][1] - muz[0][1])
         sl = slice(f * fw, (f + 1) * fw)
+        aff = None
+        if det is not None and f > 0 and (work[:, sl] > 0).any():
+            p0 = (muz[0][0] - ent['x'], muz[0][1] - ent['y']) if muz else (0, 0)
+            aff = register(c0f, work[:, :fw] > 0, orig_rgb[:, sl].astype(np.float32) / 255.0, work[:, sl] > 0,
+                           p0, (p0[0] + off[0], p0[1] + off[1]))
+            if os.environ.get('PIXELSTYLE_DEBUG') and aff:
+                A = aff[0]
+                print(f'  ruta {f}: skala {1 / np.hypot(A[0, 0], A[1, 0]):.2f} vridn {np.degrees(np.arctan2(A[1, 0], A[0, 0])):.1f} kostnad {aff[3]:.3f}')
         r, ang, wood = style_frame(rgb[:, sl], work[:, sl], tiles, off, ang0, wood0, strength, small=pick,
-                                   opts=opts or (tuple(OPTS.get(base, ())) + tuple(extra)))
+                                   opts=opts or (tuple(OPTS.get(base, ())) + tuple(extra)), det=det, aff=aff)
         rgb[:, sl] = r
         if f == 0:
             ang0, wood0 = ang, wood
@@ -434,7 +720,7 @@ def run_all(strength):
         if kind == 'fp' and wid not in wf:
             print('hoppar över (saknas i weapons.js):', fn)
             continue
-        style_image(Image.open(os.path.join(src, fn)), wid, None, strength, kind == 'pick', wf, base_im).save(os.path.join(dst, fn))
+        style_image(Image.open(os.path.join(src, fn)), wid, None, strength * (0.7 if kind == 'pick' else 1.0), kind == 'pick', wf, base_im).save(os.path.join(dst, fn))
         print('ok', fn)
 
 
@@ -444,7 +730,7 @@ def main():
     ap.add_argument('dst', nargs='?')
     ap.add_argument('--id', help='vapnets nyckel i js/weapons.js (annars ur filnamnet)')
     ap.add_argument('--fw', type=int, help='rutbredd i pixlar om vapnet inte står i weapons.js')
-    ap.add_argument('--strength', type=float, default=1.0, help='hur kraftigt slitage/skuggning (0.5-1.5)')
+    ap.add_argument('--strength', type=float, default=0.8, help='hur kraftigt slitage/skuggning (0.5-1.5), standard 0.8')
     ap.add_argument('--pick', action='store_true', help='behandla hela bilden som en ruta (pick_*.png)')
     ap.add_argument('--all', action='store_true', help='orig_v20/*.png -> assets/gfx/ för alla nya vapen')
     ap.add_argument('--opts', default='', help='kommalista: nowood (orangebrunt är koppar/läder, ingen ådring), '

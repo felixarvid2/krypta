@@ -304,3 +304,26 @@ python3 pixelstyle.py orig_v20/fp_axe.png ../../assets/gfx/fp_axe.png         # 
 python3 pixelstyle.py ny/fp_x.png ../../assets/gfx/fp_x.png --opts smoke      # inritad krutrök lämnas ren
 ```
 Kontaktark före/efter ligger i `pixelstyle_ark/`, skärmbilder ur spelet tas med `node tools/gfx/vapen/stil.mjs`.
+
+Version 21: morgonstjärnan (`flail`) och trombonen (`blunderbuss`). Definitionerna byggs av `tools/props18/fp_defs.py` och
+ligger i en egen fil i stället för i `static-defs.json` (`DEFS=` till `render-static.mjs`, egen utkatalog). Morgonstjärnan är ett
+askskaft med läderlindning, en järnhätta, en kedja med sju länkar (`c0`–`c6`) och en spikklubba (`name: ball`, mynningen) i
+bumerangens hand, i närstridsläget. Kedjans riktning anges per bildruta i kamerans rum och räknas om till vapnets egen ram, och
+länkarna och klubban flyttas dit med `partPose move`. `fire` är det tunga slaget (sex rutor, `pack.py` ritar svepet, `SWEEP`)
+och `spin` (`melee.extra`, fyra rutor som går runt, nytt läge i `pack.py`) är kedjan som snurras över huvudet medan högerklick
+hålls in: `states: {idle:[0], fire:[1..6], spin:[7..10]}`, `dur: {fire, spin}`. Trombonen är en valnötskolv med mässingsbeslag,
+flintlås och en mässingspipa som vidgar sig till en bred klocka (`name: muzzle`). `fire` är fem tunga rekylrutor med krutrök
+(`SMOKE`, som musköten) och `reload` (`extra`) lutar vapnet och kör ned en laddstake (`name: rod`, `hidden`) i klockan:
+`states: {idle:[0], fire:[1..5], reload:[6..10]}`, `dur: {fire, reload}`. De ostilade, packade remsorna ligger i
+`tools/props18/fp_orig/`. Upplockningsbilderna ritas i `tools/props18/make.py`.
+
+```bash
+python3 -B tools/props18/fp_defs.py /tmp/defs21.json
+cd retrofps/tools/weapon-frames
+DEFS=/tmp/defs21.json node render-static.mjs fp flail,blunderbuss /tmp/xframes21
+mkdir -p /tmp/w21/js /tmp/w21/assets/gfx && cp ../../js/weapons.js /tmp/w21/js/
+python3 pack.py /tmp/xframes21 /tmp/w21/ flail,blunderbuss       # skriver bara i /tmp/w21; posterna läggs sist i js/weapons.js för hand
+cp /tmp/w21/assets/gfx/fp_flail.png /tmp/w21/assets/gfx/fp_blunderbuss.png ../props18/fp_orig/
+python3 pixelstyle.py ../props18/fp_orig/fp_flail.png ../../assets/gfx/fp_flail.png
+python3 pixelstyle.py ../props18/fp_orig/fp_blunderbuss.png ../../assets/gfx/fp_blunderbuss.png --opts smoke
+```
