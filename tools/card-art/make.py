@@ -90,6 +90,7 @@ Kör från repo-roten: python3 retrofps/tools/card-art/make.py .          (alla)
                      python3 retrofps/tools/card-art/make.py . v18      (bara version 18)
                      python3 retrofps/tools/card-art/make.py . v19      (bara version 19)
                      python3 retrofps/tools/card-art/make.py . v20      (bara version 20)
+                     python3 retrofps/tools/card-art/make.py . v21      (bara version 21)
 """
 import math
 import os
@@ -3900,6 +3901,194 @@ def main_v20():
     return n
 
 
+# ---------- version 21: Järnfängelset och Fiskeläget (ritade motiv, inga betal-API:er) ----------
+V21_DRAWN = {  # kort-id: (ritfunktion, storlek, förskjutning y, (gloriatyp, färg))
+    'tysta_sulor': ('softsoles', 0.84, 0, ('ring', (170, 160, 150))),
+    'natkniven': ('netknife', 0.86, 0, ('rays', (170, 210, 220))),
+    'krabbtangen': ('crabclaw', 0.86, 0, ('stars', (230, 110, 80))),
+    'mashatten': ('gullhat', 0.86, 0, ('ring', (240, 240, 250))),
+    'mistlyktan': ('fogLantern', 0.86, 0, ('rays', (255, 230, 160))),
+    'kulkedjan': ('ballchain', 0.86, 0, ('stars', (160, 165, 180))),
+    'krutpasen': ('powderbag', 0.84, 0, ('ring', (120, 100, 80))),
+    'brannsalvan': ('salvejar', 0.84, 0, ('rays', (255, 150, 80))),
+    'nyckelknippan': ('keyring', 0.88, 0, ('stars', (232, 184, 64))),
+    'skrotsmedjan': ('scrapanvil', 0.88, 0, ('ring', (200, 140, 90))),
+    'tungviktaren': ('weight21', 0.86, 0, ('rays', (180, 180, 200))),
+    'sjodimman': ('seafog', 0.9, 0, ('ring', (110, 140, 160))),
+    'vaktarens_ring': ('wardenring', 0.86, 0, ('stars', (200, 60, 60))),
+    'fyrvaktaren': ('lighthouse', 0.92, 0, ('rays', (255, 240, 180))),
+    'glodande_jarnet': ('hotiron', 0.9, 0, ('ring', (255, 110, 40))),
+    'tidvattnets_snacka': ('conch', 0.9, 0, ('stars', (130, 220, 230))),
+}
+V21_PACTS = {'pakt_morgonstjarna': 'flail', 'pakt_trombon': 'blunderbuss'}
+V21_UPGRADES = {  # kort-id: (vapen, ritfunktion, gloriafärg)
+    'snabba_snurret': ('flail', 'spin21', (200, 220, 255)), 'blykulan': ('flail', 'leadball', (150, 150, 170)),
+    'hjarnskakan': ('flail', 'stars21', (255, 230, 120)), 'langa_kedjan': ('flail', 'longchain', (190, 190, 200)),
+    'trattmynningen': ('blunderbuss', 'funnel', (230, 190, 120)), 'krutladdningen': ('blunderbuss', 'blast21', (255, 170, 90)),
+    'glodskrotet': ('blunderbuss', 'emberscrap', (255, 120, 50)), 'skrotladdaren': ('blunderbuss', 'hourglass21', (150, 220, 255)),
+}
+IRON21, SEA21, FOG21, RED21, BONE21 = (96, 100, 112, 255), (60, 120, 150, 255), (190, 205, 215, 220), (190, 50, 40, 255), (230, 220, 200, 255)
+
+
+def chain21(d, x0, y0, x1, y1, n=6, w=26):
+    for i in range(n):
+        t = (i + 0.5) / n
+        x, y = x0 + (x1 - x0) * t, y0 + (y1 - y0) * t
+        d.ellipse((x - w, y - w * 0.6, x + w, y + w * 0.6), outline=STEEL, width=8)
+
+
+def spikeball21(d, cx, cy, r, col=IRON21):
+    for i in range(10):
+        a = i * math.pi / 5
+        poly(d, [(cx + math.cos(a - 0.2) * r, cy + math.sin(a - 0.2) * r), (cx + math.cos(a) * r * 1.6, cy + math.sin(a) * r * 1.6), (cx + math.cos(a + 0.2) * r, cy + math.sin(a + 0.2) * r)], STEEL, 3)
+    d.ellipse((cx - r, cy - r, cx + r, cy + r), fill=col, outline=INK, width=6)
+
+
+def art21(kind):
+    im = Image.new('RGBA', (400, 400))
+    d = ImageDraw.Draw(im)
+    if kind == 'softsoles':
+        for x in (70, 210):
+            d.ellipse((x, 90, x + 120, 340), fill=(110, 90, 70, 255), outline=INK, width=6); d.ellipse((x + 25, 130, x + 95, 300), fill=(150, 130, 100, 255))
+    elif kind == 'netknife':
+        for i in range(6): d.line((60 + i * 50, 60, 60 + i * 50, 340), fill=(200, 190, 160, 255), width=5); d.line((60, 60 + i * 56, 340, 60 + i * 56), fill=(200, 190, 160, 255), width=5)
+        poly(d, [(80, 330), (300, 110), (330, 140), (110, 350)], (220, 225, 235, 255)); rrect(d, (40, 320, 120, 370), 10, WOOD)
+    elif kind == 'crabclaw':
+        d.pieslice((70, 60, 330, 320), 200, 340, fill=(220, 90, 60, 255), outline=INK, width=6); d.pieslice((90, 160, 310, 340), 20, 160, fill=(200, 70, 50, 255), outline=INK, width=6)
+        rrect(d, (170, 300, 230, 380), 14, (200, 70, 50, 255))
+    elif kind == 'gullhat':
+        d.ellipse((60, 230, 340, 310), fill=(60, 70, 90, 255), outline=INK, width=6); rrect(d, (120, 120, 280, 270), 30, (70, 80, 100, 255))
+        poly(d, [(180, 110), (240, 60), (300, 90), (250, 130)], (245, 245, 250, 255)); d.ellipse((265, 70, 280, 85), fill=INK)
+    elif kind == 'fogLantern':
+        rrect(d, (140, 110, 260, 330), 16, (60, 50, 40, 255)); d.rectangle((160, 140, 240, 300), fill=(255, 220, 130, 255)); d.arc((150, 40, 250, 140), 180, 360, fill=STEEL, width=12)
+        for y in (180, 250): d.ellipse((30, y, 370, y + 60), fill=FOG21)
+    elif kind == 'ballchain':
+        chain21(d, 80, 80, 230, 230, 4); spikeball21(d, 270, 270, 70)
+    elif kind == 'powderbag':
+        poly(d, [(130, 130), (270, 130), (320, 350), (80, 350)], (130, 100, 70, 255)); d.line((130, 140, 270, 140), fill=RUST20, width=14)
+        for i in range(10): d.ellipse((150 + (i * 41) % 110, 240 + (i * 29) % 80, 162 + (i * 41) % 110, 252 + (i * 29) % 80), fill=(40, 40, 40, 255))
+    elif kind == 'salvejar':
+        rrect(d, (100, 150, 300, 340), 30, (210, 200, 170, 255)); rrect(d, (90, 110, 310, 160), 14, (150, 90, 50, 255)); d.ellipse((150, 200, 250, 290), fill=(120, 200, 140, 255))
+    elif kind == 'keyring':
+        d.ellipse((120, 60, 280, 220), outline=GOLD19, width=18)
+        for i, a in enumerate((-0.6, 0, 0.6)):
+            x = 200 + math.sin(a) * 120; d.line((200, 200, x, 340), fill=GOLD19, width=16); rrect(d, (x - 20, 320, x + 20, 370), 6, GOLD19)
+    elif kind == 'scrapanvil':
+        poly(d, [(60, 160), (340, 160), (300, 220), (240, 230), (260, 330), (140, 330), (160, 230), (100, 220)], IRON21)
+        for i in range(6): d.polygon([(90 + i * 45, 120), (110 + i * 45, 90), (125 + i * 45, 135)], fill=(170, 120, 80, 255))
+    elif kind == 'weight21':
+        poly(d, [(120, 140), (280, 140), (330, 350), (70, 350)], (70, 70, 80, 255)); d.arc((150, 60, 250, 170), 180, 360, fill=STEEL, width=20)
+    elif kind == 'seafog':
+        poly(d, [(60, 300), (340, 300), (300, 350), (100, 350)], (110, 80, 50, 255)); d.line((200, 120, 200, 300), fill=WOOD, width=10)
+        for y in (110, 190, 260): d.ellipse((20, y, 380, y + 70), fill=FOG21)
+    elif kind == 'wardenring':
+        d.ellipse((80, 80, 320, 320), outline=(150, 150, 160, 255), width=36); d.ellipse((160, 40, 240, 120), fill=RED21, outline=INK, width=6)
+    elif kind == 'lighthouse':
+        poly(d, [(160, 120), (240, 120), (270, 370), (130, 370)], BONE21)
+        for y in (180, 260, 330): d.line((150, y, 250, y), fill=RED21, width=26)
+        rrect(d, (150, 70, 250, 125), 8, (255, 230, 140, 255)); poly(d, [(250, 80), (390, 30), (390, 160)], (255, 240, 180, 150), 2)
+    elif kind == 'hotiron':
+        rrect(d, (40, 260, 200, 300), 10, WOOD); d.line((190, 280, 300, 170), fill=(255, 120, 40, 255), width=30); poly(d, [(280, 120), (350, 120), (350, 200), (280, 200)], (255, 160, 60, 255))
+    elif kind == 'conch':
+        poly(d, [(80, 300), (200, 60), (330, 200), (260, 340)], (240, 200, 180, 255))
+        for i in range(4): d.arc((120 + i * 20, 120 + i * 30, 300 - i * 10, 320 - i * 10), 200, 340, fill=(200, 140, 130, 255), width=8)
+        d.ellipse((200, 230, 290, 320), fill=(230, 120, 140, 255), outline=INK, width=6)
+    elif kind == 'spin21':
+        for r in (160, 110, 60): d.arc((200 - r, 200 - r, 200 + r, 200 + r), 20, 300, fill=(200, 220, 255, 255), width=14)
+    elif kind == 'leadball':
+        d.ellipse((90, 90, 310, 310), fill=(90, 92, 104, 255), outline=INK, width=8); d.ellipse((140, 130, 190, 180), fill=(160, 160, 175, 255))
+    elif kind == 'stars21':
+        for i, (x, y) in enumerate(((120, 150), (220, 100), (290, 190), (180, 250))):
+            pts = [(x + math.cos(a * math.pi / 5) * (45 if a % 2 == 0 else 18), y + math.sin(a * math.pi / 5) * (45 if a % 2 == 0 else 18)) for a in range(10)]
+            poly(d, pts, (255, 230, 120, 255), 4)
+    elif kind == 'longchain':
+        chain21(d, 40, 60, 360, 340, 8, 22)
+    elif kind == 'funnel':
+        poly(d, [(60, 100), (340, 160), (340, 240), (60, 300)], (180, 140, 80, 255))
+        for i in range(7): d.ellipse((300 + (i % 2) * 30, 120 + i * 25, 320 + (i % 2) * 30, 140 + i * 25), fill=STEEL)
+    elif kind == 'blast21':
+        for i in range(12):
+            a = i * math.pi / 6; d.line((200, 200, 200 + math.cos(a) * 170, 200 + math.sin(a) * 170), fill=(255, 170, 90, 255), width=18)
+        d.ellipse((140, 140, 260, 260), fill=(255, 230, 150, 255), outline=INK, width=6)
+    elif kind == 'emberscrap':
+        for i in range(7):
+            x, y = 80 + (i * 67) % 240, 90 + (i * 53) % 230; poly(d, [(x, y), (x + 50, y + 15), (x + 30, y + 60), (x - 10, y + 40)], (255, 120 + i * 10, 50, 255), 4)
+    elif kind == 'hourglass21':
+        poly(d, [(110, 60), (290, 60), (210, 200), (290, 340), (110, 340), (190, 200)], (200, 220, 240, 200)); poly(d, [(150, 270), (250, 270), (280, 330), (120, 330)], (230, 190, 110, 255), 3)
+        rrect(d, (90, 40, 310, 70), 8, WOOD); rrect(d, (90, 330, 310, 360), 8, WOOD)
+    return im
+
+
+def draw_flail():
+    """Morgonstjärnan: ett träskaft, en kedja och en taggig järnkula."""
+    im = Image.new('RGBA', (560, 360))
+    d = ImageDraw.Draw(im)
+    rrect(d, (10, 230, 230, 270), 12, WOOD)
+    chain21(d, 220, 250, 400, 140, 4, 20)
+    spikeball21(d, 450, 110, 62)
+    return im.crop(im.getbbox())
+
+
+def draw_blunderbuss():
+    """Trombonen: en kort mässingspipa som vidgar sig till en tratt, och en kolv av trä."""
+    im = Image.new('RGBA', (600, 300))
+    d = ImageDraw.Draw(im)
+    poly(d, [(10, 150), (200, 120), (220, 180), (40, 230)], WOOD)
+    poly(d, [(200, 125), (480, 120), (580, 60), (580, 240), (480, 180), (200, 175)], (200, 160, 80, 255))
+    d.ellipse((560, 60, 600, 240), fill=(40, 30, 20, 255), outline=INK, width=6)
+    return im.crop(im.getbbox())
+
+
+GUNS.update({'flail': draw_flail, 'blunderbuss': draw_blunderbuss})
+
+
+def drawn_card21(cid, kind, size, dy, halo):
+    big = purple_bg()
+    big.alpha_composite(halo19(*halo))
+    g = art21(kind)
+    g = shade(g.crop(g.getbbox()))
+    k = S * 4 * size / max(g.size)
+    g = g.resize((max(1, int(g.width * k)), max(1, int(g.height * k))), Image.LANCZOS)
+    pos = ((S * 4 - g.width) // 2, int((S * 4 - g.height) / 2 + dy * S * 4))
+    add_glow(big, g, pos, (0, 0, 0), 12)
+    big.alpha_composite(g, pos)
+    save(big, cid)
+
+
+def v21_upgrade(cid, w, kind, col):
+    big = purple_bg()
+    big.alpha_composite(halo19('ring', col))
+    g = art21(kind)
+    g = shade(g.crop(g.getbbox()))
+    k = S * 4 * 0.72 / max(g.size)
+    g = g.resize((max(1, int(g.width * k)), max(1, int(g.height * k))), Image.LANCZOS)
+    big.alpha_composite(g, ((S * 4 - g.width) // 2, (S * 4 - g.height) // 2 - 14))
+    b = gun(w, int(S * 4 * 0.42))
+    pos = (S * 4 - b.width - 10, S * 4 - b.height - 12)
+    add_glow(big, b, pos, (0, 0, 0), 10)
+    add_glow(big, b, pos, (255, 200, 90), 4)
+    big.alpha_composite(b, pos)
+    save(big, cid)
+
+
+def main_v21():
+    assert len(V21_DRAWN) == 16 and len(V21_UPGRADES) == 8
+    kinds = [k for k, _, _, _ in V21_DRAWN.values()] + [k for _, k, _ in V21_UPGRADES.values()]
+    assert len(kinds) == len(set(kinds)), 'varje motiv ritas bara en gång'
+    n = 0
+    for cid, (kind, size, dy, halo) in V21_DRAWN.items():
+        drawn_card21(cid, kind, size, dy, halo)
+        n += 1
+    for cid, w in V21_PACTS.items():
+        pact(cid, w)
+        n += 1
+    for cid, (w, kind, col) in V21_UPGRADES.items():
+        v21_upgrade(cid, w, kind, col)
+        n += 1
+    near_dupes(list(V21_DRAWN) + list(V21_PACTS) + list(V21_UPGRADES))
+    return n
+
+
 
 
 def main():
@@ -3943,6 +4132,9 @@ def main():
     if ONLY == 'v20':
         print(main_v20(), 'kortbilder ->', OUT)
         return
+    if ONLY == 'v21':
+        print(main_v21(), 'kortbilder ->', OUT)
+        return
     n = 0
     if not ONLY_V5:
         for cid in CARDS:
@@ -3970,6 +4162,7 @@ def main():
         n += main_v18()
         n += main_v19()
         n += main_v20()
+        n += main_v21()
     print(n, 'kortbilder ->', OUT)
 
 

@@ -1287,6 +1287,38 @@ Version 7 lägger till 200 förbättringar:
 
 Kombinerade utmaningar multiplicerar själarna. Sparplatsen väljs på startskärmen, och `?fro=XXXX` i adressen fyller i ett delat frö.
 
+## Version 21: Järnfängelset och Fiskeläget
+
+- **Järnfängelset (`prison`):** inomhus på mellandjup, med fängelsesten (ɇ), cellgaller (Ɉ), halm och smutsig sten. Där finns cellrader, vaktrum, tortyrkammare och en galggård.
+  - Larmplattor (ɍ) lyser svagt rött. Kliver du på en ringer en klocka: alla fiender inom 14 rutor larmas, och två nyckelknektar kommer in vid närmaste dörr. Varje platta larmar en gång, och en bana har högst tre. Hoppa över dem.
+  - Hängande burar (ɏ) hänger i taket och faller av 25 skada. De släpper ett föremål, och ibland kravlar en kedjefånge ut.
+  - Sträckbänkar (ɐ) och en galge (ɑ) som gungar lätt. Galler som öppnas med spak (|) finns som förut.
+- **Fiskeläget (`harbor`):** utomhus, en sen biom. Det har bryggor över mörkt vatten, kajer av sten (ɋ), bodar (Ɋ), kullersten och bryggplank.
+  - Dimman rullar in och ut i en period på 36 sekunder, och ett mistlur hörs när den är som tätast. Dimman är grå, inte svart (ljuset mäts i t108).
+  - En fyr sveper sin ljuskägla över banan. Den utgår från `level.lighthouse` (om fältet finns), annars från den första fyrlyktan (ɒ).
+  - Fisknät (Ɏ) saktar dig 50 %. Går du in i ett nät fastnar du i 0,6 s, en gång per nät och fjärde sekund. Eld bränner bort näten.
+  - Fisktunnor (ɓ) går sönder av skott och ger ammo, skrot eller fiskrens (5 hp). Ankare (ɔ) står i vägen. Djupvattnet och de ruttna plankorna finns kvar från tidigare biomer.
+- **Vapen:**
+  - **Morgonstjärnan (ɝ):** ett tungt slag (35 skada) som inte kräver ammo. Håll inne högerklick så snurrar kedjan över huvudet och träffar allt inom 1,5 rutor var fjärdedels sekund (18 skada), men du går långsammare.
+  - **Trombonen (ɞ, ammo skrot från skrotpåsar ɟ):** 12 hagel à 7 skada med kort räckvidd, och fienderna knuffas hårt bakåt. Högerklick avfyrar båda laddningarna på en gång, med dubbel rekyl och längre omladdning.
+  - Båda har pakter med fyra uppgraderingar var.
+- **Fiender i fängelset:**
+  - Nyckelknekten (ɕ) blåser i visselpipan när den ser dig. Då larmas alla fiender inom 10 rutor (en gång).
+  - Kedjefången (ɖ) är långsam och svingar kula och kedja i en bred båge som når två rutor.
+  - Tortyrmästaren (ɗ) kastar glödande järn som sätter dig i brand en kort stund. Högst två per bana.
+  - Vakthundarna (ɘ) är snabba och kommer i par.
+- **Fiender i fiskeläget:**
+  - Den drunknade fiskaren (ə) stöter med harpunen två rutor bort.
+  - Fiskmannen (ɚ) gömmer sig i djupvattnet vid bryggkanten och hoppar i en båge mot dig. Högst tre per bana.
+  - Strandkrabban (ɛ) går i sidled och tar 75 % mindre skada framifrån. Från sidan, bakifrån eller med explosioner tar den full skada.
+  - Måssvärmen (ɜ) är svag, flyger i flock, dyker och hackar.
+- **Bossar:**
+  - **Bödeln:** hugger med yxan och skickar en huggvåg längs golvet (hoppa över den). Han kastar en kedjekrok som drar dig till sig. Vid inlåsning fälls galler ned som delar arenan i 8 s. Han kallar också på nyckelknektar.
+  - **Tidvattenprästen:** slår med snäckstaven och låter tentakler skjuta upp nära dig (bubblor varnar 0,7 s innan). Han höjer vattnet i arenan så att du blir långsam, sänder en våg som knuffar dig och kallar på fiskmän.
+  - Båda kan också vara väktare.
+- **Kort:** 16 nya kort, åtta nya kortnycklar och två set: FÅNGENS VÄG och FISKARENS VÄG. De nya nycklarna är `alarmQuiet`, `netResist`, `crabCrack`, `gullResist`, `fogSight`, `flailDmg`, `blunderDmg` och `burnResist`. Kortbilderna ritas i `tools/card-art/make.py` (`v21`).
+- **Test:** `tools/playtest/t108.mjs` (port 9808).
+
 ## Version 20: Kloakerna och Öknen
 
 - **Kloakerna (`sewer`):** inomhus, med valvat tegel (Ȭ) och rörväggar (ȭ), fuktig sten och galler på golvet.

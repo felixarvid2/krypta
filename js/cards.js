@@ -209,6 +209,15 @@ const MOD_KEYS = {
   stormSight: 'Andel bättre sikt i sandstormen',
   scimitarDmg: 'Andel extra skada med kroksabeln',
   trapDmg: 'Andel extra skada med björnsaxar',
+  // version 21: Järnfängelset och Fiskeläget – larmplattor, fisknät, krabbor, måsar, dimma, morgonstjärnan, trombonen och glödande järn
+  alarmQuiet: 'Chans att en larmplatta inte larmar',
+  netResist: 'Andel mindre inbromsning och kortare tid fast i fisknät',
+  crabCrack: 'Andel mer skada genom strandkrabbornas pansar',
+  gullResist: 'Andel mindre skada av måssvärmar',
+  fogSight: 'Andel bättre sikt i fiskelägets dimma',
+  flailDmg: 'Andel extra skada med morgonstjärnan',
+  blunderDmg: 'Andel extra skada med trombonen',
+  burnResist: 'Andel kortare tid i brand av glödande järn',
 };
 const KEYS = Object.keys(MOD_KEYS);
 
@@ -920,6 +929,38 @@ const DEFS = [
   ['sandens_kniv', 'SANDENS KNIV', 'sallsynt', { scimitarDmg: 0.4, heatResist: -0.3 }, 1, '+40 % SKADA MED\nKROKSABELN\n-30 % SKYDD MOT HETTA', { curse: true, bad: 1 }],
   // legendariska
   ['sfinxens_gata', 'SFINXENS GÅTA', 'legendarisk', { stormSight: 0.3, heatResist: 0.3, oasisHeal: 0.3, scimitarDmg: 0.3 }, 1, '30 % BÄTTRE STORMSIKT\n30 % SKYDD MOT HETTA\n30 % MER OASLÄKNING\n+30 % SKADA MED SABELN', { unlock: 50 }],
+  // ---- version 21: pakter och uppgraderingar för morgonstjärnan och trombonen ----
+  ['pakt_morgonstjarna', 'STUPSTOCKENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nSTJÄRNAN BEHÖVER INGEN AMMO\n4 UNIKA UPPGRADERINGAR\nBARA MORGONSTJÄRNA RESTEN AV RUNDAN', { pact: 'flail', bad: 1 }],
+  ['pakt_trombon', 'SMUGGLARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR SKROT\n4 UNIKA UPPGRADERINGAR\nBARA TROMBON RESTEN AV RUNDAN', { pact: 'blunderbuss', bad: 1 }],
+  ['snabba_snurret', 'SNABBA SNURRET', 'sallsynt', {}, 1, 'SNURRET TRÄFFAR\nOFTARE', { weapon: 'flail', wup: 'fl_spin' }],
+  ['blykulan', 'BLYKULAN', 'ovanlig', {}, 1, 'TYNGRE SLAG OCH\nSNABBARE GÅNG I SNURRET', { weapon: 'flail', wup: 'fl_heavy' }],
+  ['hjarnskakan', 'HJÄRNSKAKAN', 'sallsynt', {}, 1, 'SLAGEN BEDÖVAR', { weapon: 'flail', wup: 'fl_stun' }],
+  ['langa_kedjan', 'LÅNGA KEDJAN', 'ovanlig', {}, 1, 'LÄNGRE RÄCKVIDD', { weapon: 'flail', wup: 'fl_reach' }],
+  ['trattmynningen', 'TRATTMYNNINGEN', 'sallsynt', {}, 1, 'FLER HAGEL I SKUREN', { weapon: 'blunderbuss', wup: 'bb_wide' }],
+  ['krutladdningen', 'KRUTLADDNINGEN', 'ovanlig', {}, 1, 'KRAFTIGARE KNUFF', { weapon: 'blunderbuss', wup: 'bb_knock' }],
+  ['glodskrotet', 'GLÖDSKROTET', 'legendarisk', {}, 1, 'SKROTET SÄTTER\nFIENDER I BRAND', { weapon: 'blunderbuss', wup: 'bb_fire' }],
+  ['skrotladdaren', 'SKROTLADDAREN', 'ovanlig', {}, 1, 'SNABBARE OMLADDNING\nOCH DUBBELLADDNING', { weapon: 'blunderbuss', wup: 'bb_fast' }],
+  // ---- version 21: larmplattor, fisknät, krabbor, måsar, dimma, morgonstjärnan, trombonen och brand (Järnfängelset och Fiskeläget) ----
+  // vanliga
+  ['tysta_sulor', 'TYSTA SULOR', 'vanlig', { alarmQuiet: 0.2 }, 3, '20 % CHANS ATT\nLARMPLATTOR ÄR TYSTA'],
+  ['natkniven', 'NÄTKNIVEN', 'vanlig', { netResist: 0.25 }, 3, '25 % MINDRE INSNÄRJNING\nI FISKNÄT'],
+  ['krabbtangen', 'KRABBTÅNGEN', 'vanlig', { crabCrack: 0.15 }, 3, '+15 % SKADA GENOM\nKRABBORNAS PANSAR'],
+  ['mashatten', 'MÅSHATTEN', 'vanlig', { gullResist: 0.2 }, 3, '20 % MINDRE SKADA\nAV MÅSAR'],
+  ['mistlyktan', 'MISTLYKTAN', 'vanlig', { fogSight: 0.2 }, 3, '20 % BÄTTRE SIKT\nI DIMMAN'],
+  ['kulkedjan', 'KULKEDJAN', 'vanlig', { flailDmg: 0.12 }, 3, '+12 % SKADA MED\nMORGONSTJÄRNAN'],
+  ['krutpasen', 'KRUTPÅSEN', 'vanlig', { blunderDmg: 0.12 }, 3, '+12 % SKADA MED\nTROMBONEN', { unlock: 10 }],
+  // ovanliga
+  ['brannsalvan', 'BRÄNNSALVAN', 'ovanlig', { burnResist: 0.3, alarmQuiet: 0.15 }, 2, '30 % KORTARE BRAND\n15 % CHANS ATT\nLARMPLATTOR ÄR TYSTA', { unlock: 15 }],
+  ['nyckelknippan', 'NYCKELKNIPPAN', 'ovanlig', { alarmQuiet: 0.3, dmg: 0.04 }, 2, '30 % CHANS ATT\nLARMPLATTOR ÄR TYSTA\n+4 % SKADA'],
+  ['skrotsmedjan', 'SKROTSMEDJAN', 'ovanlig', { blunderDmg: 0.2, crabCrack: 0.15 }, 2, '+20 % SKADA MED\nTROMBONEN\n+15 % SKADA GENOM\nKRABBPANSAR', { unlock: 15 }],
+  ['tungviktaren', 'TUNGVIKTAREN', 'ovanlig', { flailDmg: 0.2, critChance: 0.03 }, 2, '+20 % SKADA MED\nMORGONSTJÄRNAN\n+3 % KRITCHANS'],
+  ['sjodimman', 'SJÖDIMMAN', 'ovanlig', { netResist: 0.4, fogSight: -0.3 }, 1, '40 % MINDRE INSNÄRJNING\nI FISKNÄT\n-30 % SIKT I DIMMAN', { curse: true, bad: 1 }],
+  // sällsynta
+  ['vaktarens_ring', 'VAKTARENS RING', 'sallsynt', { alarmQuiet: 0.3, burnResist: 0.3, flailDmg: 0.2 }, 1, '30 % TYSTA LARMPLATTOR\n30 % KORTARE BRAND\n+20 % SKADA MED\nMORGONSTJÄRNAN', { unlock: 25 }],
+  ['fyrvaktaren', 'FYRVAKTAREN', 'sallsynt', { fogSight: 0.3, gullResist: 0.3, netResist: 0.2 }, 1, '30 % BÄTTRE SIKT I DIMMAN\n30 % MINDRE SKADA AV MÅSAR\n20 % MINDRE INSNÄRJNING', { unlock: 25 }],
+  ['glodande_jarnet', 'DET GLÖDANDE JÄRNET', 'sallsynt', { flailDmg: 0.4, burnResist: -0.3 }, 1, '+40 % SKADA MED\nMORGONSTJÄRNAN\n-30 % SKYDD MOT BRAND', { curse: true, bad: 1 }],
+  // legendariska
+  ['tidvattnets_snacka', 'TIDVATTNETS SNÄCKA', 'legendarisk', { fogSight: 0.3, crabCrack: 0.3, gullResist: 0.3, blunderDmg: 0.3 }, 1, '30 % BÄTTRE SIKT I DIMMAN\n+30 % GENOM KRABBPANSAR\n30 % MINDRE SKADA AV MÅSAR\n+30 % SKADA MED TROMBONEN', { unlock: 50 }],
 ];
 
 // ---------- Set och synergier ----------
@@ -964,6 +1005,9 @@ const SETS = {
   observatoriet: { name: 'OBSERVATORIETS VÄG', text: '25 % LÄNGRE VARNING FÖR METEORER\n25 % HÖGRE HOPP PÅ STJÄRNKARTAN\n+25 % TID MED TELESKOPET', mods: { meteorSense: 0.25, lowGrav: 0.25, starSight: 0.25 } },
   // version 20: KLOAKERNAS VÄG (Kloakerna: slam, ånga och iglar) och ÖKNENS VÄG (Öknen: oaser, sandstorm och hetta; id karavanen eftersom oknen redan finns sedan version 7)
   kloakerna: { name: 'KLOAKERNAS VÄG', text: '25 % MINDRE INBROMSNING I SLAM\n25 % MINDRE SKADA AV ÅNGAN\n20 % CHANS ATT IGLAR INTE FÄSTER', mods: { sludgeResist: 0.25, sprayResist: 0.25, leechResist: 0.2 } },
+  // version 21: FÅNGENS VÄG (Järnfängelset: larmplattor, brand och morgonstjärnan) och FISKARENS VÄG (Fiskeläget: dimma, nät och måsar)
+  fangelset: { name: 'FÅNGENS VÄG', text: '25 % CHANS ATT LARMPLATTOR ÄR TYSTA\n25 % KORTARE BRAND\n+20 % SKADA MED MORGONSTJÄRNAN', mods: { alarmQuiet: 0.25, burnResist: 0.25, flailDmg: 0.2 } },
+  fiskelaget: { name: 'FISKARENS VÄG', text: '25 % BÄTTRE SIKT I DIMMAN\n25 % MINDRE INSNÄRJNING I NÄT\n20 % MINDRE SKADA AV MÅSAR', mods: { fogSight: 0.25, netResist: 0.25, gullResist: 0.2 } },
   karavanen: { name: 'KARAVANENS VÄG', text: '25 % MER LÄKNING UR OASER\n25 % BÄTTRE SIKT I SANDSTORMEN\n20 % SKYDD MOT HETTA', mods: { oasisHeal: 0.25, stormSight: 0.25, heatResist: 0.2 } },
   templet: { name: 'TEMPLETS VÄG', text: '25 % MINDRE GIFT\n+25 % TUR MED IDOLER OCH LYCKOHJUL\n25 % MINDRE INBROMSNING I LIANER', mods: { poisonResist: 0.25, idolLuck: 0.25, vineWalk: 0.25 } },
   laboratoriet: { name: 'LABORATORIETS VÄG', text: '25 % MINDRE SKADA AV SYRA\n+25 % TUR MED TRANSMUTATION\n20 % CHANS TILL STARK BRYGD', mods: { acidResist: 0.25, transmuteLuck: 0.25, brewLuck: 0.2 } },
@@ -983,7 +1027,8 @@ const SYN = { eld: 'ELD', krit: 'KRIT', gift: 'GIFT', frost: 'FROST', blixt: 'BL
   skepp: 'SKEPPET', kanon: 'KANONER', pirat: 'PIRATER', syra: 'SYRA', flaska: 'FLASKOR', transmut: 'TRANSMUTATION', tesla: 'TESLASPOLAR',
   cirkus: 'CIRKUSEN', rampljus: 'RAMPLJUSET', kniv: 'KNIVAR', kagla: 'KÄGLOR', pil: 'GIFTPILAR', idol: 'IDOLER', djungel: 'DJUNGELN',
   gruva: 'GRUVAN', vagn: 'GRUVVAGNAR', malm: 'MALM', stjarna: 'STJÄRNOR', meteor: 'METEORER',
-  kloak: 'KLOAKERNA', slam: 'SLAM', oken: 'ÖKNEN', sabel: 'SABEL', falla: 'FÄLLOR' };
+  kloak: 'KLOAKERNA', slam: 'SLAM', oken: 'ÖKNEN', sabel: 'SABEL', falla: 'FÄLLOR',
+  fangelse: 'FÄNGELSET', hamn: 'FISKELÄGET', morgon: 'MORGONSTJÄRNAN', skrot: 'SKROT' };
 // set och syn för alla kort samlas här: id: [set eller '', syn-taggar...]
 const TAGS = {
   // eld och explosioner
@@ -1110,6 +1155,10 @@ const TAGS = {
   // version 20: KLOAKERNAS VÄG (Kloakerna) och KARAVANENS VÄG (Öknen); kloaken, slam, öknen, sabeln och fällor
   gummistovlarna: ['kloakerna', 'kloak', 'slam'], angskyddet: ['kloakerna', 'kloak'], saltpasen: ['kloakerna', 'kloak', 'slam'], kloakkartan: ['kloakerna', 'kloak', 'slam'], rattfangaren: ['kloakerna', 'kloak', 'falla'],
   vattenskinnet: ['karavanen', 'oken'], slojan: ['karavanen', 'oken'], turbanen: ['karavanen', 'oken'], karavanledaren: ['karavanen', 'oken'], sfinxens_gata: ['karavanen', 'oken', 'sabel'],
+  // version 21: FÅNGENS VÄG (Järnfängelset) och FISKARENS VÄG (Fiskeläget); fängelset, fiskeläget, morgonstjärnan och skrot
+  tysta_sulor: ['fangelset', 'fangelse'], brannsalvan: ['fangelset', 'fangelse'], nyckelknippan: ['fangelset', 'fangelse'], vaktarens_ring: ['fangelset', 'fangelse', 'morgon'],
+  natkniven: ['fiskelaget', 'hamn'], mashatten: ['fiskelaget', 'hamn'], mistlyktan: ['fiskelaget', 'hamn'], fyrvaktaren: ['fiskelaget', 'hamn'], tidvattnets_snacka: ['fiskelaget', 'hamn', 'skrot'],
+  krabbtangen: ['', 'hamn'], kulkedjan: ['', 'morgon'], krutpasen: ['', 'skrot'], skrotsmedjan: ['', 'skrot', 'hamn'], tungviktaren: ['', 'morgon', 'krit'], sjodimman: ['', 'hamn'], glodande_jarnet: ['', 'morgon', 'fangelse'],
   brynet: ['', 'sabel'], spannfjadern: ['', 'falla'], jagarens_snara: ['', 'falla'], damaskusstalet: ['', 'sabel', 'krit'], igelburken: ['', 'slam', 'oken'], sandens_kniv: ['', 'sabel', 'oken'],
 };
 
@@ -1249,6 +1298,8 @@ const FMT = {
   lanceCharge: ['p', 'SNABBARE LANSLADDNING'], meteorSense: ['p', 'METEORVARNING'], lowGrav: ['p', 'HÖGRE HOPP PÅ STJÄRNKARTAN'], starSight: ['p', 'TID MED TELESKOPET'],
   sludgeResist: ['p', 'SLAMSKYDD'], sprayResist: ['p', 'ÅNGSKYDD'], oasisHeal: ['p', 'LÄKNING UR OASER'], leechResist: ['p', 'IGELSKYDD'],
   stormSight: ['p', 'SIKT I SANDSTORMEN'], scimitarDmg: ['p', 'SKADA MED KROKSABELN'], trapDmg: ['p', 'SKADA MED BJÖRNSAXAR'],
+  alarmQuiet: ['p', 'TYSTA LARMPLATTOR'], netResist: ['p', 'SKYDD MOT FISKNÄT'], crabCrack: ['p', 'SKADA GENOM KRABBPANSAR'], gullResist: ['p', 'SKYDD MOT MÅSAR'],
+  fogSight: ['p', 'SIKT I DIMMAN'], flailDmg: ['p', 'SKADA MED MORGONSTJÄRNAN'], blunderDmg: ['p', 'SKADA MED TROMBONEN'], burnResist: ['p', 'SKYDD MOT BRAND'],
 };
 const INVERT = { damageTaken: true };
 const num = v => String(Math.round(v * 100) / 100).replace('.', ',');
@@ -1456,7 +1507,7 @@ const WEAPON_NAME = { pistol: 'PISTOL', shotgun: 'HAGELGEVÄR', rifle: 'GEVÄR',
   knives: 'KASTKNIVAR', hammer: 'STRIDSHAMMARE', musket: 'MUSKÖT', harpoon: 'HARPUN', boomerang: 'BUMERANG', prism: 'PRISMA',
   sawlauncher: 'SÅGBLAD', windgun: 'VINDBÖSSA', spear: 'SPJUT', sporelauncher: 'SPORKASTARE', mirrorshield: 'SPEGELSKÖLD', whip: 'PISKA',
   runebook: 'RUNBOK', steamcannon: 'ÅNGKANON', censer: 'RÖKELSEKAR', hivelauncher: 'BIKASTARE',
-  shears: 'TRÄDGÅRDSSAX', dreamstaff: 'DRÖMSTAV', chaincannon: 'KEDJEKANON', acidsprayer: 'SYRASPRUTA', pinthrower: 'KÄGLEKASTARE', blowgun: 'BLÅSRÖR', pickaxe: 'HACKA', starlance: 'STJÄRNLANS', scimitar: 'KROKSABEL', trapthrower: 'FÄLLKASTARE' };
+  shears: 'TRÄDGÅRDSSAX', dreamstaff: 'DRÖMSTAV', chaincannon: 'KEDJEKANON', acidsprayer: 'SYRASPRUTA', pinthrower: 'KÄGLEKASTARE', blowgun: 'BLÅSRÖR', pickaxe: 'HACKA', starlance: 'STJÄRNLANS', scimitar: 'KROKSABEL', flail: 'MORGONSTJÄRNA', blunderbuss: 'TROMBON', trapthrower: 'FÄLLKASTARE' };
 // etikett ovanför kortets namn: förbannelse, pakt, aktiv förmåga ('AKTIV · 8 S'), vilket vapen uppgraderingen hör till eller sammansmält
 const activeTag = card => 'AKTIV · ' + num(card.cd || 0) + ' S';
 function tag(card) {
