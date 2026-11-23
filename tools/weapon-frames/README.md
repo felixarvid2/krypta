@@ -307,13 +307,14 @@ Kontaktark före/efter ligger i `pixelstyle_ark/`, skärmbilder ur spelet tas me
 
 Version 21: morgonstjärnan (`flail`) och trombonen (`blunderbuss`). Definitionerna byggs av `tools/props18/fp_defs.py` och
 ligger i en egen fil i stället för i `static-defs.json` (`DEFS=` till `render-static.mjs`, egen utkatalog). Morgonstjärnan är ett
-askskaft med läderlindning, en järnhätta, en kedja med sju länkar (`c0`–`c6`) och en spikklubba (`name: ball`, mynningen) i
-bumerangens hand, i närstridsläget. Kedjans riktning anges per bildruta i kamerans rum och räknas om till vapnets egen ram, och
+askskaft med järnband och skenor, en järnhätta, en kedja med sex länkar (`c0`–`c5`) och en stor spikklubba (`name: ball`, mynningen) i
+en egen läderhandske (knogar, fingrar, tumme, manschett och en kort ärm, `name: hand`), i närstridsläget. Kedjans riktning anges per bildruta i kamerans rum och räknas om till vapnets egen ram, och
 länkarna och klubban flyttas dit med `partPose move`. `fire` är det tunga slaget (sex rutor, `pack.py` ritar svepet, `SWEEP`)
 och `spin` (`melee.extra`, fyra rutor som går runt, nytt läge i `pack.py`) är kedjan som snurras över huvudet medan högerklick
 hålls in: `states: {idle:[0], fire:[1..6], spin:[7..10]}`, `dur: {fire, spin}`. Trombonen är en valnötskolv med mässingsbeslag,
-flintlås och en mässingspipa som vidgar sig till en bred klocka (`name: muzzle`). `fire` är fem tunga rekylrutor med krutrök
-(`SMOKE`, som musköten) och `reload` (`extra`) lutar vapnet och kör ned en laddstake (`name: rod`, `hidden`) i klockan:
+ett flintlås av järn (låsbleck, hane med flinta, eldstål och panna) och en åttkantig mässingspipa med järnband som vidgar sig till
+en bred klocka (`name: muzzle`). `fire` är fem tunga rekylrutor med en grå, oregelbunden krutrök som sprids och glesnar (rastrerad,
+utan kontur, `BLUNDERSMOKE`) och `reload` (`extra`) lutar vapnet och kör ned en laddstake (`name: rod`, `hidden`) i klockan:
 `states: {idle:[0], fire:[1..5], reload:[6..10]}`, `dur: {fire, reload}`. De ostilade, packade remsorna ligger i
 `tools/props18/fp_orig/`. Upplockningsbilderna ritas i `tools/props18/make.py`.
 

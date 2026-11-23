@@ -89,6 +89,36 @@ LANCEGLOW={'starlance':[(0,4),(1,7),(2,10),(3,13)]}             # version 19: lj
 LANCEFLASH={'starlance':[(0,1.0),(1,0.6),(2,0.25)]}             # version 19: stjärnblänket vid stjärnan när strålen släpps (steg, styrka)
 SWEEP={'scimitar':[None,(0,0.6),(1,1.0),(2,0.7),None]}           # version 20: kroksabelns svep bakom eggen (steg, styrka)
 TRAPFLY={'trapthrower':[None,None,0.3,0.75]}                    # version 20: björnsaxen (andel av sträckan mot siktet, None = ingen)
+# version 21: morgonstjärnan (flail, närstrid, extra läget spin) och trombonen (blunderbuss, krutrök som musköten; None i omladdningsrutorna)
+TARGET['blunderbuss']=(124,222,18); HARD.update(('flail','blunderbuss'))
+BLUNDERSMOKE={'blunderbuss':[(0,10),(1,18),(2,26),(3,33),(4,38)]}   # trombonens krutrök (steg, radie i px): grå, oregelbunden, glesnar (rastrerad), ingen kontur
+SWEEP['flail']=[None,None,(0,0.8),(1,1.0),(2,0.6),None]
+
+
+def blundersmoke_draw(d,mx,my,st,X0,Y0,i):
+    """Version 21: trombonen: ett oregelbundet grått krutmoln ur klockan som sprids uppåt och framåt och glesnar; halvgenomskinligt
+    med en ordnad 4x4-rastrering i stället för alfa (vapnen har hel eller ingen täckning), utan svart kontur; mynningsblixt i första steget."""
+    import random
+    k,r=st; rr=random.Random(41+k)
+    B=np.array([[0,8,2,10],[12,4,14,6],[3,11,1,9],[15,7,13,5]])/16.0
+    blobs=[(mx+rr.uniform(-0.6,0.5)*r-k*4,my+rr.uniform(-0.9,0.3)*r-k*5,r*rr.uniform(0.35,0.62)) for _ in range(5+2*k)]
+    dens=[0.95,0.8,0.62,0.45,0.3][min(k,4)]
+    sh=[(96,94,92),(128,126,122),(160,158,152),(188,186,180)]
+    x0=int(min(b[0]-b[2] for b in blobs))-1; x1=int(max(b[0]+b[2] for b in blobs))+1
+    y0=int(min(b[1]-b[2] for b in blobs))-1; y1=int(max(b[1]+b[2] for b in blobs))+1
+    for y in range(y0,y1+1):
+        for x in range(x0,x1+1):
+            v=0.0; top=0.0
+            for bx,by,br in blobs:
+                q=1-((x-bx)**2+(y-by)**2)/(br*br)
+                if q>0: v=max(v,q); top=max(top,(by-y)/br)
+            if v<=0: continue
+            a=min(1.0,v*1.6)*dens
+            if a>B[(y+Y0)%4,(x+X0)%4]:
+                c=sh[min(3,max(0,int(1.5+top*1.5+v)))]
+                d.point((x,y),fill=c+(255,))
+    if k==0:
+        d.ellipse((mx-5,my-5,mx+5,my+5),fill=(255,170,60,255)); d.ellipse((mx-3,my-3,mx+3,my+3),fill=(255,230,150,255)); d.point((mx,my),fill=(255,255,235,255))
 AIM=(176,50)                                        # dit harpunen flyger (strax ovanför och till höger om siktet)
 WAIM=(112,80)                                       # version 11: dit piskans snärt når (till vänster om siktet, där bågen slår)
 OUTC=(37,19,26)
@@ -563,7 +593,7 @@ if ONLY:
 for w,st in d.items():
     if ONLY and w not in ONLY: continue
     files=[]; states={}
-    for s in ['idle','fire']+[k for k in ('draw','charge','reload','throw','empty','block','ward','dash') if k in st]:   # version 6: draw, 7: charge, 8: reload/empty, 9: throw, 11: block, 13: ward, 20: dash
+    for s in ['idle','fire']+[k for k in ('draw','charge','reload','throw','empty','block','ward','dash','spin') if k in st]:   # version 6: draw, 7: charge, 8: reload/empty, 9: throw, 11: block, 13: ward, 20: dash, 21: spin
         states[s]=[]
         for fr in st[s]: states[s].append(len(files)); files.append(fr)
     ims=[Image.open(f['f']).convert('RGBA') for f in files]
@@ -634,6 +664,8 @@ for w,st in d.items():
         atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(SWEEP[w]),lambda m,st:(m[0]-4,m[1]-40,m[0]+44,m[1]+4),sweep_draw)
     if w in TRAPFLY:
         atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(TRAPFLY[w]),lambda m,f:(min(m[0],AIM[0])-16,min(m[1],AIM[1])-30,max(m[0],AIM[0])+16,m[1]+8),trap_draw)
+    if w in BLUNDERSMOKE:   # version 21
+        atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(BLUNDERSMOKE[w]),lambda m,st:(m[0]-st[1]*1.4-14,m[1]-st[1]*1.4-16,m[0]+st[1]*1.2+8,m[1]+st[1]+6),blundersmoke_draw)
     atlas.save(OUT+f'assets/gfx/fp_{w}.png',optimize=True)
     if w in MUZZLE_IDLE: mz=[mz[0] if i in states['fire'] else m for i,m in enumerate(mz)]   # bågen: utan pil räknas mynningen från vilobilden
     out[w]={'x':x,'y':y,'w':fw,'h':fh,'states':states,'muzzle':mz,'dur':{'fire':round(st['fire_dur'],3),**{k:round(v,3) for k,v in st.get('durs',{}).items()}}}
