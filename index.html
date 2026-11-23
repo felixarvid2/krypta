@@ -129,11 +129,141 @@
   #touch.onehand .crouchb { left: auto; right: calc(var(--m) + 1vw + var(--b) * .95); bottom: calc(min(62.5vw, 100vh) * .2 + 1vh + var(--b) * .85 + var(--g)); top: auto; }
   #touch .tb.lit { opacity: 1; filter: drop-shadow(0 0 6px #ffd24a); }
   #touch.layout .tb { opacity: 1; outline: 2px dashed #ffd24a; display: block; }
+  /* UI-omgörningen: få knappar (#touch:not(.all)). Inställningen ALLA KNAPPAR (.all) ger exakt de gamla reglerna ovan.
+     Permanent: AVFYRA, ALT, HOPPA, RUSA, PAUS. .ctx syns bara när de går att använda (.show), .xtra nås via pausen/HUD-hörnen. */
+  #touch:not(.all) { --vr: max(calc(var(--m) + 1vw), calc(max(1vw, var(--m) / 2 - var(--b) * .875) + var(--b) * 1.75 + var(--g))); } /* bildens högra kant, men aldrig över AVFYRA */
+  #touch:not(.all) .tb.xtra { display: none !important; }
+  #touch:not(.all).playing:not(.layout) .tb.fsbtn { display: none; }
+  #touch:not(.all):not(.layout) .tb.ctx:not(.show) { display: none; }
+  #touch:not(.all) .tb.ctx.show { animation: tbpop .18s ease-out; }
+  @keyframes tbpop { from { transform: scale(.3); opacity: 0; } }
+  #touch:not(.all) .fire { width: calc(var(--b) * 1.75); height: calc(var(--b) * 1.75); right: calc(max(1vw, var(--m) / 2 - var(--b) * .875) + env(safe-area-inset-right, 0px)); bottom: calc(3vh + env(safe-area-inset-bottom, 0px)); opacity: min(1, calc(var(--bo, .6) + .25)); }
+  #touch:not(.all) .aim { bottom: calc(3vh + var(--b) * 1.75 + var(--g)); }
+  #touch:not(.all) .reload, #touch:not(.all) .use { width: calc(var(--b) * .85); height: calc(var(--b) * .85); }
+  #touch:not(.all) .reload { bottom: calc(3vh + var(--b) * 2.75 + var(--g) * 2); }
+  #touch:not(.all) .use { bottom: calc(3vh + var(--b) * 3.6 + var(--g) * 3); }
+  #touch:not(.all) .jumpb, #touch:not(.all) .dashb, #touch:not(.all) .grenb, #touch:not(.all) .potb, #touch:not(.all) .abb, #touch:not(.all) .lampb { width: calc(var(--b) * .85); height: calc(var(--b) * .85); right: calc(var(--vr) + env(safe-area-inset-right, 0px)); }
+  #touch:not(.all) .jumpb { bottom: calc(3vh + env(safe-area-inset-bottom, 0px)); }
+  #touch:not(.all) .dashb { bottom: calc(3vh + var(--b) * .85 + var(--g)); }
+  #touch:not(.all) .grenb { bottom: calc(3vh + var(--b) * 1.7 + var(--g) * 2); }
+  #touch:not(.all) .potb { bottom: calc(3vh + var(--b) * 1.7 + var(--g) * 2); } /* högst tre rader: minikartan ligger ovanför */
+  @media (orientation: landscape) and (max-aspect-ratio: 19/10) { /* smala svarta fält (16:9): ANVÄND och LADDA OM flyttar in i bilden, annars hamnar de på minikartan */
+    #touch:not(.all) .use, #touch:not(.all) .reload { right: calc(var(--vr) + var(--b) * 1.7 + var(--g) * 2 + env(safe-area-inset-right, 0px)); }
+    #touch:not(.all) .use { bottom: calc(3vh + env(safe-area-inset-bottom, 0px)); }
+    #touch:not(.all) .reload { bottom: calc(3vh + var(--b) * .85 + var(--g)); }
+    #touch:not(.all).onehand .tb.walkb { right: calc(var(--vr) + var(--b) * 2.55 + var(--g) * 3 + env(safe-area-inset-right, 0px)); }
+    #touch:not(.all) .tb.pausebtn { top: calc(16vh + env(safe-area-inset-top, 0px)); left: 1vw; } /* under hälsan, som här når ut i det smala fältet */
+  }
+  #touch:not(.all) .abb, #touch:not(.all) .lampb, #touch:not(.all) .potb { right: calc(var(--vr) + var(--b) * .85 + var(--g) + env(safe-area-inset-right, 0px)); }
+  #touch:not(.all) .abb { bottom: calc(3vh + env(safe-area-inset-bottom, 0px)); }
+  #touch:not(.all) .lampb { bottom: calc(3vh + var(--b) * .85 + var(--g)); }
+  #touch:not(.all) .potb.empty, #touch:not(.all) .abb.empty { opacity: var(--bo, .6); }
+  #touch:not(.all).onehand .walkb { right: calc(var(--vr) + var(--b) * 1.7 + var(--g) * 2 + env(safe-area-inset-right, 0px)); bottom: calc(3vh + env(safe-area-inset-bottom, 0px)); }
+  #touch .rothint { display: none; position: absolute; left: 50%; width: 9vw; height: 9vw; transform: translateX(-50%); pointer-events: none; opacity: .45; }
+  #touch .rothint img { width: 100%; height: 100%; }
+  @media (orientation: portrait) {
+    #touch:not(.all) .fire { width: calc(var(--b) * 1.7); height: calc(var(--b) * 1.7); right: var(--p); bottom: var(--bot); }
+    #touch:not(.all) .aim { right: calc(var(--p) + var(--b) * 1.7 + 3vw); bottom: var(--bot); }
+    #touch:not(.all) .jumpb, #touch:not(.all) .dashb { width: var(--b); height: var(--b); }
+    #touch:not(.all) .jumpb { right: calc(var(--p) + var(--b) * .35); bottom: calc(var(--bot) + var(--b) * 1.7 + 3vw); }
+    #touch:not(.all) .dashb { right: calc(var(--p) + var(--b) * 1.7 + 3vw); bottom: calc(var(--bot) + var(--b) + 3vw); }
+    #touch:not(.all) .pausebtn { left: var(--p); right: auto; top: calc(var(--cb) + 3vw); }
+    #touch:not(.all) .use, #touch:not(.all) .reload, #touch:not(.all) .grenb, #touch:not(.all) .potb, #touch:not(.all) .abb, #touch:not(.all) .lampb { width: calc(var(--b) * .85); height: calc(var(--b) * .85); }
+    #touch:not(.all) .use, #touch:not(.all) .reload, #touch:not(.all) .grenb { bottom: calc(var(--bot) + var(--b) * 2.7 + 6vw); }
+    #touch:not(.all) .potb, #touch:not(.all) .abb, #touch:not(.all) .lampb { bottom: calc(var(--bot) + var(--b) * 3.55 + 9vw); }
+    #touch:not(.all) .use, #touch:not(.all) .potb { right: var(--p); }
+    #touch:not(.all) .reload, #touch:not(.all) .abb { right: calc(var(--p) + var(--b) * .85 + 3vw); }
+    #touch:not(.all) .grenb, #touch:not(.all) .lampb { right: calc(var(--p) + var(--b) * 1.7 + 6vw); }
+    #touch:not(.all).onehand .walkb { width: calc(var(--b) * .85); height: calc(var(--b) * .85); right: calc(var(--p) + var(--b) * 2.55 + 9vw); bottom: calc(var(--bot) + var(--b) * 2.7 + 6vw); }
+    #touch.playing .rothint.on { display: block; top: calc(var(--cb) + 3vw); animation: tbpop .3s ease-out; } /* "vrid för helskärm", en gång */
+  }
   .layoutbar { position: fixed; left: 50%; top: 8px; transform: translateX(-50%); z-index: 60; display: flex; gap: 8px; align-items: center; background: #000c; padding: 8px; font: 10px "PressStart2P", monospace; color: #ffe9a8; }
   .layoutbar button { font: inherit; padding: 8px; background: #3a2c1e; color: #ffe9a8; border: 1px solid #c9a87a; }
   .touchhint { display: none; }
   body.touch .touchhint { display: block; }
   body.touch .keyhint { display: none; }
+</style>
+<style id="menucss">
+  /* ---- MENY: startskärmen som genrens huvudmeny – logotyp och en lodrät lista med stora val ---- */
+  #title { justify-content: flex-start; gap: 8px; padding: max(10px, env(safe-area-inset-top, 0px)) 16px 14px; }
+  #title::before { content: ''; margin-top: auto; } #title::after { content: ''; margin-bottom: auto; } /* centrerat när det får plats, rullbart utan att toppen klipps när det inte gör det */
+  #title > h1 { margin: 0 0 4px; font-size: clamp(30px, min(8vw, 11vh), 72px); }
+  #title > #loadhelp { margin-bottom: 0; }
+  #title .menu { display: flex; flex-direction: column; align-items: stretch; gap: 2px; width: min(24em, 92vw); }
+  #title .menu.sub { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; width: min(40em, 96vw); }
+  #title .menu.sub > .wide, #title .menu.sub > .subhead, #title .menu.sub > .back, #title .menu.sub > .seedbox { grid-column: 1 / -1; }
+  #title .menu[hidden] { display: none !important; }
+  #title .mi { font-size: clamp(12px, min(1.7vw, 3.2vh), 17px); padding: 10px 14px; background: transparent; border: 0; color: #e8d9b0; letter-spacing: 2px; text-shadow: 2px 2px #000; position: relative; line-height: 1.25; }
+  #title .mi:disabled { opacity: .4; }
+  #title .mi:hover:not(:disabled), #title .mi:focus, #title .mi.sel { background: linear-gradient(90deg, transparent, rgba(124,38,22,.9) 18%, rgba(124,38,22,.9) 82%, transparent); color: #ffd24a; outline: none; }
+  #title .mi:hover:not(:disabled)::before, #title .mi:focus::before, #title .mi.sel::before { content: '>'; position: absolute; left: 4%; color: #ffd24a; }
+  #title #start, #title #continue { font-size: clamp(14px, min(2.1vw, 4vh), 22px); color: #ffe9a8; }
+  #title .mi .label { display: block; font-size: 8px; color: var(--dim); margin-top: 3px; letter-spacing: 1px; text-shadow: none; }
+  #title #souls { font-size: .7em; color: var(--soul); margin: 0 0 0 6px; }
+  #title #souls:not(:empty)::before { content: ''; display: inline-block; width: .55em; height: .55em; margin-right: .45em; background: var(--soul); transform: rotate(45deg) translateY(-.1em); }
+  #title #unlocks, #title #altar { color: var(--soul); }
+  #title .menu.sub .mi { font-size: clamp(10px, min(1.4vw, 2.8vh), 14px); padding: 8px 10px; }
+  #title .menu.sub .mi.back { color: var(--muted); margin-top: 6px; }
+  #title .subhead { font-size: 10px; color: var(--dim); letter-spacing: 4px; text-align: center; margin-bottom: 6px; }
+  #title #dailyinfo { font-size: 7px; line-height: 1.7; text-align: center; margin: -2px auto 6px; max-width: 64em; }
+  #title #best { font-size: 7px; line-height: 1.7; color: var(--dim); text-align: center; margin-top: 4px; }
+  #title .seedbox { justify-content: center; margin-top: 4px; }
+  #title #setup { display: flex; flex-direction: column; align-items: center; gap: 6px; width: min(52em, 96vw); }
+  #title #setup .mi.back, #title #setup #fullscreen { align-self: stretch; }
+  #title #version { position: fixed; right: calc(8px + env(safe-area-inset-right, 0px)); bottom: 6px; font-size: 7px; color: var(--dim); opacity: .7; }
+  #title #status { font-size: 8px; max-width: 40em; }
+  #title #status:empty { display: none; }
+  @media (max-height: 520px) {
+    #title { gap: 4px; }
+    #title > h1 { font-size: clamp(26px, 10vh, 44px); letter-spacing: 4px; }
+    #title .mi { padding: 7px 12px; }
+    #title.insub > h1 { display: none; }
+    #title .menu.sub .mi { padding: 6px 8px; }
+  }
+  @media (max-height: 520px) and (min-width: 700px) { #title .menu.sub { grid-template-columns: repeat(3, 1fr); width: min(56em, 96vw); } }
+  /* ---- dödsskärmen och nivåslutet: DOM-skärmar ovanför pekknapparna ---- */
+  .endscr { position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(6px, 2vh, 14px); padding: 12px 16px; text-align: center; background: radial-gradient(rgba(20,4,2,.35), rgba(8,2,1,.85) 75%); animation: es-in .35s ease-out both; user-select: none; -webkit-user-select: none; }
+  @keyframes es-in { from { opacity: 0; } to { opacity: 1; } }
+  .endscr .es-big { font-size: clamp(30px, min(8vw, 13vh), 76px); color: var(--blood); letter-spacing: 6px; text-shadow: 4px 4px #000, 0 0 28px #6a1408; }
+  .endscr.win .es-big { color: #9fe0a0; text-shadow: 4px 4px #000, 0 0 28px #1f6a20; }
+  .endscr .es-line { font-size: clamp(9px, min(1.3vw, 2.6vh), 13px); color: var(--muted); letter-spacing: 1px; }
+  .endscr .es-line b { color: #ff7060; font-weight: normal; }
+  .endscr .es-nums { display: flex; gap: clamp(18px, 5vw, 56px); justify-content: center; }
+  .endscr .es-nums > div { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+  .endscr .es-nums .n { font-size: clamp(16px, min(2.6vw, 5vh), 28px); color: #ffe9a8; text-shadow: 2px 2px #000; }
+  .endscr .es-nums .k { font-size: 8px; color: var(--dim); letter-spacing: 2px; }
+  .endscr .es-souls { font-size: clamp(10px, min(1.5vw, 3vh), 15px); color: var(--soul); }
+  .endscr .es-tip { font-size: 8px; color: var(--dim); max-width: 46em; line-height: 1.7; }
+  .endscr .es-btns { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; margin-top: 4px; }
+  .endscr .es-btns button { font-size: clamp(11px, min(1.6vw, 3.4vh), 16px); padding: 12px 22px; min-width: 10em; }
+  .endscr .es-btns button.sec { background: transparent; border-color: var(--dim); color: var(--muted); }
+  .endscr .es-btns button:focus-visible, .endscr .es-btns button:hover { background: var(--btn-hi); color: #ffd24a; outline: 2px solid #ffe9a8; outline-offset: 2px; }
+  #floorend .es-big { font-size: clamp(14px, min(2.6vw, 5vh), 26px); color: #ffd24a; letter-spacing: 3px; text-shadow: 3px 3px #000; }
+  #floorend .fe-body { display: flex; gap: clamp(20px, 6vw, 70px); align-items: center; }
+  #floorend .fe-rows { display: grid; grid-template-columns: auto auto; gap: clamp(6px, 1.6vh, 12px) 28px; font-size: clamp(10px, min(1.5vw, 3vh), 15px); }
+  #floorend .fe-rows .k { color: var(--dim); text-align: left; letter-spacing: 2px; }
+  #floorend .fe-rows .v { color: #ffe9a8; text-align: right; min-width: 6em; }
+  #floorend .fe-rows .v.gold { color: #ffd24a; }
+  #floorend .fe-grade { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  #floorend .fe-grade .k { font-size: 8px; color: var(--dim); letter-spacing: 3px; }
+  #floorend .fe-grade .g { font-size: clamp(44px, min(9vw, 18vh), 96px); text-shadow: 5px 5px #000; transform: scale(0); transition: transform .25s cubic-bezier(.3,1.6,.5,1); }
+  #floorend .fe-grade .g.on { transform: scale(1); }
+  #floorend .fe-extra { font-size: 8px; color: #9fe060; max-width: 46em; line-height: 1.7; }
+  /* pausmenyn och MER: samma lodräta lista som startskärmen */
+  #cardui .cu-choice.menulist .cu-wrap { gap: 6px; }
+  #cardui .cu-choice.menulist .cu-deckbox { gap: 6px; }
+  #cardui .cu-choice.menulist .cu-title { font-size: clamp(18px, min(3.4vw, 7vh), 30px); }
+  #cardui .cu-choice.menulist .cu-sub { font-size: clamp(7px, min(1.2vw, 2.4vh), 10px); line-height: 1.6; }
+  #cardui .cu-choice.menulist .cu-choices { gap: 2px; margin: 4px 0 0; width: min(22em, 90vw); }
+  #cardui .cu-choice.menulist .cu-opt { text-align: center; background: transparent; border: 0; box-shadow: none; padding: clamp(6px, 1.6vh, 11px) 14px; color: #e8d9b0; text-shadow: 2px 2px #000; position: relative; }
+  #cardui .cu-choice.menulist .cu-ol { font-size: clamp(11px, min(1.6vw, 3.4vh), 16px); letter-spacing: 2px; }
+  #cardui .cu-choice.menulist .cu-opt:hover, #cardui .cu-choice.menulist .cu-opt:focus { background: linear-gradient(90deg, transparent, rgba(124,38,22,.9) 18%, rgba(124,38,22,.9) 82%, transparent); color: #ffd24a; outline: none; }
+  #cardui .cu-choice.menulist .cu-opt:hover::before, #cardui .cu-choice.menulist .cu-opt:focus::before { content: '>'; position: absolute; left: 4%; top: 50%; transform: translateY(-50%); color: #ffd24a; }
+  /* inställningarnas flikar */
+  #cardui .cu-tabs { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; align-self: stretch; }
+  #cardui .cu-tab { font-size: .7em; padding: .7em .9em; background: transparent; border-color: #4a3a28; color: var(--muted, #c9a87a); }
+  #cardui .cu-tab[aria-pressed="true"] { background: #5a1a10; border-color: #d8a24a; color: #ffd24a; }
+  @media (max-height: 520px) { #cardui .cu-panel .cu-pbody { max-height: 52vh; } #cardui .cu-tab { padding: .5em .7em; } }
 </style>
 </head>
 <body>
@@ -141,34 +271,36 @@
 <div id="touch" hidden></div>
 <div id="title">
   <h1>KRYPTA</h1>
-  <p id="tagline">Fem slumpade våningar och en boss längst ner. Samla kort, dö, lås upp mer.</p>
-  <div class="row mainrow">
-    <button id="start" disabled>NY RUNDA</button>
-    <button id="continue" hidden>FORTSÄTT</button>
-    <button id="daily" disabled>DAGENS RUNDA</button>
+  <div id="ptitle" class="label" hidden></div>
+  <p id="tagline" hidden>Fem slumpade våningar och en boss längst ner.</p>
+  <div class="menu" id="mainmenu">
+    <button id="continue" class="mi" type="button" hidden>FORTSÄTT</button>
+    <button id="start" class="mi" type="button" disabled>SPELA</button>
+    <button id="moremodesbtn" class="mi" type="button" aria-expanded="false" data-sub="moremodes">LÄGEN</button>
+    <button id="setupbtn" class="mi" type="button" aria-expanded="false" data-sub="setup">ANPASSA <span id="setupsum" class="label"></span></button>
+    <button id="collbtn" class="mi" type="button" aria-expanded="false" data-sub="collections">SAMLINGAR <span id="souls"></span></button>
+    <button id="settingsbtn" class="mi" type="button">INSTÄLLNINGAR</button>
   </div>
-  <div class="row">
-    <button id="hubbtn" class="ghost" type="button">LÄGRET</button>
-    <button id="campaignbtn" class="ghost" type="button">KAMPANJEN</button>
-    <button id="moremodesbtn" class="ghost" type="button" aria-expanded="false">FLER LÄGEN +</button>
-  </div>
-  <div class="row panel" id="moremodes" hidden>
-    <button id="bossrush" class="ghost" type="button">BOSSRUSH</button>
-    <button id="weekly" class="ghost" type="button">VECKANS UTMANING</button>
-    <button id="survival" class="ghost" type="button">ÖVERLEVNAD</button>
-    <button id="mazebtn" class="ghost" type="button">LABYRINTEN</button>
-    <button id="abyssbtn" class="ghost" type="button">AVGRUNDEN</button>
-    <button id="abyssdaily" class="ghost" type="button">DAGENS AVGRUND</button>
-    <button id="huntbtn" class="ghost" type="button">BOSSJAKTEN</button>
-    <button id="monthly" class="ghost" type="button">MÅNADENS UTMANING</button>
-    <button id="editorbtn" class="ghost" type="button">BANBYGGAREN</button>
+  <div class="menu sub" id="moremodes" hidden>
+    <div class="subhead">LÄGEN</div>
+    <button id="daily" class="mi wide" type="button" disabled>DAGENS RUNDA</button>
+    <div id="dailyinfo" class="label wide"></div>
+    <button id="campaignbtn" class="mi" type="button">KAMPANJEN</button>
+    <button id="hubbtn" class="mi" type="button">LÄGRET</button>
+    <button id="bossrush" class="mi" type="button">BOSSRUSH</button>
+    <button id="weekly" class="mi" type="button">VECKANS UTMANING</button>
+    <button id="monthly" class="mi" type="button">MÅNADENS UTMANING</button>
+    <button id="survival" class="mi" type="button">ÖVERLEVNAD</button>
+    <button id="mazebtn" class="mi" type="button">LABYRINTEN</button>
+    <button id="abyssbtn" class="mi" type="button">AVGRUNDEN</button>
+    <button id="abyssdaily" class="mi" type="button">DAGENS AVGRUND</button>
+    <button id="huntbtn" class="mi" type="button">BOSSJAKTEN</button>
+    <button id="editorbtn" class="mi" type="button">BANBYGGAREN</button>
     <span class="seedbox"><label class="label" for="seed">FRÖ</label><input id="seed" maxlength="16" placeholder="SLUMPAT" autocomplete="off"></span>
+    <button class="mi back wide" type="button" data-back>TILLBAKA</button>
   </div>
-  <div class="row setuprow">
-    <span id="setupsum" class="label"></span>
-    <button id="setupbtn" class="ghost" type="button" aria-expanded="false">ANPASSA RUNDAN +</button>
-  </div>
-  <div class="panel" id="setup" hidden>
+  <div class="menu sub" id="setup" hidden>
+    <div class="subhead">ANPASSA</div>
     <div class="label">SVÅRIGHETSGRAD</div>
     <div class="row" id="diff"></div>
     <div class="row" id="asc" hidden></div>
@@ -180,39 +312,47 @@
     <div class="row" id="cmodes" hidden></div>
     <div class="label" id="slotlabel">SPARPLATS</div>
     <div class="row" id="slots" hidden></div>
+    <button id="fullscreen" class="mi fsonly" type="button">HELSKÄRM</button>
+    <button class="mi back" type="button" data-back>TILLBAKA</button>
   </div>
-  <div class="row soulrow">
-    <span id="souls"></span>
-    <button id="unlocks" class="ghost" disabled>LÅS UPP KORT</button>
-    <button id="altar" class="ghost soul" disabled>SJÄLAALTARET</button>
+  <div class="menu sub" id="collections" hidden>
+    <div class="subhead">SAMLINGAR</div>
+    <button id="unlocks" class="mi" type="button" disabled>LÅS UPP KORT</button>
+    <button id="altar" class="mi" type="button" disabled>SJÄLAALTARET</button>
+    <button id="profilebtn" class="mi" type="button">PROFIL</button>
+    <button id="statsbtn" class="mi" type="button">STATISTIK</button>
+    <button id="bestiary" class="mi" type="button">BESTIARIUM</button>
+    <button id="achbtn" class="mi" type="button">PRESTATIONER</button>
+    <button id="codexbtn" class="mi" type="button">KORTARKIV</button>
+    <button id="chroniclebtn" class="mi" type="button">KRÖNIKAN</button>
+    <button id="titlesbtn" class="mi" type="button">TITLAR</button>
+    <button id="practicebtn" class="mi" type="button">ÖVNING</button>
+    <button id="manualbtn" class="mi" type="button">HANDBOK</button>
+    <button id="newsbtn" class="mi" type="button">NYHETER</button>
+    <div id="best" class="wide"></div>
+    <button class="mi back wide" type="button" data-back>TILLBAKA</button>
   </div>
-  <div class="row">
-    <button id="settingsbtn" class="ghost" type="button">INSTÄLLNINGAR</button>
-    <button id="manualbtn" class="ghost" type="button">HANDBOK</button>
-    <button id="newsbtn" class="ghost" type="button">NYHETER</button>
-    <button id="collbtn" class="ghost" type="button" aria-expanded="false">SAMLINGAR +</button>
-    <button id="fullscreen" class="ghost fsonly" type="button">HELSKÄRM</button>
-  </div>
-  <div class="row panel" id="collections" hidden>
-    <button id="profilebtn" class="ghost" type="button">PROFIL</button>
-    <button id="bestiary" class="ghost" type="button">BESTIARIUM</button>
-    <button id="achbtn" class="ghost" type="button">PRESTATIONER</button>
-    <button id="codexbtn" class="ghost" type="button">KORTARKIV</button>
-    <button id="practicebtn" class="ghost" type="button">ÖVNING</button>
-    <button id="statsbtn" class="ghost" type="button">STATISTIK</button>
-    <button id="chroniclebtn" class="ghost" type="button">KRÖNIKAN</button>
-    <button id="titlesbtn" class="ghost" type="button">TITLAR</button>
-  </div>
-  <div class="foot">
-    <div id="ptitle" class="label" hidden></div>
-    <div id="best"></div>
-    <div id="dailyinfo" class="label"></div>
-    <div id="version" class="label">VERSION 20 · KLOAKERNA OCH ÖKNEN – SE NYHETER</div>
-  </div>
-  <p class="touchhint">VÄNSTER TUMME: GÅ · HÖGER TUMME: VRID OCH SKJUT · LIGGANDE GER STÖRST BILD. HANDBOKEN FÖRKLARAR ALLA KNAPPAR.</p>
+  <div id="version" class="label">V20</div>
   <div id="status">Laddar…</div>
   <div id="loadwrap"><div id="loadbar"></div></div>
   <div id="loadhelp" class="label"></div>
+</div>
+<div id="runover" class="endscr" hidden>
+  <div class="es-big" id="ro-head">DU DOG</div>
+  <div class="es-line" id="ro-cause"></div>
+  <div class="es-nums"><div><span class="n" id="ro-depth">1</span><span class="k">VÅNING</span></div><div><span class="n" id="ro-kills">0</span><span class="k">FIENDER</span></div><div><span class="n" id="ro-time">0:00</span><span class="k">TID</span></div></div>
+  <div class="es-souls" id="ro-souls"></div>
+  <div class="es-btns"><button id="retrybtn" type="button">FÖRSÖK IGEN</button><button id="romenubtn" class="sec" type="button">MENY</button></div>
+  <div class="es-tip" id="ro-tip"></div>
+</div>
+<div id="floorend" class="endscr" hidden>
+  <div class="es-big" id="fe-head">VÅNING KLARAD</div>
+  <div class="fe-body">
+    <div class="fe-rows" id="fe-rows"></div>
+    <div class="fe-grade"><span class="k">BETYG</span><span class="g" id="fe-grade"></span></div>
+  </div>
+  <div class="fe-extra" id="fe-extra"></div>
+  <div class="es-btns"><button id="nextbtn" type="button">VIDARE</button></div>
 </div>
 <script src="js/rng.js"></script>
 <script src="js/gen.js"></script>

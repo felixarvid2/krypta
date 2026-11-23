@@ -1090,8 +1090,8 @@ function recomputeMods() {
 }
 const up = k => UP.has(k) && !!run && WEAPONS[P.weapon].id === run.pact;
 
-const plain = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '');
-function say(t, d = 2.5) { const pt = plain(t); if (msgs.length && msgs[0].text === pt) { msgs[0].t = Math.max(msgs[0].t, d); return; } msgs.unshift({ text: pt, t: d }); if (msgs.length > 3) msgs.length = 3; if (settings.tts && t && d >= 2.5 && state !== 'title') speak(t); }
+const plain = s => String(s).normalize('NFC').replace(/[^\u0000-\u007fÅÄÖåäö]/g, ch => ch.normalize('NFD').replace(/[\u0300-\u036f]/g, '')); // å, ä och ö finns i fonten och behålls; andra accenter tas bort
+function say(t, d = 2.5) { const pt = plain(t), ex = msgs.find(m => m.text === pt); if (ex) { ex.t = Math.max(ex.t, d); return; } msgs.push({ text: pt, t: d, d }); if (msgs.length > 3) msgs.splice(1, msgs.length - 3); /* kö: det första syns, de två senaste väntar */ if (settings.tts && t && d >= 2.5 && state !== 'title') speak(t); }
 
 // ---------- Runda och våningar ----------
 const dailySeed = () => { const d = new Date(); return RNG.hash(`krypta-${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`); };
@@ -2116,6 +2116,76 @@ function enemyUnderCrosshair() {
   }
   return false;
 }
+// ---------- HUD i hörnen (som genrens moderna förebilder): ikoner och siffror, ingen statuslist ----------
+let HL = null, hudGoldV = null, hudGoldRun = null, goldPop = null, fxIcons = []; const fxMax = {};
+const hudTxtCol = () => ({ blue: '#b0ccff', green: '#b0e8b0', gold: '#ffd890' })[settings.hudTheme] || '#e8d9b0'; // HUD-temat färgar siffrorna
+function mapTop() { return isTouch() ? 3 + (settings.bigHud ? 30 : 22) + 3 : 4; } // minikartan: under ammo-hörnet på pekskärm
+function hudLay() { // hörnens rutor i spelkoordinater (320×200); pekskärm: överst så att nedre delen är fri för tummarna
+  const t = isTouch(), big = !!settings.bigHud, w = big ? 112 : 80, h = big ? 30 : 22, y = t ? 3 : H - 2 - h, ss = big ? 2 : 1;
+  const ms = settings.mapScale || 3, size = (2 * Math.round(24 / ms) + 1) * ms;
+  const L = { t, big, hp: { x: 4, y, w, h }, ammo: { x: W - 4 - w, y, w, h }, map: { x: W - 4 - size, y: mapTop(), w: size, h: size } };
+  const potOn = !!(P.potions && P.potions.length) || !!settings.potHud, lampOn = P.battery !== undefined && (P.lamp || P.battery < 15);
+  let c; // vänster stapel: drycker, lampa, effekter (uppåt från hälsan på dator, nedåt på pekskärm)
+  if (t) { c = y + h + 3; L.potY = c; if (potOn) c += 14; L.lampY = c; if (lampOn) c += 7; L.fxY = c; }
+  else { c = y - 2; if (potOn) c -= 13; L.potY = c; if (lampOn) c -= 7; L.lampY = c + 1; L.fxY = c - 12; }
+  if (t) { L.exY = y + 2; L.exR = L.ammo.x - 4; L.noteR = L.ammo.x - 4; L.noteY = y + 13; L.ab = { x: L.map.x - 22, y: L.map.y + 2 }; L.st = { x: L.map.x - 34, y: L.map.y + 34 }; }
+  else { L.exY = y - 9 * ss - 1; L.exR = W - 5; L.ab = { x: W - 22, y: L.exY - 21 }; L.st = { x: W - 64, y: L.ab.y + 14 }; L.noteR = W - 5; L.noteY = L.ab.y - 11; }
+  L.msgY = t ? y + h + 3 : 5; L.row2 = L.msgY + 11; L.msgW = t ? 23 : 25; L.styleY = L.map.y + L.map.h + 42; // överst i mitten: meddelanderaden och en andra rad (nivå, våg, arena, rampljus …)
+  return L;
+}
+function hudIcon(g, kind, x, y, col, s = 1) { // små pixelikoner: kors, sköld, granat, nyckel, stjärna, omladdning
+  const R = (a, b, w, h) => g.fillRect(x + a * s, y + b * s, w * s, h * s);
+  if (kind === 'cross') { g.fillStyle = '#000'; R(3, 0, 5, 11); R(0, 3, 11, 5); g.fillStyle = col; R(4, 1, 3, 9); R(1, 4, 9, 3); }
+  else if (kind === 'shield') { g.fillStyle = '#000'; R(0, 0, 9, 7); R(1, 7, 7, 2); R(3, 9, 3, 1); g.fillStyle = col; R(1, 1, 7, 6); R(2, 7, 5, 1); R(3, 8, 3, 1); g.fillStyle = '#ffffff60'; R(2, 2, 2, 3); }
+  else if (kind === 'gren') { g.fillStyle = '#000'; R(0, 2, 7, 6); g.fillStyle = col; R(1, 3, 5, 4); R(2, 2, 3, 1); R(2, 7, 3, 1); g.fillStyle = '#c9a87a'; R(3, 0, 1, 2); R(4, 0, 2, 1); }
+  else if (kind === 'key') { g.fillStyle = col; R(0, 0, 3, 3); R(3, 1, 3, 1); R(4, 2, 1, 2); R(5, 2, 1, 1); g.fillStyle = '#000'; R(1, 1, 1, 1); }
+  else if (kind === 'star') { g.fillStyle = col; R(2, 0, 1, 1); R(1, 1, 3, 1); R(0, 2, 5, 1); R(1, 3, 3, 1); R(1, 4, 1, 1); R(3, 4, 1, 1); }
+  else if (kind === 'reload') { g.strokeStyle = col; g.lineWidth = 2 * s; g.beginPath(); g.arc(x + 6 * s, y + 6 * s, 4.5 * s, 0.3, TAU - 0.9); g.stroke(); g.lineWidth = 1; g.fillStyle = col; R(8, 0, 4, 1); R(10, 1, 2, 3); }
+}
+function drawHpCorner(g, L) { // hälsa: kors + stor siffra + tunn stapel; skyddet som sköld + siffra bara när det finns
+  const r = L.hp, i = L.big ? 2 : 1, ns = L.big ? 3 : 2, low = P.hp <= maxHp() * 0.3, over = P.hp > maxHp() + 0.5, blink = tmr % 0.6 < 0.3;
+  const hpS = String(Math.max(0, Math.ceil(P.hp))), nx = r.x + 4 + 11 * i, barY = r.y + r.h - 3, barW = r.x + r.w - nx - 2;
+  hudIcon(g, 'cross', r.x + 1, r.y + Math.round((r.h - 3 - 11 * i) / 2), over ? '#60e0a0' : low ? (blink ? '#ff4d3d' : '#801810') : '#d83a2a', i);
+  txt(hpS, nx, r.y + 1, over ? '#a0ffd0' : !low ? hudTxtCol() : (blink ? '#ff4d3d' : '#a02a20'), ns);
+  hpShown = hpShown > P.hp ? Math.max(P.hp, hpShown - maxHp() * 0.4 / 60) : P.hp; // fördröjd stapel
+  g.fillStyle = '#000a'; g.fillRect(nx - 1, barY - 1, barW + 2, 4); g.fillStyle = '#2a1410'; g.fillRect(nx, barY, barW, 2);
+  g.fillStyle = '#f0e0c0'; g.fillRect(nx, barY, Math.round(barW * clamp(hpShown / maxHp(), 0, 1)), 2); g.fillStyle = '#c03828'; g.fillRect(nx, barY, Math.round(barW * clamp(P.hp / maxHp(), 0, 1)), 2);
+  if (mod('shield') > 0) { g.fillStyle = '#20344a'; g.fillRect(nx, barY + 2, barW, 1); g.fillStyle = '#7fc0ff'; g.fillRect(nx, barY + 2, Math.round(barW * clamp(P.shield / mod('shield'), 0, 1)), 1); } // skölden (kort) som tunn blå stapel
+  if (P.armor > 0) { const ax = nx + textW(hpS) * ns + 4, aS = String(Math.ceil(P.armor)); hudIcon(g, 'shield', ax, r.y + 3 * i, '#5f88d0', i); txt(aS, ax + 10 * i + 1, r.y + 4 * i, '#9fc4ff', i); }
+  if (run.cls && CLASSES[run.cls]) { g.fillStyle = CLASSES[run.cls].color; g.globalAlpha = 0.6; g.fillRect(r.x - 2, r.y + 2, 1, r.h - 4); g.globalAlpha = 1; } // klassens färg
+}
+function drawAmmoCorner(g, L) { // magasinet stort + "/reserv" litet; granater, nycklar, vapennivå och runor som små ikoner
+  const r = L.ammo, wp = WEAPONS[P.weapon], ns = L.big ? 3 : 2, ss = L.big ? 2 : 1, xr = r.x + r.w - 1;
+  const mag = wp.melee ? '–' : wp.staff ? String(Math.floor(P.mags[P.weapon])) : String(P.mags[P.weapon]), res = wp.melee || wp.staff || wp.ammo === 'none' ? '' : '/' + P.ammo[wp.ammo];
+  const low = !wp.melee && +mag <= Math.ceil(effMag(P.weapon) * 0.25), rw = res ? textW(res) * ss : 0;
+  txt(mag, Math.round(xr - rw - textW(mag) * ns - 1), r.y + 1, mag === '0' ? (tmr % 0.5 < 0.25 ? '#ff4d3d' : '#7a2a20') : low ? '#ffb040' : hudTxtCol(), ns);
+  if (res) txt(res, Math.round(xr - rw), r.y + 1 + 8 * (ns - ss), P.ammo[wp.ammo] === 0 ? (tmr % 0.6 < 0.3 ? '#ff4d3d' : '#7a2a20') : '#a08a68', ss);
+  if (!wp.melee) { const bw = r.w - 18, bx = xr - bw, by = r.y + r.h - 3, k = clamp(P.mags[P.weapon] / Math.max(1, effMag(P.weapon)), 0, 1); g.fillStyle = '#000a'; g.fillRect(bx - 1, by - 1, bw + 2, 4); g.fillStyle = '#2a2018'; g.fillRect(bx, by, bw, 2); g.fillStyle = low ? '#ffb040' : '#c9a87a'; g.fillRect(xr - Math.round(bw * k), by, Math.round(bw * k), 2); }
+  const it = [], y = L.exY;
+  if (run.pact) it.push([textW('EDEN'), x => txt('EDEN', x, y, '#ff7050')]);
+  for (const rn of curRunes()) it.push([8, x => { const im = hudImg['rune_' + rn]; if (im) g.drawImage(im, x, y, 7, 7); else { g.fillStyle = RUNES[rn].col; g.fillRect(x + 1, y + 1, 5, 5); } }]);
+  for (let k = wlvl(wp.id); k > 0; k--) it.push([6, x => hudIcon(g, 'star', x, y + 1, '#ffd24a')]);
+  for (let k = Math.min(P.keys || 0, 5); k > 0; k--) it.push([7, x => hudIcon(g, 'key', x, y + 1, '#ffd24a')]);
+  if (P.grenades > 0) { const s = String(P.grenades); it.push([9 + textW(s), x => { hudIcon(g, 'gren', x, y - 1, '#7a9a50'); txt(s, x + 9, y, '#c8e8a0'); }]); }
+  let x = L.exR - it.reduce((a, [w]) => a + w + 3, -3); for (const [w, f] of it) { f(Math.round(x)); x += w + 3; }
+  if (hudGoldRun !== run) { hudGoldRun = run; hudGoldV = run.gold; } // guldet syns bara när det ändras: "+15" som stiger och bleknar
+  else if (run.gold !== hudGoldV) { const d = run.gold - hudGoldV; hudGoldV = run.gold; if (d > 0) goldPop = { v: (goldPop && goldPop.t > 0.3 ? goldPop.v : 0) + d, t: 1.8 }; }
+  if (goldPop && goldPop.t > 0) { goldPop.t -= 1 / 60; const s = `+${goldPop.v}`; txt(s, Math.round(L.noteR - textW(s)), Math.round(L.noteY - (L.t ? 0 : (1.8 - goldPop.t) * 5)), '#ffd24a', 1, true, Math.min(1, goldPop.t * 1.5)); }
+}
+function drawFxRow(g, L) { // aktiva effekter: små färgade ikoner/förkortningar med nedräkningsstapel vid hälsan, högst fyra
+  const ch = [], add = (k, t, col, ic) => { if (!(t > 0)) { fxMax[k] = 0; return; } fxMax[k] = Math.max(fxMax[k] || 0, t); ch.push({ t, m: fxMax[k], col, ic }); };
+  add('haste', P.haste, '#9fe060', 'FA'); add('rage', P.rageT, POTIONS.rage.color, 'potion_rage'); add('ghost', P.ghostT, POTIONS.ghost.color, 'potion_ghost'); add('speed', P.speedT, POTIONS.speed.color, 'potion_speed');
+  add('slow', P.slowT, '#80b0ff', 'LÅ'); add('scope', P.scopeT, '#c0b0ff', 'TE'); if (!hudImg.icon_poison2) add('poison', P.poisonT, '#9fe060', 'GI'); // TE = teleskopet
+  if (up('bullettime') && WS.aim > 0.8) ch.push({ col: '#80b0ff', ic: hudImg.icon_time ? 'icon_time' : 'TS' });
+  if (P.iframe > 0) ch.push({ col: '#ffffff', ic: 'OS' });
+  for (const im of fxIcons) ch.push({ img: im });
+  ch.slice(0, 4).forEach((c, i) => {
+    const x = L.hp.x + i * 19, y = L.fxY, im = c.img || hudImg[c.ic];
+    g.fillStyle = 'rgba(0,0,0,0.45)'; g.fillRect(x, y - 1, 17, 11);
+    if (im) { if (im.height > im.width) g.drawImage(im, x + 5, y - 1, 6, 9); else g.drawImage(im, x + 4, y, 8, 8); } else txt(c.ic, x + 1, y + 1, c.col, 1, true, 0.95);
+    if (c.m) { g.fillStyle = '#000a'; g.fillRect(x, y + 9, 17, 1); g.fillStyle = c.col; g.fillRect(x, y + 9, Math.round(17 * c.t / c.m), 1); }
+  });
+}
 function drawHUD() {
   const g = ctx, y0 = VH;
   if (state === 'play') drawHeatFx(g);
@@ -2154,55 +2224,38 @@ function drawHUD() {
   }
   if (state === 'play' && xs !== 1) g.restore();
   const hb = boss && !boss.dead ? boss : guardianE && !guardianE.dead && !guardianE.dying ? guardianE : null;
-  if (hb && state === 'play') { // bossens (eller väktarens) livmätare
-    const w = hb.guardian ? 140 : 200, x = (W - w) / 2, y = 22;
-    g.fillStyle = '#000b'; g.fillRect(x - 2, y - 2, w + 4, 8);
-    g.fillStyle = hb.guardian ? '#3a1050' : '#5a1010'; g.fillRect(x, y, w, 4);
+  HL = hudLay(); const L = HL, wp = WEAPONS[P.weapon]; g.textBaseline = 'top';
+  if (hb && state === 'play') { // bossens (eller väktarens) livmätare: bred och tunn, namnet litet över
+    const w = L.t ? 140 : hb.guardian ? 180 : showMap === 1 ? 196 : 240, x = Math.round((W - w) / 2), ny = L.t ? L.msgY : (cmode('clock') || run.maze) ? 24 : 4, y = ny + 9; L.bossMsgY = ny + 16; L.row2 = L.bossMsgY + 11; // under klockan/labyrintens tid om de visas
+    txt(hb.d.name, Math.round((W - textW(hb.d.name)) / 2), ny, hb.enraged ? (tmr % 0.5 < 0.25 ? '#ff4030' : '#a02010') : '#ffd24a'); // rasande: namnet blinkar rött
+    g.fillStyle = '#000b'; g.fillRect(x - 1, y - 1, w + 2, 5);
+    g.fillStyle = hb.guardian ? '#3a1050' : '#5a1010'; g.fillRect(x, y, w, 3);
     hb.shownHp = hb.shownHp === undefined ? hb.hp : Math.max(hb.hp, hb.shownHp - hb.maxHp * 0.15 * (1 / 60)); // fördröjd stapel
-    g.fillStyle = '#f0e0c0'; g.fillRect(x, y, w * Math.max(0, hb.shownHp) / hb.maxHp, 4);
-    g.fillStyle = hb.guardian ? '#c050ff' : hb.phase === 3 ? '#ff5020' : '#d02818'; g.fillRect(x, y, w * Math.max(0, hb.hp) / hb.maxHp, 4);
-    g.fillStyle = '#000'; g.fillRect(Math.round(x + w / 3), y - 1, 1, 6); g.fillRect(Math.round(x + w * 2 / 3), y - 1, 1, 6); // fasgränser
-    g.fillStyle = '#0007'; for (let i = 1; i < 12; i++) if (i % 4) g.fillRect(Math.round(x + w * i / 12), y, 1, 4); // segment
-    if (hb.enraged) txt('RASANDE', x + w + 4, y - 1, tmr % 0.5 < 0.25 ? '#ff4030' : '#a02010');
-    txt(hb.d.name, (W - textW(hb.d.name)) / 2, y + 7, '#ffd24a');
+    g.fillStyle = '#f0e0c0'; g.fillRect(x, y, w * Math.max(0, hb.shownHp) / hb.maxHp, 3);
+    g.fillStyle = hb.guardian ? '#c050ff' : hb.phase === 3 ? '#ff5020' : '#d02818'; g.fillRect(x, y, w * Math.max(0, hb.hp) / hb.maxHp, 3);
+    g.fillStyle = '#000'; g.fillRect(Math.round(x + w / 3), y - 1, 1, 5); g.fillRect(Math.round(x + w * 2 / 3), y - 1, 1, 5); // fasgränser
+    g.fillStyle = '#0007'; for (let i = 1; i < 12; i++) if (i % 4) g.fillRect(Math.round(x + w * i / 12), y, 1, 3); // segment
+    if (hb.enraged && tmr % 0.5 < 0.25) { g.strokeStyle = '#ff4030'; g.strokeRect(x - 1.5, y - 1.5, w + 3, 6); }
   }
-  if (levelBanner > 0 && bossBanner <= 0 && state === 'play') {
-    const a = Math.min(1, levelBanner, (3 - levelBanner) * 3), sub = lvl.hub ? 'MELLAN RUNDORNA' : run.abyss ? `AVGRUND ${run.depth} · ${BIOME_NAME[lvl.biome] || ''}` : (cycleOf(run.depth) ? `VARV ${cycleOf(run.depth) + 1} · ` : '') + `VÅNING ${run.depth} · ${BIOME_NAME[lvl.biome] || ''}`;
+  if (levelBanner > 0 && bossBanner <= 0 && state === 'play') { // titelkortet: namnet stort, våningen litet och högst en kort rad till
+    const a = Math.min(1, levelBanner, (3 - levelBanner) * 3), sub = lvl.hub ? 'MELLAN RUNDORNA' : run.abyss ? `AVGRUND ${run.depth}` : (cycleOf(run.depth) ? `VARV ${cycleOf(run.depth) + 1} · ` : '') + `VÅNING ${run.depth}`;
     ctx.font = '16px "PressStart2P"'; const w = ctx.measureText(plain(lvl.name)).width;
-    if (w < W - 8) txt(lvl.name, (W - w) / 2, 46, '#e8d9b0', 2, true, a); else txt(lvl.name, (W - textW(lvl.name)) / 2, 50, '#e8d9b0', 1, true, a);
-    txt(sub, (W - textW(sub)) / 2, 66, '#c9a87a', 1, true, a);
-    if (floorEvent) { wrapText(EVENTS[floorEvent].name + ' – ' + EVENTS[floorEvent].text, 36).slice(0, 2).forEach((ev, k) => txt(ev, (W - textW(ev)) / 2, 78 + k * 10, '#ff7060', 1, true, a)); }
-    else if (run.floorCurse) { const t = 'FÖRBANNAD: +60 GULD OM DU KLARAR DEN'; txt(t, (W - textW(t)) / 2, 78, '#c080ff', 1, true, a); }
-    else if (!run.practice && run.depth > profile.bestDepth && profile.bestDepth > 1) { const t = 'DJUPARE ÄN NÅGONSIN!'; txt(t, (W - textW(t)) / 2, 78, '#9fe0a0', 1, true, a); }
+    if (w < W - 8) txt(lvl.name, (W - w) / 2, 40, '#e8d9b0', 2, true, a); else txt(lvl.name, (W - textW(lvl.name)) / 2, 44, '#e8d9b0', 1, true, a);
+    txt(sub, (W - textW(sub)) / 2, 60, '#c9a87a', 1, true, a * 0.9);
+    const ex = floorEvent ? [EVENTS[floorEvent].name, '#ff7060'] : run.floorCurse ? ['FÖRBANNAD VÅNING', '#c080ff'] : (!run.practice && run.depth > profile.bestDepth && profile.bestDepth > 1) ? ['DJUPARE ÄN NÅGONSIN!', '#9fe0a0'] : run.depth === 1 && run.modifier ? [run.modifier.name + (run.modifier2 ? ' · ' + run.modifier2.name : ''), '#ff9050'] : null;
+    if (ex) txt(ex[0], (W - textW(ex[0])) / 2, 72, ex[1], 1, true, a);
   }
   if (bossBanner > 0 && !boss && guardianE && guardianE.d.title) { const s = guardianE.d.title; txt(s, (W - textW(s)) / 2, 60, '#d080ff', 1, true, Math.min(1, bossBanner)); }
   if (bossBanner > 0 && boss && boss.d.title) { const t = boss.d.title; txt(t, (W - textW(t)) / 2, 72, '#e8d9b0', 1, true, Math.min(1, bossBanner)); }
   if (bossBanner > 0 && boss) { const s = boss.d.name; ctx.font = '16px "PressStart2P"'; const w = ctx.measureText(plain(s)).width; txt(s, (W - w) / 2, 50, '#ff5030', 2, true, Math.min(1, bossBanner)); }
-  // nedre listen: som de klassiska statuslisterna – en stor siffra per fält och en liten etikett under
-  g.fillStyle = '#15100c'; g.fillRect(0, y0, W, HUD_H);
-  g.fillStyle = '#4a3828'; g.fillRect(0, y0, W, 1);
-  for (const sx of HUD_CELLS.slice(1)) { g.fillStyle = '#2a2018'; g.fillRect(sx, y0 + 6, 1, HUD_H - 12); }
-  g.textBaseline = 'top';
-  const wp = WEAPONS[P.weapon], cx = i => (HUD_CELLS[i] + (HUD_CELLS[i + 1] || W)) / 2;
-  const big = (s, x, col) => txt(s, Math.round(x - textW(s)), y0 + 7, col, 2), lab = (s, x, col = '#7a6448') => txt(s, Math.round(x - textW(s) / 2), y0 + 25, col);
-  // hälsa
-  big(String(Math.max(0, Math.ceil(P.hp))), cx(0), P.hp > maxHp() + 0.5 ? '#a0ffd0' : P.hp > maxHp() * 0.3 ? '#e8d9b0' : (tmr % 0.6 < 0.3 ? '#ff4d3d' : '#a02a20')); lab('HÄLSA', cx(0));
-  // rustning
-  big(String(Math.ceil(P.armor)), cx(1), P.armor > 0 ? '#9fc4ff' : '#4a3a28'); lab('SKYDD', cx(1));
-  // ammunition: magasinet stort, reserven liten bredvid
-  { const mag = wp.melee ? '–' : wp.staff ? String(Math.floor(P.mags[P.weapon])) : String(P.mags[P.weapon]), res = wp.melee || wp.staff || wp.ammo === 'none' ? '' : '/' + P.ammo[wp.ammo];
-    const low = !wp.melee && +mag <= Math.ceil(effMag(P.weapon) * 0.25), w = textW(mag) * 2 + textW(res), x = Math.round(cx(2) - w / 2);
-    txt(mag, x, y0 + 7, mag === '0' ? (tmr % 0.5 < 0.25 ? '#ff4d3d' : '#7a2a20') : low ? '#ffb040' : '#e8d9b0', 2);
-    if (res) txt(res, x + textW(mag) * 2 + 1, y0 + 13, P.ammo[wp.ammo] === 0 ? (tmr % 0.6 < 0.3 ? '#ff4d3d' : '#7a2a20') : '#8a7558');
-    lab(wp.ammo === 'none' ? 'NÄRSTRID' : AMMO[wp.ammo].name, cx(2)); }
-  // vapnet: namnet, och under det granater, nycklar och vapennivå i en rad
-  { const nm = wShort(wp); txt(nm, Math.round(cx(3) - textW(nm) / 2), y0 + 11, legendOf(wp.id) ? '#ffd24a' : '#e8d9b0');
-    const bits = []; if (run.pact) bits.push(['EDEN', '#ff7050']); bits.push([`G${P.grenades}`, P.grenades ? '#a8e080' : '#4a3a28']); if (P.keys) bits.push([`N${P.keys}`, '#ffd24a']); { const lv = wlvl(wp.id); if (lv) bits.push(['★'.repeat(lv), '#ffd24a']); }
-    let bw = bits.reduce((a, [t]) => a + textW(t), 0) + (bits.length - 1) * 6, bx = Math.round(cx(3) - bw / 2); for (const [t, c] of bits) { txt(t, bx, y0 + 25, c); bx += textW(t) + 6; } }
-  // våningen och guldet
-  { const f = boss ? 'BOSS' : `VÅN ${run.depth}`, gtx = `${run.gold}G`; txt(f, Math.round(cx(4) - textW(f) / 2), y0 + 11, '#c9a87a'); txt(gtx, Math.round(cx(4) - textW(gtx) / 2), y0 + 25, '#ffd24a'); }
-  if (settings.bigHud) { let yy = 6; msgs.forEach((m, i) => { const a = Math.min(1, m.t * 2); if (i === 0) for (const ln of wrapText(m.text, 19).slice(0, 2)) { g.fillStyle = `rgba(0,0,0,${0.55 * a})`; g.fillRect((W - textW(ln) * 2) / 2 - 3, yy - 2, textW(ln) * 2 + 6, 19); txt(ln, (W - textW(ln) * 2) / 2, yy, '#ffe9a8', 2, true, a); yy += 19; } else { txt(m.text, (W - textW(m.text)) / 2, yy, '#c9b080', 1, true, a); yy += 11; } }); }
-  else if (levelBanner <= 0.5 && bossBanner <= 0.5 && state === 'play') msgs.slice(0, 2).forEach((m, i) => { const lines = wrapText(m.text, 26).slice(0, i ? 1 : 2), a = Math.min(1, m.t * 2) * (i ? 0.55 : 1); lines.forEach((ln, k) => txt(ln, Math.round((W - textW(ln)) / 2), (hb ? 40 : cmode('clock') ? 24 : 5) + (i ? 22 : k * 10), i ? '#b8a078' : '#ffe9a8', 1, true, a)); }); // ett meddelande i taget, det förra bleknar under
+  if (state === 'play') { drawHpCorner(g, L); drawAmmoCorner(g, L); } // hörnen ersätter den gamla statuslisten
+  { const m = msgs[0], big = !!settings.bigHud; // meddelanden: högst en rad åt gången överst i mitten; långa bläddras rad för rad
+    if (m && (state === 'play' || big) && (big || (levelBanner <= 0.5 && bossBanner <= 0.5))) {
+      const k = big ? 2 : 1, my = hb && state === 'play' ? L.bossMsgY : L.msgY + (cmode('clock') || (run && run.maze) ? 20 : 0);
+      const lines = wrapText(m.text, big ? (L.t ? 17 : 19) : L.msgW), n = lines.length, d = m.d || 2.5, ln = lines[Math.min(n - 1, Math.floor(clamp(1 - m.t / d, 0, 0.999) * n))] || '', w = textW(ln) * k, a = Math.min(1, m.t * 2);
+      if (big) { g.fillStyle = `rgba(0,0,0,${0.55 * a})`; g.fillRect(Math.round((W - w) / 2) - 3, my - 2, w + 6, 19); }
+      txt(ln, Math.round((W - w) / 2), my, '#ffe9a8', k, true, a);
+    } }
   if (state === 'play' && WS.state === 'reload' && !WEAPONS[P.weapon].shellReload) { // omladdningsmätare med det aktiva fältet
     const k = clamp(WS.t / (WEAPONS[P.weapon].reload * reloadMul()), 0, 1), bw = 44, bx = (W - bw) / 2, by = HORIZON + 10;
     g.fillStyle = '#000a'; g.fillRect(bx - 1, by - 1, bw + 2, 5);
@@ -2213,62 +2266,50 @@ function drawHUD() {
     const pt = portals[0], d = Math.hypot(pt.x - P.x, pt.y - P.y);
     if (d > 3) {
       let rel = Math.atan2(pt.y - P.y, pt.x - P.x) - P.a; rel = Math.atan2(Math.sin(rel), Math.cos(rel));
-      const cx = W / 2 + clamp(rel, -1.4, 1.4) * 70, cy = 30;
+      const cx = W / 2 + clamp(rel, -1.4, 1.4) * 70, cy = L.t ? 46 : 30; // under meddelanderaderna
       g.save(); g.translate(cx, cy); g.rotate(rel); g.fillStyle = tmr % 0.8 < 0.4 ? '#c080ff' : '#9060e0';
       g.beginPath(); g.moveTo(7, 0); g.lineTo(-4, -4); g.lineTo(-2, 0); g.lineTo(-4, 4); g.closePath(); g.fill(); g.restore();
-      const t = `${Math.round(d)}`; txt(t, cx - textW(t) / 2, cy + 6, '#c9a0ff', 1, true, 0.8);
+      const t = `${Math.round(d)}`; txt(t, Math.round(cx + 9), cy - 3, '#c9a0ff', 1, true, 0.8); // avståndet bredvid pilen
     }
   }
-  if (WS.nameT > 0 && state === 'play') { const w = WEAPONS[P.weapon], nm = w.name; txt(nm, (W - textW(nm)) / 2, VH - 24, '#ffd24a', 1, true, Math.min(1, WS.nameT * 2));
-    const info = `SKADA ${Math.round(w.dmg * (w.pellets || 1) * 10)} · ${w.melee ? 'NÄRSTRID' : (1 / w.delay).toFixed(1) + ' SKOTT/S'}${wlvl(w.id) ? ' · NIVÅ ' + wlvl(w.id) : ''}`; txt(info, (W - textW(info)) / 2, VH - 14, '#c9a87a', 1, true, Math.min(1, WS.nameT * 2)); }
+  if (WS.nameT > 0 && state === 'play') { const w = WEAPONS[P.weapon], nm = w.name; txt(nm, (W - textW(nm)) / 2, VH - 24, legendOf(w.id) ? '#ffd24a' : '#e8d9b0', 1, true, Math.min(1, WS.nameT * 2)); } // vapnets namn bara en kort stund vid vapenbyte
   if (WS.boost && state === 'play') txt('+15%', W / 2 + 12, HORIZON - 14, '#9fe060', 1, true, 0.8);
-  if (state === 'play') { drawBowAim(g); drawStaffCharge(g); drawAbilityHud(g); drawTutorial(g); drawHammerCharge(g); drawStealthHud(g); drawLampHud(g); drawCues(g); drawMazeTimer(g); drawXpHud(g); drawAirHud(g); drawTimeHud(g); drawDpsHud(g); drawV11Hud(g); drawV13Hud(g); drawV14Hud(g); drawV14Hud2(g); drawV15Hud(g); drawV16Hud(g); drawV17Hud(g); drawV18Hud(g); drawV19Hud(g); drawV20Hud(g); drawLoopHud(g); }
+  if (state === 'play') { // effekternas 8×8-ikoner (som förr ritades i en rad längst ned) samlas i effektraden vid hälsan
+    fxIcons = []; g.drawImage = function (im, x, y, w, h) { if (arguments.length === 5 && y === VH - 22 && w === 8 && h === 8) { if (im && !fxIcons.includes(im)) fxIcons.push(im); return; } return CanvasRenderingContext2D.prototype.drawImage.apply(this, arguments); };
+    try { drawBowAim(g); drawStaffCharge(g); drawAbilityHud(g); drawTutorial(g); drawHammerCharge(g); drawStealthHud(g); drawLampHud(g); drawCues(g); drawMazeTimer(g); drawXpHud(g); drawAirHud(g); drawTimeHud(g); drawDpsHud(g); drawV11Hud(g); drawV13Hud(g); drawV14Hud(g); drawV14Hud2(g); drawV15Hud(g); drawV16Hud(g); drawV17Hud(g); drawV18Hud(g); drawV19Hud(g); drawV20Hud(g); drawLoopHud(g); }
+    finally { delete g.drawImage; }
+    drawFxRow(g, L);
+  }
   if (state === 'play') drawHudExtras(g);
   if (wheel && !wheel.open && performance.now() - wheel.t0 > 260) wheel.open = true;
   if (wheel && wheel.open && state === 'play') drawWheel(g);
-  if (state === 'play') { // aktiva effekter nere till vänster, med nedräkning
-    const st = [], sec = t => ` ${Math.ceil(t)}`;
-    if (P.haste > 0) st.push(['FART' + sec(P.haste), '#9fe060']);
-    if (P.rageT > 0) st.push(['RASERI' + sec(P.rageT), POTIONS.rage.color]);
-    if (P.ghostT > 0) st.push(['OSYNLIG' + sec(P.ghostT), POTIONS.ghost.color]);
-    if (P.speedT > 0) st.push(['SNABBHET' + sec(P.speedT), POTIONS.speed.color]);
-    if (P.iframe > 0) st.push(['OSÅRBAR', '#ffffff']);
-    if (P.slowT > 0) st.push(['LÅNGSAM' + sec(P.slowT), '#80b0ff']);
-    if (P.poisonT > 0) st.push(['FÖRGIFTAD' + sec(P.poisonT), '#9fe060']);
-    if (floorEvent) st.push([EVENTS[floorEvent].name, '#ff7060']);
-    if (P.shield > 0) st.push([`SKÖLD ${Math.ceil(P.shield)}`, '#7fc0ff']);
-    if (up('bullettime') && WS.aim > 0.8) st.push(['TIDSSTOPP', '#80b0ff']);
-    if (run.modifier) st.push([run.modifier.name, '#ff9050']);
-    if (run.modifier2) st.push([run.modifier2.name, '#ff9050']);
-    if (run.floorCurse) st.push(['FÖRBANNAD VÅNING', '#c080ff']);
-    const poff = P.potions && P.potions.length ? 16 : 0; // dryckerna ligger underst
-    st.forEach(([t, c], i) => txt(t, 4, VH - 12 - poff - i * 10, c, 1, true, 0.85));
-  }
-  if (hint && state === 'play') txt(hint, (W - textW(hint)) / 2, HORIZON + 26, '#ffd24a');
-  else if (WS.state === 'idle' && !wp.melee && P.mags[P.weapon] === 0 && P.ammo[wp.ammo] > 0 && state === 'play') { const s = isTouch() ? 'LADDA OM!' : 'R = LADDA OM', w = textW(s); txt(s, (W - w) / 2, HORIZON + 14, '#ffb040'); }
-  if (subs.length && state === 'play') { subs.forEach((s, i) => { s.t -= 1 / 60; const k = settings.bigSubs ? 2 : 1, w = textW(s.text) * k; if (settings.bigSubs) { g.fillStyle = 'rgba(0,0,0,0.6)'; g.fillRect((W - w) / 2 - 3, VH - 58 - i * 18, w + 6, 18); } txt(s.text, (W - w) / 2, settings.bigSubs ? VH - 56 - i * 18 : VH - 40 - i * 10, '#e8e8e8', k, true, Math.min(1, s.t * 2)); }); subs = subs.filter(s => s.t > 0); }
-  if (settings.fps) { fpsN++; if (tmr - fpsT >= 1 || tmr < fpsT) { fpsShow = fpsN; fpsN = 0; fpsT = tmr; } txt(fpsShow + ' FPS', 4, 4, '#9fe060', 1, true, 0.8); }
+  // (aktiva effekter, våningshändelsen, skölden och rundans modifierare: se drawFxRow, titelkortet och hälsostapeln)
+  const lowY = VH - 40; // en kort rad nere i mitten för hjälptext: användbart föremål eller omladdning
+  if (hint && state === 'play') txt(hint, Math.round((W - textW(hint)) / 2), lowY, '#ffd24a', 1, true, 0.95);
+  else if (WS.state === 'idle' && !wp.melee && P.mags[P.weapon] === 0 && P.ammo[wp.ammo] > 0 && state === 'play') { if (L.t) hudIcon(g, 'reload', W / 2 - 6, lowY - 2, tmr % 0.8 < 0.5 ? '#ffb040' : '#a06020'); else { const s = 'R = LADDA OM', w = textW(s); txt(s, Math.round((W - w) / 2), lowY, '#ffb040'); } }
+  if (subs.length && state === 'play') { subs.forEach((s, i) => { s.t -= 1 / 60; const k = settings.bigSubs ? 2 : 1, w = textW(s.text) * k; if (settings.bigSubs) { g.fillStyle = 'rgba(0,0,0,0.6)'; g.fillRect((W - w) / 2 - 3, VH - 60 - i * 18, w + 6, 18); } txt(s.text, (W - w) / 2, settings.bigSubs ? VH - 58 - i * 18 : VH - 50 - i * 10, '#e8e8e8', k, true, Math.min(1, s.t * 2)); }); subs = subs.filter(s => s.t > 0); }
+  if (settings.fps) { fpsN++; if (tmr - fpsT >= 1 || tmr < fpsT) { fpsShow = fpsN; fpsN = 0; fpsT = tmr; } txt(fpsShow + ' FPS', L.t ? 92 : 4, 4, '#9fe060', 1, true, 0.8); }
   if (showMap === 2) drawMap(false); else if (showMap === 1 && state === 'play') drawMap(true);
 }
-let hpShown = 100, objLast = '', objT = 0;
+let hpShown = 100, objLast = '', objT = 0, objDur = 4, objLvl = null;
 function drawHudExtras(g) { // uthållighet, granater, nycklar, mål, pilar och mer
   const y0 = VH, wp = WEAPONS[P.weapon];
-  // fördröjd hälsostapel och uthållighet
-  hpShown = hpShown > P.hp ? Math.max(P.hp, hpShown - maxHp() * 0.4 / 60) : P.hp;
-  g.fillStyle = '#2a1410'; g.fillRect(8, y0 + 3, 44, 2); g.fillStyle = '#f0e0c0'; g.fillRect(8, y0 + 3, 44 * clamp(hpShown / maxHp(), 0, 1), 2); g.fillStyle = '#c03828'; g.fillRect(8, y0 + 3, 44 * clamp(P.hp / maxHp(), 0, 1), 2);
-  if (mod('shield') > 0) { g.fillStyle = '#20344a'; g.fillRect(64, y0 + 3, 44, 2); g.fillStyle = '#7fc0ff'; g.fillRect(64, y0 + 3, 44 * P.shield / mod('shield'), 2); }
+  // uthållighet (hälsostapeln och skölden ritas i hälsohörnet, drawHpCorner)
   if (P.stam < STAM_MAX() - 0.01) { const w = 40, x = (W - w) / 2, y = VH - 6; g.fillStyle = '#000a'; g.fillRect(x - 1, y - 1, w + 2, 4); g.fillStyle = P.stam < 0.3 ? '#c06020' : '#d8c060'; g.fillRect(x, y, w * P.stam / STAM_MAX(), 2); }
   // granater, nycklar, smideslevel
   drawPotionHud(g); drawRuneHud(g);
   if (WS.throwT >= 0) { const k = Math.min(1, WS.throwT); g.fillStyle = '#000a'; g.fillRect(W / 2 - 16, HORIZON + 18, 32, 3); g.fillStyle = '#c0ff90'; g.fillRect(W / 2 - 16, HORIZON + 18, 32 * k, 3); }
   // hagelspridningen i siktet
   if (wp.pellets > 1 && settings.xstyle !== 'punkt') { const r = Math.round((wp.spread + WS.spread * 0.5 + (wp.hip || 0) * (1 - WS.aim)) * (1 - WS.aim * 0.6) / (1 + mod('accuracy')) / Math.atan(plane) * W / 2); g.strokeStyle = 'rgba(255,255,255,0.25)'; g.beginPath(); g.arc(W / 2 + 0.5, HORIZON + 0.5, Math.max(4, r), 0, TAU); g.stroke(); }
-  if (HUD_THEMES[settings.hudTheme]) { g.save(); g.globalCompositeOperation = 'color'; g.fillStyle = HUD_THEMES[settings.hudTheme]; g.fillRect(0, y0, W, HUD_H); g.restore(); } // HUD-tema
+  // HUD-temat färgar nu hörnens siffror (hudTxtCol) i stället för en list
   // mål och timer
-  const oy = showMap === 1 ? 4 + (2 * Math.round(24 / (settings.mapScale || 3)) + 1) * (settings.mapScale || 3) + 5 : 4; // under minikartan, till höger
-  if (settings.objective !== false && showMap !== 2 && levelBanner <= 0 && bossBanner <= 0 && !(boss && !boss.dead) && !(guardianE && !guardianE.dead && !guardianE.dying)) { const obj = objective(); if (obj) { if (obj !== objLast) { objLast = obj; objT = tmr; } const a = tmr - objT < 4 ? 0.9 : 0.4; txt(obj, W - 4 - textW(obj), oy, '#e8d9b0', 1, true, a); } } // målet syns tydligt när det ändras och bleknar sedan
+  let oy = showMap === 1 ? HL.map.y + HL.map.h + 5 : HL.t ? HL.map.y : 4; // under minikartan, till höger
+  if (settings.objective !== false && showMap !== 2 && levelBanner <= 0 && bossBanner <= 0 && !(boss && !boss.dead) && !(guardianE && !guardianE.dead && !guardianE.dying)) { const obj = objective(); if (obj) { // målet: smal text under kartan, 4 s när våningen börjar och 2 s när det gör framsteg, sedan borta
+    const key = /INOM|VÅG OM/.test(obj) ? obj.replace(/\d/g, '') : obj; // nedräkningar räknas inte som framsteg varje sekund
+    if (key !== objLast || objLvl !== lvl) { objDur = objLast === '' || objLvl !== lvl ? 4 : 2; objLast = key; objT = tmr; objLvl = lvl; }
+    const a = clamp((objDur - (tmr - objT)) * 2, 0, 0.95); if (a > 0) { const s = shortObjective(obj), x = W - 4 - textW(s); txt(s, x, oy, '#e8d9b0', 1, true, a); g.globalAlpha = a; g.fillStyle = '#ffd24a'; g.fillRect(x - 6, oy + 2, 3, 3); g.fillRect(x - 5, oy + 1, 1, 5); g.fillRect(x - 7, oy + 3, 5, 1); g.globalAlpha = 1; } } } // EN kort rad med en liten målmarkör
   if (settings.timer) { const t = fmtTime(levelTime); txt(t, W - 4 - textW(t), oy + 10, '#c9a87a', 1, true, 0.8); }
-  if (challenge) { const t = challenge.wave ? `VÅG ${challenge.wave}/${challenge.max} · ${challenge.alive.filter(e => !e.dead).length} KVAR` : 'GÖR DIG REDO'; txt(t, (W - textW(t)) / 2, 34, '#ff9050'); }
+  if (challenge) { const t = challenge.wave ? `VÅG ${challenge.wave}/${challenge.max} · ${challenge.alive.filter(e => !e.dead).length} KVAR` : 'GÖR DIG REDO'; txt(t, (W - textW(t)) / 2, HL.row2, '#ff9050'); } // under meddelanderaden
   // pilar vid kanten mot väktare, eliter och bytet utanför bilden
   for (const e of ents) {
     if (e.dead || e.dormant || e.hidden || !(e.guardian || e.elite || e.bounty) || (e.guardian && e.asleep && !seen[(e.y | 0) * mw + (e.x | 0)])) continue;
@@ -2292,11 +2333,21 @@ function drawHudExtras(g) { // uthållighet, granater, nycklar, mål, pilar och 
   // frost och långsamhet i kanterna
   if (P.slowT > 0 && settings.noFlash !== true) { const gr = g.createRadialGradient(W / 2, HORIZON, VH * 0.4, W / 2, HORIZON, W * 0.6); gr.addColorStop(0, 'rgba(120,180,255,0)'); gr.addColorStop(1, 'rgba(120,180,255,0.28)'); g.fillStyle = gr; g.fillRect(0, 0, W, VH); }
   if (P.poisonT > 0) { const gr = g.createRadialGradient(W / 2, HORIZON, VH * 0.4, W / 2, HORIZON, W * 0.6); gr.addColorStop(0, 'rgba(90,255,90,0)'); gr.addColorStop(1, 'rgba(90,255,90,0.2)'); g.fillStyle = gr; g.fillRect(0, 0, W, VH); }
-  // klassens färg
-  if (run.cls && CLASSES[run.cls]) { g.fillStyle = CLASSES[run.cls].color; g.globalAlpha = 0.6; g.fillRect(0, y0 + 2, 1, HUD_H - 4); g.globalAlpha = 1; }
   if (cardBanner) { cardBanner.t -= 1 / 60; const a = Math.min(1, cardBanner.t * 2); const t = 'NYTT KORT: ' + cardBanner.name; g.globalAlpha = a; g.fillStyle = 'rgba(0,0,0,0.5)'; g.fillRect((W - textW(t)) / 2 - 4, VH - 29, textW(t) + 8, 13); g.strokeStyle = cardBanner.color; g.strokeRect((W - textW(t)) / 2 - 3.5, VH - 28.5, textW(t) + 7, 12); g.globalAlpha = 1; txt(t, (W - textW(t)) / 2, VH - 26, cardBanner.color, 1, true, a); if (cardBanner.t <= 0) cardBanner = null; } // ram i kortets raritetsfärg
 }
 let cardBanner = null;
+function shortObjective(o) { // målet som EN kort rad (≤ 10 tecken) under minikartan; hela texten finns i objective()
+  let m;
+  if ((m = o.match(/^DÖDA ELITERNA \((\d+) KVAR\)/))) return `ELIT ${m[1]}`;
+  if ((m = o.match(/^DÖDA FIENDERNA \((\d+) KVAR\)/))) return `${m[1]} KVAR`;
+  if ((m = o.match(/^VÅG (\d+) · (\d+) KVAR/))) return `VÅG ${m[1]}·${m[2]}`;
+  if ((m = o.match(/^NÄSTA VÅG OM (\d+)/))) return `VÅG OM ${m[1]}`;
+  if ((m = o.match(/INOM (\S+)$/))) return `TID ${m[1]}`;
+  if (/^BESEGRA VÄKTAREN/.test(o)) return 'VÄKTAREN'; if (/^BESEGRA /.test(o)) return 'BOSSEN'; if (/^GÅ IN I PORTALEN/.test(o)) return 'PORTALEN'; if (/^ÖVERLEV/.test(o)) return 'ÖVERLEV';
+  if ((m = o.match(/^([A-ZÅÄÖ]{2,10}): /))) return m[1]; // "JAKT: DÖDA DEN MÄRKTA ELITEN" → "JAKT"
+  if (/MIMIC/.test(o)) return 'MIMIC';
+  return o.length > 10 ? o.slice(0, 10) : o;
+}
 function objective() { // vad man ska göra just nu
   if (run && run.survival) { const n = run.survival.alive.filter(e => !e.dead).length; return n ? `VÅG ${run.survival.wave} · ${n} KVAR` : `NÄSTA VÅG OM ${Math.max(0, Math.ceil(run.survival.t))}`; }
   if (boss && !boss.dead) return 'BESEGRA ' + boss.d.name;
@@ -2319,9 +2370,9 @@ function txt(s, x, y, col, scale = 1, shadow = true, alpha = 1) {
 }
 function drawMap(mini) {
   if (mini && settings.mapRotate) { // minikartan roterar med spelaren
-    const s = settings.mapScale || 3, r = Math.round(24 / s), size = (2 * r + 1) * s, cx = W - 4 - size / 2, cy = 4 + size / 2;
-    ctx.save(); ctx.beginPath(); ctx.rect(W - 4 - size - 2, 2, size + 4, size + 4); ctx.clip();
-    ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(W - 4 - size - 2, 2, size + 4, size + 4);
+    const s = settings.mapScale || 3, r = Math.round(24 / s), size = (2 * r + 1) * s, mt = mapTop(), cx = W - 4 - size / 2, cy = mt + size / 2;
+    ctx.save(); ctx.beginPath(); ctx.rect(W - 4 - size - 2, mt - 2, size + 4, size + 4); ctx.clip();
+    ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(W - 4 - size - 2, mt - 2, size + 4, size + 4);
     ctx.translate(cx, cy); ctx.rotate(-P.a - Math.PI / 2); ctx.translate(-(P.x * s), -(P.y * s));
     drawMapCells(true, s, 0, 0, Math.max(0, (P.x | 0) - r - 4), Math.max(0, (P.y | 0) - r - 4), Math.min(mw, (P.x | 0) + r + 5), Math.min(mh, (P.y | 0) + r + 5));
     ctx.restore(); return;
@@ -2334,7 +2385,7 @@ function drawMapBox(mini) { // automap: bara rutor man har sett. mini = liten ka
     s = settings.mapScale || 3; const r = Math.round(24 / s);
     x0 = clamp((P.x | 0) - r, 0, Math.max(0, mw - 2 * r - 1)); y0 = clamp((P.y | 0) - r, 0, Math.max(0, mh - 2 * r - 1));
     x1 = Math.min(mw, x0 + 2 * r + 1); y1 = Math.min(mh, y0 + 2 * r + 1);
-    ox = W - 4 - (x1 - x0) * s - x0 * s; oy = 4 - y0 * s;
+    ox = W - 4 - (x1 - x0) * s - x0 * s; oy = mapTop() - y0 * s;
     ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(ox + x0 * s - 2, oy + y0 * s - 2, (x1 - x0) * s + 4, (y1 - y0) * s + 4);
   } else {
     s = clamp(Math.floor(Math.min((W - 10) / mw, (VH - 10) / mh)), 2, 5); ox = (W - mw * s) / 2 | 0; oy = (VH - mh * s) / 2 | 0;
@@ -2342,7 +2393,9 @@ function drawMapBox(mini) { // automap: bara rutor man har sett. mini = liten ka
     const leg = [['#60d060', 'UTGÅNG'], ['#c080ff', 'PORTAL'], ['#ffe070', 'ANVÄNDBART'], ['#ff6030', 'KRUTFAT'], ['#ffd24a', 'GULD'], ['#ff4030', 'FIENDE'], ['#40ffff', 'MARKÖR (B)']];
     if (W - (ox + mw * s) > 70) leg.forEach(([c, t], i) => { ctx.fillStyle = c; ctx.fillRect(ox + mw * s + 8, oy + 4 + i * 10, 4, 4); txt(t, ox + mw * s + 15, oy + 2 + i * 10, '#c9a87a', 1, true, 0.9); }); // teckenförklaring
   }
+  if (mini) { ctx.save(); ctx.beginPath(); ctx.rect(ox + x0 * s - 2, oy + y0 * s - 2, (x1 - x0) * s + 4, (y1 - y0) * s + 4); ctx.clip(); } // rumsramar får inte rita utanför minikartan
   drawMapCells(mini, s, ox, oy, x0, y0, x1, y1);
+  if (mini) ctx.restore();
 }
 function drawMapCells(mini, s, ox, oy, x0, y0, x1, y1) {
   const inside = (x, y) => x >= x0 && y >= y0 && x < x1 && y < y1;
@@ -3339,7 +3392,7 @@ function drawPotionHud(g) { // dryckerna i listen och färgen i bilden
   const fxOn = [P.rageT > 0 && POTIONS.rage, P.ghostT > 0 && POTIONS.ghost, P.speedT > 0 && POTIONS.speed].filter(Boolean);
   for (const d of fxOn) { const [r, gg, b] = d.tint; g.fillStyle = `rgba(${r},${gg},${b},0.07)`; g.fillRect(0, 0, W, VH); g.strokeStyle = `rgba(${r},${gg},${b},0.35)`; g.lineWidth = 3; g.strokeRect(1.5, 1.5, W - 3, VH - 3); g.lineWidth = 1; }
   if (P.potFlash) { const [r, gg, b] = P.potFlash.tint; g.fillStyle = `rgba(${r},${gg},${b},${0.3 * P.potFlash.t})`; g.fillRect(0, 0, W, VH); }
-  const n = potSlots(), x0 = 6, y = VH - 16;
+  const n = potSlots(), x0 = 6, y = HL ? HL.potY : VH - 16; // vid hälsohörnet
   if (!(P.potions && P.potions.length) && !settings.potHud) return;
   for (let i = 0; i < n; i++) {
     const p = P.potions && P.potions[i], x = x0 + i * 11;
@@ -3704,7 +3757,7 @@ function drawBowAim(g) { // siktet drar ihop sig när bågen spänns
   if (!WEAPONS[P.weapon].bow || !(WS.draw > 0)) return;
   const r = Math.round(14 - WS.draw * 10), cx = W / 2, cy = HORIZON;
   g.strokeStyle = WS.draw >= 1 ? 'rgba(255,220,90,0.95)' : 'rgba(255,255,255,0.6)'; g.beginPath(); g.arc(cx + 0.5, cy + 0.5, r, 0, TAU); g.stroke();
-  if (WS.draw >= 1 && tmr % 0.4 < 0.2) txt('FULLT SPÄND', cx - textW('FULLT SPÄND') / 2, cy + 18, '#ffd24a', 1, true, 0.9);
+  if (WS.draw >= 1 && tmr % 0.4 < 0.2) { g.beginPath(); g.arc(cx + 0.5, cy + 0.5, r + 3, 0, TAU); g.stroke(); } // fullt spänd: en extra blinkande ring i stället för text mitt i bilden
 }
 function drawStaffCharge(g) {
   if (!WEAPONS[P.weapon].staff) return;
@@ -4050,7 +4103,7 @@ let abBtnEl = null; const abBtn = () => abBtnEl || (abBtnEl = document.querySele
 function abilityKill() { if (abCd > 0) abCd = Math.max(0, abCd - (P.combo >= 3 ? 1 : 0.4)); } // dödanden laddar förmågan
 function drawAbilityHud(g) {
   const c = activeCard(); if (!c) return;
-  const x = W - 22, y = VH - 22, im = hudImg['ab_' + c.active], col = (ABILITIES[c.active] || {}).col || '#e8d9b0';
+  const x = HL ? HL.ab.x : W - 22, y = HL ? HL.ab.y : VH - 22, im = hudImg['ab_' + c.active], col = (ABILITIES[c.active] || {}).col || '#e8d9b0';
   g.fillStyle = 'rgba(0,0,0,0.55)'; g.fillRect(x - 2, y - 2, 20, 20);
   if (im) g.drawImage(im, x, y, 16, 16); else { g.fillStyle = col; g.fillRect(x + 4, y + 4, 8, 8); }
   if (abCd > 0) { const k = abCd / ((c.cd || 15) * Math.max(0.1, 1 - mod('activeCd'))); g.fillStyle = 'rgba(0,0,0,0.65)'; g.fillRect(x, y, 16, Math.round(16 * k)); txt(String(Math.ceil(abCd)), x + 8 - textW(String(Math.ceil(abCd))) / 2, y + 4, '#ffffff', 1, true, 0.9); }
@@ -4060,7 +4113,8 @@ function drawAbilityHud(g) {
   if (P.bubbleT > 0) { g.strokeStyle = `rgba(130,190,255,${0.3 + 0.2 * Math.sin(tmr * 8)})`; g.lineWidth = 2; g.beginPath(); g.arc(W / 2, HORIZON, 70, 0, TAU); g.stroke(); g.lineWidth = 1; }
 }
 function drawRuneHud(g) { // runorna på vapnet syns i listen
-  const rs = curRunes(); let x = HUD_CELLS[4] - 10;
+  return; // runorna ritas nu som små ikoner i ammo-hörnet (drawAmmoCorner)
+  const rs = curRunes(); let x = HUD_CELLS[4] - 10; // eslint-disable-line no-unreachable
   for (const r of rs) { const im = hudImg['rune_' + r]; if (im) g.drawImage(im, x, VH + 2, 7, 7); else { g.fillStyle = RUNES[r].col; g.fillRect(x + 1, VH + 3, 5, 5); } x -= 8; }
 }
 // ---------- Version 6: överlevnadsläget ----------
@@ -4100,11 +4154,11 @@ function ghostPos() { if (!ghostPlay) return null; const f = levelTime / 0.25, i
 // ---------- Version 6: introduktion för nya spelare ----------
 const TUT = [
   { text: () => isTouch() ? 'VÄNSTER TUMME: GÅ' : 'GÅ MED W A S D', done: () => Math.hypot(P.x - TUT.x0, P.y - TUT.y0) > 2 },
-  { text: () => isTouch() ? 'TRYCK PÅ BILDEN FÖR ATT SKJUTA' : 'SKJUT MED VÄNSTER MUSKNAPP', done: () => (run.shots || 0) > 0 },
+  { text: () => isTouch() ? 'AVFYRA-KNAPPEN: SKJUT' : 'VÄNSTERKLICK: SKJUT', done: () => (run.shots || 0) > 0 }, // korta rader (≤ 24 tecken)
   { text: () => isTouch() ? 'HOPPKNAPPEN: HOPPA' : 'HOPPA MED SPACE', done: () => P.jz > 0.1 },
-  { text: () => isTouch() ? 'HANDEN: ÖPPNA DÖRRAR OCH KISTOR' : 'E: ÖPPNA DÖRRAR OCH KISTOR', done: () => TUT.used },
-  { text: () => 'DÖDA ELITERNA ELLER ALLA FIENDER – DÅ ÖPPNAS PORTALEN', done: () => portals.length > 0 || kills >= 3 },
-  { text: () => 'KORT GER BONUSAR. LYCKA TILL!', done: () => TUT.t > 4 },
+  { text: () => isTouch() ? 'HANDEN: ÖPPNA OCH ANVÄND' : 'E: ÖPPNA OCH ANVÄND', done: () => TUT.used },
+  { text: () => 'DÖDA ALLA FÖR PORTALEN', done: () => portals.length > 0 || kills >= 3 },
+  { text: () => 'LYCKA TILL!', done: () => TUT.t > 4 },
 ];
 function tutTick(dt) {
   if (!run || profile.tutDone || run.practice || run.survival || state !== 'play') return;
@@ -4113,11 +4167,18 @@ function tutTick(dt) {
   if (s && s.done()) { TUT.step++; TUT.t = 0; play('tutorial', 0.6); if (TUT.step >= TUT.length) { profile.tutDone = true; saveProfile(); } }
 }
 function drawTutorial(g) {
+  if (run && state === 'play' && isTouch() && profile.tutDone && !profile.tipAmmo && levelBanner <= 0 && !subs.length && P.has.filter(Boolean).length >= 2) { // pekskärm, en gång per profil: vapenbyte = tryck på ammo-hörnet
+    const k = drawTutorial.ammoT = (drawTutorial.ammoT || 0) + 1 / 60, t = 'TRYCK PÅ AMMO FÖR ATT BYTA VAPEN';
+    txt(t, Math.round((W - textW(t)) / 2), VH - 50, '#ffe9a8', 1, true, clamp(Math.min(k * 3, (6 - k) * 2), 0, 1));
+    if (HL && tmr % 0.8 < 0.5) { g.strokeStyle = '#ffd24a'; g.strokeRect(HL.ammo.x - 1.5, HL.ammo.y - 1.5, HL.ammo.w + 3, HL.ammo.h + 3); } // ammo-hörnet blinkar
+    if (k < 0.02) drawTutorial.w0 = P.weapon; if (k > 6 || P.weapon !== drawTutorial.w0) { profile.tipAmmo = true; saveProfile(); } // klart efter 6 s eller när man har bytt vapen
+    return;
+  }
   if (!run || profile.tutDone || TUT.step === undefined || state !== 'play' || levelBanner > 0) return;
-  const s = TUT[TUT.step]; if (!s) return; const t = s.text(), w = textW(t);
-  g.fillStyle = 'rgba(0,0,0,0.6)'; g.fillRect((W - w) / 2 - 5, VH - 46, w + 10, 13); g.strokeStyle = '#ffd24a'; g.strokeRect((W - w) / 2 - 4.5, VH - 45.5, w + 9, 12);
-  txt(t, (W - w) / 2, VH - 43, '#ffe9a8', 1, true, 0.6 + 0.4 * Math.abs(Math.sin(tmr * 3)));
-  const st = `${TUT.step + 1}/${TUT.length}`; txt(st, (W + w) / 2 + 8, VH - 43, '#8a7a60');
+  if (subs.length) return; // en rad i taget nere i mitten
+  const s = TUT[TUT.step]; if (!s) return; const t = s.text(), w = textW(t); // en kort, liten rad nere i mitten
+  txt(t, Math.round((W - w) / 2), VH - 50, '#ffe9a8', 1, true, 0.6 + 0.4 * Math.abs(Math.sin(tmr * 3)));
+  g.fillStyle = '#ffd24a80'; for (let i = 0; i < TUT.length; i++) g.fillRect(Math.round(W / 2 - TUT.length * 3 + i * 6), VH - 40 + 1, i <= TUT.step ? 4 : 2, 1); // stegen som små streck
 }
 // ---------- Version 6: dagliga uppdrag (tre om dagen, själar som belöning) ----------
 const DQ = [
@@ -4285,7 +4346,7 @@ function weaponV7Tick(wp, dt, trig) { // laddning och alternativa skott för de 
 function drawHammerCharge(g) {
   if (!WEAPONS[P.weapon].hammer || !(WS.hcharge > 0)) return;
   const w = 40, x = (W - w) / 2, y = HORIZON + 22; g.fillStyle = '#000a'; g.fillRect(x - 1, y - 1, w + 2, 4); g.fillStyle = WS.hcharge >= 0.7 ? '#ffd24a' : '#c9a87a'; g.fillRect(x, y, w * WS.hcharge, 2);
-  if (WS.hcharge >= 0.7 && tmr % 0.4 < 0.2) txt('JORDSKALV', W / 2 - textW('JORDSKALV') / 2, y + 6, '#ffd24a', 1, true, 0.9);
+  if (WS.hcharge >= 0.7 && tmr % 0.4 < 0.2) { g.strokeStyle = '#ffd24a'; g.strokeRect(x - 2.5, y - 2.5, w + 5, 7); } // jordskalv redo: stapeln blinkar med en ram i stället för text
 }
 // ---------- Version 7: mumie, skarabéer, schakalkrigare, ficktjuv och dubbelgångare ----------
 const AI_V7 = {
@@ -4442,7 +4503,8 @@ const NARRATOR = { sewer: 'KLOAKERNA. ALLT SOM SPOLAS NED HAMNAR HÄR – ÄVEN 
 function narrate() { // berättaren vid nya biomer första gången
   if (!lvl || !lvl.biome || !NARRATOR[lvl.biome]) return; profile.narrated = profile.narrated || [];
   if (profile.narrated.includes(lvl.biome)) return; profile.narrated.push(lvl.biome); saveProfile();
-  setTimeout(() => { if (state === 'play') { say(NARRATOR[lvl.biome], 4); speak(NARRATOR[lvl.biome]); } }, 3200);
+  if (run) run.narr = NARRATOR[lvl.biome]; // berättarraden visas inte i bilden längre (pausen kan visa run.narr); talsyntesen läser den
+  setTimeout(() => { if (state === 'play') speak(NARRATOR[lvl.biome]); }, 3200);
 }
 function speak(t) { // talsyntes (inställning)
   if (!settings.tts || !window.speechSynthesis) return;
@@ -4513,8 +4575,9 @@ function stealthKill(e) { // dödad utan att upptäcka dig
 }
 function drawStealthHud(g) { // ljud- och ljusmätare
   if (settings.stealthHud === false || !ents.some(e => !e.dead && !e.alert && !e.dormant)) return;
-  const x = W - 46, y = VH - 12, v = visibility();
+  const x = HL ? HL.st.x : W - 46, y = HL ? HL.st.y : VH - 12, v = visibility(); // nära ammo-hörnet
   noiseLvl = Math.max(0, noiseLvl - 1 / 60 * 0.6);
+  if (HL && !(P.crouch > 0.5 || noiseLvl > 0.15)) return; // bara när man smyger eller just har låtit
   for (const [k, val, col, icon] of [[0, v, '#e8d9b0', 'icon_eye'], [1, noiseLvl, '#c9a87a', 'icon_ear']]) {
     const yy = y - k * 6; const im = hudImg[icon];
     if (im) g.drawImage(im, x - 9, yy - 2, 6, 6); else { g.fillStyle = col; g.fillRect(x - 8, yy, 4, 2); }
@@ -4546,7 +4609,8 @@ function lampLight(flashLight) { // ljuskäglan i ljuskartan
 }
 function drawLampHud(g) {
   if (P.battery === undefined) return;
-  const x = 4, y = VH - 4 - (P.potions && P.potions.length ? 16 : 0) - 4; // batteriet nere till vänster
+  if (HL && !(P.lamp || P.battery < 15)) return; // bara när lampan är tänd eller batteriet nästan slut
+  const x = 4, y = HL ? HL.lampY : VH - 4 - (P.potions && P.potions.length ? 16 : 0) - 4; // batteriet nere till vänster
   g.fillStyle = '#000a'; g.fillRect(x, y, 22, 4); g.fillStyle = P.battery < 15 ? (tmr % 0.5 < 0.25 ? '#ff5040' : '#802010') : P.lamp ? '#fff0a0' : '#8a7a50'; g.fillRect(x + 1, y + 1, 20 * P.battery / 100, 2);
   if (!isTouch() && (P.lamp || P.battery < 100)) txt(keyName((settings.binds || {}).KeyL || 'KeyL'), x + 25, y - 2, '#8a7a60', 1, true, 0.6);
 }
@@ -4703,18 +4767,33 @@ function sneakMusicTick(dt) {
   else if (sneakMusic && !quiet) { sneakMusic = false; playMusic(); }
 }
 // ---------- Version 7: pausmenyn (mobil och knappen ENTER) ----------
-function pauseMenu() {
-  openUI(() => CardUI.choice({ title: 'PAUS', subtitle: `VÅNING ${run.depth} · ${run.gold} GULD · ${run.owned.length} KORT`, cancel: 0,
-    options: [{ label: 'FORTSÄTT', text: '' }, { label: 'INSTÄLLNINGAR', text: '' }, { label: 'KARTA', text: '' }, { label: 'KORTLEKEN', text: '' }, { label: 'KRÖNIKAN', text: `${pagesFound().length} AV ${CHRONICLE.length} SIDOR` }, { label: 'GE UPP', text: 'AVSLUTA RUNDAN' }, { label: 'TALANGER', text: `NIVÅ ${run.lvl || 1} · ${Object.keys(run.talents || {}).length} TALANGER` }] }, i => {
+const pauseLine = () => [lvl && BIOME_NAME[lvl.biome] || '', 'VÅNING ' + run.depth, run.gold + ' GULD'].filter(Boolean).join(' · '); // pausens enda rad: biom · våning · guld
+function menuList() { const n = document.querySelector('#cardui .cu-choice'); if (n) { n.classList.add('menulist'); n.querySelectorAll('.cu-ol').forEach(o => { o.textContent = o.textContent.replace(/^\[\d+\]\s*/, ''); }); } } // genrens lodräta lista i stället för kort med text
+function pauseMenu() { // pausmenyn: en rad om rundan och en kort lodrät lista
+  openUI(() => { CardUI.choice({ title: 'PAUS', subtitle: pauseLine(), cancel: 0, options: ['FORTSÄTT', 'INSTÄLLNINGAR', 'KARTA', 'KORTLEKEN', 'MER', 'GE UPP'].map(label => ({ label, text: '' })) }, i => {
     closeUI('pause');
     if (i === 0) resume();
     else if (i === 1) openSettingsUI();
     else if (i === 2) { pauseMap = !pauseMap; }
     else if (i === 3) showDeck();
-    else if (i === 4) openUI(() => showChronicle(() => closeUI('pause')));
+    else if (i === 4) pauseMore();
     else if (i === 5) abandonRun();
-    else if (i === 6) openUI(() => showTalents(() => closeUI('pause')));
-  }));
+  }); menuList(); });
+}
+function pauseMore() { // MER: krönikan, talangerna, rundans detaljer och helskärm
+  const back = () => { closeUI('pause'); pauseMenu(); };
+  openUI(() => { CardUI.choice({ title: 'MER', subtitle: pauseLine(), cancel: 4, options: [`KRÖNIKAN ${pagesFound().length}/${CHRONICLE.length}`, `TALANGER · NIVÅ ${run.lvl || 1}`, 'RUNDAN', 'HELSKÄRM', 'TILLBAKA'].map(label => ({ label, text: '' })) }, i => {
+    closeUI('pause');
+    if (i === 0) openUI(() => showChronicle(back));
+    else if (i === 1) openUI(() => showTalents(back));
+    else if (i === 2) openUI(() => showRunInfo(back));
+    else if (i === 3) { toggleFullscreen(); pauseMenu(); }
+    else pauseMenu();
+  }); menuList(); });
+}
+function showRunInfo(onClose) { // det som förr stod i pausen: klass, svårighet, frö, bonusar, uppdrag och logg
+  const rows = [['VÅNING', `${run.depth} · ${BIOME_NAME[lvl.biome] || ''}`], ['KLASS', run.cls && CLASSES[run.cls] ? CLASSES[run.cls].name + (run.asc ? ` · UPPST. ${run.asc}` : '') : '–'], ['SVÅRIGHET', DIFF[settings.diff].name], ['KORT', String(run.owned.length)], ['GULD', String(run.gold)], ['FRÖ', seedText(run.seed)], ['SJÄLAR', `${profile.souls} · REKORD VÅNING ${profile.bestDepth}`]];
+  CardUI.list('RUNDAN', '', rows.map(([k, v]) => ({ label: k, text: v })).concat(bonusLines().concat(pauseExtras().filter(l => !/^KLASS:|^SJÄLAR /.test(l))).map(l => ({ label: l, text: '', color: /^FEL/.test(l) ? '#ff7060' : '' }))), onClose);
 }
 // ---------- Version 7: övning mot en fiende ----------
 function beginEnemyPractice(type) {
@@ -5053,7 +5132,7 @@ function alertEnemy(e, spread) {
   if (e.dead) return;
   if (!e.alert && e.d.tip && run) { // första mötet med en ny sorts fiende i rundan
     run.seen = run.seen || [];
-    if (!run.seen.includes(e.type)) { run.seen.push(e.type); say(`${e.d.name}: ${e.d.tip}`, 4); }
+    if (!run.seen.includes(e.type)) { run.seen.push(e.type); say(`NY FIENDE: ${e.d.name}`, 2.4); speak(`${e.d.name}: ${e.d.tip}`); } // bara namnet i bilden – förklaringen finns i bestiariet (och läses upp med talsyntesen)
   }
   if (!e.alert && e.type === 'É' && !e.howled) { e.howled = true; play('icewolf', 0.8, rnd(0.9, 1.1), { x: e.x, y: e.y }); for (const o of ents) if (o.type === 'É' && !o.dead && Math.hypot(o.x - e.x, o.y - e.y) < 15) { o.howled = true; if (!o.alert) { o.alert = true; o.spotT = 0.9; } } } // ylet kallar flocken
   if (!e.alert) { e.alert = true; e.spotT = 0.9; e.cd = Math.max(e.cd, rnd(0.35, 0.8)); if (Math.random() < 0.7) play(e.d.growl, 0.5, rnd(0.9, 1.1), { x: e.x, y: e.y }); }
@@ -5212,8 +5291,8 @@ function stepSound() { // fotsteg låter olika på gräs, grus, trä och sten
 }
 function update(dt) {
   tmr += dt;
-  if (state === 'play' && levelBanner <= 0.5 && bossBanner <= 0.5) for (const m of msgs) m.t -= dt; // meddelandena väntar medan titelkortet visas
-  while (msgs.length && msgs[msgs.length - 1].t <= 0) msgs.pop();
+  if (state === 'play' && levelBanner <= 0.5 && bossBanner <= 0.5 && msgs.length) msgs[0].t -= dt * (msgs.length > 1 ? 2 : 1); // bara det synliga meddelandet räknar ned – dubbelt så fort när fler väntar i kön
+  while (msgs.length && msgs[0].t <= 0) msgs.shift();
   P.hurt = Math.max(0, P.hurt - dt); P.pick = Math.max(0, P.pick - dt * 2); P.flash = Math.max(0, P.flash - dt); P.shake = Math.max(0, P.shake - dt * 3);
   // rekyl återhämtar sig mot ursprungligt sikte
   P.pitch -= P.pitch * Math.min(1, dt * 9); const ry = P.ryaw * Math.min(1, dt * 5); P.a -= ry; P.ryaw -= ry;
@@ -5313,7 +5392,7 @@ function pollGamepad(dt) {
   const dz = v => Math.abs(v) < 0.15 ? 0 : (v - Math.sign(v) * 0.15) / 0.85, b = i => !!(g.buttons[i] && g.buttons[i].pressed), edge = i => b(i) && !gp.prev[i];
   const lx = dz(g.axes[0] || 0), ly = dz(g.axes[1] || 0), rx = dz(g.axes[2] || 0), ry = dz(g.axes[3] || 0);
   if (lx || ly || rx || b(7)) gp.active = true;
-  if (window.CardUI && CardUI.isOpen()) { // menyer: styrkors/spak flyttar fokus, A väljer, B backar, X slår om, Y visar trädet
+  if ((window.CardUI && CardUI.isOpen()) || (state === 'title' && !document.getElementById('title').hidden) || ((state === 'dead' || state === 'runover') && !document.getElementById('runover').hidden)) { // menyer (även startskärmen och dödsskärmen): styrkors/spak flyttar fokus, A väljer, B backar, X slår om, Y visar trädet
     const key = c => window.dispatchEvent(new KeyboardEvent('keydown', { code: c, key: c, bubbles: true, cancelable: true }));
     const dir = b(12) || ly < -0.6 ? 'ArrowUp' : b(13) || ly > 0.6 ? 'ArrowDown' : b(14) || lx < -0.6 ? 'ArrowLeft' : b(15) || lx > 0.6 ? 'ArrowRight' : '';
     gp.navT = (gp.navT || 0) - dt; if (!dir) gp.navT = 0; else if (gp.navT <= 0) { gp.navT = gp.navDir === dir ? 0.16 : 0.35; gp.navDir = dir; key(dir); }
@@ -5331,7 +5410,8 @@ function pollGamepad(dt) {
     if (edge(9)) pause();
   } else if (state === 'pause' && edge(9)) resume();
   else if (state === 'stats' && (edge(0) || edge(9))) nextFloor();
-  else if ((state === 'dead' || state === 'runover') && (edge(0) || edge(9))) leaveRunScreen();
+  else if ((state === 'dead' || state === 'runover') && edge(0)) retryRun();
+  else if ((state === 'dead' || state === 'runover') && edge(9)) leaveRunScreen();
   gp.prev = g.buttons.map(x => x.pressed); gp.pad = g;
   return state === 'play' ? { f: -ly, s: lx } : { f: 0, s: 0 };
 }
@@ -6545,6 +6625,7 @@ function spriteError(err, s) { if (s && s.o) s.o.renderFail = (s.o.renderFail ||
 function frameStep(t) {
   const realDt = Math.min(0.05, (t - last) / 1000 || 0); last = t;
   lowFpsGuard(realDt); if (Math.floor(t / 1000) !== Math.floor((t - realDt * 1000) / 1000)) updateWakeLock();
+  syncEndScreens(); // dödsskärmen och nivåslutet (DOM)
   if (state !== 'play') pollGamepad(realDt);
   let dt = realDt; if (hitStop > 0) { hitStop -= realDt; dt = realDt * 0.06; } // träffstopp: tiden står nästan still ett ögonblick
   if (state === 'play' && run && up('bullettime') && WS.aim > 0.8) dt *= 0.5; // tidsstoppet
@@ -6556,7 +6637,7 @@ function frameStep(t) {
     if (state !== 'pause' && state !== 'ui' && !(photo && state === 'play')) update(dt);
     updateLight(); render();
     if (photo && state === 'play') photoFilter(ctx);
-    if (photo && state === 'play') { const t = 'FOTOLÄGE – K FÖR ATT FORTSÄTTA'; if (tmr % 2 < 1.2) txt(t, (W - textW(t)) / 2, VH + 12, '#e8d9b0'); }
+    if (photo && state === 'play') { const t = 'FOTOLÄGE – K FÖR ATT FORTSÄTTA'; if (tmr % 2 < 1.2) txt(t, (W - textW(t)) / 2, VH - 12, '#e8d9b0'); }
     else { drawWeapon(); drawHUD(); }
     if (deathMap && ((state === 'dead' && P.deadT > 1.2) || state === 'runover')) { ctx.fillStyle = '#0b0806f2'; ctx.fillRect(0, 0, W, VH); drawMap(false); const t = 'HÄR SLUTADE RUNDAN – M STÄNGER KARTAN'; txt(t, (W - textW(t)) / 2, VH - 10, '#ffe9a8'); }
     else if (state === 'dead' && P.deadT > 1.2) drawRunOver(false);
@@ -6566,16 +6647,11 @@ function frameStep(t) {
     if (state === 'stats') drawStats();
   }
 }
-function drawPause() { // pausen: rubrik, några rader om rundan och tangenterna längst ned
-  ctx.fillStyle = 'rgba(8,6,10,0.95)'; ctx.fillRect(0, 0, W, H);
-  ctx.font = '16px "PressStart2P"'; ctx.textBaseline = 'top'; const w = ctx.measureText('PAUS').width; txt('PAUS', (W - w) / 2, 12, '#ffe9a8', 2);
-  const go = isTouch() ? 'TRYCK FÖR ATT FORTSÄTTA' : 'KLICKA ELLER ESC FÖR ATT FORTSÄTTA'; txt(go, (W - textW(go)) / 2, 32, '#c9a87a', 1, true, 0.6 + 0.4 * Math.abs(Math.sin(tmr * 2)));
-  const rows = [['VÅNING', `${run.depth} · ${BIOME_NAME[lvl.biome] || ''}`], ['KLASS', run.cls && CLASSES[run.cls] ? CLASSES[run.cls].name + (run.asc ? ` · UPPST. ${run.asc}` : '') : '–'], ['SVÅRIGHET', DIFF[settings.diff].name], ['KORT', String(run.owned.length)], ['FRÖ', seedText(run.seed)], ['SJÄLAR', `${profile.souls} · REKORD VÅNING ${profile.bestDepth}`]];
-  rows.forEach(([k, v], i) => { const y = 50 + i * 11; txt(k, 48, y, '#8a7558'); txt(v.length > 21 ? v.slice(0, 20) + '…' : v, 136, y, '#e8d9b0'); });
-  let y = 50 + rows.length * 11 + 6; ctx.fillStyle = '#3a2c1e'; ctx.fillRect(48, y - 4, W - 96, 1);
-  const more = bonusLines().concat(pauseExtras().filter(l => !/^KLASS:|^SJÄLAR /.test(l)));
-  for (const l of more) { for (const ln of wrapText(l, 36).slice(0, 2)) { if (y > H - 34) break; txt(ln, (W - textW(ln)) / 2, y, /^FEL/.test(ln) ? '#ff7060' : '#b8a078'); y += 10; } }
-  if (!isTouch()) { const k1 = 'ENTER MENY · I INSTÄLLNINGAR', k2 = 'M KARTA · C KORTEN · G GE UPP'; ctx.fillStyle = '#3a2c1e'; ctx.fillRect(48, H - 26, W - 96, 1); txt(k1, (W - textW(k1)) / 2, H - 21, '#8a7558'); txt(k2, (W - textW(k2)) / 2, H - 11, '#8a7558'); }
+function drawPause() { // pausen: PAUS och en enda rad (biom · våning · guld); allt annat finns i pausmenyn (Enter) under MER → RUNDAN
+  ctx.fillStyle = 'rgba(8,6,10,0.8)'; ctx.fillRect(0, 0, W, H);
+  ctx.font = '16px "PressStart2P"'; ctx.textBaseline = 'top'; const w = ctx.measureText('PAUS').width; txt('PAUS', (W - w) / 2, 70, '#ffe9a8', 2);
+  const ln = pauseLine(); txt(ln, (W - textW(ln)) / 2, 100, '#c9a87a');
+  const go = isTouch() ? 'TRYCK FÖR ATT FORTSÄTTA' : 'KLICKA FÖR ATT FORTSÄTTA · ENTER MENY'; txt(go, (W - textW(go)) / 2, 122, '#8a7558', 1, true, 0.6 + 0.4 * Math.abs(Math.sin(tmr * 2)));
 }
 function pauseExtras() { // uppstigning, klass, uppdrag och händelselogg
   const out = [];
@@ -6602,7 +6678,70 @@ function overlay(t1, lines, col) {
   const w = ctx.measureText(plain(t1)).width; txt(t1, (W - w) / 2, 22, '#fff', 2);
   lines.forEach((s, i) => { txt(s, (W - textW(s)) / 2, 54 + i * 13, i ? '#e0c890' : '#ffe9a8'); });
 }
-function drawStats() {
+// ---------- MENY: nivåslutet och dödsskärmen som DOM-skärmar (#floorend, #runover) ovanför pekknapparna ----------
+// Canvasen tonas bara ned; siffrorna, betyget och knapparna ligger i DOM. D (eller tryck på siffrorna) visar de gamla detaljerna.
+let endScr = { ro: null, fe: null }, endDetails = false;
+function drawStats() { if (endDetails) return drawStatsDetails(); ctx.fillStyle = 'rgba(10,6,4,0.72)'; ctx.fillRect(0, 0, W, H); }
+function drawRunOver(win) { if (endDetails) return drawRunDetails(win); ctx.fillStyle = win ? 'rgba(4,16,6,0.55)' : 'rgba(40,4,2,0.5)'; ctx.fillRect(0, 0, W, H); }
+function syncEndScreens() { // körs varje bildruta och från showTitle: visar/döljer skärmarna efter spelets läge
+  const ro = document.getElementById('runover'), fe = document.getElementById('floorend'); if (!ro || !fe) return;
+  const over = !!map && !!run && !deathMap && !endDetails && ((state === 'dead' && P.deadT > 1.2) || state === 'runover');
+  if (over) { if (ro.hidden) showRunOver(state === 'runover'); else tickRunOver(); } else if (!ro.hidden) { ro.hidden = true; endScr.ro = null; }
+  const st = !!map && state === 'stats' && !!stats && !endDetails;
+  if (st) { if (fe.hidden) showFloorEnd(); else tickFloorEnd(); } else if (!fe.hidden) { fe.hidden = true; endScr.fe = null; }
+  if (state !== 'stats' && state !== 'dead' && state !== 'runover') endDetails = false;
+}
+function showRunOver(win) {
+  const r = run, ro = document.getElementById('runover'), cause = document.getElementById('ro-cause');
+  ro.classList.toggle('win', !!win); document.getElementById('ro-head').textContent = win ? 'SEGER' : 'DU DOG';
+  cause.textContent = '';
+  if (!win && r.cause) { cause.append('DÖDAD AV '); cause.appendChild(Object.assign(document.createElement('b'), { textContent: r.cause })); }
+  else if (win) cause.textContent = r.practice ? 'ÖVNINGEN KLARAD' : r.loop ? `VARV ${r.loop + 1} KLARAT` : 'BOSSEN BESEGRAD';
+  cause.hidden = !cause.textContent;
+  document.getElementById('ro-depth').textContent = String(r.depth); document.getElementById('ro-kills').textContent = String(r.kills); document.getElementById('ro-time').textContent = fmtTime(r.time || 0);
+  document.getElementById('ro-souls').textContent = '';
+  const tip = r.records && r.records.length ? 'NYTT REKORD: ' + r.records[0] : !win ? 'TIPS: ' + (DEATH_TIPS[r.cause] || 'VARJE RUNDA LÄR DIG NÅGOT') : '';
+  document.getElementById('ro-tip').textContent = tip.length > 60 ? tip.slice(0, 58) + '…' : tip;
+  endScr.ro = { t0: performance.now(), souls: r.practice ? -1 : r.souls || 0, shown: -1 };
+  mouseDown = false; aimDown = false; if (document.pointerLockElement) document.exitPointerLock();
+  ro.hidden = false;
+  if (!isTouch()) setTimeout(() => { try { if (!ro.hidden) document.getElementById('retrybtn').focus({ preventScroll: true }); } catch (e) { /* ingen fokus */ } }, 0);
+}
+function tickRunOver() { // själarna räknas upp
+  const o = endScr.ro; if (!o || o.souls < 0) return; const n = Math.min(o.souls, Math.floor((performance.now() - o.t0) / 40));
+  if (n !== o.shown) { o.shown = n; document.getElementById('ro-souls').textContent = `+${n} SJÄLAR`; if (n < o.souls && n % 3 === 0) play('coin', 0.15, 1.6); }
+}
+function retryRun() { // FÖRSÖK IGEN: en ny runda direkt med samma inställningar (samma som Enter)
+  if (!((state === 'dead' && P.deadT > 0.8) || (state === 'runover' && P.deadT > 0.3))) return;
+  showTitle(); document.getElementById('seed').value = ''; begin('new');
+}
+function showFloorEnd() {
+  const s = stats, fe = document.getElementById('floorend');
+  document.getElementById('fe-head').textContent = `${s.name} KLARAD`;
+  const rows = [{ k: 'TID', v: s.time, f: v => fmtTime(v) + (s.rec && s.time < s.rec && v >= s.time ? ' REKORD!' : '') }, { k: 'DÖDADE', v: s.kills, f: v => `${Math.round(v)}/${s.totalEnemies}` }, { k: 'HEMLIGHETER', v: s.secrets, f: v => `${Math.round(v)}/${s.totalSecrets}` }, { k: 'GULD', v: run.gold, f: v => String(Math.round(v)), gold: true }];
+  const box = document.getElementById('fe-rows'); box.textContent = '';
+  for (const r of rows) { box.appendChild(Object.assign(document.createElement('span'), { className: 'k', textContent: r.k })); r.el = box.appendChild(Object.assign(document.createElement('span'), { className: 'v' + (r.gold ? ' gold' : ''), textContent: '' })); }
+  const g = document.getElementById('fe-grade'); g.textContent = s.grade || '–'; g.style.color = GRADE_COL[s.grade] || '#e8d9b0'; g.classList.remove('on');
+  document.getElementById('fe-extra').textContent = (s.extra || []).slice(0, 3).join(' · ');
+  endScr.fe = { t0: performance.now(), rows, done: false };
+  fe.hidden = false; tickFloorEnd();
+  if (!isTouch()) setTimeout(() => { try { if (!fe.hidden) document.getElementById('nextbtn').focus({ preventScroll: true }); } catch (e) { /* ingen fokus */ } }, 0);
+}
+function tickFloorEnd(skip) { // sammanräkningen: en rad i taget räknas upp, sedan slår betyget ned
+  const o = endScr.fe; if (!o || o.done) return; if (skip) o.t0 = -1e9;
+  const t = (performance.now() - o.t0) / 1000, per = 0.35;
+  o.rows.forEach((r, i) => { const k = clamp((t - i * per) / per, 0, 1), txt0 = t < i * per ? '' : r.f(r.v * k); if (r.el.textContent !== txt0) { r.el.textContent = txt0; if (k >= 1 && !r.tick) { r.tick = 1; play('ui_hover', 0.35, 0.8); } } });
+  if (t >= o.rows.length * per + 0.15) { o.done = true; const g = document.getElementById('fe-grade'); g.classList.add('on'); play('coin', 0.5, 0.7); }
+}
+document.getElementById('retrybtn').addEventListener('click', e => { e.stopPropagation(); retryRun(); });
+document.getElementById('romenubtn').addEventListener('click', e => { e.stopPropagation(); leaveRunScreen(); });
+document.getElementById('nextbtn').addEventListener('click', e => { e.stopPropagation(); nextFloor(); });
+document.getElementById('floorend').addEventListener('click', () => { const o = endScr.fe; if (o && !o.done) tickFloorEnd(true); else nextFloor(); }); // tryck var som helst: hoppa över uppräkningen, sedan vidare
+document.querySelector('#runover .es-nums').addEventListener('click', () => { endDetails = true; });
+document.querySelector('#floorend .fe-rows').addEventListener('click', e => { const o = endScr.fe; if (o && o.done) { e.stopPropagation(); endDetails = true; } });
+addEventListener('keydown', e => { if (e.code === 'KeyD' && (state === 'dead' || state === 'runover') && P.deadT > 1.2) endDetails = !endDetails; else if (endDetails && (state === 'stats' || state === 'dead' || state === 'runover') && (e.code === 'Escape' || e.code === 'KeyD')) endDetails = false; });
+canvas.addEventListener('mousedown', e => { if (endDetails && (state === 'stats' || state === 'dead' || state === 'runover')) { endDetails = false; e.stopImmediatePropagation(); } }, true);
+function drawStatsDetails() {
   const s = stats;
   ctx.fillStyle = '#0c0806fa'; ctx.fillRect(0, 0, W, H);
   const head = `${s.name} KLARAD`; txt(head, (W - textW(head)) / 2, 8, '#ffd24a');
@@ -6626,7 +6765,7 @@ function drawStats() {
 const DEATH_TIPS = { 'LAVA': 'HOPPA ÖVER LAVAN ELLER GÅ RUNT', 'SPIKFÄLLA': 'SPIKARNA KLICKAR INNAN DE SKJUTER UPP', 'GIFTGAS': 'GASEN PYSER MED JÄMNA MELLANRUM', 'GAV UPP': 'SJÄLAALTARET GÖR NÄSTA RUNDA LÄTTARE',
   'BOMBSKELETT': 'SKJUT BOMBSKELETTEN PÅ AVSTÅND', 'SPINDEL': 'BRÄNN NÄTEN MED BLOSS ELLER GRANATER', 'HELVETESHUND': 'HUNDARNA SNUBBLAR OM DU TRÄFFAR DEM I SPRÅNGET', 'VAMPYR': 'VAMPYREN ÄR SNABB – BACKA OCH SKJUT',
   'ORKKRIGARE': 'LÅT ORKKRIGAREN KROCKA I VÄGGEN', 'BENMAGIKER': 'DÖDA MAGIKERN INNAN DEN VÄCKER FLER' };
-function drawRunOver(win) {
+function drawRunDetails(win) { // de gamla detaljerna (graf, kort, tidslinje) – D eller tryck på siffrorna på dödsskärmen
   const r = run;
   ctx.fillStyle = win ? '#0a140afa' : '#160606fa'; ctx.fillRect(0, 0, W, H);
   ctx.font = '16px "PressStart2P"'; const t1 = win ? 'SEGER!' : 'RUNDAN ÄR SLUT'; const w = ctx.measureText(plain(t1)).width;
@@ -6655,7 +6794,7 @@ function drawRunOver(win) {
   else if (log.length && Math.floor(P.deadT / 4) % 2 === 1) { txt('TIDSLINJE:', 200, 90, '#c9a87a'); log.forEach((n, i) => txt(n.slice(0, 15), 200, 100 + i * 8, '#a0d0e8', 1, true, 0.9)); } // rundans tidslinje
   else if (names.length) { txt('KORT:', 200, 90, '#c9a87a'); names.forEach((n, i) => txt(n.slice(0, 14), 200, 100 + i * 8, '#b9a0e8', 1, true, 0.9)); }
   if (!win && r.cause) wrapText('TIPS: ' + (DEATH_TIPS[r.cause] || 'VARJE RUNDA LÄR DIG NÅGOT'), 38).slice(0, 2).forEach((t, i) => txt(t, (W - textW(t)) / 2, 142 + i * 10, '#8a7558'));
-  const f = isTouch() ? 'TRYCK FÖR MENYN' : 'KLICKA FÖR MENYN'; txt(f, (W - textW(f)) / 2, H - 30, '#ffe9a8', 1, true, 0.55 + 0.45 * Math.abs(Math.sin(tmr * 2.5)));
+  const f = isTouch() ? 'TRYCK FÖR ATT GÅ TILLBAKA' : 'KLICKA ELLER D FÖR ATT GÅ TILLBAKA'; txt(f, (W - textW(f)) / 2, H - 30, '#ffe9a8', 1, true, 0.55 + 0.45 * Math.abs(Math.sin(tmr * 2.5)));
   const keysTxt = isTouch() ? '' : 'ENTER NY · R SAMMA FRÖ · M KARTA'; if (keysTxt) txt(keysTxt, (W - textW(keysTxt)) / 2, H - 16, '#6a5a44');
 }
 
@@ -6667,7 +6806,7 @@ function showTitle() {
   if (breathSnd) { breathSnd.s.stop(); breathSnd = null; }
   if (document.pointerLockElement) document.exitPointerLock();
   document.getElementById('title').hidden = false;
-  refreshTitle();
+  syncEndScreens(); refreshTitle(); titleMenu('');
 }
 function ensureAudio() {
   if (!actx) loadSounds().then(() => { if (state === 'play' && !ambient) startAmbient(); else playMusic(); });
@@ -6822,7 +6961,9 @@ function openSettings(onClose) {
     check('DUBBELTRYCK PÅ BILDEN = HOPPA', 'tapJump');
     check('PAUSA NÄR MOBILEN VRIDS TILL STÅENDE', 'rotatePause');
     check('SPRING AUTOMATISKT (MOBIL)', 'autoRun');
-    const ob = (t, f) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'cu-btn'; b.textContent = t; b.onclick = ev => { ev.stopPropagation(); f(); }; c.appendChild(b); };
+    check('ALLA KNAPPAR (DEN GAMLA PEKLAYOUTEN)', 'allButtons', applyTouchLayout);
+    def('autoFs', true); check('HELSKÄRM AUTOMATISKT NÄR RUNDAN BÖRJAR (MOBIL)', 'autoFs');
+    const ob =(t, f) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'cu-btn'; b.textContent = t; b.onclick = ev => { ev.stopPropagation(); f(); }; c.appendChild(b); };
     ob('FLYTTA MOBILKNAPPARNA', () => { CardUI.close(); layoutEdit(() => openSettings(onClose)); });
     ob('BYT KNAPPAR PÅ HANDKONTROLLEN', () => { CardUI.close(); openPadMap(() => openSettings(onClose)); });
     sec('HJÄLPLÄGE OCH TILLGÄNGLIGHET');
@@ -6841,7 +6982,25 @@ function openSettings(onClose) {
     btn('IMPORTERA PROFIL', importProfile);
     if (state === 'title') btn('ÅTERSTÄLL PROFILEN', () => { CardUI.close(); resetProfile(() => openSettings(onClose)); });
     btn('ÅTERSTÄLL ALLA INSTÄLLNINGAR', () => { for (const k of Object.keys(settings)) delete settings[k]; Object.assign(settings, { sens: 1, vol: 0.8, muted: false, diff: 1, fov: 74, gamma: 1, shake: 1, xstyle: 'kors', xcolor: '', bob: true, vibrate: true, btnScale: 1, map: 1 }); saveSettings(); applyFov(); applyVolume(); applyMixer(); applyDisplay(); applyTouchLayout(); CardUI.close(); openSettings(onClose); });
+    btn('HELSKÄRM', () => toggleFullscreen());
+    settingsTabs(c);
   }, onClose);
+}
+let settingsTab = 'BILD';
+function settingsTabs(c) { // MENY: inställningarna i flikar (BILD, LJUD, SPEL, KONTROLL, TILLGÄNGLIGHET, ÖVRIGT) i stället för en lång lista; raderna ligger kvar i DOM
+  const TAB = { 'LJUD': 'LJUD', 'SPEL': 'SPEL', 'SIKTE OCH MOBIL': 'KONTROLL', 'MOBIL: EN HAND': 'KONTROLL', 'BILD OCH TILLGÄNGLIGHET': 'TILLGÄNGLIGHET', 'HJÄLPLÄGE OCH TILLGÄNGLIGHET': 'TILLGÄNGLIGHET', 'ÖVRIGT': 'ÖVRIGT' };
+  const ORDER = ['BILD', 'LJUD', 'SPEL', 'KONTROLL', 'TILLGÄNGLIGHET', 'ÖVRIGT'], kids = [...c.children], groups = {}; let cur = 'BILD';
+  for (const k of kids) {
+    if (k.classList.contains('cu-sec')) { const n = k.textContent.trim(); cur = TAB[n] || (/MOBIL|KNAPP|KONTROLL|STYR/.test(n) ? 'KONTROLL' : /LJUD/.test(n) ? 'LJUD' : /TILLGÄNG|HJÄLP/.test(n) ? 'TILLGÄNGLIGHET' : 'ÖVRIGT'); }
+    let t = cur; if (cur === 'BILD') { const l = k.textContent || ''; if (/^(KÄNSLIGHET|VIBRATION|VÄNSTERHÄNT|KNAPPSTORLEK)/.test(l)) t = 'KONTROLL'; else if (/^VOLYM/.test(l)) t = 'LJUD'; }
+    k.dataset.tab = t; (groups[t] = groups[t] || []).push(k);
+  }
+  const tabs = ORDER.filter(t => groups[t]).concat(Object.keys(groups).filter(t => !ORDER.includes(t)));
+  const bar = CardUI.el('div', 'cu-tabs');
+  const show = t => { settingsTab = t; for (const k of kids) k.hidden = k.dataset.tab !== t; for (const b of bar.children) b.setAttribute('aria-pressed', String(b.dataset.tab === t)); c.scrollTop = 0; };
+  for (const t of tabs) { const b = document.createElement('button'); b.type = 'button'; b.className = 'cu-btn cu-tab'; b.dataset.tab = t; b.textContent = t; b.onclick = ev => { ev.stopPropagation(); show(t); }; bar.appendChild(b); }
+  if (c.parentNode) c.parentNode.insertBefore(bar, c);
+  show(tabs.includes(settingsTab) ? settingsTab : tabs[0]);
 }
 function exportProfile() { // profilen som en JSON-fil
   try { const b = new Blob([JSON.stringify({ profile, settings }, null, 1)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'krypta-profil.json'; document.body.appendChild(a); a.click(); a.remove(); } catch (e) { /* hämtning stöds inte */ }
@@ -6862,9 +7021,9 @@ function layoutEdit(onDone) {
   let drag = null;
   const down = e => { if (!layoutOn) return; const b = e.target.closest('.tb'); e.stopImmediatePropagation(); e.preventDefault(); if (!b) return; const r = b.getBoundingClientRect(); drag = { b, dx: e.clientX - r.left, dy: e.clientY - r.top }; b.setPointerCapture && b.setPointerCapture(e.pointerId); };
   const move = e => { if (!layoutOn || !drag) return; e.stopImmediatePropagation(); e.preventDefault(); const st = drag.b.style; st.left = (e.clientX - drag.dx) + 'px'; st.top = (e.clientY - drag.dy) + 'px'; st.right = 'auto'; st.bottom = 'auto'; };
-  const up = e => { if (!layoutOn || !drag) return; e.stopImmediatePropagation(); const r = drag.b.getBoundingClientRect(); settings.btnPos = Object.assign({}, settings.btnPos, { [drag.b.dataset.act]: { x: +(r.left / innerWidth * 100).toFixed(2), y: +(r.top / innerHeight * 100).toFixed(2) } }); saveSettings(); drag = null; };
+  const up = e => { if (!layoutOn || !drag) return; e.stopImmediatePropagation(); const r = drag.b.getBoundingClientRect(); settings[touchPosKey()] = Object.assign({}, settings[touchPosKey()], { [drag.b.dataset.act]: { x: +(r.left / innerWidth * 100).toFixed(2), y: +(r.top / innerHeight * 100).toFixed(2) } }); saveSettings(); drag = null; };
   ui.addEventListener('pointerdown', down, true); ui.addEventListener('pointermove', move, true); ui.addEventListener('pointerup', up, true);
-  bar.onclick = e => { const k = e.target.dataset.l; if (k === 'reset') { settings.btnPos = {}; saveSettings(); ui.querySelectorAll('.tb').forEach(b => { b.style.left = b.style.top = b.style.right = b.style.bottom = ''; }); }
+  bar.onclick = e => { const k = e.target.dataset.l; if (k === 'reset') { settings[touchPosKey()] = {}; saveSettings(); ui.querySelectorAll('.tb').forEach(b => { b.style.left = b.style.top = b.style.right = b.style.bottom = ''; }); }
     if (k === 'done') { layoutOn = false; ui.classList.remove('layout'); bar.remove(); ui.removeEventListener('pointerdown', down, true); ui.removeEventListener('pointermove', move, true); ui.removeEventListener('pointerup', up, true); applyTouchLayout(); onDone(); } };
 }
 // ---------- Version 6: byt knappar på handkontrollen ----------
@@ -6885,7 +7044,7 @@ function openPadMap(onClose) {
   }, onClose);
 }
 function applyTouchLayout() { const ui = document.getElementById('touch'); if (!ui) return;
-  for (const b of ui.querySelectorAll('.tb')) { const pos = (settings.btnPos || {})[b.dataset.act]; if (pos) { b.style.left = pos.x + '%'; b.style.top = pos.y + '%'; b.style.right = 'auto'; b.style.bottom = 'auto'; } } ui.classList.toggle('lefty', !!settings.lefty); ui.classList.toggle('onehand', !!settings.oneHand); if (!settings.oneHand) autoWalk = false; ui.style.setProperty('--bs', settings.btnScale || 1); applyDisplay(); }
+  ui.classList.toggle('all', !!settings.allButtons); for (const b of ui.querySelectorAll('.tb')) { const pos = (settings[touchPosKey()] || {})[b.dataset.act]; if (pos) { b.style.left = pos.x + '%'; b.style.top = pos.y + '%'; b.style.right = 'auto'; b.style.bottom = 'auto'; } else b.style.left = b.style.top = b.style.right = b.style.bottom = ''; } ui.classList.toggle('lefty', !!settings.lefty); ui.classList.toggle('onehand', !!settings.oneHand); if (!settings.oneHand) autoWalk = false; ui.style.setProperty('--bs', settings.btnScale || 1); applyDisplay(); }
 function pause() { if (state === 'play') { state = 'pause'; mouseDown = false; aimDown = false; for (const k in keys) keys[k] = false; if (actx) actx.suspend(); } }
 function resume() { if (state === 'pause') { state = 'play'; if (actx) actx.resume(); lockPointer(); } }
 let pauseMap = false;
@@ -6926,7 +7085,7 @@ addEventListener('keydown', e0 => {
   const e = keyEv(e0);
   if (state === 'title' || (window.CardUI && CardUI.isOpen())) return;
   if (state === 'ui') return;
-  if (e.code === 'Escape' || e.code === 'KeyP') { if (state === 'play') pause(); else if (state === 'pause' && e.code === 'KeyP') resume(); return; }
+  if (e.code === 'Escape' || e.code === 'KeyP') { if (state === 'play') pause(); else if (state === 'pause' && e.code === 'KeyP') resume(); else if ((state === 'dead' || state === 'runover') && e.code === 'Escape') leaveRunScreen(); return; }
   if (state === 'pause' && e.code === 'KeyI') { openSettingsUI(); return; }
   if (state === 'pause' && (e.code === 'Enter' || e.code === 'NumpadEnter')) { pauseMenu(); return; }
   if (state === 'stats' && e.code === 'KeyD' && settings.diff < 3 && run.diff !== 4) { settings.diff = (settings.diff + 1) % 3; run.diff = settings.diff; saveSettings(); say('SVÅRIGHET: ' + DIFF[settings.diff].name, 1.5); return; } // byt svårighet mellan våningarna
@@ -6964,7 +7123,9 @@ addEventListener('keydown', e0 => {
     if (n >= 0 && n < WEAPONS.length) switchWeapon(n);
     if (e.code === 'KeyQ' && !e.repeat && !wheelStart()) { if (P.has[P.lastWeapon] && P.lastWeapon !== P.weapon) switchWeapon(P.lastWeapon); else cycleWeapon(1); }
   } else if ((state === 'dead' || state === 'runover') && e.code === 'KeyR') { replaySeed(); }
-  else if ((state === 'dead' || state === 'runover') && (e.code === 'Enter' || e.code === 'NumpadEnter') && P.deadT > 0.8) { showTitle(); document.getElementById('seed').value = ''; begin('new'); } // snabbstart
+  else if ((state === 'dead' || state === 'runover') && (e.code === 'Enter' || e.code === 'NumpadEnter') && P.deadT > 0.8) { if (document.activeElement && document.activeElement.id === 'romenubtn') leaveRunScreen(); else retryRun(); } // snabbstart: FÖRSÖK IGEN (eller MENY om den är markerad)
+  else if ((state === 'dead' || state === 'runover') && (e.code === 'ArrowLeft' || e.code === 'ArrowRight' || e.code === 'ArrowUp' || e.code === 'ArrowDown')) { const bs = [...document.querySelectorAll('#runover .es-btns button')], i = bs.indexOf(document.activeElement); if (bs.length) try { bs[(i + 1) % bs.length].focus(); } catch (er) { /* ingen fokus */ } }
+  else if ((state === 'dead' || state === 'runover') && (e.code === 'Escape' || e.code === 'Backspace')) { leaveRunScreen(); }
   else if ((state === 'dead' || state === 'runover') && e.code === 'KeyS') { screenshot(); say('BILDEN ÄR SPARAD', 1.5); }
   else if ((state === 'dead' || state === 'runover') && e.code === 'KeyM') { deathMap = !deathMap; }
   else if ((state === 'dead' || state === 'runover') && e.code === 'KeyL') { shareSeed(); }
@@ -7043,13 +7204,81 @@ const TAP_MOVE = 12, TAP_TIME = 250; // px, ms: kort tryck i vridzonen = ett sko
 // stående: bilden ligger överst och hela bilden är vridzon, joysticken bor under den
 const lookFloor = () => innerHeight > innerWidth ? canvas.getBoundingClientRect().bottom : 0;
 const isTouch = () => matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+// ---------- UI-omgörningen: få knappar på telefonen (som moderna mobila FPS) ----------
+// Permanent: AVFYRA, ALT (sikta = vapnets alt-attack), HOPPA, RUSA, PAUS. Sammanhangsknappar (.ctx) syns bara när de går att använda.
+// Vapenbyte: tryck på ammo-hörnet (håll = vapenhjulet). Minikartan: tryck = stora kartan. Inställningen ALLA KNAPPAR ger den gamla layouten.
+const touchMin = () => !settings.allButtons;
+const touchPosKey = () => settings.allButtons ? 'btnPos' : 'btnPosMin'; // layoutredigeraren sparar varje layout för sig
+const TOUCH_NO_RELOAD = ['boomerang', 'windgun', 'spear', 'mirrorshield', 'whip', 'censer', 'shears'];
+function touchCanUse() { // samma saker som useKey() når – och sparken, som handen gör när inget annat finns
+  if (!P || !lvl || !map) return false;
+  for (const pr of props) if (pr.def && pr.def.use && !(pr.used && pr.def.use !== 'anvil') && Math.hypot(pr.x - P.x, pr.y - P.y) < 1.3) return true;
+  for (const e of ents) if (e.dormant && Math.hypot(e.x - P.x, e.y - P.y) < 1.4) return true;
+  for (const c of chests) if (!c.open && Math.hypot(c.x - P.x, c.y - P.y) < 1.2) return true;
+  for (const m of merchants) if (Math.hypot(m.x - P.x, m.y - P.y) < 1.6 && shadowVisible(m)) return true;
+  const ca = Math.cos(P.a), sa = Math.sin(P.a);
+  for (const dist of [0.6, 1.0, 1.4]) { const nx = P.x + ca * dist, ny = P.y + sa * dist; if (doorAt(nx, ny) && isDoorChar(cellAt(nx, ny))) return true; }
+  for (const e of ents) { if (e.dead || e.dying || e.hidden || e.dormant || !e.d) continue; const d = Math.hypot(e.x - P.x, e.y - P.y); if (d > 1.5 + e.d.size * 0.3) continue;
+    let off = Math.atan2(e.y - P.y, e.x - P.x) - P.a; off = Math.atan2(Math.sin(off), Math.cos(off)); if (Math.abs(off) < 0.7) return true; } // sparka/avrätta fienden framför
+  for (const pt of pots) if (!pt.broken && Math.hypot(pt.x - P.x, pt.y - P.y) < 1.4) return true;
+  const fx0 = P.x + ca * 0.9, fy0 = P.y + sa * 0.9;
+  for (const pr of props) if (pr.def && !pr.broken && (pr.def.boom || pr.ch === 'u') && Math.hypot(pr.x - fx0, pr.y - fy0) < 0.8) return true;
+  return solid(fx0, fy0); // en vägg tätt framför: hemliga dörrar hittas med handen
+}
+function touchCanReload() { const wp = WEAPONS[P.weapon]; if (!wp || wp.melee || TOUCH_NO_RELOAD.some(k => wp[k])) return false; if (WS.state === 'reload') return true; return P.mags[P.weapon] < effMag(P.weapon) && P.ammo[wp.ammo] > 0; }
+const touchDarkLvl = { t: 0 };
+const touchDark = () => { // mörk våning, eller riktigt mörkt där man står (sedan syns LAMPA i 6 s, så att den inte blinkar i varje skugga)
+  if (floorEvent === 'dark' || cmode('dark') || dmod('dark')) return true;
+  if (lvl && lvl.ambient <= 0.2) return true; // mörka biomer (grottorna, biblioteket, kristallgrottorna …)
+  const now = performance.now(); if (levelTime > 0.5 && lightAt(P.x, P.y) < 0.2) touchDarkLvl.t = now + 6000;
+  return now < touchDarkLvl.t;
+};
+const TOUCH_CTX = { use: touchCanUse, reload: touchCanReload, grenade: () => P.grenades > 0 || WS.throwT >= 0, potion: () => !!(P.potions && P.potions.length),
+  ability: () => !!activeCard() && abCd <= 0, lamp: () => !!P.lamp || ((P.battery || 0) > 0 && touchDark()) };
+function touchCtxTick(ui) { // visa/dölj sammanhangsknapparna
+  for (const b of ui.querySelectorAll('.tb.ctx')) { let on = false; try { on = state === 'play' && !!TOUCH_CTX[b.dataset.act](); } catch (e) { on = false; } b.classList.toggle('show', on || b.classList.contains('on')); }
+}
+function touchHudRects() { // HUD-agentens rutor (spelkoordinater); reserv enligt kontraktet om de inte finns
+  let R = null; try { R = window.__game && typeof window.__game.hudRects === 'function' ? window.__game.hudRects() : null; } catch (e) { R = null; }
+  const s = settings.mapScale || 3, ms = (2 * Math.round(24 / s) + 1) * s + 4;
+  return Object.assign({ hp: { x: 4, y: 3, w: 80, h: 22 }, ammo: { x: 236, y: 3, w: 80, h: 22 }, map: { x: W - 6 - ms, y: 28, w: ms + 4, h: ms } }, R || {});
+}
+function touchHudHit(cx, cy) { // vilket HUD-hörn fingret landade på
+  const r = canvas.getBoundingClientRect(); if (!r.width) return '';
+  const gx = (cx - r.left) / r.width * W, gy = (cy - r.top) / r.height * H, R = touchHudRects();
+  const inR = q => q && gx >= q.x - 4 && gx <= q.x + q.w + 4 && gy >= q.y - 4 && gy <= q.y + q.h + 4;
+  if (inR(R.ammo)) return 'swap';
+  if (showMap === 1 && inR(R.map)) return 'map';
+  return '';
+}
+function touchHudTap(e, ptrs) { // tryck på ammo = byt vapen (håll = vapenhjulet), tryck på minikartan = stora kartan
+  if (showMap === 2 && touchMin() && (settings.lefty ? e.clientX < innerWidth * 0.55 : e.clientX > innerWidth * 0.45)) { const r = canvas.getBoundingClientRect(); if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) { showMap = 1; ptrs.set(e.pointerId, { kind: 'hud' }); return true; } }
+  const h = touchHudHit(e.clientX, e.clientY); if (!h) return false;
+  if (h === 'swap') { ptrs.set(e.pointerId, { kind: 'hud', swap: true, sx: e.clientX, sy: e.clientY }); wheelStart(); }
+  else { showMap = 2; ptrs.set(e.pointerId, { kind: 'hud' }); play('click', 0.3, 1.5); }
+  return true;
+}
+function touchScreenBtn(e) { // knappar som MENY ritar på canvas (dödsskärmen, våningsstatistiken): window.__game.screenButtons()
+  let L = null; try { L = window.__game && typeof window.__game.screenButtons === 'function' ? window.__game.screenButtons() : null; } catch (er) { L = null; }
+  if (!L || !L.length) return false;
+  const r = canvas.getBoundingClientRect();
+  for (const s of L) { let q; if (s.el) { const b = s.el.getBoundingClientRect(); q = [b.left, b.top, b.width, b.height]; } else q = [r.left + s.x / W * r.width, r.top + s.y / H * r.height, s.w / W * r.width, s.h / H * r.height];
+    if (q[2] > 0 && e.clientX >= q[0] && e.clientX <= q[0] + q[2] && e.clientY >= q[1] && e.clientY <= q[1] + q[3]) { try { s.act(); } catch (er) { console.error(er); } return true; } }
+  return false;
+}
+function autoFullscreen() { // tyst: ingen text om det nekas, ingen vrid-spärr (stående läge är tillåtet)
+  try { if (fsElement() || !fsSupported()) return; const el = document.documentElement, req = el.requestFullscreen || el.webkitRequestFullscreen; if (!req) return;
+    const r = req.call(el, { navigationUI: 'hide' }); if (r && r.catch) r.catch(() => {}); } catch (e) { /* inte här */ }
+}
+let fsWantT = 0; // senaste trycket på en knapp på startskärmen (användargesten gäller några sekunder)
+document.addEventListener('click', e => { if (state === 'title' && isTouch() && settings.autoFs !== false && e.target && e.target.closest && e.target.closest('button')) fsWantT = performance.now(); }, true);
 function setupTouch() {
   const ui = document.getElementById('touch');
   const T = A + 'touch/';
   const btn = (act, icon, cls) => `<button class="tb ${cls}" data-act="${act}" aria-label="${act}"><img src="${T}btn.png" alt=""><img class="ic${act === 'fullscreen' ? ' fsicon' : ''}" src="${T}icon_${icon}.png" alt=""></button>`;
-  ui.innerHTML = `<div class="joy" hidden><img class="pad" src="${T}pad.png" alt=""><img class="nub" src="${T}nub.png" alt=""></div>
-    ${btn('fire', 'crosshair', 'fire')}${btn('aim', 'target', 'aim')}${btn('reload', 'arrow_rotate', 'reload')}${btn('use', 'hand', 'use')}${btn('swap', 'arrow_curved', 'swap')}
-    ${btn('map', 'map', 'map small')}${btn('deck', 'star', 'deck small')}${btn('pause', 'pause', 'pausebtn small')}${btn('fullscreen', 'size_larger', 'fsbtn small')}${btn('settings', 'gear', 'gearbtn small')}${btn('giveup', 'exit', 'giveupbtn small')}${btn('jump', 'jump', 'jumpb')}${btn('crouch', 'crouch', 'crouchb')}${btn('dash', 'dash', 'dashb')}${btn('grenade', 'grenade', 'grenb')}${btn('potion', 'potion', 'potb')}${btn('walk', 'arrow_curved', 'walkb')}${btn('ability', 'star', 'abb')}${btn('lamp', 'lamp', 'lampb')}${btn('stone', 'stone', 'stoneb')}`;
+  ui.innerHTML = `<div class="joy" hidden><img class="pad" src="${T}pad.png" alt=""><img class="nub" src="${T}nub.png" alt=""></div><div class="rothint"><img src="${T}icon_size_larger.png" alt=""></div>
+    ${btn('fire', 'crosshair', 'fire')}${btn('aim', 'target', 'aim')}${btn('reload', 'arrow_rotate', 'reload ctx')}${btn('use', 'hand', 'use ctx')}${btn('swap', 'arrow_curved', 'swap xtra')}
+    ${btn('map', 'map', 'map small xtra')}${btn('deck', 'star', 'deck small xtra')}${btn('pause', 'pause', 'pausebtn small')}${btn('fullscreen', 'size_larger', 'fsbtn small')}${btn('settings', 'gear', 'gearbtn small xtra')}${btn('giveup', 'exit', 'giveupbtn small xtra')}${btn('jump', 'jump', 'jumpb')}${btn('crouch', 'crouch', 'crouchb xtra')}${btn('dash', 'dash', 'dashb')}${btn('grenade', 'grenade', 'grenb ctx')}${btn('potion', 'potion', 'potb ctx')}${btn('walk', 'arrow_curved', 'walkb')}${btn('ability', 'star', 'abb ctx')}${btn('lamp', 'lamp', 'lampb ctx')}${btn('stone', 'stone', 'stoneb xtra')}`;
   applyTouchLayout();
   const joy = ui.querySelector('.joy'), nub = ui.querySelector('.nub');
   const ptrs = new Map(); // pointerId -> { kind, x, y, ox, oy }
@@ -7060,6 +7289,8 @@ function setupTouch() {
     if (state === 'pause' && e.target.closest('.gearbtn')) { openSettingsUI(); e.preventDefault(); return; }
     if (state === 'pause' && e.target.closest('.giveupbtn')) { abandonRun(); e.preventDefault(); return; }
     if (state !== 'play') { // tryck för att fortsätta, gå vidare osv.
+      if (touchScreenBtn(e)) { e.preventDefault(); return; } // MENY:s knappar på canvas (FÖRSÖK IGEN, MENY, VIDARE)
+      if ((state === 'stats' || state === 'dead' || state === 'runover') && !endDetails && !deathMap && document.getElementById(state === 'stats' ? 'floorend' : 'runover')) { e.preventDefault(); return; } // MENY:s DOM-skärmar tar själva emot trycken – hoppa inte över dem
       if (state === 'pause') resume(); else if (state === 'stats') nextFloor(); else leaveRunScreen();
       e.preventDefault(); return;
     }
@@ -7088,6 +7319,7 @@ function setupTouch() {
         if (act === 'lamp') toggleLamp();
         if (act === 'stone') throwStone();
       }
+    } else if (touchHudTap(e, ptrs)) { // HUD-hörnen: ammo = byt vapen, minikartan = stora kartan
     } else if ((settings.lefty ? e.clientX > innerWidth * 0.55 : e.clientX < innerWidth * 0.45) && e.clientY > lookFloor()) { // joysticken: flytande där tummen landar, eller fast
       const fixed = settings.fixedJoy, fx0 = settings.lefty ? innerWidth * 0.85 : innerWidth * 0.15, fy0 = innerHeight * 0.72;
       const ox = fixed ? fx0 : e.clientX, oy = fixed ? fy0 : e.clientY;
@@ -7120,8 +7352,8 @@ function setupTouch() {
     const p = ptrs.get(e.pointerId); if (!p) return;
     ptrs.delete(e.pointerId);
     if (p.kind === 'joy') { touch.mx = touch.my = touch.mag = 0; joy.hidden = true; }
+    if (p.swap && !p.swiped) wheelRelease(() => cycleWeapon(1)); // byt-knappen eller ammo-hörnet
     if (p.btn) { p.btn.classList.remove('on'); if (p.btn.dataset.act === 'crouch') touch.crouch = false; if (p.btn.dataset.act === 'grenade') grenadeThrow();
-      if (p.swap && !p.swiped) wheelRelease(() => cycleWeapon(1));
       if (p.mapHold) { clearTimeout(p.mapHold); if (p.mapHeld !== undefined) { showMap = p.mapHeld; settings.map = showMap; saveSettings(); } } }
     if (p.fire) mouseDown = false;
     if (p.tap && e.type === 'pointerup' && performance.now() - p.t0 < TAP_TIME && state === 'play') { // snabbt tryck = skott, dubbeltryck = hopp (inställning)
@@ -7138,6 +7370,12 @@ function setupTouch() {
     ui.classList.toggle('playing', state === 'play');
     ui.querySelector('[data-act=aim]').classList.toggle('lit', aimDown);
     ui.classList.toggle('paused', state === 'pause');
+    if (ui.classList.contains('all') !== !!settings.allButtons) applyTouchLayout(); // ALLA KNAPPAR ändrad (inställningar, importerad profil)
+    if (show && !layoutOn) touchCtxTick(ui);
+    if (state === 'play' && touchMin() && !touch.rotShown && innerHeight > innerWidth * 1.1) { touch.rotShown = performance.now(); ui.querySelector('.rothint').classList.add('on'); } // stående: en diskret "vrid för helskärm" en gång
+    if (touch.rotShown && performance.now() - touch.rotShown > 4000) ui.querySelector('.rothint').classList.remove('on');
+    if (fsWantT && state !== 'title') { if (performance.now() - fsWantT < 4500) autoFullscreen(); fsWantT = 0; } // automatisk helskärm när rundan börjar
+    else if (fsWantT && performance.now() - fsWantT > 4500) fsWantT = 0;
   }, 150);
 }
 
@@ -7171,7 +7409,7 @@ function refreshTitle() {
   const ascBox = document.getElementById('asc'); ascBox.hidden = settings.diff !== 3; ascBox.textContent = '';
   if (settings.diff === 3) { const max = profile.ascMax || 0; for (let i = 0; i <= Math.min(5, max); i++) { const b = document.createElement('button'); b.type = 'button'; b.textContent = i ? `UPPSTIGNING ${i}` : 'GRUND'; b.title = ASC_TEXT[i]; b.setAttribute('aria-pressed', String((settings.asc || 0) === i)); b.onclick = () => { settings.asc = i; saveSettings(); refreshTitle(); document.getElementById('status').textContent = ASC_TEXT[i]; }; ascBox.appendChild(b); } if (!max) ascBox.appendChild(Object.assign(document.createElement('span'), { className: 'label', textContent: 'VINN PÅ MARDRÖM FÖR UPPSTIGNING 1' })); }
   const saved = store.get(runKey(), null), cont = document.getElementById('continue');
-  cont.hidden = !saved; if (saved) cont.textContent = `FORTSÄTT (VÅNING ${saved.run.depth})`;
+  cont.hidden = !saved; if (saved) { cont.textContent = 'FORTSÄTT'; cont.appendChild(Object.assign(document.createElement('span'), { className: 'label', textContent: 'VÅNING ' + saved.run.depth })); }
   const slotBox = document.getElementById('slots'); if (slotBox) { slotBox.textContent = ''; slotBox.hidden = (profile.runs || 0) < 1; // tre sparplatser
     for (let i = 0; i < 3; i++) { const sv = store.get('run' + (i ? '.' + i : ''), null), b = document.createElement('button'); b.type = 'button'; b.textContent = `PLATS ${i + 1}: ${sv ? 'VÅNING ' + sv.run.depth + (sv.run.cls && CLASSES[sv.run.cls] ? ' · ' + CLASSES[sv.run.cls].name : '') : 'TOM'}`;
       b.setAttribute('aria-pressed', String((settings.slot || 0) === i)); b.onclick = () => { settings.slot = i; saveSettings(); refreshTitle(); document.getElementById('status').textContent = `SPARPLATS ${i + 1} VALD`; }; slotBox.appendChild(b); } }
@@ -7180,7 +7418,7 @@ function refreshTitle() {
     if (sum) sum.textContent = [DIFF[settings.diff].name + (settings.diff === 3 && settings.asc ? ' ' + settings.asc : ''), c.name, settings.pet && PETS[settings.pet] ? PETS[settings.pet].name : '', settings.cmode ? cmodeNames(settings.cmode) : ''].filter(Boolean).join(' · '); }
   const tl = document.getElementById('ptitle'); if (tl) { const t = TITLES.find(x => x[0] === profile.title && titleOpen(x[0])); tl.textContent = t && t[0] ? '« ' + t[1] + ' »' : ''; tl.hidden = !(t && t[0]); }
   const locked = window.Cards ? Cards.ALL.filter(c => c.unlock && !profile.unlocked.includes(c.id)).length : 0;
-  document.getElementById('souls').textContent = `SJÄLAR ${profile.souls}`; { const ub = document.getElementById('unlocks'); if (ub) ub.textContent = locked ? `LÅS UPP KORT (${locked})` : 'LÅS UPP KORT'; }
+  { const so = document.getElementById('souls'); so.textContent = String(profile.souls); so.title = 'SJÄLAR'; } { const ub = document.getElementById('unlocks'); if (ub) ub.textContent = locked ? `LÅS UPP KORT (${locked})` : 'LÅS UPP KORT'; }
   const lr = (profile.history || [])[0];
   document.getElementById('best').textContent = profile.runs ? `RUNDOR ${profile.runs} · SEGRAR ${profile.wins} · BÄSTA VÅNING ${profile.bestDepth} · REKORD ${profile.bestScore}` + (lr ? ` · SENAST: VÅNING ${lr.depth}${lr.win ? ', SEGER' : lr.cause ? ', ' + lr.cause : ''}` : '') : '';
 }
@@ -7355,9 +7593,11 @@ function talentPick(onDone) { // nivå upp: välj en talang
 function talentTick() { if (run && run.talentQ > 0 && state === 'play' && !(boss && !boss.dead) && !CardUI.isOpen() && (run.talentWait = (run.talentWait || 0) + 1) > 30) { run.talentWait = 0; talentPick(); } }
 function drawXpHud(g) { // erfarenhetsstapeln längst ned i bilden
   if (!run || run.practice) return; xpFlash = Math.max(0, xpFlash - 1 / 60); lvlBanner = Math.max(0, lvlBanner - 1 / 60);
-  const k = clamp((run.xp || 0) / xpNeed(run.lvl || 1), 0, 1);
-  g.fillStyle = '#0008'; g.fillRect(0, VH - 2, W, 2); g.fillStyle = xpFlash > 0 ? '#e0c0ff' : '#9a60e0'; g.fillRect(0, VH - 2, Math.round(W * k), 2);
-  if (lvlBanner > 0) { const t = `NIVÅ ${run.lvl}!` + (run.talentQ ? ' – VÄLJ TALANG' : ''); txt(t, (W - textW(t)) / 2, HORIZON - 40, lvlBanner % 0.4 < 0.2 ? '#e0c0ff' : '#b080ff', 1, true); }
+  const k = clamp((run.xp || 0) / xpNeed(run.lvl || 1), 0, 1), xv = (run.lvl || 1) * 1e6 + (run.xp || 0);
+  if (xv !== drawXpHud.v) { if (drawXpHud.v !== undefined) drawXpHud.t = tmr; drawXpHud.v = xv; } // stapeln syns bara en stund när erfarenheten ändras
+  const show = clamp(2.5 - (tmr - (drawXpHud.t ?? -9)), 0, 1) || (lvlBanner > 0 ? 1 : 0), bw = 120, bx = (W - bw) / 2;
+  if (show > 0) { g.globalAlpha = show; g.fillStyle = '#0008'; g.fillRect(bx, VH - 2, bw, 2); g.fillStyle = xpFlash > 0 ? '#e0c0ff' : '#9a60e0'; g.fillRect(bx, VH - 2, Math.round(bw * k), 2); g.globalAlpha = 1; }
+  if (lvlBanner > 0) { const t = `NIVÅ ${run.lvl}!` + (run.talentQ ? ' – VÄLJ TALANG' : ''); txt(t, (W - textW(t)) / 2, HL ? HL.row2 : 16, lvlBanner % 0.4 < 0.2 ? '#e0c0ff' : '#b080ff', 1, true); }
 }
 function talentHooksHurt() { // talanger som reagerar när du tar skada
   if (!run) return;
@@ -7784,7 +8024,7 @@ let dpsLog = [];
 function drawDpsHud(g) { // skjutbanans mätare
   if (!run || !run.hub || !dpsLog.length) return; dpsLog = dpsLog.filter(x => tmr - x.t < 5); if (!dpsLog.length) return;
   const sum = dpsLog.reduce((a, x) => a + x.d, 0), span = Math.max(1, Math.min(5, tmr - dpsLog[0].t)), t = `SKADA PER SEKUND: ${Math.round(sum / span)} · ${WEAPONS[P.weapon].name}`;
-  txt(t, (W - textW(t)) / 2, 30, '#ffd24a', 1, true);
+  txt(t, (W - textW(t)) / 2, HL ? HL.row2 : 30, '#ffd24a', 1, true);
 }
 function hubHint(p, d) { if (d < 2.5 && p.kind === 'mode') { const m = HUB_MODES.find(x => x[0] === p.mode); hint = 'PORTAL → ' + (m ? m[1] : p.mode); return true; } return false; }
 // ---------- Version 9: sågbladskastaren, vindbössan och spjutet ----------
@@ -8765,11 +9005,11 @@ const LOOP_MAGNET = new Set(['health', 'ammo', 'armor', 'gold', 'goldpile', 'gea
 function drawLoopHud(g) {
   if (cmode('clock') && run && lvl && !lvl.hub) { const t = Math.max(0, run.clockT || 0), s = t.toFixed(1), w = textW(s) * 2; txt(s, Math.round((W - w) / 2), 4, t < 3 ? (tmr % 0.4 < 0.2 ? '#ff4030' : '#a02010') : run.clockFlash > 0 ? '#9fe060' : '#ffe9a8', 2); }
   if (settings.styleMeter === false || style.v < 0.5) return;
-  const r = styleRank(), R = STYLE_RANKS[r], x0 = W - 96, y0 = 72, nx = STYLE_RANKS[r + 1], k = nx ? (style.v - R[3]) / (nx[3] - R[3]) : 1, lines = style.feed.slice(0, 3);
-  g.fillStyle = 'rgba(0,0,0,0.45)'; g.fillRect(x0 - 3, y0 - 3, 95, 26 + lines.length * 9);
-  txt(R[0], x0, y0, R[2], 2); txt('STIL', x0 + textW(R[0]) * 2 + 4, y0 + 7, '#8a7558');
-  g.fillStyle = '#2a2018'; g.fillRect(x0, y0 + 18, 88, 2); g.fillStyle = R[2]; g.fillRect(x0, y0 + 18, Math.round(88 * clamp(k, 0, 1)), 2);
-  lines.forEach((f, i) => { const s = f.t.length > 11 ? f.t.slice(0, 11) : f.t; txt(s, x0, y0 + 23 + i * 9, '#e8d9b0', 1, true, Math.min(1, f.k * 2)); });
+  const r = styleRank(), R = STYLE_RANKS[r], x0 = W - 76, y0 = HL ? HL.styleY : 72, nx = STYLE_RANKS[r + 1], k = nx ? (style.v - R[3]) / (nx[3] - R[3]) : 1, lines = style.feed.slice(0, 3); // smal, i högerkanten (utanför bildens mitt)
+  g.fillStyle = 'rgba(0,0,0,0.45)'; g.fillRect(x0 - 3, y0 - 3, 75, 26 + lines.length * 9);
+  txt(R[0], x0, y0, R[2], 2);
+  g.fillStyle = '#2a2018'; g.fillRect(x0, y0 + 18, 72, 2); g.fillStyle = R[2]; g.fillRect(x0, y0 + 18, Math.round(72 * clamp(k, 0, 1)), 2);
+  lines.forEach((f, i) => { const s = f.t.length > 9 ? f.t.slice(0, 9) : f.t; txt(s, x0, y0 + 23 + i * 9, '#e8d9b0', 1, true, Math.min(1, f.k * 2)); });
 }
 // ---------- Version 13: runboken och ångkanonen ----------
 function runeFire(wp, base) {
@@ -9073,7 +9313,7 @@ function updateV14(dt) {
 }
 function drawV14Hud(g) {
   if (!arenaCur) return; const a = arenaCur, n = a.alive.filter(e => !e.dead).length, t = `ARENA · VÅG ${a.wave}/${a.waves}` + (n ? ` · ${n} KVAR` : '');
-  txt(t, (W - textW(t)) / 2, 36, '#ff9060', 1, true, 0.9);
+  txt(t, (W - textW(t)) / 2, HL ? HL.row2 : 36, '#ff9060', 1, true, 0.9); // under meddelanderaden
 }
 
 // ---------- Version 14: nya invånare i de mellersta och sena biomerna ----------
@@ -10173,7 +10413,7 @@ function v18Kill(e) {
   if (e.d.ai === 'templeguardian') { e.beam = null; spawnPuff(e.x, e.y, 10); for (let i = 0; i < 6; i++) particles.push({ x: e.x, y: e.y, z: 0.6, vx: rnd(-1.5, 1.5), vy: rnd(-1.5, 1.5), vz: rnd(0.5, 2), life: 1, img: fx.parts.rock ? fx.parts.rock[0] : fx.shards[i % 6], size: 0.1, grav: true, bounce: true }); }
 }
 function drawV18Hud(g) {
-  if (P.spotT > 0) { const gr = g.createRadialGradient(W / 2, HORIZON, VH * 0.35, W / 2, HORIZON, W * 0.65); gr.addColorStop(0, 'rgba(255,240,200,0)'); gr.addColorStop(1, 'rgba(255,230,170,0.16)'); g.fillStyle = gr; g.fillRect(0, 0, W, VH); txt('I RAMPLJUSET', (W - textW('I RAMPLJUSET')) / 2, 30, '#ffe6a0', 1, true, 0.7 + 0.3 * Math.sin(tmr * 6)); if (hudImg.icon_spotlight) g.drawImage(hudImg.icon_spotlight, 98, VH - 22, 8, 8); }
+  if (P.spotT > 0) { const gr = g.createRadialGradient(W / 2, HORIZON, VH * 0.35, W / 2, HORIZON, W * 0.65); gr.addColorStop(0, 'rgba(255,240,200,0)'); gr.addColorStop(1, 'rgba(255,230,170,0.16)'); g.fillStyle = gr; g.fillRect(0, 0, W, VH); txt('I RAMPLJUSET', (W - textW('I RAMPLJUSET')) / 2, HL ? HL.row2 + 11 : 30, '#ffe6a0', 1, true, 0.7 + 0.3 * Math.sin(tmr * 6)); if (hudImg.icon_spotlight) g.drawImage(hudImg.icon_spotlight, 98, VH - 22, 8, 8); }
   if (P.pirT > 0) { g.fillStyle = `rgba(160,30,30,${0.1 + 0.05 * Math.sin(tmr * 12)})`; g.fillRect(0, VH * 0.75, W, VH * 0.25); }
   if (P.poisonT > 0 && hudImg.icon_poison2) g.drawImage(hudImg.icon_poison2, 110, VH - 22, 8, 8);
   if (hudImg.icon_steal && ents.some(e => !e.dead && e.stole && Math.hypot(e.x - P.x, e.y - P.y) < 12)) g.drawImage(hudImg.icon_steal, 122, VH - 22, 8, 8);
@@ -10581,7 +10821,7 @@ function drawV19Hud(g) {
   if (P.gasT > 0) { g.fillStyle = `rgba(120,170,60,${0.12 + 0.04 * Math.sin(tmr * 3)})`; g.fillRect(0, 0, W, VH); if (hudImg.icon_gas) g.drawImage(hudImg.icon_gas, 134, VH - 22, 8, 8); }
   if (P.lowGT > 0 && hudImg.icon_lowgrav) g.drawImage(hudImg.icon_lowgrav, 146, VH - 22, 8, 8);
   if (P.v19slowT > 0) { const gr = g.createRadialGradient(W / 2, HORIZON, VH * 0.25, W / 2, HORIZON, W * 0.6); gr.addColorStop(0, 'rgba(80,60,160,0)'); gr.addColorStop(1, `rgba(80,60,160,${0.4 * Math.min(1, P.v19slowT)})`); g.fillStyle = gr; g.fillRect(0, 0, W, VH); }
-  if (P.scopeT > 0) { const t = 'TELESKOPET ' + Math.ceil(P.scopeT) + ' S'; txt(t, W - 6 - textW(t), VH - 32, '#c0b0ff', 1, true, 0.8); }
+  // teleskopet visas som "TE" med nedräkningsstapel i effektraden (drawFxRow)
   if (WEAPONS[P.weapon].starlance && WS.lcharge > 0) { const k = WS.lcharge / 1.2, w = 40, x = (W - w) / 2, y = HORIZON + 22; g.fillStyle = '#000a'; g.fillRect(x - 1, y - 1, w + 2, 4); g.fillStyle = WS.lcharge < 0.2 ? '#806080' : k >= 1 ? '#ffffff' : '#c0a0ff'; g.fillRect(x, y, w * k, 2); }
   if (c19ing()) { g.fillStyle = `rgba(255,220,160,${0.08 + 0.08 * Math.sin(tmr * 20)})`; g.fillRect(0, 0, W, VH); }
 }
@@ -10851,7 +11091,7 @@ function drawV20Hud(g) {
     g.fillStyle = `rgba(235,210,160,${0.35 * v20stormK})`; for (let i = 0; i < 26; i++) { const x = ((i * 53 + tmr * 260) % (W + 40)) - 20, y = (i * 37 + Math.sin(i + tmr) * 8) % VH; g.fillRect(x, y, 6 + (i % 3) * 3, 1); }
     if (hudImg.icon_storm) g.drawImage(hudImg.icon_storm, 170, VH - 22, 8, 8); }
   if (P.leech && hudImg.icon_leech) g.drawImage(hudImg.icon_leech, 182, VH - 22, 8, 8);
-  if (P.leech) { g.fillStyle = `rgba(150,20,30,${0.15 + 0.05 * Math.sin(tmr * 8)})`; g.fillRect(0, 0, W, VH); const t = 'IGELN SUGER – SKJUT DEN ELLER HOPPA ' + Math.max(0, 3 - (P.leech.jumps || 0)) + ' GÅNGER'; txt(t, (W - textW(t)) / 2, HORIZON + 30, '#ff8080', 1, true, 0.8); }
+  if (P.leech) { g.fillStyle = `rgba(150,20,30,${0.15 + 0.05 * Math.sin(tmr * 8)})`; g.fillRect(0, 0, W, VH); const t = 'IGEL! HOPPA ' + Math.max(0, 3 - (P.leech.jumps || 0)) + ' GGR'; txt(t, Math.round((W - textW(t)) / 2), VH - 50, '#ff8080', 1, true, 0.8); } // kort rad nere i mitten
   if (WEAPONS[P.weapon].scimitar && WS.lungeCd > 0) { const w = 30, x = (W - w) / 2, y = HORIZON + 22, k = 1 - WS.lungeCd / (up('sc_dash') ? 1.2 : 2); g.fillStyle = '#000a'; g.fillRect(x - 1, y - 1, w + 2, 4); g.fillStyle = '#e0c080'; g.fillRect(x, y, w * k, 2); }
 }
 function drawV20World(list) {
@@ -11005,6 +11245,7 @@ const v20api = () => ({ sluices: v20sl, sprays: v20sprays, oases: v20oases, mira
     light: () => light, lvl: () => lvl, boss: () => boss, gainCard, startLevel, props: () => props, guardian: () => guardianE, explode, alertEnemy, WEAPONS, mods: () => M, loadFloor, openShop, openChest, profile, showTitle, endRun, hurtEnemy,
     spawnEnemy: (type, x, y) => { const e = makeEnemy(type, x, y); ents.push(e); totalEnemies++; return e; }, portals: () => portals, particles: () => particles, hazards: () => hazards,
     pet: () => pet, allies: () => allies, beginMaze, beginBossHunt, beginEnemyPractice, beginAbyss, beginHub, openEditor, styleRef: () => style, arenasRef: () => arenas, arenaCurRef: () => arenaCur, execute, canExec, kickParry, edEncode, edDecode, playCustom, giveLegend, LEGENDS, beginCampaign, pclouds: () => pclouds, tports: () => tports, beginFinale, lightningAt, bubbles: () => timeBubbles, sawsRef: () => saws, voidAt, solid, hasLOS, freeSpot, mapRef: () => map, enterPortal, killAllCheat: () => { for (const e of ents) if (!e.dead && !e.boss) hurtEnemy(e, 99999, e.x, e.y, { noProc: true }); if (boss && !boss.dead) hurtEnemy(boss, 99999, boss.x, boss.y, { noProc: true }); }, talentPick, gainXp, TALENTS, talent, deepAt, tideHigh, pauseMenu, settings, refreshTitle, checkAch, showStats, levelTime: () => levelTime, showTitles, cmode, shareSeed, soundCue, cues: () => cues, deathMap: () => deathMap, findPage, showChronicle, toggleLamp, throwStone, openGambler, openBanker, openWanderer, visibility, addPropAt, openCampfire, openQuestBoard, giveRune, useAbility, quests: () => quests, drinkPotion, swapPotion, givePotion, givePet, spawnAlly, spawnPortal, dropItem, openAlchemist, openPriest, openPetCage, biomeFor, useProp, v19: () => ({ carts: v19carts, loose: v19loose, ports: v19ports, slits: v19slits, mets: v19mets, wells: v19wells, rays: v19rays, beams: v19beams, pend: v19pend, ore: v19ore, setup: setupV19, meteor: v19Meteor, grav: v19Grav, clock: v19clock }), v18: () => ({ trapdoors: v18doors, spotOn: P.spotT > 0, darts: v18darts, beams: v18beams, clock: v18clock }), hitProp, burnThorns, v17: () => ({ lobs, clouds: v17clouds, puddles: v17puddles, tiles: v17tiles, wave: v17wave }) };
+  window.__game.hudRects = () => { const L = hudLay(); return { hp: L.hp, ammo: L.ammo, map: L.map }; }; window.__game.settings = window.__game.settings || settings; window.__game.say = say; window.__game.msgs = () => msgs; // HUD-hörnen i spelkoordinater (320×200) – pekkontrollerna trycker på dem
   window.__game.v20 = v20api; window.__game.weaponFrame = () => { const r = weaponFrame(); return { idx: r.idx, dx: r.dx, dy: r.dy }; }; window.__game.fogK = () => fogK;
   if (params.has('autostart')) begin('new');
 })();
@@ -11030,9 +11271,8 @@ document.getElementById('mazebtn').addEventListener('click', () => { if (!docume
 document.getElementById('huntbtn').addEventListener('click', () => { if (!document.getElementById('start').disabled) beginBossHunt(); });
 document.getElementById('monthly').addEventListener('click', () => startMode('monthly'));
 document.getElementById('titlesbtn').addEventListener('click', () => showTitles());
-for (const [b, box] of [['moremodesbtn', 'moremodes'], ['collbtn', 'collections'], ['setupbtn', 'setup']]) document.getElementById(b).addEventListener('click', () => { // fällbara rader på startskärmen
-  const el = document.getElementById(box), open = el.hidden; el.hidden = !open; const btn = document.getElementById(b); btn.setAttribute('aria-expanded', String(open)); btn.textContent = btn.textContent.replace(/[+−]$/, open ? '−' : '+'); settings['open_' + box] = open; saveSettings(); });
-for (const box of ['moremodes', 'collections', 'setup']) if (settings['open_' + box]) { document.getElementById(box).hidden = false; const b = document.getElementById({ moremodes: 'moremodesbtn', collections: 'collbtn', setup: 'setupbtn' }[box]); b.setAttribute('aria-expanded', 'true'); b.textContent = b.textContent.replace(/\+$/, '−'); }
+for (const [b, box] of [['moremodesbtn', 'moremodes'], ['collbtn', 'collections'], ['setupbtn', 'setup']]) document.getElementById(b).addEventListener('click', () => titleMenu(box)); // undermenyer: LÄGEN, ANPASSA, SAMLINGAR
+document.querySelectorAll('#title [data-back]').forEach(b => b.addEventListener('click', () => titleMenu('')));
 document.getElementById('campaignbtn').addEventListener('click', () => { if (!document.getElementById('start').disabled) showCampaign(); });
 document.getElementById('hubbtn').addEventListener('click', () => { if (!document.getElementById('start').disabled) beginHub(); });
 document.getElementById('abyssbtn').addEventListener('click', () => { if (!document.getElementById('start').disabled) beginAbyss(); });
@@ -11046,6 +11286,29 @@ addEventListener('keydown', e => { // siffertangenterna väljer klass på starts
   if (!classOpen(id)) { document.getElementById('status').textContent = `${CLASSES[id].name} ÄR LÅST (${CLASSES[id].cost} SJÄLAR)`; return; }
   settings.cls = id; saveSettings(); refreshTitle(); document.getElementById('status').textContent = `${CLASSES[id].name}: ${CLASSES[id].text}`;
 });
-addEventListener('keydown', e => { if (state === 'title' && e.code === 'Enter' && !CardUI.isOpen() && document.activeElement?.tagName !== 'INPUT' && !document.getElementById('start').disabled) { e.preventDefault(); startMode('new'); } });
+addEventListener('keydown', e => { // startskärmen: pilarna flyttar markeringen, Enter väljer, Escape går tillbaka (handkontrollen skickar samma tangenter)
+  if (state !== 'title' || CardUI.isOpen() || document.getElementById('title').hidden) return;
+  const a = document.activeElement, inInput = !!a && a.tagName === 'INPUT', items = titleItems(), i = items.indexOf(a);
+  if (e.code === 'ArrowDown' || e.code === 'ArrowUp' || (!inInput && (e.code === 'ArrowLeft' || e.code === 'ArrowRight'))) {
+    e.preventDefault(); const n = items.length, d = e.code === 'ArrowDown' || e.code === 'ArrowRight' ? 1 : -1; if (!n) return;
+    try { items[i < 0 ? (d > 0 ? 0 : n - 1) : (i + d + n) % n].focus(); } catch (er) { /* ingen fokus */ } play('ui_hover', 0.3); return;
+  }
+  if (e.code === 'Escape' || (e.code === 'Backspace' && !inInput)) { if (titleSub) { e.preventDefault(); titleMenu(''); } return; }
+  if (e.code !== 'Enter' && e.code !== 'NumpadEnter') return;
+  if (inInput) { if (a.id === 'seed' && !document.getElementById('start').disabled) { e.preventDefault(); startMode('new'); } return; } // Enter i fröfältet startar med fröet
+  e.preventDefault(); if (i >= 0) { items[i].click(); const f = document.activeElement; if ((!f || !f.isConnected || f === document.body) && state === 'title') { const it = titleItems(); if (it[i]) try { it[i].focus({ preventScroll: true }); } catch (er) { /* ingen fokus */ } } return; } // ANPASSA bygger om knapparna: behåll markeringen
+  if (!titleSub && !document.getElementById('start').disabled) startMode('new');
+});
+let titleSub = ''; // öppen undermeny på startskärmen: '' (huvudlistan), 'moremodes', 'setup' eller 'collections'
+function titleMenu(sub) { // visa huvudlistan eller en undermeny i samma stil
+  const prev = titleSub; titleSub = sub || '';
+  document.getElementById('mainmenu').hidden = !!titleSub;
+  for (const box of ['moremodes', 'setup', 'collections']) document.getElementById(box).hidden = box !== titleSub;
+  for (const [b, box] of [['moremodesbtn', 'moremodes'], ['setupbtn', 'setup'], ['collbtn', 'collections']]) document.getElementById(b).setAttribute('aria-expanded', String(box === titleSub));
+  document.getElementById('title').classList.toggle('insub', !!titleSub); document.getElementById('title').scrollTop = 0;
+  const back = !titleSub && prev ? document.getElementById({ moremodes: 'moremodesbtn', setup: 'setupbtn', collections: 'collbtn' }[prev]) : null;
+  const it = titleItems(), t = back && it.includes(back) ? back : it[0]; if (t && !isTouch()) try { t.focus({ preventScroll: true }); } catch (e) { /* ingen fokus */ }
+}
+function titleItems() { const box = document.getElementById(titleSub || 'mainmenu'); return box ? [...box.querySelectorAll('button, input')].filter(b => !b.disabled && b.offsetParent !== null) : []; }
 document.getElementById('fullscreen').addEventListener('click', () => toggleFullscreen());
 })();

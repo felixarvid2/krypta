@@ -21,7 +21,7 @@ ok(await ev(() => !!localStorage.getItem('krypta.run.2')), 'rundan sparas på pl
 await ev(() => { __game.settings.slot = 0; });
 // pausmenyn
 await ev(() => { __game.pauseMenu(); }); await wait(300); await shot('pausemenu');
-ok(await ev(() => document.querySelectorAll('.cu-opt').length === 7), 'pausmenyn har sju val');
+ok(await ev(() => document.querySelectorAll('.cu-opt').length === 6), 'pausmenyn har sex val (MER samlar resten)');
 await pg.click('.cu-opt >> nth=0'); await wait(300);
 ok(await ev(() => __game.state()) === 'play', 'FORTSÄTT återupptar');
 // död: kamera och dödskarta
