@@ -56,10 +56,15 @@ ok(/[SABCD]/.test(await ev(() => __game.run().grades || '')), 'våningen får et
 await shot('grade');
 // klockan
 await pg.goto(`http://localhost:${PORT}/index.html?nolock=1`); await pg.waitForFunction('!document.getElementById("start").disabled', { timeout: 90000 });
-await ev(() => { __game.profile.tutDone = true; __game.settings.cmode = 'clock'; localStorage.removeItem('krypta.run'); __game.begin('new'); }); await wait(1200); await pg.keyboard.press('Escape'); await wait(3800);
+await ev(s => { __game.profile.tutDone = true; __game.settings.cmode = 'clock'; localStorage.removeItem('krypta.run'); if (s) document.getElementById('seed').value = s; __game.begin('new'); }, process.env.T76_SEED || ''); await wait(1200); await pg.keyboard.press('Escape');
+// fröoberoende: rensa banans fiender (utan klocktid) och ställ ut två orörliga, tåliga fiender som fällor inte kan döda
+await ev(() => { const g = __game, P = g.P; for (const e of g.ents()) e.dead = true;
+  window.__ce = [0, 1].map(i => { const e = g.spawnEnemy('W', P.x + 0.5 + i * 0.3, P.y + 0.5); e.d = { ...e.d, speed: 0, dmg: 0 }; e.hp = e.maxHp = 1e5; return e; });
+  g.run().clockT = 10; });
+await wait(3800);
 const c0 = await ev(() => __game.run().clockT); await wait(1000); const c1 = await ev(() => __game.run().clockT);
 ok(c1 < c0 && c0 <= 10, `klockan tickar (${c0.toFixed(1)} → ${c1.toFixed(1)})`);
-await ev(() => { const g = __game, e = g.ents().find(o => !o.dead && !o.boss); g.hurtEnemy(e, 9999, e.x, e.y, {}); });
+await ev(() => { const e = window.__ce[0]; __game.hurtEnemy(e, 1e9, e.x, e.y, {}); });
 ok(await ev(() => __game.run().clockT) > c1 + 2, 'en död ger mer tid');
 await shot('clock');
 await ev(() => { __game.run().clockT = 0.05; }); await wait(600);
