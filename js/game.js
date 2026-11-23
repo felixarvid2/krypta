@@ -4637,7 +4637,7 @@ function updateMaze(dt) {
   if (!run.maze || state !== 'play') return;
   const left = run.maze.limit - levelTime;
   if (left < 30 && Math.floor(left) !== Math.floor(left + dt)) play('labyrinth_tick', 0.5, left < 10 ? 1.3 : 1);
-  if (left <= 0) { run.cause = 'TIDEN TOG SLUT'; P.hp = 0; hurtPlayer(9999); }
+  if (left <= 0) { const lu = run.livesUsed; run.cause = 'TIDEN TOG SLUT'; P.hp = 0; hurtPlayer(9999); if (state === 'play' && run.livesUsed > lu) run.maze.limit = levelTime + 30; } // återupplivningen ger ny tid
 }
 function drawMazeTimer(g) { // labyrintens nedräkning
   if (!run.maze) return; const left = Math.max(0, run.maze.limit - levelTime), t = 'TID ' + fmtTime(Math.ceil(left));
@@ -8737,7 +8737,7 @@ function clockTick(dt) {
   if (levelBanner > 0.5 || bossBanner > 0.5 || portals.length || !ents.some(e => !e.dead && !e.dummy && !e.ally && !e.dormant)) return; // tiden står still när det inte finns något att döda
   run.clockT = (run.clockT ?? 10) - dt;
   if (run.clockT <= 3 && Math.floor(run.clockT * 2) !== Math.floor((run.clockT + dt) * 2)) play('click', 0.6, 1.6);
-  if (run.clockT <= 0) { run.cause = 'KLOCKAN'; P.iframe = 0; hurtPlayer(1e6); }
+  if (run.clockT <= 0) { const lu = run.livesUsed; run.cause = 'KLOCKAN'; P.iframe = 0; hurtPlayer(1e6); if (state === 'play' && run.livesUsed > lu) run.clockT = 5; } // återupplivningen ger halva klockan
 }
 // ---- våningsbetyg ----
 function floorGrade(extra) {
