@@ -1,17 +1,17 @@
 // Spelrobot: spelar rundor automatiskt (gudläge) och samlar fel, fastlåsningar och bildfrekvens.
 // node bot.mjs <minuter> [extra-query, t.ex. "&biome=crystal"] [läge: new|abyss|hunt]
 import { setup } from './head.mjs';
-const MIN = +(process.argv[2] || 3), Q = process.argv[3] || '', MODE = process.argv[4] || 'new';
+const MIN = +(process.argv[2] || 3), Q = process.argv[3] || '', MODE = process.argv[4] || 'new', SEGER = +(process.env.BOTNG_SEGER || 0) || 0; // BOTNG_SEGER: testsöm, vinn rundan efter så många sekunders speltid
 const PORT = 8900 + Math.floor(Math.random() * 90);
 const { pg, errs, ev, wait, shot, done } = await setup(PORT, 'out/bot');
 await pg.goto(`http://localhost:${PORT}/index.html?nolock=1${Q}`);
 await pg.waitForFunction('!document.getElementById("start").disabled', { timeout: 90000 });
-await ev(MODE => {
+await ev(([MODE, SEGER]) => {
   const g = __game; g.profile.tutDone = true; g.profile.runs = Math.max(3, g.profile.runs);
-  const B = window.__bot = { dmg: {}, deaths: {}, fl: {}, hpPrev: 0, curB: '', floors: 0, runs: 0, stuck: [], biomes: {}, bosses: {}, frames: 0, slow: 0, worst: 0, lastFloorT: performance.now(), floorKey: '', weaponsUsed: {}, talents: 0, cards: 0 };
+  const B = window.__bot = { dmg: {}, deaths: {}, wins: 0, playT: 0, wonSent: false, fl: {}, hpPrev: 0, curB: '', floors: 0, runs: 0, stuck: [], biomes: {}, bosses: {}, frames: 0, slow: 0, worst: 0, lastFloorT: performance.now(), floorKey: '', weaponsUsed: {}, talents: 0, cards: 0 };
   let last = performance.now();
   const raf = () => { const t = performance.now(), d = t - last; last = t; if (g.state() === 'play') { B.frames++; if (d > 50) B.slow++; B.worst = Math.max(B.worst, d); } requestAnimationFrame(raf); }; requestAnimationFrame(raf);
-  const startRun = () => { B.runs++; if (MODE === 'abyss') g.beginAbyss(); else if (MODE === 'hunt') g.beginBossHunt(); else g.begin('new'); };
+  const startRun = () => { B.runs++; B.playT = 0; B.wonSent = false; if (MODE === 'abyss') g.beginAbyss(); else if (MODE === 'hunt') g.beginBossHunt(); else g.begin('new'); };
   startRun();
   let fireOn = false, wT = 0, tpT = 0;
   const down = () => { if (!fireOn) { fireOn = true; g.canvasDown ? g.canvasDown() : document.querySelector('canvas').dispatchEvent(new MouseEvent('mousedown', { button: 0, bubbles: true })); } };
@@ -21,11 +21,13 @@ await ev(MODE => {
       const st = g.state();
       if (window.CardUI && CardUI.isOpen()) { up(); const el = document.querySelector('.cu-talent, .cu-tcard, .cu-card:not(.owned), .cu-opt, .cu-item:not(.sold), .cu-li[role=button], .cu-btn'); if (el) { if (el.closest('.cu-talents, [class*=talent]')) B.talents++; else B.cards++; el.click(); } else document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', bubbles: true })); return; }
       if (st === 'stats') { g.nextFloor(); return; }
-      if ((st === 'dead' || st === 'runover') && !B.deadSeen) { B.deadSeen = true; B.deaths[B.curB || '?'] = (B.deaths[B.curB || '?'] || 0) + 1; const c = (g.run() && g.run().cause) || '?'; B.causes = B.causes || {}; B.causes[c] = (B.causes[c] || 0) + 1; }
+      if (st === 'runover' && !B.deadSeen) { B.deadSeen = true; B.wins++; }
+      if (st === 'dead' && !B.deadSeen) { B.deadSeen = true; B.deaths[B.curB || '?'] = (B.deaths[B.curB || '?'] || 0) + 1; const c = (g.run() && g.run().cause) || '?'; B.causes = B.causes || {}; B.causes[c] = (B.causes[c] || 0) + 1; }
       if (st === 'dead' || st === 'runover') { up(); g.showTitle(); setTimeout(startRun, 300); return; }
       if (st === 'pause') { g.resume && g.resume(); return; }
       if (st !== 'play') return;
       { B.deadSeen = false; const P0 = g.P, bb = (g.lvl() && g.lvl().biome) || '?'; if (bb !== B.curB || P0.hp > B.hpPrev + 40) B.hpPrev = P0.hp; B.curB = bb; if (P0.hp < B.hpPrev) B.dmg[bb] = (B.dmg[bb] || 0) + (B.hpPrev - P0.hp); B.hpPrev = P0.hp; }
+      if (SEGER > 0) { B.playT += 0.1; if (B.playT >= SEGER && !B.wonSent) { B.wonSent = true; up(); g.endRun(true); return; } }
       const P = g.P, run = g.run(), lvl = g.lvl(), key = run.depth + ':' + (lvl && lvl.name);
       if (key !== B.floorKey) { B.floorKey = key; B.floors++; B.lastFloorT = performance.now(); B.biomes[lvl.biome || '?'] = (B.biomes[lvl.biome || '?'] || 0) + 1; B.fl[lvl.biome || '?'] = (B.fl[lvl.biome || '?'] || 0) + 1; if (g.boss()) B.bosses[g.boss().id] = (B.bosses[g.boss().id] || 0) + 1;
         for (let i = 0; i < g.WEAPONS.length; i++) P.has[i] = true; for (const k in P.ammo) P.ammo[k] = 999; P.battery = 100; }
@@ -47,11 +49,11 @@ await ev(MODE => {
       if (!foes.length && !portal && tpT <= 0) { tpT = 2; g.killAllCheat(); }
     } catch (e) { (window.__botErr = window.__botErr || []).push(String(e.stack || e).slice(0, 300)); }
   }, 100);
-}, MODE);
+}, [MODE, SEGER]);
 const t0 = Date.now();
 while (Date.now() - t0 < MIN * 60000) {
   await wait(15000);
-  const s = await ev(() => { const B = window.__bot; return { floors: B.floors, runs: B.runs, biomes: B.biomes, bosses: B.bosses, stuck: B.stuck, dmg: B.dmg, deaths: B.deaths, causes: B.causes, arenas: [Object.keys(B.arN || {}).length, Object.keys(B.arS || {}).length, Object.keys(B.arD || {}).length], slowPct: B.frames ? +(100 * B.slow / B.frames).toFixed(1) : 0, worst: Math.round(B.worst), state: __game.state(), depth: __game.run() && __game.run().depth, lvl: __game.run() && __game.run().lvl, botErr: (window.__botErr || []).slice(-3), stuckInfo: B.stuckInfo }; });
+  const s = await ev(() => { const B = window.__bot; return { floors: B.floors, runs: B.runs, biomes: B.biomes, bosses: B.bosses, stuck: B.stuck, dmg: B.dmg, deaths: B.deaths, wins: B.wins, causes: B.causes, arenas: [Object.keys(B.arN || {}).length, Object.keys(B.arS || {}).length, Object.keys(B.arD || {}).length], slowPct: B.frames ? +(100 * B.slow / B.frames).toFixed(1) : 0, worst: Math.round(B.worst), state: __game.state(), depth: __game.run() && __game.run().depth, lvl: __game.run() && __game.run().lvl, botErr: (window.__botErr || []).slice(-3), stuckInfo: B.stuckInfo }; });
   console.log(new Date().toISOString().slice(11, 19), JSON.stringify(s));
   if (errs.length) console.log('SIDFEL:', errs.slice(-5).join('\n'));
 }

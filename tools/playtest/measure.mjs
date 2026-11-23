@@ -22,15 +22,15 @@ for (let i = 0; i < BIOMES.length; i += PAR) {
   await Promise.all(BIOMES.slice(i, i + PAR).map(async b => { const r = await run('node', ['botng.mjs', String(MIN), `&biome=${b}`], { cwd: HERE, timeout: MIN * 60 + 120 });
     const last = r.out.split('\n').filter(l => /^\d\d:\d\d:\d\d \{/.test(l)).pop(); let s = {}; try { s = JSON.parse(last.slice(9)); } catch (e) { s = { parseError: true }; }
     const fl = s.floors || 0, dmg = Object.values(s.dmg || {}).reduce((a, x) => a + x, 0), dead = Object.values(s.deaths || {}).reduce((a, x) => a + x, 0);
-    rep.bots[b] = { floors: fl, deathsPerFloor: fl ? +(dead / fl).toFixed(2) : null, dmgPerFloor: fl ? Math.round(dmg / fl) : null, causes: s.causes || {}, stuck: s.stuck || [], pageErrors: (r.out.match(/SIDFEL/g) || []).length, botErr: (s.botErr || []).slice(0, 3), worstFrameMs: s.worst, slowPct: s.slowPct };
+    rep.bots[b] = { floors: fl, deathsPerFloor: fl ? +(dead / fl).toFixed(2) : null, wins: s.wins || 0, dmgPerFloor: fl ? Math.round(dmg / fl) : null, causes: s.causes || {}, stuck: s.stuck || [], pageErrors: (r.out.match(/SIDFEL/g) || []).length, botErr: (s.botErr || []).slice(0, 3), worstFrameMs: s.worst, slowPct: s.slowPct };
     process.stdout.write(`bot ${b}: ${JSON.stringify(rep.bots[b])}\n`); }));
 }
 rep.finished = new Date().toISOString();
 fs.writeFileSync(path.join(OUT, 'report.json'), JSON.stringify(rep, null, 1));
 const md = [`# Mätrapport ${rep.commit} (${rep.finished})`, '', `- gen-test: ${rep.genTest ? (rep.genTest.ok ? 'OK' : 'FEL') : 'hoppades över'}`, `- cards-test: ${rep.cardsTest.ok ? 'OK' : 'FEL'}`,
   rep.suite ? `- speltester: ${rep.suite.total - rep.suite.failed.length}/${rep.suite.total} gröna${rep.suite.failed.length ? ' – föll: ' + rep.suite.failed.join(', ') : ''}` : '- speltester: hoppades över', '',
-  '| biom | våningar | dödsfall/våning | skada/våning | fastnade | sidfel | sämsta bildruta ms | vanligaste dödsorsaker |', '|---|---|---|---|---|---|---|---|',
-  ...Object.entries(rep.bots).map(([b, s]) => `| ${b} | ${s.floors} | ${s.deathsPerFloor} | ${s.dmgPerFloor} | ${s.stuck.length} | ${s.pageErrors} | ${s.worstFrameMs} | ${Object.entries(s.causes).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, v]) => k + ' ×' + v).join(', ')} |`)];
+  '| biom | våningar | dödsfall/våning | segrar | skada/våning | fastnade | sidfel | sämsta bildruta ms | vanligaste dödsorsaker |', '|---|---|---|---|---|---|---|---|---|',
+  ...Object.entries(rep.bots).map(([b, s]) => `| ${b} | ${s.floors} | ${s.deathsPerFloor} | ${s.wins} | ${s.dmgPerFloor} | ${s.stuck.length} | ${s.pageErrors} | ${s.worstFrameMs} | ${Object.entries(s.causes).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, v]) => k + ' ×' + v).join(', ')} |`)];
 if (rep.suite && rep.suite.failLines.length) md.push('', '## Fel i speltesterna', '', ...rep.suite.failLines.map(l => '- ' + l));
 fs.writeFileSync(path.join(OUT, 'report.md'), md.join('\n') + '\n');
 console.log(md.join('\n'));
