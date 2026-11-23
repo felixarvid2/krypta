@@ -249,6 +249,42 @@
     #title .menu.sub .mi { padding: 6px 8px; }
   }
   @media (max-height: 520px) and (min-width: 700px) { #title .menu.sub { grid-template-columns: repeat(3, 1fr); width: min(56em, 96vw); } }
+  /* ---- MENY: levande startskärm – banan syns genom en ljus mitt och mörka kanter (game.js titleLive) ---- */
+  #title.livebg { background: radial-gradient(ellipse 62% 70% at 50% 50%, rgba(11,8,6,.22), rgba(11,8,6,.5) 62%, rgba(6,4,3,.95) 100%); }
+  #title.livebg.insub { background: radial-gradient(ellipse 70% 75% at 50% 50%, rgba(11,8,6,.68), rgba(8,5,4,.82) 65%, rgba(6,4,3,.96) 100%); }
+  #title.livebg > h1 { text-shadow: 4px 4px #000, 0 0 30px rgba(0,0,0,.9); }
+  /* menyvalen glider in i tur och ordning (kort: testerna klickar efter ~150 ms) */
+  #title .menu:not([hidden]) > * { animation: mi-in .22s ease-out backwards; }
+  #title .menu:not([hidden]) > :nth-child(2) { animation-delay: .03s; } #title .menu:not([hidden]) > :nth-child(3) { animation-delay: .06s; }
+  #title .menu:not([hidden]) > :nth-child(4) { animation-delay: .09s; } #title .menu:not([hidden]) > :nth-child(n+5) { animation-delay: .12s; }
+  @keyframes mi-in { from { opacity: 0; transform: translateX(-14px); } }
+  #title > h1 { animation: logo-in .5s cubic-bezier(.2,1.4,.4,1) backwards; }
+  @keyframes logo-in { from { opacity: 0; transform: scale(1.25); } }
+  /* övergång: kort toning när en runda börjar och mellan våningar (game.js menyFade) */
+  #menyfade { position: fixed; inset: 0; z-index: 45; pointer-events: none; background: #000; opacity: 0; }
+  #menyfade.go { animation: meny-fade .42s ease-out; }
+  @keyframes meny-fade { 0% { opacity: 1; } 100% { opacity: 0; } }
+  /* dödsskärmen: DU DOG slår in (stor → normal, skakning), resten följer i tur och ordning; siffrorna räknas upp i game.js (tickRunOver) */
+  #runover:not([hidden]) .es-big { animation: ro-slam .55s cubic-bezier(.2,.9,.3,1) both, ro-shake .32s .42s linear; }
+  #runover.win:not([hidden]) .es-big { animation: ro-rise .6s cubic-bezier(.2,1.5,.4,1) both; }
+  @keyframes ro-slam { 0% { opacity: 0; transform: scale(3.2); filter: blur(3px); } 55% { opacity: 1; transform: scale(.9); filter: none; } 75% { transform: scale(1.06); } 100% { transform: scale(1); } }
+  @keyframes ro-shake { 0%, 100% { translate: 0 0; } 20% { translate: -7px 3px; } 40% { translate: 6px -3px; } 60% { translate: -4px 2px; } 80% { translate: 3px -1px; } }
+  @keyframes ro-rise { 0% { opacity: 0; transform: translateY(40px) scale(.6); } 100% { opacity: 1; transform: none; } }
+  #runover:not([hidden]) .es-line, #runover:not([hidden]) .es-nums > div, #runover:not([hidden]) .es-souls, #runover:not([hidden]) .es-btns, #runover:not([hidden]) .es-tip { animation: es-up .3s ease-out both; }
+  #runover:not([hidden]) .es-line { animation-delay: .45s; } #runover:not([hidden]) .es-nums > div:nth-child(1) { animation-delay: .52s; } #runover:not([hidden]) .es-nums > div:nth-child(2) { animation-delay: .59s; }
+  #runover:not([hidden]) .es-nums > div:nth-child(3) { animation-delay: .66s; } #runover:not([hidden]) .es-souls { animation-delay: .72s; } #runover:not([hidden]) .es-btns { animation-delay: .3s; } #runover:not([hidden]) .es-tip { animation-delay: .8s; }
+  @keyframes es-up { from { opacity: 0; transform: translateY(10px); } }
+  .endscr .es-nums .n.tick { animation: n-tick .12s ease-out; } @keyframes n-tick { 50% { transform: scale(1.18); color: #fff; } }
+  /* nivåslutet: rubriken glider in, betyget stämplas (stor → normal, lutning), rutan skakar och en liten skur gnistor flyger ut */
+  #floorend:not([hidden]) .es-big { animation: es-up .35s ease-out both; }
+  #floorend .fe-grade { position: relative; }
+  #floorend .fe-grade .g.on { animation: fe-stamp .42s cubic-bezier(.2,.9,.3,1.2) both; transition: none; }
+  @keyframes fe-stamp { 0% { transform: scale(3.4) rotate(-16deg); opacity: 0; } 60% { transform: scale(.86) rotate(4deg); opacity: 1; } 80% { transform: scale(1.08) rotate(-2deg); } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+  #floorend .fe-body.stamp { animation: ro-shake .3s .24s linear; }
+  #floorend .fe-spark { position: absolute; left: 50%; top: 58%; width: 8px; height: 8px; margin: -4px; background: var(--c, #ffd24a); box-shadow: 0 0 6px var(--c, #ffd24a); pointer-events: none; animation: fe-spark .6s .26s cubic-bezier(.1,.7,.3,1) both; }
+  @keyframes fe-spark { 0% { transform: translate(0, 0) scale(1.4); opacity: 0; } 8% { opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)) scale(.3); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { #title .menu > *, #title > h1, #menyfade.go, .endscr *, .endscr .fe-body.stamp { animation: none !important; } #floorend .fe-spark { display: none; } }
+  body.meny-rm #title .menu > *, body.meny-rm #title > h1, body.meny-rm #menyfade.go, body.meny-rm .endscr * { animation: none !important; } body.meny-rm #floorend .fe-spark { display: none; }
   /* ---- dödsskärmen och nivåslutet: DOM-skärmar ovanför pekknapparna ---- */
   .endscr { position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(6px, 2vh, 14px); padding: 12px 16px; text-align: center; background: radial-gradient(rgba(20,4,2,.35), rgba(8,2,1,.85) 75%); animation: es-in .35s ease-out both; user-select: none; -webkit-user-select: none; }
   @keyframes es-in { from { opacity: 0; } to { opacity: 1; } }
@@ -394,6 +430,7 @@
   <div class="fe-extra" id="fe-extra"></div>
   <div class="es-btns"><button id="nextbtn" type="button">VIDARE</button></div>
 </div>
+<div id="menyfade"></div>
 <script src="js/rng.js"></script>
 <script src="js/gen.js"></script>
 <script src="js/cards.js"></script>

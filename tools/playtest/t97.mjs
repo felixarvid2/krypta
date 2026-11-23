@@ -18,7 +18,7 @@ await pg.addInitScript(HOOK);
 const begin = async (page) => {
   await page.goto(`http://localhost:${PORT}/index.html?nolock=1`); await page.waitForFunction('!document.getElementById("start").disabled', null, { timeout: 60000 });
   await page.evaluate(() => { localStorage.removeItem('krypta.run'); __game.profile.tutDone = true; const s = document.getElementById('seed'); if (s) s.value = 't97'; __game.begin('new'); });
-  await page.waitForTimeout(1500); await page.keyboard.press('Escape'); await page.waitForTimeout(4200); // titelkortet är borta
+  await page.waitForTimeout(1500); await page.keyboard.press('Escape'); await page.waitForTimeout(4200); await page.waitForFunction(() => __game.state() === 'play' && !(__game.banner && __game.banner() > 0), null, { timeout: 30000 }); await page.waitForTimeout(300); // titelkortet är borta (i speltid – under last går spelet långsammare)
 };
 const grab = async (ms, page = pg) => { await page.evaluate(() => { window.__txt = []; window.__txtOn = true; }); await page.waitForTimeout(ms); return page.evaluate(() => { window.__txtOn = false; return window.__txt.filter(t => t.a > 0.05 && t.s.trim()); }); };
 const inCentre = t => t.x < 240 && t.x + t.w > 80 && t.y < 150 && t.y + t.h > 50;
@@ -106,7 +106,7 @@ await p2.screenshot({ path: 'out/t97/touch.png' });
 await p2.evaluate(() => { const g = __game; g.profile.tipAmmo = false; g.P.has[1] = true; });
 T = await grab(1500, p2);
 ok(T.some(t => /TRYCK P. AMMO F.R ATT BYTA VAPEN/.test(t.s)), 'pekskärm: tipset om vapenbyte via ammo-hörnet visas');
-await p2.waitForTimeout(5500);
+await p2.waitForFunction(() => __game.profile.tipAmmo === true, null, { timeout: 25000 }).catch(() => {}); // speltid: under last tar det längre
 ok(await p2.evaluate(() => __game.profile.tipAmmo === true), 'tipset visas bara en gång per profil');
 ok(errs2.length === 0, 'inga sidfel på pekskärm ' + errs2.join(' / '));
 await ctx2.close();
