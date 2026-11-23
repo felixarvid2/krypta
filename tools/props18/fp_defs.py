@@ -81,23 +81,10 @@ for k in range(18):                                                             
     fl.append({"prim": "cone", "size": [0.38, 1.0], "seg": 5, "scale": 0.15, "rot": spike_rot(v),
                "pos": [round(v[0] * (BR_ + 0.05), 4), round(BY + v[1] * (BR_ + 0.05), 4), round(v[2] * (BR_ + 0.05), 4)], "color": STEELS, "name": "ball"})
 # the gloved fist round the haft (the back of the hand to the right, the knuckles ahead, the thumb over the left side)
-hd = [
-    {"prim": "box", "size": [0.13, 0.17, 0.07], "scale": 0.17, "pos": [0.0, -0.045, 0.05], "color": GLOVE, "name": "hand"},          # back of the hand
-    {"prim": "sphere", "size": [1], "seg": 10, "scale": 0.13, "pos": [-0.01, -0.06, 0.045], "color": GLOVE, "name": "hand"},
-    {"prim": "box", "size": [0.09, 0.16, 0.07], "scale": 0.16, "pos": [-0.05, -0.04, 0.0], "color": GLOVE, "name": "hand"},          # palm side
-    {"prim": "cyl", "size": [1, 1, 4], "rot": [0, 0, -70], "seg": 8, "scale": 0.11, "pos": [0.025, 0.055, -0.05], "color": GLOVE2, "name": "hand"},   # thumb
-    {"prim": "sphere", "size": [1], "seg": 8, "scale": 0.05, "pos": [0.065, 0.07, -0.04], "color": GLOVE3, "name": "hand"},
-    {"prim": "cyl", "size": [1, 1, 0.9], "seg": 12, "scale": 0.2, "pos": [0, -0.19, 0.01], "color": CUFF, "name": "hand"},          # cuff
-    {"prim": "cyl", "size": [1, 1.1, 1.6], "seg": 12, "scale": 0.36, "pos": [0, -0.42, 0.02], "color": SLEEVE, "name": "hand"},    # short sleeve
-]
-for j in range(4):                                                                       # four fingers wrapped round the front
-    y = 0.03 - j * 0.042
-    hd.append({"prim": "cyl", "size": [1, 1, 5.2], "rot": [90, 0, 0], "seg": 8, "scale": 0.13, "pos": [0.058, round(y, 4), 0.005], "color": GLOVE2, "name": "hand"})
-    hd.append({"prim": "sphere", "size": [1], "seg": 8, "scale": 0.026, "pos": [0.058, round(y, 4), -0.06], "color": GLOVE2, "name": "hand"})  # finger tip
-    hd.append({"prim": "sphere", "size": [1], "seg": 10, "scale": 0.058, "pos": [0.045, round(y, 4), 0.068], "color": GLOVE3, "name": "hand"})   # knuckle
-for j in range(4):
-    a = j / 4 * 2 * math.pi
-    hd.append({"prim": "sphere", "size": [1], "seg": 6, "scale": 0.025, "pos": [round(math.cos(a) * 0.1, 4), -0.19, round(math.sin(a) * 0.1, 4)], "color": "#c89a42", "name": "hand"})
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'weapon-frames'))
+from glove_def import glove   # fas 3: den nya, rundare läderhandsken (delas med version 22)
+hd = glove()
 
 
 def chain(ang, d0, d1=None):
@@ -184,6 +171,15 @@ bb += [
     {"prim": "torus", "size": [1, 0.1], "rot": [0, 90, 0], "seg": 20, "scale": 0.36, "pos": [0.765, 0.045, 0], "color": BRASS2, "name": "muzzle"},                    # rolled lip
     {"prim": "cyl", "size": [1, 1, 0.3], "rot": [0, 0, -90], "seg": 14, "scale": 0.08, "pos": [0.55, 0.045, 0], "color": "#0c0c10"},                                 # the dark bore
     {"prim": "cyl", "size": [0.3, 0.3, 8], "rot": [0, 0, -90], "seg": 6, "scale": 0.6, "pos": [0.95, 0.045, 0], "color": "#4a2a16", "name": "rod", "hidden": True},   # ramrod (reload)
+]
+# fas 3: more shine and contrast in the brass - a bright facet along the top of the barrel, a dark one underneath, and a
+# bright and a dark ring round the bell
+bb += [
+    {"prim": "box", "size": [0.6, 0.012, 0.05], "scale": 0.6, "pos": [0.2, 0.139, 0], "color": "#f4dc8c", "name": "barrel"},
+    {"prim": "box", "size": [0.6, 0.012, 0.03], "rot": [45, 0, 0], "scale": 0.6, "pos": [0.2, 0.113, -0.068], "color": "#d8b860", "name": "barrel"},
+    {"prim": "box", "size": [0.6, 0.012, 0.04], "rot": [-45, 0, 0], "scale": 0.6, "pos": [0.2, 0.113, 0.068], "color": "#6a5020", "name": "barrel"},
+    {"prim": "torus", "size": [1, 0.07], "rot": [0, 90, 0], "seg": 20, "scale": 0.25, "pos": [0.66, 0.045, 0], "color": "#f4dc8c", "name": "muzzle"},
+    {"prim": "torus", "size": [1, 0.06], "rot": [0, 90, 0], "seg": 20, "scale": 0.17, "pos": [0.58, 0.045, 0], "color": "#5e4618", "name": "muzzle"},
 ]
 ROD = lambda dx: {"rod": {"show": True, "move": [dx, 0, 0]}}
 blunderbuss = {"model": "none", "base": [1, 0.1, 0.1], "parts": bb, "nozzle": "muzzle", "nozzleFront": True, "cam": [0.42, 0.34, -0.3, 0.8, 0.9],

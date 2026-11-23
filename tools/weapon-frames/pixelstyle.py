@@ -12,6 +12,7 @@ SÅ KÖR DU DET
     python3 pixelstyle.py --all      # alla nya vapen: orig_v20/{fp,pick}_*.png -> assets/gfx/ (hoppar över de åtta gamla)
 
   --opts smoke   om krutrök/ånga är inritad i skjutrutorna (annars får röken kontur och smuts som en sten)
+  --opts leather gråbrunt läder (handsken i glove_def.py) får läderyta i stället för träådring
   --opts nowood  om orangebruna ytor är koppar, tegel eller läder (annars får de träådring)
   --strength     0.6 = lättare slitage, 0.8 = standard (valt i spelet mot gamla pistol/shotgun/smg), 1.3 = hårt
 
@@ -45,7 +46,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 # per vapen: 'nowood' = orangebruna ytor är koppar/tegel/läder och ska inte få ådring
 # 'smoke' = ljusgrå pixlar är inritad krutrök/ånga och lämnas i fred (bara palett)
-OPTS = {'steamcannon': ('nowood', 'smoke'), 'musket': ('smoke',), 'flamer': ('nowood',)}
+OPTS = {'steamcannon': ('nowood', 'smoke'), 'musket': ('smoke',), 'flamer': ('nowood',),
+        'flail': ('leather',), 'trident': ('leather',), 'brimstone': ('leather',), 'blunderbuss': ('smoke',)}
 
 OLD = {'pistol', 'shotgun', 'smg', 'rifle', 'dbshotgun', 'sniper', 'crossbow', 'flaregun',
        'pistol_legend', 'shotgun_legend', 'rifle_legend'}
@@ -259,6 +261,11 @@ def style_frame(rgb, alpha, tiles, off=(0, 0), ang0=None, wood0=None, strength=1
     wood = m & ~emis & ~metal & (hue >= 8) & (hue <= 46) & (sat > 0.28) & (val < 0.80) & ~((hue > 34) & (sat > 0.6) & (val > 0.6))
     if 'nowood' in opts:                        # orangebrunt är koppar/läder här, inte trä
         wood = wood & False
+    leather = np.zeros_like(m)
+    if 'leather' in opts:                       # gråbrunt, lågmättat läder (handsken i glove_def.py): ingen ådring, rost eller repor
+        leather = m & ~emis & (hue >= 17) & (hue <= 37) & (sat >= 0.34) & (sat <= 0.61)
+        wood = wood & ~leather
+        metal = metal & ~leather
     paint = m & ~emis & ~metal & ~wood
     dirty = m & ~emis
 
@@ -327,10 +334,11 @@ def style_frame(rgb, alpha, tiles, off=(0, 0), ang0=None, wood0=None, strength=1
     k = np.where(wood, k * (1 + S * wk), k)
 
     # metall: repor, hack och rost
-    sm = np.where(metal, 1.0, np.where(paint, 0.40, 0.0))
+    sm = np.where(metal, 1.0, np.where(paint & ~leather, 0.40, 0.0))
     k *= 1 + S * 0.42 * scr * sm * (0.5 + 0.5 * (mid > -0.4))
     rust = np.clip((rustn - 1.35) * 1.6 + 0.35 * np.clip(blotch - 0.5, 0, 2) * (rustn > 0.9) + 0.5 * (grain > 0.2) * (rustn > 1.0), 0, 1) * np.where(metal, 1.0, np.where(paint, 0.38, 0.0))
     rust = rust * (0.55 + 0.45 * np.clip((4.5 - dist) / 3, 0, 1)) * min(S, 1.2)
+    rust = np.where(leather, 0, rust)
 
     # fogar och kontur
     # handgjorda detaljer (nitar, band, skåror) ritade i vilorutans koordinater, se DETAILS
@@ -345,7 +353,8 @@ def style_frame(rgb, alpha, tiles, off=(0, 0), ang0=None, wood0=None, strength=1
         ok &= np.abs(c - ref0[sy, sx]).sum(-1) < 0.26          # bara där rutan ser ut som vilorutan (samma del)
         k = np.where(ok, k * kd[sy, sx], k)
         dcol = np.where(ok[..., None], cd[sy, sx], 0)
-    k = np.where(seam_m, k * (1 - 0.34 * S), k)
+    k = np.where(seam_m, k * (1 - np.where(leather, 0.55, 0.34) * S), k)
+    k = np.where(leather, k * (1 + 0.05 * S * np.clip(mid, -2, 2)), k)       # läder: mjuk fläckighet
     k = np.where(lit_seam & ~seam_m, k * (1 + 0.16 * S), k)
     rim = dirty & thick & (dist == 2) & (ndl > 0.30)
     k = np.where(rim, k * (1 + 0.30 * S) + 0.05 * S, k)
@@ -365,7 +374,7 @@ def style_frame(rgb, alpha, tiles, off=(0, 0), ang0=None, wood0=None, strength=1
         col = col * (1 - 0.35 * rust)[..., None]
     else:
         col = col + (rc - col) * (rust * 0.75)[..., None]
-    chip = paint & (scr > 0.55) & (mid > 0.2)
+    chip = paint & ~leather & (scr > 0.55) & (mid > 0.2)
     col = np.where(chip[..., None], col * 0.45 + np.array([0.46, 0.44, 0.40], np.float32) * (0.35 + 0.5 * lum[..., None]), col)
     # skuggor dras svagt mot kallt, ljus mot varmt
     l2 = np.clip(col @ np.array([0.30, 0.59, 0.11], np.float32), 0, 1)[..., None]

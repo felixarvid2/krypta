@@ -328,3 +328,11 @@ cp /tmp/w21/assets/gfx/fp_flail.png /tmp/w21/assets/gfx/fp_blunderbuss.png ../pr
 python3 pixelstyle.py ../props18/fp_orig/fp_flail.png ../../assets/gfx/fp_flail.png
 python3 pixelstyle.py ../props18/fp_orig/fp_blunderbuss.png ../../assets/gfx/fp_blunderbuss.png --opts smoke
 ```
+
+Version 22, fas 3 (VAPENSTIL): handsken och treudden. Läderhandsken ligger nu i `glove_def.py` och delas av
+`tools/props18/fp_defs.py` (morgonstjärnan) och `tools/props19/fp_defs.py` (treudden, mortelns sidogrepp): tjocka fingrar
+med mörka springor, ljusa knogar, tumme, handrygg och handflata som tillplattade klot, söm vid handleden och nitad manschett,
+i ett grått, lågmättat läder som `pixelstyle.py` känner igen (`leather` i `OPTS`: ingen träådring, rost eller repor).
+Treudden har fått ett grövre skaft, en bred tvärslå av järn och tre långa, ljusa järnuddar med hullingar, och hålls mer
+upprätt i vila. Trombonen har ljusa och mörka fasetter längs pipan och ringar runt klockan. De fyra packas om som förut
+(mot en kopia av `js/weapons.js`, posterna förs över för hand) och stilas med `pixelstyle.py` ur `fp_orig/`.

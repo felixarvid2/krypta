@@ -93,6 +93,24 @@ TRAPFLY={'trapthrower':[None,None,0.3,0.75]}                    # version 20: bj
 TARGET['blunderbuss']=(124,222,18); HARD.update(('flail','blunderbuss'))
 BLUNDERSMOKE={'blunderbuss':[(0,10),(1,18),(2,26),(3,33),(4,38)]}   # trombonens krutrök (steg, radie i px): grå, oregelbunden, glesnar (rastrerad), ingen kontur
 SWEEP['flail']=[None,None,(0,0.8),(1,1.0),(2,0.6),None]
+# version 22: treudden (trident, närstrid som spjutet: throw/empty) och svavelmortern (brimstone: brinnande klot i båge + krutrök)
+TARGET['brimstone']=(148,214,24); HARD.update(('trident','brimstone'))
+BLUNDERSMOKE['brimstone']=[(0,9),(1,16),(2,22),(3,28),(4,32)]
+BRIMFLY={'brimstone':[(0,0.12),(1,0.38),(2,0.66),(3,0.92),None]}   # svavelklotet (steg, andel av sträckan mot siktet i en båge)
+
+
+def brimfly_draw(d,mx,my,st,X0,Y0,i):
+    """Version 22: svavelmortern: ett brinnande gult svavelklot som lobbas i en båge mot siktet, med en eldsvans bakåt; krymper med avståndet."""
+    k,f=st; ax,ay=AIM[0]-X0,AIM[1]-Y0
+    def at(t): return (mx+(ax-mx)*t, my+(ay-my)*t-np.sin(t*np.pi)*34)
+    px,py=at(f); s=max(0.45,1.25-f*0.85)
+    for j in range(6,0,-1):                     # eldsvansen
+        tx,ty=at(max(0,f-j*0.035)); r=max(1,(5-j*0.6)*s)
+        d.ellipse((tx-r,ty-r,tx+r,ty+r),fill=((255,120,20,255) if j>3 else (255,190,50,255)))
+    r=7*s
+    d.ellipse((px-r-1,py-r-1,px+r+1,py+r+1),fill=(120,40,10,255))
+    d.ellipse((px-r,py-r,px+r,py+r),fill=(232,180,32,255))
+    d.ellipse((px-r*0.6,py-r*0.7,px+r*0.2,py),fill=(255,240,140,255))
 
 
 def blundersmoke_draw(d,mx,my,st,X0,Y0,i):
@@ -666,6 +684,8 @@ for w,st in d.items():
         atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(TRAPFLY[w]),lambda m,f:(min(m[0],AIM[0])-16,min(m[1],AIM[1])-30,max(m[0],AIM[0])+16,m[1]+8),trap_draw)
     if w in BLUNDERSMOKE:   # version 21
         atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(BLUNDERSMOKE[w]),lambda m,st:(m[0]-st[1]*1.4-14,m[1]-st[1]*1.4-16,m[0]+st[1]*1.2+8,m[1]+st[1]+6),blundersmoke_draw)
+    if w in BRIMFLY:   # version 22
+        atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(BRIMFLY[w]),lambda m,st:(min(m[0],AIM[0])-14,max(0,min(m[1],AIM[1])-50),max(m[0],AIM[0])+14,m[1]+10),brimfly_draw)
     atlas.save(OUT+f'assets/gfx/fp_{w}.png',optimize=True)
     if w in MUZZLE_IDLE: mz=[mz[0] if i in states['fire'] else m for i,m in enumerate(mz)]   # bågen: utan pil räknas mynningen från vilobilden
     out[w]={'x':x,'y':y,'w':fw,'h':fh,'states':states,'muzzle':mz,'dur':{'fire':round(st['fire_dur'],3),**{k:round(v,3) for k,v in st.get('durs',{}).items()}}}
