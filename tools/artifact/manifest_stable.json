@@ -2763,7 +2763,9 @@
 "p-misc-2": {
 "group": "misc",
 "files": [
-"assets/font/KryptaRing.ttf"
+"assets/font/KryptaRing.ttf",
+"assets/gfx/gfx_en_bolt.png",
+"assets/gfx/gfx_en_bone.png"
 ]
 }
 }
