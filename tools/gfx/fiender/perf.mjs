@@ -10,7 +10,7 @@ const cdp = await pg.context().newCDPSession(pg); await cdp.send('Emulation.setC
 const res = { on: [], off: [] };
 for (let rep = 0; rep < 4; rep++) for (const mode of ['on', 'off']) {
   await ev(on => { __game.gfxE.set(on); for (const e of __game.ents()) { e.dead = true; e.gibbed = true; } __game.particles().length = 0; const P = __game.P;
-    for (let k = 0; k < 12; k++) { const d = 2.5 + (k % 4) * 0.8, s = (k % 3 - 1) * 1.2; const e = __game.spawnEnemy('WSLX'[k % 4], P.x + Math.cos(P.a) * d - Math.sin(P.a) * s, P.y + Math.sin(P.a) * d + Math.cos(P.a) * s); e.alert = false; e.sleep = true; } }, mode === 'on');
+    for (let k = 0; k < 12; k++) { const d = 2.5 + (k % 4) * 0.8, s = (k % 3 - 1) * 1.2; const e = __game.spawnEnemy('WSLX'[k % 4], P.x + Math.cos(P.a) * d - Math.sin(P.a) * s, P.y + Math.sin(P.a) * d + Math.cos(P.a) * s); e.alert = false; e.sleep = true; if (k % 2) { e.hp = e.maxHp = 999; e.burn = 30; e.poison = 30; } } }, mode === 'on'); // hälften brinner och är förgiftade (omgång 2)
   await wait(600);
   await ev(() => { window.__ft = []; window.__ftOn = true; window.__hitI = setInterval(() => { for (const e of __game.ents()) if (!e.dead && Math.random() < 0.3) __game.hurtEnemy(e, 0.2, e.x, e.y); }, 250); });
   await wait(1500); await ev(() => { let n = 0; for (const e of __game.ents()) if (!e.dead && n++ < 6) __game.hurtEnemy(e, n % 2 ? e.maxHp * 3 : e.hp + 1.5, e.x, e.y); }); await wait(1500);

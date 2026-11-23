@@ -17,9 +17,9 @@ const OFF = !!process.env.OFF; // OFF=1: FIENDERs effekter avstängda (före-bil
 await ev(off => { if (__game.gfxE) __game.gfxE.set(!off); }, OFF);
 const clear = () => ev(() => { for (const e of __game.ents()) if (!e.boss) { e.dead = true; e.gibbed = true; } __game.particles().length = 0; });
 const put = (type, d = 2.1, side = 0) => ev(([type, d, side]) => { const P = __game.P; const e = __game.spawnEnemy(type, P.x + Math.cos(P.a) * d - Math.sin(P.a) * side, P.y + Math.sin(P.a) * d + Math.cos(P.a) * side); e.alert = false; e.sleep = true; return __game.ents().indexOf(e); }, [type, d, side]);
-const grab = () => ev(() => { const c = document.getElementById('screen'); const k = document.createElement('canvas'); const sx = c.width / 320, w = 128 * sx, h = 96 * sx; k.width = 384; k.height = 288; const g = k.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(c, 96 * sx, 46 * sx, w, h, 0, 0, 384, 288); (window.__seq = window.__seq || []).push(k); });
+const grab = (full = false) => ev(full => { const c = document.getElementById('screen'); const k = document.createElement('canvas'); const sx = c.width / 320, w = (full ? 320 : 128) * sx, h = (full ? 200 : 96) * sx; k.width = full ? 480 : 384; k.height = full ? 300 : 288; const g = k.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(c, full ? 0 : 96 * sx, full ? 0 : 46 * sx, w, h, 0, 0, k.width, k.height); (window.__seq = window.__seq || []).push(k); }, full);
 const save = async (name) => { const url = await ev(() => { const fr = window.__seq || [], cols = Math.min(4, fr.length), rows = Math.ceil(fr.length / cols), w = fr[0].width, h = fr[0].height; const m = document.createElement('canvas'); m.width = cols * w; m.height = rows * h; const g = m.getContext('2d'); g.imageSmoothingEnabled = false; fr.forEach((f, i) => g.drawImage(f, (i % cols) * w, Math.floor(i / cols) * h)); window.__seq = []; return m.toDataURL('image/png'); }); fs.writeFileSync(path.join(OUT, name + '.png'), Buffer.from(url.split(',')[1], 'base64')); };
-const series = async (name, n, ms, act) => { await ev(() => { window.__seq = []; }); if (act) await act(); for (let i = 0; i < n; i++) { await grab(); await wait(ms); } await save(name); };
+const series = async (name, n, ms, act, full = false) => { await ev(() => { window.__seq = []; }); if (act) await act(); for (let i = 0; i < n; i++) { await grab(full); await wait(ms); } await save(name); };
 // närstridare träffas
 await clear(); let i = await put('W'); await wait(300);
 await series('traff', 12, 45, () => ev(i => { const e = __game.ents()[i]; e.hp = 999; e.maxHp = 999; __game.hurtEnemy(e, 3, e.x, e.y); }, i));
@@ -46,6 +46,11 @@ await series('flygare_dod', 8, 60, () => ev(i => { const e = __game.ents()[i]; e
 // skytt som laddar (telegraf)
 await clear(); i = await put('Ä', 3.2); await wait(200);
 await series('skytt', 12, 70, () => ev(i => { const e = __game.ents()[i]; e.sleep = false; e.alert = true; e.state = 'attack'; e.t = 0; e.didHit = false; }, i));
+// statuseffekter: fyra orker sida vid sida (omgång 2)
+for (const [name, sts] of [['status', ['burn', 'frozen', 'poison', 'stun']], ['status2', ['bleed', 'slow', 'fleeT', 'champion']]]) {
+  await clear(); const ids = []; for (let k = 0; k < 4; k++) ids.push(await put('W', 2.6, (k - 1.5) * 0.75)); await wait(500);
+  await series(name, 8, 120, () => ev(([ids, sts]) => { ids.forEach((i, k) => { const e = __game.ents()[i]; e.hp = e.maxHp = 999; if (sts[k] === 'champion') e.champion = true; else e[sts[k]] = 30; }); }, [ids, sts]), true);
+}
 if (process.env.PERF) {
   await clear(); for (let k = 0; k < 12; k++) await put('WSLX'[k % 4], 2.5 + (k % 4) * 0.8, (k % 3 - 1) * 1.2);
   const cdp = await pg.context().newCDPSession(pg); await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
@@ -57,7 +62,7 @@ if (process.env.PERF) {
 }
 // boss: träff och fasbyte
 await ev(() => { __game.showTitle(); __game.beginBossHunt(); }); await wait(600);
-await pg.click('.cu-opt >> nth=0'); await wait(2500); await stage(); await ev(off => { if (__game.gfxE) __game.gfxE.set(!off); }, OFF);
+await pg.click('.cu-opt >> nth=0'); await series('boss_intro', 12, 180, null, true); await wait(800); await stage(); await ev(off => { if (__game.gfxE) __game.gfxE.set(!off); }, OFF);
 await ev(() => { const P = __game.P; P.iframe = 99999; P.hp = 999; const b = __game.boss(); if (b) { b.x = P.x + Math.cos(P.a) * 4.5; b.y = P.y + Math.sin(P.a) * 4.5; b.stun = 99; } });
 await wait(300);
 await series('boss_fas', 12, 80, () => ev(() => { const b = __game.boss(); if (b) __game.hurtEnemy(b, b.hp - b.maxHp * 0.6, b.x, b.y); }));

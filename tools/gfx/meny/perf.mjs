@@ -13,5 +13,7 @@ const title = await measure(4000), meny = await ev(() => window.__game.meny ? __
 await ev(() => { document.getElementById('seed').value = 'perf'; __game.begin('new'); }); await wait(1500); await pg.keyboard.press('Escape'); await wait(1000);
 await ev(() => { if (window.CardUI && CardUI.isOpen()) CardUI.close(); __game.resume && __game.resume(); }); await wait(4000);
 const play = await measure(5000);
-console.log(JSON.stringify({ title, play, titleLive: meny && { on: meny.on, cost: +meny.cost.toFixed(2), genMs: Math.round(meny.genMs), why: meny.why } }));
+await ev(() => Object.defineProperty(__game.P, 'swim', { get: () => true, set: () => {}, configurable: true })); await wait(800); // under ytan (vågorna)
+const swim = await measure(3000); swim.waveMs = await ev(() => +(__game.meny && __game.meny.body ? __game.meny.body().waveMs || 0 : 0).toFixed(2)); await ev(() => { delete __game.P.swim; __game.P.swim = false; });
+console.log(JSON.stringify({ title, play, swim, titleLive: meny && { on: meny.on, cost: +meny.cost.toFixed(2), genMs: Math.round(meny.genMs), why: meny.why } }));
 await done();

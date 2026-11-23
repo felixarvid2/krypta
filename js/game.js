@@ -1239,7 +1239,7 @@ function startLevel(level) {
   if (run.floorCurse) for (const e of ents) if (!e.boss) { e.hp = e.maxHp = e.maxHp * 1.2; e.d = { ...e.d, dmg: e.d.dmg * 1.3 }; }
   if (!boss && !merchants.length && run.depth >= 2 && lrng.next() < 0.15) { const sp = randomFreeCell(lrng); if (sp) { merchants.push({ x: sp[0], y: sp[1], stock: null, wander: true }); map[sp[1] | 0][sp[0] | 0] = 'M'; logEvent('VANDRANDE KÖPMAN'); } } // vandrande köpman
   if (floorEvent === 'mist') fogMul = 1.8; else fogMul = 1;
-  P.vx = P.vy = 0; P.flash = 0; P.hurt = 0; P.roll = 0; P.camZ = 0.5; P.deadT = 0; P.shake = 0; P.haste = 0;
+  P.vx = P.vy = 0; P.flash = 0; P.hurt = 0; P.roll = 0; P.camZ = 0.5; P.deadT = 0; P.shake = 0; P.haste = 0; if (P.deathPitch) { P.pitch = 0; P.deathPitch = false; } // dödskamerans nedåtblick nollställs
   P.hp = Math.min(P.hp, maxHp()); P.shield = mod('shield');
   WS.state = 'draw'; WS.t = 0; WS.aim = 0; WS.shot = 99;
   hurtDir = []; msgs.length = 0;
@@ -1494,8 +1494,9 @@ function updateLight() {
     const wind = lvl.sky ? 1.8 : 1; // facklorna fladdrar i vinden utomhus
     const fl = 0.85 + 0.1 * wind * Math.sin(tmr * 9 + t.ph) + 0.06 * wind * Math.sin(tmr * 23 + t.ph * 3) + gfxWFlick(t);
     const k = t.prop && t.prop.used ? 0.15 : 1; // använd brunn och släckt altare lyser knappt
-    for (const [i, w] of t.cells) light[i] += w * fl * k * darkK;
-    if (lcol) { const c = t.col || (t.col = torchCol(t)), ck = t.prop || t.hidden ? 0.8 : 0.35; for (const [i, w] of t.cells) addCol(i, w * fl * k * darkK, c, ck); }
+    const rd = gfxWRad(t), iv = rd ? 1 / (t.str || 1.3) : 0; // VÄRLD: radien andas – de yttre rutorna lyser mer eller mindre
+    for (const [i, w] of t.cells) light[i] += w * (fl + rd * (1 - w * iv)) * k * darkK;
+    if (lcol) { const c = t.col || (t.col = torchCol(t)), ck = t.prop || t.hidden ? 0.8 : 0.35; for (const [i, w] of t.cells) addCol(i, w * (fl + rd * (1 - w * iv)) * k * darkK, c, ck); }
   }
   const flashLight = (lx, ly, strength, r, col) => {
     for (let y = Math.max(0, (ly | 0) - r); y < Math.min(mh, (ly | 0) + r + 1); y++) for (let x = Math.max(0, (lx | 0) - r); x < Math.min(mw, (lx | 0) + r + 1); x++) {
@@ -1507,6 +1508,7 @@ function updateLight() {
   if (P.flash > 0) flashLight(P.x, P.y, P.flash * 9, 4, MUZZLE_COL[WEAPONS[P.weapon].id] || [255, 200, 120]); // mynningsflamman i vapnets färg
   for (const pr of projectiles) flashLight(pr.x, pr.y, 0.5, 3, pr.friendly && pr.kind !== 'flare' ? null : PROJ_TINT[pr.kind] || [255, 130, 50]);
   for (const f of flashes) flashLight(f.x, f.y, f.t * 5, f.r | 0, f.col || [255, 150, 60]);
+  wpLights(flashLight); // Grafik: explosionsljus som falnar
   for (const c of chests) if (!c.open) flashLight(c.x, c.y, 0.18, 2);
   if (lvl.exit) flashLight(lvl.exit.x + 0.5, lvl.exit.y + 0.5, 0.35 + 0.1 * Math.sin(tmr * 3), 3); // utgången lyser
   for (const e of ents) if (e.burn > 0 && !e.dead && !e.dormant) flashLight(e.x, e.y, 0.3, 2, [255, 140, 50]); // brinnande fiender lyser
@@ -1760,6 +1762,7 @@ function render() {
   if (pet) list.push({ x: pet.x, y: pet.y, k: 'pet', o: pet });
   { const gp = ghostPos(); if (gp) list.push({ x: gp.x, y: gp.y, k: 'gh', o: gp }); }
   for (const b of boulders) list.push({ x: b.x, y: b.y, k: 'bo', o: b });
+  if (lvl.exit && gfxWOn()) list.push({ x: lvl.exit.x + 0.5, y: lvl.exit.y + 0.5, k: 'gw', o: lvl.exit }); // VÄRLD: utgångens ljuspelare och ring
   if (lvl.beams && !settings.lowfx) for (const b of lvl.beams) list.push({ x: b.x + 0.5, y: b.y + 0.5, k: 'be', o: b });
   for (const a of allies) list.push({ x: a.x, y: a.y, k: 'al', o: a });
   for (const p of particles) list.push({ x: p.x, y: p.y, k: 'x', o: p });
@@ -1776,7 +1779,7 @@ function render() {
   for (const s of list) s.d = (s.x - P.x) ** 2 + (s.y - P.y) ** 2;
   list.sort((p, q) => q.d - p.d);
   for (const s of list) try { // en trasig sprite får inte stoppa bilden
-    const o = s.o; spriteSX = spriteSY = 1; spriteClip = 0;
+    const o = s.o; spriteSX = spriteSY = 1; spriteClip = 0; spriteOutline = 0;
     if (s.k === 'x' && s.d < 0.2 && o.size < 0.3) continue; // småpartiklar alldeles framför kameran blir jättestora
     if (s.k === 'e') {
       if (o.boss) {
@@ -1786,22 +1789,23 @@ function render() {
         gfxEBoss(o); // FIENDER: skugga, skakning, fasbyte, dödsskakningar (sätter spriteSX/SY/Clip och gfxEOff)
         drawSprite(bossFrame(o), o.x + gfxEOff.x, o.y + gfxEOff.y, o.d.size * (o.formK || 1), o.dying ? -o.dying * 0.3 : 0, flip, null, Math.max(gfxEOff.f, o.flash > 0 ? o.flash : 0), 0.75, false,
           o.dying ? [255, 120, 60] : o.stun > 0 ? [160, 200, 255] : o.id === 'ghost' ? [190, 220, 255] : o.id === 'monk' ? [190, 140, 255] : null, o.id === 'ghost' ? 0.2 : o.ghostB || 0);
-        spriteSX = spriteSY = 1; spriteClip = 0; continue;
+        spriteSX = spriteSY = 1; spriteClip = 0; spriteOutline = 0; continue;
       }
       if (!o.dead && o.state === 'attack') o.flip = (o.x - P.x) * plX + (o.y - P.y) * plY > 0; // vänd mot mitten när den anfaller
       else if (!o.dead && (o.mvx || o.mvy)) o.flip = o.mvx * plX + o.mvy * plY < 0;
-      if (o.gibbed || (o.hidden && o.under)) continue; // tentakeln under ytan syns inte
+      if ((o.gibbed && !gfxEChar(o)) || (o.hidden && o.under)) continue; // tentakeln under ytan syns inte; FIENDER: en brinnande som dog syns förkolnad en stund
       const tint = o.dead ? null : o.goldT > tmr ? [255, 205, 60] : o.backT > tmr ? [255, 150, 40] : o.empowered ? [210, 120, 255] : o.bounty ? (tmr % 0.6 < 0.3 ? [255, 120, 60] : [255, 200, 90]) : o.champion ? [255, 215, 90] : o.frozen > 0 ? [150, 210, 255] : o.burn > 0 ? [255, 150, 70] : o.slow > 0 ? [120, 170, 255] : o.marks >= 4 ? [210, 110, 255] : o.poison > 0 ? [140, 255, 100] : o.haste > 0 ? [150, 255, 150] : o.elite ? o.elite.tint : o.veteran ? [255, 175, 165] : null;
       if (!o.dead && fx.parts.shadow && s.d < 200) drawSprite(fx.parts.shadow[0], o.x, o.y, 0.05 * o.d.size * gfxEShadowK(o), 0, false, null, 0, 0); // skugga på golvet (flygare: mindre ju högre)
       gfxEPose(o, enemyFrames[o.type]); // FIENDER: squash & stretch, knuff, andning, gångstuds, spawn och dödsfall
       const tele = !o.dead && o.state === 'attack' && o.d.melee && enemyFrames[o.type] && o.t < enemyFrames[o.type].attack.length / o.d.atkFps * o.d.hitAt && o.t > enemyFrames[o.type].attack.length / o.d.atkFps * o.d.hitAt - 0.18 ? 0.45 : 0; // anfallet blinkar i förväg
       const tw = o.dead && o.t < 0.5 && !o.boss ? Math.sin(tmr * 70) * 0.025 * (0.5 - o.t) * 2 : 0; // sista ryckningen
       if (settings.outline && !o.dead && !o.dormant) spriteOutline = o.elite || o.boss ? 0xff30c0ff : 0xff3050ff;
-      drawSprite(enemyFrame(o), o.x + tw * plX + gfxEOff.x, o.y + tw * plY + gfxEOff.y, o.d.size * 1.15, gfxEOff.z + ((o.d.ai === 'fly' || o.d.ai === 'wisp' || o.d.float) && !o.dead && !o.anchored ? 0.3 + Math.sin(tmr * 3 + o.x) * 0.06 : 0), o.flip, null, Math.max(tele, o.flash > 0 ? o.flash : 0), settings.contrast && !o.dead ? 0.65 : o.elite ? 0.3 : 0, false, tint, o.dead ? 0 : o.ghost || 0);
-      spriteOutline = 0; spriteSX = spriteSY = 1; spriteClip = 0; gfxETele(o);
+      else if ((o.elite || o.champion || o.frozen > 0) && !o.dead && !o.dormant && !(o.ghost > 0.5) && s.d < 150) spriteOutline = gfxEAura(o); // FIENDER: elitens/championens kontur pulserar
+      drawSprite(enemyFrame(o), o.x + tw * plX + gfxEOff.x, o.y + tw * plY + gfxEOff.y, o.d.size * 1.15, gfxEOff.z + ((o.d.ai === 'fly' || o.d.ai === 'wisp' || o.d.float) && !o.dead && !o.anchored ? 0.3 + Math.sin(tmr * 3 + o.x) * 0.06 : 0), o.flip, null, Math.max(tele, o.flash > 0 ? o.flash : 0), settings.contrast && !o.dead ? 0.65 : o.elite ? 0.3 : 0, false, gfxEOff.t || tint, o.dead ? 0 : o.ghost || 0);
+      spriteOutline = 0; spriteSX = spriteSY = 1; spriteClip = 0; gfxETele(o); gfxEOver(o, s.d); // FIENDER: glöd före skott, stjärnor vid bedövning
       if (o.carry && !o.dead && !(o.ghost > 0.5)) { const ci = o.carry === 'key' ? spr.key : o.carry === 'grenade' ? spr.grenade : o.carry === 'potion' ? spr.potion_unknown || spr.health : fx.coin[Math.floor(tmr * 8) % 4]; if (ci) drawSprite(ci, o.x, o.y, 0.12, o.d.size * 1.05 + 0.05 * Math.sin(tmr * 4), false, null, 0, 0.6); } // bär ett föremål
       if (o.leader && !o.dead && fx.parts.star) drawSprite(fx.parts.star[0], o.x, o.y, 0.08, o.d.size * 1.12, false, 1.6, 0, 0, true, [255, 220, 90]); // ledaren
-      if (!o.dead && o.alert && !o.dormant && !(o.ghost > 0.5) && s.d < 220 && lightAt(o.x, o.y) < 0.4 && o.d.ai !== 'wisp') drawSprite(fx.parts.eye ? fx.parts.eye[0] : fx.hit[1], o.x, o.y, fx.parts.eye ? 0.035 * o.d.size : 0.03, (o.d.ai === 'fly' ? 0.3 : 0) + o.d.size * 0.82, false, 2.2, 0, 0, true, [255, 50, 30]); // glödande ögon i mörkret
+      if (!o.dead && o.alert && !o.dormant && !(o.ghost > 0.5) && s.d < 220 && lightAt(o.x, o.y) < 0.4 && o.d.ai !== 'wisp' && gfxEOff.z > -0.3 * o.d.size) drawSprite(fx.parts.eye ? fx.parts.eye[0] : fx.hit[1], o.x + gfxEOff.x, o.y + gfxEOff.y, fx.parts.eye ? 0.035 * o.d.size : 0.03, gfxEOff.z + (o.d.ai === 'fly' ? 0.3 : 0) + o.d.size * Math.min(0.82, gfxEHead(enemyFrame(o)) * 1.15 - 0.17), false, 2.2, 0, 0, true, [255, 50, 30]); // glödande ögon i mörkret
     } else if (s.k === 'i') {
       const hopZ = o.hop > 0 ? Math.sin(o.hop / 0.5 * Math.PI) * 0.25 : 0; gfxWItem(o, s.d, plX, plY); // VÄRLD: skugga och glimt
       if (o.type === 'gold' || o.type === 'goldpile') { drawSprite(fx.coin[Math.floor(tmr * 8 + o.x * 3) % 4], o.x, o.y + 0 * hopZ, o.type === 'goldpile' ? 0.24 : 0.16, 0.05 + 0.03 * Math.sin(tmr * 4 + o.y) + hopZ, false, null, 0, 0.6); continue; }
@@ -1826,11 +1830,12 @@ function render() {
     else if (s.k === 'm') drawSprite(fx.merchant[Math.floor(tmr * 5) % 6], o.x, o.y, 1.05, 0, (o.x - P.x) * plX + (o.y - P.y) * plY > 0, null, 0, o.shadow ? 0.25 : 0.55, false, o.shadow ? [150, 120, 255] : null, o.shadow ? 0.35 : 0);
     else if (s.k === 'pet') drawPet(o, plX, plY);
     else if (s.k === 'bo') drawSprite(fx.props.boulder ? fx.props.boulder[Math.floor(o.t * 8) % fx.props.boulder.length] : fx.shards[7], o.x, o.y, 0.9, 0, false, null, 0, 0.4);
+    else if (s.k === 'gw') gfxWExit(o, s.d);
     else if (s.k === 'be') drawSprite(fx.parts.beam ? fx.parts.beam[0] : fx.hit[1], o.x, o.y, 1.15, 0, false, 0.9 + 0.1 * Math.sin(tmr + o.x), 0, 0, true, [255, 230, 170]); // ljusstråle
     else if (s.k === 'gh') drawSprite(bossFx.ghost ? bossFx.ghost.idle[Math.floor(tmr * 7) % bossFx.ghost.idle.length] : fx.hit[1], o.x, o.y, 0.55, 0.1, false, 1.2, 0, 0, false, [140, 255, 180], 0.6); // spöket
     else if (s.k === 'al') drawSprite(enemyFrame(o), o.x, o.y, o.d.size * 1.15, o.d.ai === 'fly' ? 0.3 : 0, (o.mvx || o.mvy) ? o.mvx * plX + o.mvy * plY < 0 : false, null, 0, 0.4, false, o.tint, 0.15);
     else if (s.k === 'q') { if (o.def && o.def.light && !o.used && !settings.lowfx && s.d < 150) drawSprite(fx.fireball[4], o.x, o.y, o.size * 0.9, o.size * 0.3, false, 0.35 + 0.05 * Math.sin(tmr * 7 + o.ph), 0, 0, true, o.poisoned ? [90, 255, 80] : PROP_GLOW[o.ch] || [255, 170, 80]); // glöd
-      const sw = GFXW_SWAY[o.ch] ? gfxWSway(o) : 0; // VÄRLD: hängande lyktor, ljuskronor, nät och klockor svänger
+      const sw = GFXW_SWAY[o.ch] ? gfxWSway(o) : 0; gfxWPropPose(o); // VÄRLD: hängande lyktor, ljuskronor, nät och klockor svänger
       if (o.def) drawSprite(propImg(o), o.x + (o.off && !o.axis ? o.off : 0) + plX * sw, o.y + (o.off && o.axis ? o.off : 0) + plY * sw, o.size, o.z || 0, o.flip, o.def.light && !o.used ? 1.6 : null, o.flashT > tmr ? 0.8 : 0, o.def.npc ? 0.45 : 0.3, false, o.poisoned ? [130, 255, 120] : null); else drawSprite(o.img, o.x, o.y, o.size, 0, o.flip); }
     else if (s.k === 'ic') drawSprite(fx.parts.icicle ? fx.parts.icicle[0] : fx.hit[1], o.x, o.y, 0.3, o.fall < 0 ? 0.68 : Math.max(0, 0.68 - o.fall * o.fall * 4), false, null, 0, 0.5, false, [200, 230, 255]);
     else if (s.k === 'h') drawSprite(bossFx.ghost.idle[Math.floor(tmr * 7) % bossFx.ghost.idle.length], o.x, o.y, 0.9, 0.15 + Math.sin(tmr * 2) * 0.05, (o.x - P.x) * plX + (o.y - P.y) * plY > 0, 1.2, 0, 0, false, [170, 230, 200], 0.45);
@@ -1881,7 +1886,7 @@ function render() {
   if (P.hp < maxHp() * 0.3 && state === 'play' && settings.lowHpGray !== false) desaturate(0.55 * (1 - P.hp / (maxHp() * 0.3))); // låg HP: bilden gråas
   if (Math.abs(P.roll) > 0.002 && (state === 'play' || state === 'dead')) { // lutning vid sidosteg och fall vid döden
     rollCtx.putImageData(frame, 0, 0);
-    ctx.save(); ctx.translate(W / 2, VH / 2); ctx.rotate(P.roll); ctx.scale(1.05, 1.05); ctx.drawImage(rollCan, -W / 2, -VH / 2); ctx.restore();
+    ctx.save(); ctx.translate(W / 2, VH / 2); ctx.rotate(P.roll); { const rs = 1.05 + Math.max(0, Math.abs(P.roll) - 0.1) * 0.75; ctx.scale(rs, rs); } ctx.drawImage(rollCan, -W / 2, -VH / 2); ctx.restore(); // större lutning (döden): förstora så att hörnen täcks
   } else ctx.putImageData(frame, 0, 0);
   if (photo) { ctx.fillStyle = '#000'; ctx.fillRect(0, VH, W, HUD_H); }
 }
@@ -2303,6 +2308,94 @@ const wfxApi = {
   bench: (n = 300) => { const ts = [], T0 = performance.now(); for (let i = 0; i < n; i++) { const t0 = performance.now(); drawWeapon(); ts.push(performance.now() - t0); } const mean = (performance.now() - T0) / n; ts.sort((a, b) => a - b); return { mean, med: ts[n >> 1], p90: ts[(n * 0.9) | 0] }; }
 };
 
+// ---------- Grafik: projektiler och explosioner (VAPEN, omgång 2) ----------
+// Spår efter projektilerna (rök/glöd för granater, flimmer för bloss, ljussvans för magi och fiendeskott), nedslag efter väggmaterial
+// (gnistor i metall, flisor i trä, damm och flis i sten, isskärvor i frostbiomen), explosioner i flera steg (blixt → eldklot som växer →
+// rökmoln som stiger och dröjer kvar) med chockvågsring, skräp och ett ljus som falnar. Allt via den vanliga partikellistan med budget
+// (inga nya spår när listan är nästan full), lowfx stänger av partiklarna; det billiga ljuset finns kvar.
+const WP = { sched: [], lights: [], n: { trail: 0, booms: 0, stages: 0, smoke: 0, ring: 0, debris: 0, impacts: { metal: 0, wood: 0, stone: 0, ice: 0 }, die: 0 } };
+const WP_BUDGET = 150, WP_HARD = 215; // spår slutar när listan har 150 partiklar; nedslag och explosioner fyller på till 215 (miljön stannar vid 180–200, FIENDER vid 235, taket i updateParticles är 260)
+function wpLight(x, y, t, r, s, col, merge) { // ett ljus som falnar; kedjeexplosioner förnyar ett ljus i närheten i stället för att stapla nya
+  if (merge) for (const l of WP.lights) if (Math.abs(l.x - x) + Math.abs(l.y - y) < 1.5 && l.life >= t * 0.5) { l.t = l.life = Math.max(l.life, t); l.s = Math.max(l.s, s); return; }
+  if (WP.lights.length < 8) WP.lights.push({ x, y, t, life: t, r, s, col });
+}
+const WP_SMOKE = { gren: 1, pgren: 1, cball: 1, barrel: 1, pchain: 1 }, WP_FIRE = { flare: 1, spark: 1 }, WP_MAGIC = { sorb: [150, 200, 255], dstar: [255, 200, 255], pspore: [170, 255, 120], prune: [255, 120, 200] };
+const WP_SKIP = { arrow: 1, stone: 1, web: 1, bandage: 1, log: 1, rock: 1, axe: 1, knife: 1, nail: 1, parrow: 1, harpoon: 1, saw: 1, pbee: 1, boom: 1, spear: 1, pshears: 1, ppin: 1 };
+const wpOn = () => !settings.lowfx && !WP.off;
+const WP_BIOME_MAT = { library: 'wood', ship: 'wood', forest: 'wood', garden: 'wood', jungle: 'wood', circus: 'wood', hive: 'wood', clock: 'metal', foundry: 'metal', lab: 'metal', observatory: 'metal', frost: 'ice', crystal: 'glass', mirror: 'glass', dream: 'glass' };
+function wpPart(p, hard) { if (particles.length >= (hard ? WP_HARD : WP_BUDGET)) return false; if (p.maxLife === undefined) p.maxLife = p.life; particles.push(p); return true; }
+const wpImg = (n, i = 0) => (fx.parts[n] && fx.parts[n][i % fx.parts[n].length]) || fx.hit[1];
+function wpProjTick(dt) { // anropas först i updateProjectiles: spår och schemalagda explosionssteg
+  if (window.__game && !window.__game.wproj) window.__game.wproj = wpApi;
+  for (let i = WP.sched.length - 1; i >= 0; i--) { const s = WP.sched[i]; s.t -= dt; if (s.t <= 0) { WP.sched.splice(i, 1); if (wpOn()) { s.fn(); WP.n.stages++; } } }
+  for (let i = WP.lights.length - 1; i >= 0; i--) if ((WP.lights[i].t -= dt) <= 0) WP.lights.splice(i, 1);
+  if (!wpOn() || dt <= 0) return;
+  for (const p of projectiles) {
+    if (p.dead || WP_SKIP[p.kind]) continue;
+    const dx = p.x - P.x, dy = p.y - P.y; if (dx * dx + dy * dy > 256) continue; // bara nära spelaren
+    if (!p.friendly && PROJ_DRAW_V8[p.kind] && !PROJ_TINT[p.kind]) continue; // specialritade fiendeskott utan egen färg: inget spår
+    const smoke = WP_SMOKE[p.kind], fire = WP_FIRE[p.kind], magic = p.friendly ? WP_MAGIC[p.kind] : p.kind === 'skull' ? [120, 190, 255] : PROJ_TINT[p.kind] || [255, 140, 60];
+    if (!smoke && !fire && !magic) continue;
+    p._wt = (p._wt || 0) + dt; const every = smoke ? 0.045 : fire ? 0.035 : 0.03; if (p._wt < every) continue; p._wt = 0;
+    const z = (p.z ?? 0.5) - (p.kind === 'pgren' ? 0 : 0.12), bx = p.x - p.vx * 0.02, by = p.y - p.vy * 0.02;
+    if (smoke) { // rökspår + glöd
+      if (!wpPart({ x: bx, y: by, z, vx: rnd(-0.1, 0.1), vy: rnd(-0.1, 0.1), vz: 0.22, life: 0.75, frames: fx.parts.smoke || fx.hit, img: wpImg('smoke'), size: 0.1, drift: true, tint: [150, 145, 140] })) return;
+      if (Math.random() < 0.5) wpPart({ x: bx, y: by, z, vx: 0, vy: 0, vz: 0, life: 0.16, img: fx.hit[1], size: 0.06, add: true, tint: [255, 170, 70], fade: true });
+    } else if (fire) { // blosset flimrar och sprutar glöd
+      if (!wpPart({ x: bx, y: by, z, vx: rnd(-0.3, 0.3), vy: rnd(-0.3, 0.3), vz: rnd(0.2, 0.6), life: 0.26, frames: fx.parts.flame || fx.fire, img: wpImg('flame'), size: 0.1 + Math.random() * 0.05, add: true, tint: PROJ_TINT[p.kind] || [255, 120, 60], drift: true })) return;
+      if (Math.random() < 0.35) wpPart({ x: bx, y: by, z, vx: rnd(-0.8, 0.8), vy: rnd(-0.8, 0.8), vz: rnd(0.5, 1.5), life: 0.5, img: wpImg('ember'), size: 0.025, add: true, tint: [255, 190, 90], grav: true });
+    } else if (!wpPart({ x: bx, y: by, z: z + 0.04, vx: 0, vy: 0, vz: 0, life: 0.24, img: fx.hit[1], size: p.big ? 0.24 : 0.19, add: true, tint: magic })) return; // ljussvans i skottets färg (ca 8 punkter per skott)
+    WP.n.trail++;
+  }
+}
+function wpLights(flashLight) { for (const l of WP.lights) flashLight(l.x, l.y, l.s * Math.pow(l.t / l.life, 1.6), l.r, l.col); } // ljus som falnar (anropas från updateLight)
+function wpBoom(x, y, r, big) { // explosionens steg; den gamla blixten, eldkloten och sotet finns kvar
+  WP.n.booms++;
+  wpLight(x, y, 1.3, Math.min(7, 3 + r * 1.4) | 0, big ? 2.4 : 1.7, [255, 120, 40], true); // ljuset falnar (förnyas vid kedjeexplosioner)
+  if (!wpOn() || solid(x, y)) return;
+  const k = clamp(r / 2, 0.6, 1.8);
+  if (!settings.noFlash) wpPart({ x, y, z: 0.4, vx: 0, vy: 0, vz: 0, life: 0.09, img: fx.fireball[0], size: 0.7 * k, add: true, tint: [255, 250, 225] }, true); // blixten
+  for (let i = 0; i < 14; i++) { const a = i / 14 * TAU + rnd(-0.1, 0.1), sp = (3 + r) * rnd(0.85, 1.1); // chockvågsring på golvet
+    if (wpPart({ x: x + Math.cos(a) * 0.2, y: y + Math.sin(a) * 0.2, z: 0.03, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, vz: 0, life: 0.34, frames: i & 1 ? fx.parts.smoke || null : null, img: i & 1 ? wpImg('smoke') : fx.hit[1], size: i & 1 ? 0.15 : 0.09, add: true, tint: i & 1 ? [170, 135, 95] : [255, 160, 70], fade: true }, true)) WP.n.ring++; } // glöd och dammrök i ringen
+  for (let i = 0; i < 7; i++) { const a = rnd(0, TAU), sp = rnd(1.2, 3.2); // skräp som studsar
+    if (wpPart({ x, y, z: 0.15, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, vz: rnd(1.8, 3.6), life: rnd(0.9, 1.5), img: i < 4 ? wpImg('rock') : wpImg('ember', i), size: i < 4 ? rnd(0.022, 0.038) : 0.03, grav: true, bounce: true, add: i >= 4, tint: i < 4 ? [160, 140, 120] : [255, 150, 60] }, true)) WP.n.debris++; } // sten och glödande bitar
+  sparks(x, y, 0.4, big ? 8 : 5);
+  WP.sched.push({ t: 0.05, fn: () => { for (let i = 0; i < 4; i++) wpPart({ x: x + rnd(-0.35, 0.35) * k, y: y + rnd(-0.35, 0.35) * k, z: rnd(0.25, 0.6), vx: rnd(-0.4, 0.4), vy: rnd(-0.4, 0.4), vz: 0, life: 0.45, frames: fx.fireball, img: fx.fireball[0], size: 0.62 * k, add: true }, true); } }); // eldklotet växer
+  WP.sched.push({ t: 0.14, fn: () => { for (let i = 0; i < 2; i++) wpPart({ x: x + rnd(-0.2, 0.2), y: y + rnd(-0.2, 0.2), z: 0.55, vx: 0, vy: 0, vz: 0.7, life: 0.55, frames: fx.fireball, img: fx.fireball[0], size: 0.95 * k, add: true, drift: true }, true); } });
+  WP.sched.push({ t: 0.32, fn: () => { const f = fx.parts.smoke2 || fx.parts.smoke || fx.hit; for (let i = 0; i < (big ? 6 : 4); i++) if (wpPart({ x: x + rnd(-0.5, 0.5) * k, y: y + rnd(-0.5, 0.5) * k, z: rnd(0.35, 0.8), vx: rnd(-0.2, 0.2), vy: rnd(-0.2, 0.2), vz: rnd(0.22, 0.4), life: rnd(1.9, 2.8), frames: f, img: f[0], size: rnd(0.36, 0.55) * k, drift: true, tint: [135, 128, 120] }, true)) WP.n.smoke++; } }); // rökmolnet stiger, dröjer kvar och löses upp (rutorna följer livet)
+}
+function wpImpact(x, y, z, cell, dx, dy) { // kulnedslag efter väggens material
+  if (!wpOn() || particles.length >= WP_HARD) return;
+  let mat = wallMat(cell); if (mat === 'stone' && lvl && WP_BIOME_MAT[lvl.biome]) mat = WP_BIOME_MAT[lvl.biome]; // vanliga väggar: biomens material
+  const glass = mat === 'glass'; if (glass) mat = 'ice'; // glas/kristall splittras som is, men glittrar i biomens färg
+  WP.n.impacts[mat]++;
+  if (glass) for (let i = 0; i < 3; i++) wpPart({ x, y, z, vx: -dx * rnd(0.5, 1.5) + rnd(-0.8, 0.8), vy: -dy * rnd(0.5, 1.5) + rnd(-0.8, 0.8), vz: rnd(0.4, 1.6), life: 0.4, img: fx.hit[2], size: 0.025, add: true, grav: true, tint: BIOME_TINT[lvl.biome] || [220, 230, 255] }, true);
+  const ox = -dx, oy = -dy, out = (s, j) => [ox * s + rnd(-j, j), oy * s + rnd(-j, j)];
+  if (mat === 'metal') { for (let i = 0; i < 5; i++) { const [vx, vy] = out(rnd(1.2, 2.8), 1.2); wpPart({ x, y, z, vx, vy, vz: rnd(0.4, 2.4), life: 0.28, img: fx.hit[2], size: 0.03, add: true, tint: [255, 240, 190], grav: true }, true); } if (!settings.noFlash) wpLight(x, y, 0.07, 2, 1.2, [255, 225, 160]); }
+  else if (mat === 'wood') { for (let i = 0; i < 4; i++) { const [vx, vy] = out(rnd(0.8, 2), 0.9); wpPart({ x, y, z, vx, vy, vz: rnd(0.6, 2), life: rnd(0.7, 1.1), img: wpImg('shard', i), size: 0.036, grav: true, bounce: true, tint: [205, 150, 90] }, true); } wpPart({ x: x - dx * 0.05, y: y - dy * 0.05, z, vx: -dx * 0.3, vy: -dy * 0.3, vz: 0.2, life: 0.45, frames: fx.parts.smoke || fx.hit, img: wpImg('smoke'), size: 0.08, drift: true, add: true, fade: true, tint: [120, 95, 60] }, true); } // flisor och lite sågdamm
+  else if (mat === 'ice') { for (let i = 0; i < 4; i++) { const [vx, vy] = out(rnd(0.8, 2.2), 1); wpPart({ x, y, z, vx, vy, vz: rnd(0.6, 2.2), life: rnd(0.6, 1), img: wpImg('glassshard', i), size: 0.03, grav: true, bounce: true, tint: [205, 235, 255] }, true); } wpPart({ x: x + ox * 0.05, y: y + oy * 0.05, z, vx: ox * 0.2, vy: oy * 0.2, vz: 0.15, life: 0.5, frames: fx.parts.smoke || fx.hit, img: wpImg('smoke'), size: 0.09, drift: true, add: true, fade: true, tint: [170, 200, 230] }, true); }
+  else { const [vx, vy] = out(0.35, 0.1); wpPart({ x: x + ox * 0.05, y: y + oy * 0.05, z, vx, vy, vz: 0.25, life: 0.55, frames: fx.parts.smoke || fx.hit, img: wpImg('smoke'), size: 0.1, drift: true, add: true, fade: true, tint: [120, 110, 95] }, true); // damm (svagt ljust, syns i mörker) och flis
+    for (let i = 0; i < 3; i++) { const [vx2, vy2] = out(rnd(0.8, 1.8), 0.8); wpPart({ x, y, z, vx: vx2, vy: vy2, vz: rnd(0.5, 1.8), life: rnd(0.5, 0.8), img: wpImg('rock'), size: 0.022, grav: true, bounce: true, tint: [140, 130, 120] }, true); } }
+}
+function wpProjWall(p) { // spikar och pilar som slår i väggen: samma nedslag som kulorna (bara när det finns plats i listan)
+  if (particles.length >= WP_BUDGET) return; const v = Math.hypot(p.vx, p.vy) || 1;
+  wpImpact(p.x - p.vx / v * 0.06, p.y - p.vy / v * 0.06, p.z ?? 0.5, cellAt(p.x, p.y), p.vx / v, p.vy / v);
+}
+function wpPuffFx(x, y, z) { // små smällar (explodeFx): ljus som falnar och två rökpuffar
+  wpLight(x, y, 0.6, 3, 1.1, [255, 130, 50], true);
+  if (!wpOn()) return; const f = fx.parts.smoke2 || fx.parts.smoke || fx.hit;
+  for (let i = 0; i < 2; i++) if (wpPart({ x: x + rnd(-0.2, 0.2), y: y + rnd(-0.2, 0.2), z: (z ?? 0.5) + 0.1, vx: rnd(-0.1, 0.1), vy: rnd(-0.1, 0.1), vz: 0.3, life: rnd(1.1, 1.6), frames: f, img: f[0], size: rnd(0.25, 0.35), drift: true, tint: [135, 128, 120] })) WP.n.smoke++;
+}
+function wpProjDie(p) { // fiendeskott som slocknar: gnistor i skottets färg
+  WP.n.die++; if (!wpOn() || p.friendly || particles.length >= WP_BUDGET) return;
+  const c = PROJ_TINT[p.kind] || [255, 140, 60];
+  for (let i = 0; i < 4; i++) wpPart({ x: p.x - p.vx * 0.02, y: p.y - p.vy * 0.02, z: (p.z ?? 0.5) - 0.05, vx: rnd(-1.5, 1.5), vy: rnd(-1.5, 1.5), vz: rnd(0.3, 1.6), life: 0.3, img: fx.hit[2], size: 0.03, add: true, tint: c, grav: true });
+  if (!settings.noFlash) wpLight(p.x, p.y, 0.18, 2, 1, c);
+}
+const wpApi = { state: () => ({ sched: WP.sched.length, lights: WP.lights.length, parts: particles.length, n: JSON.parse(JSON.stringify(WP.n)) }), impact: (mat) => { const c = { metal: 'G', wood: 'D', stone: '#' }[mat] || '#'; wpImpact(P.x + Math.cos(P.a), P.y + Math.sin(P.a), 0.5, c, Math.cos(P.a), Math.sin(P.a)); },
+  setOff: v => { WP.off = !!v; }, // prov: stäng av bara det här blocket (A/B-mätning)
+  bench: (n = 120) => { const ts = []; for (let i = 0; i < n; i++) { const t0 = performance.now(); tmr += 1 / 60; updateProjectiles(1 / 60); updateParticles(1 / 60); updateLight(); render(); ts.push(performance.now() - t0); } ts.sort((a, b) => a - b); return { med: ts[n >> 1], p90: ts[(n * 0.9) | 0], parts: particles.length, proj: projectiles.length }; } }; // projektiler + partiklar + ljus + bild
+
 // ---------- HUD ----------
 function drawWorldOverlay() { // skadesiffror, livmätare för eliter
   ctx.textBaseline = 'top';
@@ -2444,11 +2537,12 @@ function drawHUD() {
   if (P.boom > 0 && !settings.noFlash) { g.fillStyle = `rgba(255,240,210,${P.boom.toFixed(3)})`; g.fillRect(0, 0, W, VH); } // nära explosion
   if (state === 'play' && up('bullettime') && WS.aim > 0.8) { g.fillStyle = 'rgba(90,140,255,0.13)'; g.fillRect(0, 0, W, VH); } // tidsstoppet
   if (P.hp < maxHp() * 0.3 && state === 'play') {
-    const p = 0.25 + 0.2 * Math.sin(tmr * 6);
-    const gr = g.createRadialGradient(W / 2, HORIZON, VH * 0.35, W / 2, HORIZON, W * 0.62);
-    gr.addColorStop(0, 'rgba(120,0,0,0)'); gr.addColorStop(1, `rgba(150,0,0,${p})`);
+    const lowK = 1 - clamp(P.hp / (maxHp() * 0.3), 0, 1), p = 0.22 + 0.1 * lowK + (settings.noFlash ? 0.08 : 0.24) * heartBeat(); // MENY: långsam puls (dunk-dunk), starkare ju lägre hälsan är
+    const gr = g.createRadialGradient(W / 2, HORIZON, VH * (0.38 - 0.12 * lowK), W / 2, HORIZON, W * 0.62);
+    gr.addColorStop(0, 'rgba(90,0,0,0)'); gr.addColorStop(0.6, `rgba(110,0,0,${(p * 0.5).toFixed(3)})`); gr.addColorStop(1, `rgba(70,0,0,${Math.min(0.85, p * 1.5).toFixed(3)})`);
     g.fillStyle = gr; g.fillRect(0, 0, W, VH);
   }
+  drawBodyFx(g); // MENY: skärmen och spelarens kropp (skadebågar, upplockning, rusning, gift/eld/vatten, döden)
   const xs = settings.xsize || 1; if (state === 'play' && xs !== 1) { g.save(); g.translate(W / 2, HORIZON); g.scale(xs, xs); g.translate(-W / 2, -HORIZON); }
   if (state === 'play') { // sikte
     const gap = Math.round(2 + WS.spread * 160), cx = W / 2, cy = HORIZON;
@@ -2489,9 +2583,10 @@ function drawHUD() {
     const ex = floorEvent ? [EVENTS[floorEvent].name, '#ff7060'] : run.floorCurse ? ['FÖRBANNAD VÅNING', '#c080ff'] : (!run.practice && run.depth > profile.bestDepth && profile.bestDepth > 1) ? ['DJUPARE ÄN NÅGONSIN!', '#9fe0a0'] : run.depth === 1 && run.modifier ? [run.modifier.name + (run.modifier2 ? ' · ' + run.modifier2.name : ''), '#ff9050'] : null;
     if (ex) txt(ex[0], (W - textW(ex[0])) / 2, 72, ex[1], 1, true, a);
   }
+  if (bossBanner > 0) gfxEIntroBars(ctx); // FIENDER: svarta band under bossintrot
   if (bossBanner > 0 && !boss && guardianE && guardianE.d.title) { const s = guardianE.d.title; txt(s, (W - textW(s)) / 2, 60, '#d080ff', 1, true, Math.min(1, bossBanner)); }
-  if (bossBanner > 0 && boss && boss.d.title) { const t = boss.d.title; txt(t, (W - textW(t)) / 2, 72, '#e8d9b0', 1, true, Math.min(1, bossBanner)); }
-  if (bossBanner > 0 && boss) { const s = boss.d.name; ctx.font = '16px "PressStart2P"'; const w = ctx.measureText(plain(s)).width; txt(s, (W - w) / 2, 50, '#ff5030', 2, true, Math.min(1, bossBanner)); }
+  if (bossBanner > 0 && boss && boss.d.title) { const t = boss.d.title; txt(t, (W - textW(t)) / 2, 72, '#e8d9b0', 1, true, Math.min(1, bossBanner) * gfxESubA()); }
+  if (bossBanner > 0 && boss) gfxEBossName(boss.d.name, Math.min(1, bossBanner)); // FIENDER: namnet slår in
   if (state === 'play') { hudJuice(); g.save(); g.translate(HJ.sx, HJ.sy); drawHpCorner(g, L); drawAmmoCorner(g, L); g.restore(); hudPops(g, L); } // hörnen ersätter den gamla statuslisten; MENY: skakar vid tung träff, "+N" stiger
   { const m = msgs[0], big = !!settings.bigHud; // meddelanden: högst en rad åt gången överst i mitten; långa bläddras rad för rad
     if (m && (state === 'play' || big) && (big || (levelBanner <= 0.5 && bossBanner <= 0.5))) {
@@ -2861,6 +2956,7 @@ function fire() {
       if (p < 3) spawnImpact(hx, hy, rnd(0.25, 0.7));
       if (p < 4 && wallDist === wall.dist) wallMark(wall, dx, dy, P.camZ + rnd(-0.06, 0.06) + P.pitch * -0.004, 'hole');
       if (p === 0) sparks(hx, hy, P.camZ, 3);
+      if (p < 2) wpImpact(hx, hy, P.camZ, wall.cell, dx, dy); // Grafik: nedslag efter väggmaterial
       if (p === 0 && Math.random() < 0.5) play(wallMat(wall.cell) === 'metal' ? 'ricochet' : wallMat(wall.cell) === 'wood' ? 'kick' : Math.random() < 0.6 ? 'bullet_wall' : 'ricochet', 0.3, rnd(0.8, 1.3), { x: hx, y: hy });
       if (!boomAt) boomAt = { x: hx, y: hy };
       if (up('ricowall')) ricochetWall(hx, hy, dx, dy, wall.side, base * 0.8);
@@ -2891,6 +2987,7 @@ function nearestFoes(e, r, n) { // levande fiender nära e som e har fri sikt ti
     .sort((a, b) => Math.hypot(a.x - e.x, a.y - e.y) - Math.hypot(b.x - e.x, b.y - e.y)).slice(0, n);
 }
 function zap(ax, ay, bx, by, tint) { // synlig stråle mellan två punkter (studs, blixt)
+  gfxEZap(bx, by, tint); // FIENDER: den som träffas av en blå blixt sprakar en stund
   for (let i = 1; i <= 5; i++) { const t = i / 6; particles.push({ x: ax + (bx - ax) * t + rnd(-0.08, 0.08), y: ay + (by - ay) * t + rnd(-0.08, 0.08), z: 0.5 + rnd(-0.1, 0.1), vx: 0, vy: 0, vz: 0, life: 0.18, maxLife: 0.18, frames: fx.hit, img: fx.hit[0], size: 0.18, add: true, tint }); }
 }
 function afterHit(e, dmg, hx, hy, pellet) {
@@ -3206,7 +3303,7 @@ function gib(e) { // köttbitar och ben flyger
   for (let i = 0; i < 6; i++) spawnBlood(e.x, e.y); addDecal(e.x, e.y); addDecal(e.x + rnd(-0.4, 0.4), e.y + rnd(-0.4, 0.4));
 }
 function shatter(e) { // frusna fiender splittras
-  e.gibbed = true; play('ice_break', 0.7, rnd(0.9, 1.1), { x: e.x, y: e.y });
+  e.gibbed = true; play('ice_break', 0.7, rnd(0.9, 1.1), { x: e.x, y: e.y }); gfxEShatter(e);
   const f = fx.parts.ice;
   for (let i = 0; i < 10; i++) { const a = rnd(0, TAU), sp = rnd(1, 3); particles.push({ x: e.x, y: e.y, z: 0.4, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, vz: rnd(1.5, 3), life: rnd(1, 1.6), img: f ? f[i % f.length] : fx.hit[0], size: 0.08, grav: true, bounce: true, tint: f ? null : [160, 210, 255] }); }
 }
@@ -3217,7 +3314,7 @@ function comboKill(e) { // kombomätare: dödanden i följd inom 3 s
 }
 function killEnemy(e) {
   hitStop = Math.max(hitStop, e.boss ? 0.15 : e.elite ? 0.07 : 0.02);
-  e.dead = true; e.t = 0; e.state = 'dead'; gfxEKill(e); if (e.d.ai !== 'eel') kills++; run.kills++; if (e.tb) { e.tb.t = 0; e.tb = null; } score += Math.round(e.d.score * (e.elite ? 3 : 1) * depthMul());
+  e.dead = true; e.t = 0; e.state = 'dead'; gfxEKill(e); gfxWDeathFx(e); if (e.d.ai !== 'eel') kills++; run.kills++; if (e.tb) { e.tb.t = 0; e.tb = null; } score += Math.round(e.d.score * (e.elite ? 3 : 1) * depthMul());
   multiKill(); addDecal(e.x, e.y); comboKill(e); vib(e.boss ? 'boss' : 'kill');
   play('click', 0.3, 2.4); // tydligt dödsljud
   if (e.boss || e.guardian) for (let i = 0; i < 5; i++) if (fx.parts.scorch) decals.push({ x: e.x + rnd(-0.8, 0.8), y: e.y + rnd(-0.8, 0.8), img: fx.parts.scorch[0], size: rnd(0.14, 0.24) }); // bossen lämnar en krater
@@ -3290,6 +3387,7 @@ function explode(x, y, dmg, r, hurtsPlayer, big) {
   for (const e of ents) if (!e.dead && e.sleep && Math.hypot(e.x - x, e.y - y) < 8) { e.sleep = false; alertEnemy(e, false); } // explosioner väcker sovande
   play('fireburst', 0.6, rnd(0.8, 1), { x, y });
   flashes.push({ x, y, t: 0.3, r: Math.min(6, 2 + r * 1.5) });
+  wpBoom(x, y, r, big); // Grafik: eldklot som växer, rökmoln, chockvågsring, skräp och ljus som falnar
   if (!settings.lowfx) for (let i = 0; i < 5; i++) particles.push({ x: x + rnd(-r, r) * 0.5, y: y + rnd(-r, r) * 0.5, z: 0.02, vx: 0, vy: 0, vz: 0, life: rnd(1.5, 3), maxLife: 3, img: fx.parts.ember ? fx.parts.ember[0] : fx.hit[1], size: 0.04, add: true, tint: [255, 130, 40], fade: true }); // glödande rester
   const dp = Math.hypot(P.x - x, P.y - y); if (dp < 4.5) P.boom = Math.max(P.boom, 0.35 * (1 - dp / 4.5));
   if (dp < 12) P.shake = Math.max(P.shake, (big ? 2.4 : 1.2 + r * 0.2) * (1 - dp / 12)); // skakar efter avstånd
@@ -3909,6 +4007,7 @@ function updateNail(p, dt) { // spikens flykt: fastnålning mot vägg, studs och
     return;
   }
   if (solid(p.x, p.y) || p.life <= 0) {
+    if (p.life > 0) wpProjWall(p); // Grafik: nedslag efter väggmaterial
     const ox = p.x - p.vx * dt, oy = p.y - p.vy * dt;
     if (p.life > 0 && (p.bounces > 0 || Math.random() < 0.18)) { // studsar mot sten
       if (solid(p.x, oy)) p.vx = -p.vx; if (solid(ox, p.y)) p.vy = -p.vy; p.x = ox; p.y = oy; p.bounces = Math.max(0, (p.bounces || 0) - 1); p.dmg *= 0.7;
@@ -3988,6 +4087,7 @@ function updateArrow(p, dt) {
     if (p.pierce-- <= 0) { p.dead = true; return; }
   }
   if (solid(p.x, p.y) || p.life <= 0) { // pilen fastnar och kan plockas upp
+    if (p.life > 0) wpProjWall(p); // Grafik: nedslag efter väggmaterial
     p.dead = true; const x = p.x - p.vx * dt * 1.2, y = p.y - p.vy * dt * 1.2;
     if (p.life > 0) { play('arrow_hit', 0.3, 1.3, { x, y }); if (!solid(x, y) && !up('bw_explosive')) items.push({ type: 'arrowpick', x, y, taken: false, drop: true, a: Math.atan2(p.vy, p.vx) }); }
     if (up('bw_explosive')) explode(x, y, p.dmg * 0.5, 1.4);
@@ -4507,8 +4607,8 @@ const tlRM = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)'
 function titleLiveOn() { return !TL.off && !settings.lowfx && !settings.reduceMotion && !(tlRM && tlRM.matches) && settings.titleLive !== false && !!window.Gen && !!tex.floor_stone && !!tex.wall_stone; }
 function titleLiveGen() { // en riktig bana (som spelet genererar dem), dörrar blir golv; ljuset från facklor och eldfat räknas fram en gång
   TL.genAt = performance.now();
-  const seed = (Math.random() * 1e9) >>> 0, biome = TL_BIOMES[seed % TL_BIOMES.length];
-  let L = null; try { L = Gen.floor(seed, 1 + seed % 3, { biome }); } catch (e) { L = null; }
+  let L = TL.pre, biome = TL.preBiome; TL.pre = null; // förgenererad bakom laddningsskärmen eller dödsskärmen (inget ryck på startskärmen)
+  if (!L) { const seed = (Math.random() * 1e9) >>> 0; biome = TL_BIOMES[seed % TL_BIOMES.length]; try { L = Gen.floor(seed, 1 + seed % 3, { biome }); } catch (e) { L = null; } }
   if (!L || !L.map || !L.map.length) { TL.off = true; TL.why = 'gen'; return; }
   const h = L.map.length, w = L.map[0].length, n = w * h, grid = new Uint8Array(n), wt = new Array(n), fi = new Uint8Array(n), lit = new Float32Array(n).fill(Math.max(0.32, L.ambient || 0));
   const fl = (L.floors || [L.floor]).map(t => tex[t] || tex.floor_stone), lights = []; let sx = -1, sy = -1;
@@ -4527,6 +4627,13 @@ function titleLiveGen() { // en riktig bana (som spelet genererar dem), dörrar 
   [TL.fr, TL.fg, TL.fb] = (L.fog || [10, 8, 6]).map(v => Math.min(60, v));
   tlExtend(); const p = tlAt(0.4), q = tlAt(1.8); TL.x = p[0]; TL.y = p[1]; TL.a = Math.atan2(q[1] - p[1], q[0] - p[0]);
 }
+function tlPregen(again) { // bara Gen.floor (det dyra): körs medan laddningsskärmen visas och på dödsskärmen/nivåslutet, aldrig på startskärmen
+  TL.preQ = false; if (TL.pre || TL.off || settings.lowfx || !window.Gen) return;
+  const t0 = performance.now(), seed = (Math.random() * 1e9) >>> 0, biome = TL_BIOMES[seed % TL_BIOMES.length];
+  try { TL.pre = Gen.floor(seed, 1 + seed % 3, { biome }); TL.preBiome = biome; TL.preMs = performance.now() - t0; if (again) TL.newOnTitle = true; } catch (e) { TL.pre = null; }
+}
+setTimeout(() => tlPregen(false), 30); // när skriptet har laddats: medan bilderna och ljuden laddas
+function tlPregenSoon() { if (!TL.pre && !TL.preQ && TL.lv && !TL.off) { TL.preQ = true; setTimeout(() => { if (state === 'dead' || state === 'runover' || state === 'stats') tlPregen(true); else TL.preQ = false; }, 3000); } } // efter uppräkningen, och bara om skärmen fortfarande står still // anropas från menyWatch på dödsskärmen och nivåslutet
 function tlExtend() { // nästa sträcka: bredden först från vägens slut till en avlägsen ruta, läggs till efter den gamla (inga hopp)
   const { grid, w, h, path } = TL, e = path[path.length - 1], s0 = (e[1] | 0) * w + (e[0] | 0), prev = new Int32Array(w * h).fill(-1), dist = new Int16Array(w * h).fill(-1), q = [s0];
   dist[s0] = 0; let far = [];
@@ -4541,8 +4648,8 @@ function tlExtend() { // nästa sträcka: bredden först från vägens slut till
 function tlAt(s) { const p = TL.path, n = p.length - 1; s = clamp(s, 0, n); const i = Math.min(n - 1, s | 0), f = s - i, a = p[i], b = p[Math.min(n, i + 1)]; return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]; }
 function titleLive(dt) { // ritar kameraflykten på canvasen; false = den gamla glöden används
   if (!titleLiveOn()) return false;
-  if (!TL.lv) { TL.wait += dt; if (TL.wait < 0.8) return false; titleLiveGen(); TL.genMs = performance.now() - TL.genAt; TL.t = 0; if (!TL.lv || TL.off) return false; } // genereras först när startskärmen visats en stund
-  else if (performance.now() - TL.genAt > 120000 && TL.t > 60 && TL.genMs < 300) { titleLiveGen(); TL.t = 0; if (TL.off) return false; } // en ny bana (och biom) ibland – inte på långsamma enheter
+  if (!TL.lv) { TL.wait += dt; if (TL.wait < (TL.pre ? 0 : 0.8)) return false; titleLiveGen(); TL.genMs = performance.now() - TL.genAt; TL.t = 0; if (!TL.lv || TL.off) return false; } // genereras först när startskärmen visats en stund
+  else if (TL.newOnTitle && TL.pre) { TL.newOnTitle = false; titleLiveGen(); TL.t = 0; if (TL.off) return false; } // en ny bana (och biom) varje gång man kommer tillbaka – förgenererad på dödsskärmen/nivåslutet
   const t0 = performance.now();
   try {
     TL.t += dt; TL.frames++; TL.fade = Math.min(1, TL.fade + dt * 0.7);
@@ -4586,7 +4693,8 @@ function tlRender(a, camZ) {
 // Ändringar upptäcks genom att jämföra med förra bildrutan (ingen krok i hurtPlayer eller upplockningen). Skakningen är bara en ritförskjutning: hudRects() ändras inte.
 const HJ = { lv: null, hp: 0, ar: 0, res: 0, mag: 0, wp: -1, last: 0, hit: 0, big: 0, heal: 0, rel: 0, kick: 0, pops: [], sx: 0, sy: 0, hpDx: 0, hpDy: 0, hpCol: null, magDy: 0, magCol: null, n: 0 };
 function hjPop(kind, v, col) { // samma sorts "+N" inom en kort stund slås ihop
-  const o = HJ.pops.find(p => p.kind === kind && p.t > 0.75); if (o) { o.v += v; o.t = Math.max(o.t, 1); return; }
+  if (kind !== 'hp' || v >= 5) HJ.edge = { col: kind === 'hp' ? '80,230,110' : kind === 'ar' ? '110,160,255' : '255,200,80', t: 0.5 }; // upplockningen tonar kanten (drawBodyFx)
+  const o =HJ.pops.find(p => p.kind === kind && p.t > 0.75); if (o) { o.v += v; o.t = Math.max(o.t, 1); return; }
   if (HJ.pops.length >= 6) HJ.pops.shift(); HJ.pops.push({ kind, v, col, t: 1.1 }); HJ.n++;
 }
 function hudJuice() {
@@ -4638,14 +4746,58 @@ function menyStamp(g) { // rutan skakar och en liten skur gnistor i betygets fä
   setTimeout(() => box.querySelectorAll('.fe-spark').forEach(s => s.remove()), 1100);
 }
 function menyWatch() { // en ny våning (eller runda) har startat: kort toning från svart
-  const rm = !!settings.reduceMotion; if (rm !== MF.rm) { MF.rm = rm; document.body.classList.toggle('meny-rm', rm); } // spelets "minskad rörelse" stänger av CSS-animationerna (cards.css, index.html)
+  const rm = !!settings.reduceMotion; if (rm !== MF.rm) { MF.rm = rm; document.body.classList.toggle('meny-rm', rm); }
+  const nf = !!settings.noFlash; if (nf !== MF.nf) { MF.nf = nf; document.body.classList.toggle('meny-nf', nf); } // inga blixtar i DOM-skärmarna heller // spelets "minskad rörelse" stänger av CSS-animationerna (cards.css, index.html)
+  if (state !== MF.st) { MF.prev = MF.st; MF.st = state; MF.stT = performance.now(); if (state === 'stats' && MF.prev === 'play') { MF.exitT = MF.stT; const fe = document.getElementById('floorend'); if (fe) { fe.classList.add('exitflash'); setTimeout(() => fe.classList.remove('exitflash'), 600); } } } // blixten bara när man just gått ut (inte när detaljerna stängs) // tillståndsbyten: utgångens virvel, pausens toning
+  if (state === 'dead' || state === 'runover' || state === 'stats') tlPregenSoon(); // startskärmens nästa bana medan skärmen står still
   if (!map || !lvl || lvl === MF.lv) return; MF.lv = lvl;
   if (settings.reduceMotion) return; const el = document.getElementById('menyfade'); if (!el) return;
   el.classList.remove('go'); void el.offsetWidth; el.classList.add('go'); MF.n++;
 }
+// ---------- MENY: skärmen och spelarens kropp – skadebågar, låg hälsa, upplockning, rusning, gift/eld/vatten, döden, utgången, pausen ----------
+// Billigt: kanttoningarna är förritade dukar per färg (en drawImage), fartlinjerna högst 14 streck. lowfx stänger av vågorna, fartlinjerna och glöden.
+const BF = { last: 0, edges: new Map(), dashK: 0, n: 0, swim: 0, dead: 0, exit: 0 };
+function heartBeat() { const ph = (tmr * 1.1) % 1; return Math.exp(-ph * 16) + 0.65 * (ph > 0.22 ? Math.exp(-(ph - 0.22) * 16) : 0); } // dunk-dunk
+function edgeImg(col) { let c = BF.edges.get(col); if (!c) { c = document.createElement('canvas'); c.width = W; c.height = VH; const x = c.getContext('2d'), gr = x.createRadialGradient(W / 2, HORIZON, VH * 0.3, W / 2, HORIZON, W * 0.6); gr.addColorStop(0, `rgba(${col},0)`); gr.addColorStop(1, `rgba(${col},1)`); x.fillStyle = gr; x.fillRect(0, 0, W, VH); BF.edges.set(col, c); } return c; }
+function edgeFx(g, col, a) { if (!(a > 0.005)) return; g.globalAlpha = Math.min(1, a); g.drawImage(edgeImg(col), 0, 0); g.globalAlpha = 1; BF.n++; }
+function drawBodyFx(g) {
+  const now = performance.now(), dt = Math.min(0.05, (now - BF.last) / 1000 || 0); BF.last = now;
+  const fx = !settings.lowfx, rm = !!settings.reduceMotion, nf = !!settings.noFlash;
+  if (state === 'play') {
+    for (const h of hurtDir) { // skadan: en röd båge runt siktet åt det håll den kom ifrån, med en spets utåt
+      const a = h.ang - P.a - Math.PI / 2, r = 50 + (1 - h.t) * 8, c = `rgba(${h.col || '220,0,0'},${(0.9 * h.t).toFixed(3)})`;
+      g.strokeStyle = c; g.lineWidth = 3; g.beginPath(); g.arc(W / 2, HORIZON, r, a - 0.34, a + 0.34); g.stroke(); g.lineWidth = 1;
+      g.fillStyle = c; g.beginPath(); g.moveTo(W / 2 + Math.cos(a) * (r + 8), HORIZON + Math.sin(a) * (r + 8)); g.lineTo(W / 2 + Math.cos(a - 0.09) * (r + 1), HORIZON + Math.sin(a - 0.09) * (r + 1)); g.lineTo(W / 2 + Math.cos(a + 0.09) * (r + 1), HORIZON + Math.sin(a + 0.09) * (r + 1)); g.fill();
+    }
+    if (HJ.edge && HJ.edge.t > 0) { HJ.edge.t -= dt; edgeFx(g, HJ.edge.col, (nf ? 0.22 : 0.5) * HJ.edge.t / 0.5); } // upplockning: grön hälsa, blått skydd, gul ammo
+    if (P.poisonT > 0) edgeFx(g, '60,210,50', 0.1 + (rm ? 0 : 0.08 * (1 + Math.sin(tmr * 4)))); // giftet pulserar
+    if (P.burnFx > 0) { P.burnFx = Math.max(0, P.burnFx - dt); edgeFx(g, '255,110,20', P.burnFx * (nf ? 0.5 : 0.7 + 0.3 * Math.random())); // elden fladdrar och glöd stiger
+      if (fx) { g.fillStyle = '#ffb040'; for (let i = 0; i < 10; i++) g.fillRect((Math.random() * W) | 0, (VH - Math.random() * 40 * P.burnFx * 2) | 0, 1, 2); } }
+    BF.swim = P.swim ? Math.min(1, BF.swim + dt * 2) : Math.max(0, BF.swim - dt * 2);
+    if (BF.swim > 0) { if (fx && !rm) { const t0 = performance.now(); if (!BF.wcv) { BF.wcv = document.createElement('canvas'); BF.wcv.width = W; BF.wcv.height = VH; BF.wg = BF.wcv.getContext('2d'); } // en kopia av bilden, sedan remsor ur kopian (ingen självkopiering per remsa)
+      BF.wg.drawImage(canvas, 0, 0, W, VH, 0, 0, W, VH); for (let y = 0; y < VH; y += 8) { const o = Math.round(Math.sin(tmr * 2.6 + y * 0.06) * 1.6 * BF.swim); if (o) g.drawImage(BF.wcv, 0, y, W, 8, o, y, W, 8); } const ms = performance.now() - t0; BF.waveMs = BF.waveMs ? BF.waveMs * 0.9 + ms * 0.1 : ms; } edgeFx(g, '10,40,90', 0.45 * BF.swim); } // under ytan: vågor och mörkblå kant
+    const want = P.dashT > 0 || (WS.dashT || 0) > 0.15 ? 1 : 0; BF.dashK +=(want - BF.dashK) * Math.min(1, dt * (want > BF.dashK ? 18 : 6));
+    if (BF.dashK > 0.04 && !rm) { // rusning (bara den och sablens utfall, inte vanlig löpning): fartlinjer i kanterna och en kort mörk kant
+      if (fx) { g.strokeStyle = `rgba(255,240,220,${(0.45 * BF.dashK).toFixed(3)})`; g.beginPath(); for (let i = 0; i < 14; i++) { const a = Math.random() * TAU, r0 = 0.7 + Math.random() * 0.25, cx = Math.cos(a), cy = Math.sin(a); g.moveTo(W / 2 + cx * 160 * r0, HORIZON + cy * 110 * r0); g.lineTo(W / 2 + cx * 220, HORIZON + cy * 150); } g.stroke(); }
+      edgeFx(g, '0,0,0', 0.4 * BF.dashK);
+    }
+  }
+  if (state === 'dead') { // döden: färgen rinner ur bilden, kanten blir mörkröd och sluter sig medan kameran faller
+    const k = clamp(P.deadT / 1.2, 0, 1); BF.dead = k;
+    g.globalCompositeOperation = 'saturation'; g.fillStyle = `rgba(128,128,128,${(0.85 * k).toFixed(3)})`; g.fillRect(0, 0, W, VH); g.globalCompositeOperation = 'source-over';
+    edgeFx(g, '70,0,0', 0.25 + 0.4 * k); edgeFx(g, '0,0,0', 0.5 * k * k); // svärtan kommer sent, så att fallet syns
+  }
+}
+function drawExitFx(g) { // utgången: vit blixt och en virvel som vidgas när våningen är klar
+  const t = (performance.now() - (MF.exitT || -1e9)) / 1000; if (t < 0 || t > 0.7) return; BF.exit++;
+  if (!settings.noFlash && t < 0.35) { g.fillStyle = `rgba(255,250,235,${(0.85 * (1 - t / 0.35)).toFixed(3)})`; g.fillRect(0, 0, W, VH); }
+  if (settings.reduceMotion) return; const k = 1 - t / 0.7;
+  g.lineWidth = 3; for (let i = 0; i < 4; i++) { const r = 14 + t * 260 + i * 10, a0 = t * 9 + i * TAU / 4; g.strokeStyle = `rgba(${i % 2 ? '200,170,255' : '255,240,200'},${(0.8 * k).toFixed(3)})`; g.beginPath(); g.arc(W / 2, HORIZON, r, a0, a0 + 1.6); g.stroke(); } g.lineWidth = 1;
+}
 const MENY_API = { // window.__game.meny: tillstånd för testerna (t106)
   title: () => ({ on: titleLiveOn() && !!TL.lv, off: TL.off, why: TL.why, genMs: TL.genMs || 0, x: TL.x, y: TL.y, a: TL.a, biome: TL.biome || '', frames: TL.frames, cost: TL.cost, fade: TL.fade }),
   titleReset: () => { TL.off = false; TL.why = ''; TL.cost = 0; TL.frames = 0; },
+  body: () => ({ n: BF.n, dashK: BF.dashK, swim: BF.swim, waveMs: BF.waveMs || 0, dead: BF.dead, exit: BF.exit, edge: HJ.edge ? HJ.edge.t : 0, beat: heartBeat(), pre: !!TL.pre, preMs: TL.preMs || 0 }),
   ends: () => ({ fades: MF.n, stamps: MF.stamps, sparks: document.querySelectorAll('#floorend .fe-spark').length }),
   hud: () => ({ pops: HJ.pops.map(p => p.kind + p.v), n: HJ.n, hit: HJ.hit, big: HJ.big, rel: HJ.rel, heal: HJ.heal, hpCol: HJ.hpCol, magCol: HJ.magCol }),
 };
@@ -5599,7 +5751,7 @@ function openChest(c) {
     for (let i = 0; i < 3; i++) { const a = i / 3 * TAU, x = c.x + Math.cos(a) * 1.6, y = c.y + Math.sin(a) * 1.6; if (!solid(x, y)) { const e = makeEnemy(run.depth >= 3 ? 'V' : 'S', x, y); e.alert = true; e.minion = true; ents.push(e); totalEnemies++; spawnPuff(x, y, 6); } }
   }
   const n = 3 + Math.round(mod('chestChoice')) + (c.cursed ? 1 : 0);
-  openUI(() => draftUI(drawCards(n, { luck: 0.5 + run.depth * 0.06 + (c.rare ? 0.8 : 0) + (c.cursed ? 0.6 : 0) }), { title: c.rare ? 'DEN GLITTRANDE KISTAN' : c.cursed ? 'DEN FÖRBANNADE KISTAN' : 'KISTAN', subtitle: 'VÄLJ ETT KORT', skipLabel: 'TA INGET' }, card => { gainCard(card); closeUI(); }));
+  gfxWDefer(() => openUI(() => draftUI(drawCards(n, { luck: 0.5 + run.depth * 0.06 + (c.rare ? 0.8 : 0) + (c.cursed ? 0.6 : 0) }), { title: c.rare ? 'DEN GLITTRANDE KISTAN' : c.cursed ? 'DEN FÖRBANNADE KISTAN' : 'KISTAN', subtitle: 'VÄLJ ETT KORT', skipLabel: 'TA INGET' }, card => { gainCard(card); closeUI(); })));
 }
 function shopItems(m) {
   if (!m.stock) {
@@ -5691,6 +5843,7 @@ const pathDist = e => { const v = flow[(e.y | 0) * mw + (e.x | 0)]; return v < 0
 // ---------- Uppdatering ----------
 function ripple(x, y) { for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; particles.push({ x: x + Math.cos(a) * 0.15, y: y + Math.sin(a) * 0.15, z: 0.01, vx: Math.cos(a) * 0.8, vy: Math.sin(a) * 0.8, vz: 0, life: 0.5, maxLife: 0.5, img: fx.hit[1], size: 0.03, add: true, tint: [180, 210, 240], fade: true }); } } // vattenringar
 function stepSound() { // fotsteg låter olika på gräs, grus, trä och sten
+  gfxWStep(); // VÄRLD: damm och plask vid fötterna
   const ch = cellUnder(); if (ch === '-') { ripple(P.x, P.y); return ['splash', 0.25, rnd(1.1, 1.4)]; }
   const fln = (lvl.floors || [lvl.floor])[cellFloor ? cellFloor[(P.y | 0) * mw + (P.x | 0)] : 0] || '';
   if (/snow/.test(fln)) { if (fx.parts.footprint) { decals.push({ x: P.x + rnd(-0.08, 0.08), y: P.y + rnd(-0.08, 0.08), img: fx.parts.footprint[0], size: 0.04, life: 25 }); if (decals.length > 70) decals.shift(); } return ['snow_step', 0.3, rnd(0.9, 1.1)]; } // fotspår i snön if (ch === ':') return ['step_gravel', 0.12, 1.6];
@@ -5707,7 +5860,7 @@ function update(dt) {
   while (msgs.length && msgs[0].t <= 0) msgs.shift();
   P.hurt = Math.max(0, P.hurt - dt); P.pick = Math.max(0, P.pick - dt * 2); P.flash = Math.max(0, P.flash - dt); P.shake = Math.max(0, P.shake - dt * 3);
   // rekyl återhämtar sig mot ursprungligt sikte
-  P.pitch -= P.pitch * Math.min(1, dt * 9); const ry = P.ryaw * Math.min(1, dt * 5); P.a -= ry; P.ryaw -= ry;
+  if (state !== 'dead' || settings.reduceMotion) P.pitch -= P.pitch * Math.min(1, dt * 9); const ry = P.ryaw * Math.min(1, dt * 5); P.a -= ry; P.ryaw -= ry;
   P.burstT -= dt; if (P.burstT <= 0) P.burst = 0;
   hitMark = Math.max(0, hitMark - dt); bossBanner = Math.max(0, bossBanner - dt); levelBanner = Math.max(0, levelBanner - dt);
   for (const h of hurtDir) h.t -= dt * 1.2;
@@ -5719,7 +5872,7 @@ function update(dt) {
   for (const f of flashes) f.t -= dt; while (flashes.length && flashes[0].t <= 0) flashes.shift();
   P.boom = Math.max(0, P.boom - dt);
   if (map && state === 'play') updateWeather(dt);
-  if (state === 'dead' || state === 'runover') { P.deadT += dt; P.camZ = Math.max(0.12, 0.5 - P.deadT * 0.8); if (state === 'dead' && !settings.reduceMotion) P.roll += (0.32 - P.roll) * Math.min(1, dt * 1.6); return; }
+  if (state === 'dead' || state === 'runover') { P.deadT += dt; P.camZ = Math.max(0.12, 0.5 - P.deadT * 0.8); if (state === 'dead' && !settings.reduceMotion) { P.roll += (0.55 - P.roll) * Math.min(1, dt * 1.6); P.pitch += (-24 - P.pitch) * Math.min(1, dt * 2.2); P.deathPitch = true; } return; } // MENY: kameran glider ned mot golvet och lägger sig på sidan
   if (state !== 'play') return;
   levelTime += dt; run.time += dt;
   if (mod('regen') > 0) heal(mod('regen') * dt, true);
@@ -6394,6 +6547,7 @@ function shootFireball(src, a, speed, dmg, big, kind) {
   projectiles.push({ x: src.x + Math.cos(a) * r, y: src.y + Math.sin(a) * r, z: kind === 'rock' && !big ? 0.22 : src.boss ? 0.8 : 0.55, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed, dmg, src, big, kind, life: kind === 'orb' ? 5 : 6 }); // ogerns stenring rullar lågt: hoppa över
 }
 function updateProjectiles(dt) {
+  wpProjTick(dt); // Grafik: projektilspår och explosionssteg
   for (const p of projectiles) {
     if (p.kind === 'orb') { // svänger mot spelaren, men långsamt nog att springa ifrån
       const sp = Math.hypot(p.vx, p.vy), cur = Math.atan2(p.vy, p.vx);
@@ -6445,7 +6599,7 @@ function updateProjectiles(dt) {
     if (Math.hypot(p.x - P.x, p.y - P.y) < pr && !(low && P.jz > 0.22)) { hurtPlayer(p.dmg, p.src.x, p.src.y, 'proj'); p.dead = true; if (p.kind === 'bandage') { P.pullFrom = { x: p.src.x, y: p.src.y }; if (p.hook) { P.pullT = 0.7; P.slowT = Math.max(P.slowT, 1); say(p.tongue ? 'TUNGAN DRAR DIG!' : 'BÅTSHAKEN DRAR DIG!', 1); } else bandageHit(); } if (p.kind === 'hex') witchHex(); if (p.kind === 'chain') { P.rootT = Math.max(P.rootT || 0, 1.1); play('chain_bind', 0.7); say('KEDJAN BINDER DIG', 1); } if (p.kind === 'web' && mod('hazardImmune') <= 0) { P.slowT = Math.max(P.slowT, 2.5); say('FAST I NÄTET', 1); play('web', 0.7); } }
     else if (solid(p.x, p.y) || p.life <= 0) p.dead = true;
     if (p.dead) {
-      play('fireburst', 0.5, rnd(0.9, 1.1), { x: p.x, y: p.y });
+      play('fireburst', 0.5, rnd(0.9, 1.1), { x: p.x, y: p.y }); wpProjDie(p);
       for (let i = 0; i < 3; i++) particles.push({ x: p.x - p.vx * 0.02, y: p.y - p.vy * 0.02, z: 0.45, vx: rnd(-1, 1), vy: rnd(-1, 1), vz: rnd(0, 1), life: 0.35, maxLife: 0.35, frames: fx.fireball, img: fx.fireball[0], size: 0.3, add: true });
     }
   }
@@ -6818,6 +6972,7 @@ function summonMinions(b) {
 function explodeFx(x, y, z) {
   play('fireburst', 0.5, rnd(0.6, 0.9), { x, y });
   particles.push({ x, y, z, vx: rnd(-0.5, 0.5), vy: rnd(-0.5, 0.5), vz: 0, life: 0.45, maxLife: 0.45, frames: fx.fireball, img: fx.fireball[0], size: rnd(0.5, 0.9), add: true });
+  wpPuffFx(x, y, z); // Grafik: liten rökpuff och ljus som falnar
 }
 function bossDefeated(b) { // dödsanimation först
   b.dead = false; b.dying = 0.01; b.state = 'idle'; play('bossroar', 1, 0.6);
@@ -7061,7 +7216,9 @@ function frameStep(t) {
   }
 }
 function drawPause() { // pausen: PAUS och en enda rad (biom · våning · guld); allt annat finns i pausmenyn (Enter) under MER → RUNDAN
-  ctx.fillStyle = 'rgba(8,6,10,0.8)'; ctx.fillRect(0, 0, W, H);
+  const pk = settings.reduceMotion || MF.st !== 'pause' ? 1 : clamp((performance.now() - MF.stT) / 280, 0, 1); // MENY: bilden suddas och mörknar mjukt
+  if (!settings.lowfx && 'filter' in ctx) { ctx.filter = `blur(${(1.4 * pk).toFixed(2)}px)`; ctx.drawImage(canvas, 0, 0); ctx.filter = 'none'; }
+  ctx.fillStyle = `rgba(8,6,10,${(0.8 * pk).toFixed(3)})`; ctx.fillRect(0, 0, W, H);
   ctx.font = '16px "PressStart2P"'; ctx.textBaseline = 'top'; const w = ctx.measureText('PAUS').width; txt('PAUS', (W - w) / 2, 70, '#ffe9a8', 2);
   const ln = pauseLine(); txt(ln, (W - textW(ln)) / 2, 100, '#c9a87a');
   const go = isTouch() ? 'TRYCK FÖR ATT FORTSÄTTA' : 'KLICKA FÖR ATT FORTSÄTTA · ENTER MENY'; txt(go, (W - textW(go)) / 2, 122, '#8a7558', 1, true, 0.6 + 0.4 * Math.abs(Math.sin(tmr * 2)));
@@ -7094,7 +7251,7 @@ function overlay(t1, lines, col) {
 // ---------- MENY: nivåslutet och dödsskärmen som DOM-skärmar (#floorend, #runover) ovanför pekknapparna ----------
 // Canvasen tonas bara ned; siffrorna, betyget och knapparna ligger i DOM. D (eller tryck på siffrorna) visar de gamla detaljerna.
 let endScr = { ro: null, fe: null }, endDetails = false;
-function drawStats() { if (endDetails) return drawStatsDetails(); ctx.fillStyle = 'rgba(10,6,4,0.72)'; ctx.fillRect(0, 0, W, H); }
+function drawStats() { if (endDetails) return drawStatsDetails(); ctx.fillStyle = 'rgba(10,6,4,0.72)'; ctx.fillRect(0, 0, W, H); drawExitFx(ctx); }
 function drawRunOver(win) { if (endDetails) return drawRunDetails(win); ctx.fillStyle = win ? 'rgba(4,16,6,0.55)' : 'rgba(40,4,2,0.5)'; ctx.fillRect(0, 0, W, H); }
 function syncEndScreens() { // körs varje bildruta och från showTitle: visar/döljer skärmarna efter spelets läge
   menyWatch(); // MENY: toning när en ny våning/runda börjar
@@ -11722,6 +11879,8 @@ const v20api = () => ({ sluices: v20sl, sprays: v20sprays, oases: v20oases, mira
 // ---------- Grafik: fiender och bossar (FIENDER) – träffreaktion, död, gibs, spawn, skuggor, anfallstelegraf, bossfaser ----------
 // Allt här är bara visning: positioner/skalor räknas fram vid ritningen (gfxEOff) och skrivs aldrig tillbaka till e.x/e.y; inga nya hitStop/slowmo.
 const gfxE = { on: true, hits: 0, deaths: 0, gibs: 0, spawns: 0, tele: 0, phase: 0, bossBooms: 0, pools: 0, splats: 0, parts: 0, poses: 0 };
+const GFXE_CHAR = [40, 32, 28], gfxEChars = []; // förkolnade lik: färgton och de som ryker just nu
+const gfxEChar = o => gfxE.on && !!o.gBurnt && tmr - (o.gDeadT || -9) < 1.7;
 const gfxEOff = { x: 0, y: 0, z: 0, f: 0 }; // förskjutning och vit blixt för spriten som ritas just nu
 const gfxEDead = [], gfxEGrow = [], gfxEFly = []; // väntande blodpölar, pölar som växer, köttbitar i luften (alla med tak)
 let gfxELvl = null, gfxELvlT = 0;
@@ -11734,9 +11893,14 @@ function gfxEKind(e) { // vad fienden är gjord av: kött, ben, slem eller metal
     : /skeleton|bomber|^mage$|deathknight|mummy|drownedsailor|ghostpirate/.test(s) ? 'bone' : /blob|ooze|slime|sludge|larva|leech|toad|homunculus/.test(s) ? 'slime' : 'flesh');
 }
 const gfxEImg = { bone: null, bolt: null, tried: false }; // tools/gfx/fiender/make.py
-function gfxELoad() { if (gfxEImg.tried) return; gfxEImg.tried = true; for (const k of ['bone', 'bolt']) load(`${A}gfx/gfx_en_${k}.png`).then(i => { gfxEImg[k] = strip(i, 4); }).catch(() => { /* valfri */ }); }
+function gfxELoad() { if (gfxEImg.tried) return; gfxEImg.tried = true; for (const k of ['bone', 'bolt']) load(`${A}gfx/gfx_en_${k}.png`).then(i => { gfxEImg[k] = strip(i, 4); }).catch(() => { /* valfri */ });
+  load(`${A}gfx/part_star.png`).then(i => { gfxEImg.star = strip(i, 4); }).catch(() => { /* valfri */ }); } // stjärnan är fyra rutor 4×4 (fx.parts.star läser den som en bred ruta)
 function gfxEBleed(e, n, x, y) { // träff/död: blod för kött, benflisor och damm för odöda, gnistor för metall, färgat slem
   const k = gfxE.on ? gfxEKind(e) : 'flesh';
+  if (gfxE.on && e.frozen > 0) { // fryst: isflisor och glitter i stället för blod
+    for (let i = 0; i < (settings.lowfx ? 1 : n); i++) { const a = rnd(0, TAU), sp = rnd(0.4, 1.4); gfxEPart({ x, y, z: rnd(0.35, 0.7), vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, vz: rnd(0.3, 1.6), life: rnd(0.4, 0.8), img: fx.hit[1], size: 0.05, add: true, fade: true, grav: true, tint: [190, 235, 255] }, true); }
+    return;
+  }
   if (k === 'flesh' || e.d.ai === 'wisp') { for (let i = 0; i < n; i++) spawnBlood(x, y); return; }
   if (k === 'metal') { sparks(x, y, rnd(0.4, 0.7), settings.lowfx ? 1 : n + 1); return; }
   const lo = settings.lowfx, c = k === 'slime' ? gfxESlimeCol(e) : null, bi = gfxEImg.bone;
@@ -11754,6 +11918,7 @@ function gfxEKill(e) { // från killEnemy (direkt efter e.dead = true)
   gfxE.deaths++; e.gDeadT = tmr;
   if (e.gHitX === undefined || tmr - (e.gHitT || -9) > 0.6) { const dx = e.x - P.x, dy = e.y - P.y, d = Math.hypot(dx, dy) || 1; e.gHitX = dx / d; e.gHitY = dy / d; e.gHitK = 0.6; }
   if (!e.boss && !gfxELow() && gfxEDead.length < 16) gfxEDead.push(e);
+  if (gfxE.on && e.burn > 0 && !e.boss && !(e.frozen > 0) && !e.overkill && e.d.ai !== 'wisp' && e.type !== 'Ü' && enemyFrames[e.type]) { e.gBurnt = true; gfxE.chars++; if (gfxEChars.length < 8) gfxEChars.push(e); }
 }
 function gfxEGib(e) { // från gib(): bitarna beror på vad fienden är gjord av; returnerar true om partiklarna är klara
   if (!gfxE.on) return false;
@@ -11785,10 +11950,12 @@ function gfxESpawnFx(e) { // mörk portal/rökpuff och damm när en fiende dyker
 }
 function gfxERing(x, y, n, sp, col, size = 0.08) { for (let i = 0; i < n; i++) { const a = i / n * TAU; gfxEPart({ x, y, z: 0.1, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, vz: 0.1, life: 0.55, img: fx.hit[1], size, add: true, tint: col, fade: true, drift: true }); } }
 function gfxETick(dt) { // från update(): spawn, väntande blodpölar, växande pölar, köttbitar som landar, bossfaser och bossdöd
-  gfxELoad(); if (lvl !== gfxELvl) { gfxELvl = lvl; gfxELvlT = tmr; gfxEDead.length = gfxEGrow.length = gfxEFly.length = 0; }
+  gfxELoad(); if (gfxE.on) gfxEIntroTick(dt); if (lvl !== gfxELvl) { gfxELvl = lvl; gfxELvlT = tmr; gfxEDead.length = gfxEGrow.length = gfxEFly.length = gfxEChars.length = 0; }
+  gfxECharTick(dt);
   const fresh = tmr - gfxELvlT < 1.5;
   for (const e of ents) {
     if (e.gBorn === undefined) { e.gBorn = fresh || !gfxE.on || e.boss || e.dead || e.hidden || e.under || e.dormant || e.asleep || e.dummy || Math.hypot(e.x - P.x, e.y - P.y) > 16 ? -9 : tmr; if (e.gBorn === tmr) { gfxE.spawns++; gfxESpawnFx(e); } }
+    if (!e.dead && gfxE.on && !e.dying) gfxEStatus(e, dt); // brinner, fryst, gift, blöder, långsam, rädd
     if (!e.boss) { if (e.dead || !gfxE.on) continue;
       if (e.gDorm && !e.dormant) { e.gHitT = tmr; e.gHitX = e.gHitY = 0; e.gHitK = 1; } e.gDorm = !!e.dormant; // mimicen/statyn vaknar: ett ryck
       if ((e.charge > 0 || e.leapT > 0) && !settings.lowfx && fx.parts.smoke && Math.random() < dt * 14 && Math.abs(e.x - P.x) < 12 && Math.abs(e.y - P.y) < 12) gfxEPart({ x: e.x + rnd(-0.15, 0.15), y: e.y + rnd(-0.15, 0.15), z: 0.03, vx: rnd(-0.3, 0.3), vy: rnd(-0.3, 0.3), vz: 0.3, life: 0.5, frames: fx.parts.smoke, img: fx.parts.smoke[0], size: 0.14, drift: true, tint: [190, 175, 150] }); // damm under språng och stormning
@@ -11818,8 +11985,13 @@ function gfxEShadowK(o) { // flygare: skuggan krymper med höjden
   return clamp(0.85 - (0.3 + Math.sin(tmr * 3 + o.x) * 0.06) * 1.1, 0.35, 1);
 }
 function gfxEPose(o, set) { // squash & stretch, knuff, andning, gångstuds, spawn och dödsfall för en vanlig fiende
-  gfxEOff.x = gfxEOff.y = gfxEOff.z = gfxEOff.f = 0; if (!gfxE.on) return; gfxE.poses++;
+  gfxEOff.x = gfxEOff.y = gfxEOff.z = gfxEOff.f = 0; gfxEOff.t = null; if (!gfxE.on) return; gfxE.poses++;
   const hk = tmr - (o.gHitT || -9), hx = o.gHitX || 0, hy = o.gHitY || 0, K = o.gHitK || 0.6;
+  if (o.dead && o.gBurnt) { // förkolnad: svart, sjunker ned i golvet efter en halv sekund
+    const k = tmr - (o.gDeadT || -9); gfxEOff.t = GFXE_CHAR; spriteClip = 1;
+    if (k > 0.5) gfxEOff.z = -Math.min(1, (k - 0.5) / 1.1) * o.d.size * 1.2;
+    return;
+  }
   if (o.dead) { // faller bakåt i skottriktningen, studsar lätt mot golvet och blir liggande
     const k = tmr - (o.gDeadT || -9); if (k > 2 || k < 0) { const s = 0.2 * K; gfxEOff.x = hx * s; gfxEOff.y = hy * s; return; }
     const p = Math.min(1, k / 0.35), s = (1 - (1 - p) * (1 - p)) * 0.2 * K; gfxEOff.x = hx * s; gfxEOff.y = hy * s;
@@ -11852,6 +12024,7 @@ function gfxEBoss(o) { // bossar: skugga, tyngre träffreaktion (skakning), fasb
   if (fx.parts.shadow && !o.hidden && !(o.dying > 0)) drawSprite(fx.parts.shadow[0], o.x, o.y, 0.05 * sz, 0, false, null, 0, 0);
   const hk = tmr - (o.gHitT || -9);
   if (hk >= 0 && hk < 0.2) { const j = Math.sin(tmr * 95) * 0.05 * (1 - hk / 0.2) * (o.gHitK || 0.5); gfxEOff.x = plX * j; gfxEOff.y = plY * j; const s = Math.sin(hk / 0.2 * Math.PI) * 0.05; spriteSY = 1 - s; spriteSX = 1 + s * 0.6; }
+  gfxEIntroPose(o, plX, plY); // bossintrot: vrål-pose
   const pk = tmr - (o.gPhT || -9); if (pk >= 0 && pk < 0.7) { const s = Math.sin(pk / 0.7 * Math.PI); spriteSX *= 1 + 0.14 * s; spriteSY *= 1 + 0.1 * s; gfxEOff.f = (Math.floor(pk * 20) % 2 === 0 ? 0.09 : 0) * (1 - pk / 0.7) * nf; } // blinket stängs av med MINSKADE BLIXTAR
   if (o.dying > 0) { const a = 0.03 + o.dying * 0.035, j = Math.sin(tmr * 70) * a, j2 = Math.cos(tmr * 53) * a; gfxEOff.x = plX * j + view.dirX * j2 * 0.3 * sk; gfxEOff.y = plY * j + view.dirY * j2 * 0.3 * sk; spriteClip = 1;
     if (tmr - (o.gDST || -9) < 0.12) gfxEOff.f = 0.12 * nf; }
@@ -11859,9 +12032,88 @@ function gfxEBoss(o) { // bossar: skugga, tyngre träffreaktion (skakning), fasb
 function gfxEApi() { return { st: gfxE, set: v => { gfxE.on = !!v; }, grow: () => gfxEGrow.length, fly: () => gfxEFly.length,
   few: () => { const r = { idle: [], move: [] }; for (const [t, s] of Object.entries(enemyFrames)) { if (s.idle && s.idle.length <= 4) r.idle.push(t); if (s.move && s.move.length <= 6) r.move.push(t); } return r; }, // vilka andas / gångstudsar
   bench: (n = 300) => { const t0 = performance.now(); for (let i = 0; i < n; i++) { gfxETick(0); for (const e of ents) if (!e.boss && enemyFrames[e.type]) gfxEPose(e, enemyFrames[e.type]); } spriteSX = spriteSY = 1; spriteClip = 0; return (performance.now() - t0) / n; } }; } // ms per bildruta för FIENDERs logik
+// ---------- FIENDER omgång 2: synliga statuseffekter, elitaura och bossintro ----------
+const gfxEIntro = { t: -1, b: null, roared: false, bbPrev: 0 }; // bossintrot: tid sedan bossens namn kom upp (speltid), vilken boss
+Object.assign(gfxE, { status: 0, stars: 0, aura: 0, bars: 0, intros: 0, roars: 0, chars: 0, shards: 0 });
+function gfxECharTick(dt) { // förkolnade lik ryker och glöder medan de sjunker
+  for (let i = gfxEChars.length - 1; i >= 0; i--) { const e = gfxEChars[i], k = tmr - e.gDeadT; if (k > 1.7 || k < 0) { gfxEChars.splice(i, 1); continue; }
+    if (settings.lowfx || Math.abs(e.x - P.x) > 12 || Math.abs(e.y - P.y) > 12) continue; const sz = e.d.size, top = Math.max(0.1, sz * (1 - Math.max(0, k - 0.5) / 1.1));
+    if (fx.parts.smoke && Math.random() < dt * 5) gfxEPart({ x: e.x + rnd(-0.15, 0.15) * sz, y: e.y + rnd(-0.15, 0.15) * sz, z: rnd(0.1, 0.8) * top, vx: 0, vy: 0, vz: 0.55, life: 1, frames: fx.parts.smoke, img: fx.parts.smoke[0], size: 0.22 * sz, drift: true, tint: [70, 62, 58] });
+    if (Math.random() < dt * 12) gfxEPart({ x: e.x + rnd(-0.2, 0.2) * sz, y: e.y + rnd(-0.2, 0.2) * sz, z: rnd(0.05, 0.9) * top, vx: rnd(-0.3, 0.3), vy: rnd(-0.3, 0.3), vz: rnd(0.4, 1.1), life: 0.6, img: fx.parts.ember ? fx.parts.ember[0] : fx.hit[1], size: 0.035, add: true, fade: true, drift: true, tint: [255, 130, 40] }); }
+}
+function gfxEShatter(e) { // från shatter(): ljusblå skärvor och glitter (de vanliga isbitarna flyger redan)
+  if (!gfxE.on) return; gfxE.shards++; const n = settings.lowfx ? 0 : 10, f = fx.parts.ice;
+  for (let i = 0; i < n; i++) { const a = rnd(0, TAU), sp = rnd(0.5, 2.2); gfxEPart({ x: e.x, y: e.y, z: rnd(0.2, 0.9) * e.d.size, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, vz: rnd(0.5, 2), life: rnd(0.5, 0.9), img: fx.hit[1], size: 0.05, add: true, fade: true, grav: true, tint: [190, 235, 255] }); }
+  if (f && !settings.lowfx) for (let i = 0; i < 4; i++) { const a = rnd(0, TAU), sp = rnd(1, 2.5); gfxEPart({ x: e.x, y: e.y, z: rnd(0.4, 1) * e.d.size, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, vz: rnd(1.5, 3), life: rnd(1, 1.6), img: f[i % f.length], size: rnd(0.12, 0.18), grav: true, bounce: true, tint: [200, 235, 255] }, true); }
+}
+function gfxEAura(o) { // pulserande kontur i elitens/championens färg (pixelformat ABGR); 0 = ingen kontur
+  if (!gfxE.on || settings.lowfx) return 0; gfxE.aura++;
+  const c = o.frozen > 0 ? [190, 235, 255] : o.champion ? [255, 215, 90] : (o.elite && o.elite.tint) || [255, 80, 200], k = o.frozen > 0 ? 0.85 + 0.15 * Math.sin(tmr * 9) : 0.5 + 0.5 * Math.sin(tmr * 5 + o.x * 2); // fryst: isig kant
+  return (0xff000000 | (((c[2] * k) | 0) << 16) | (((c[1] * k) | 0) << 8) | ((c[0] * k) | 0)) >>> 0;
+}
+function gfxEHead(img) { // hur högt upp i rutan figuren når (0–1), räknas en gång per bild och sparas på bilden
+  if (!img || !img.data) return 0.9; if (img.gHead !== undefined) return img.gHead;
+  let top = img.h; for (let y = 0; y < img.h && top === img.h; y++) for (let x = 0; x < img.w; x++) if (img.data[y * img.w + x] >>> 24 >= 100) { top = y; break; }
+  return (img.gHead = top >= img.h ? 0.9 : 1 - top / img.h);
+}
+function gfxEOver(o, d2) { // ovanpå spriten: stjärnor som snurrar runt huvudet på en bedövad fiende
+  if (!gfxE.on || o.dead || !(o.stun > 0.15) || !o.alert || o.dormant || o.frozen > 0 || d2 > 150 || (o.ghost > 0.5) || !enemyFrames[o.type]) return; // vilande/mimic: stun räknas inte ned – inga stjärnor som röjer dem
+  const n = settings.lowfx ? 1 : 3, r = 0.16 * o.d.size, z = gfxEOff.z + ((o.d.ai === 'fly' || o.d.float) && !o.anchored ? 0.3 : 0) + gfxEHead(enemyFrame(o)) * o.d.size * 1.15 + 0.03; gfxE.stars++;
+  for (let i = 0; i < n; i++) { const a = tmr * 6 + i * TAU / n; drawSprite(fx.hit[1], o.x + gfxEOff.x + Math.cos(a) * r, o.y + gfxEOff.y + Math.sin(a) * r, 0.08 + 0.02 * Math.sin(tmr * 20 + i * 2), z + Math.sin(a * 2) * 0.02, false, 2, 0, 0, true, [255, 190, 30]); }
+}
+function gfxEStatus(e, dt) { // partiklar för status: brinner, fryst, förgiftad, blöder, långsam, rädd (billigt: bara nära, aldrig med lowfx)
+  if (settings.lowfx || !(e.burn > 0 || e.frozen > 0 || e.poison > 0 || e.bleed > 0 || e.fleeT > 0 || e.gShockT > tmr)) return; // inget aktivt: inga closures
+  if (e.hidden || e.dormant || (e.ghost > 0.5) || Math.abs(e.x - P.x) > 10 || Math.abs(e.y - P.y) > 10) return;
+  const sz = e.d.size * (e.formK || 1) * (e.boss ? 0.8 : 1), z0 = (e.d.ai === 'fly' || e.d.float) && !e.anchored && !e.boss ? 0.3 : 0, m = e.boss ? 2 : 1;
+  const R = () => rnd(-0.17, 0.17) * sz, H = () => z0 + rnd(0.1, 0.85) * sz, P2 = fx.parts, at = (r) => Math.random() < dt * r * m;
+  if (e.burn > 0) { // små lågor på kroppen och rök överst
+    if (at(12)) { gfxE.status++; gfxEPart({ x: e.x + R(), y: e.y + R(), z: H(), vx: 0, vy: 0, vz: rnd(0.4, 0.9), life: 0.35, frames: fx.fire, img: fx.fire[0], size: 0.17 * sz, add: true, drift: true }); }
+    if (P2.smoke && at(2)) gfxEPart({ x: e.x + R(), y: e.y + R(), z: z0 + sz * 0.9, vx: 0, vy: 0, vz: 0.5, life: 0.9, frames: P2.smoke, img: P2.smoke[0], size: 0.2 * sz, drift: true, tint: [80, 70, 65] }); }
+  if (e.frozen > 0) { // iskristaller som glimtar, små isflisor som faller
+    if (at(5)) { gfxE.status++; gfxEPart({ x: e.x + R(), y: e.y + R(), z: H(), vx: 0, vy: 0, vz: 0, life: 0.4, img: fx.hit[1], size: 0.045, add: true, fade: true, drift: true, tint: [200, 235, 255] }); }
+    if (P2.ice && at(1.2)) gfxEPart({ x: e.x + R(), y: e.y + R(), z: H(), vx: 0, vy: 0, vz: 0, life: 0.8, img: P2.ice[(Math.random() * P2.ice.length) | 0], size: 0.05, grav: true }); }
+  if (e.poison > 0 && at(2)) { gfxE.status++; const f = P2.bubble2 || P2.bubble; gfxEPart({ x: e.x + R(), y: e.y + R(), z: H(), vx: 0, vy: 0, vz: rnd(0.25, 0.45), life: 0.8, img: f ? f[0] : fx.hit[1], size: 0.06, drift: true, sway: rnd(0, 6), frames: f || fx.hit, tint: [130, 255, 90] }); } // gröna bubblor
+  if (e.gShockT > tmr && at(16)) { gfxE.status++; const f = P2.lightning || P2.lightning2; gfxEPart({ x: e.x + R() * 0.6, y: e.y + R() * 0.6, z: H() - 0.1 * sz, vx: 0, vy: 0, vz: 0, life: 0.12, frames: f || fx.hit, img: (f || fx.hit)[0], size: 0.28 * sz, add: true, tint: [170, 215, 255] }); } // elektrisk: blixtbågar på kroppen
+  // blöder: statusTick tappar redan en liten blodspårsdroppe var 0,4 s – här några större; gift: statusFx ger gröna glödkorn – här bubblor
+  if (e.bleed > 0 && at(2)) { gfxE.status++; gfxEPart({ x: e.x + R(), y: e.y + R(), z: z0 + rnd(0.3, 0.7) * sz, vx: 0, vy: 0, vz: 0, life: 0.6, img: fx.blood[(Math.random() * 3) | 0], size: 0.08, grav: true }); } // droppar
+  if (e.fleeT > 0 && at(2.5)) { gfxE.status++; gfxEPart({ x: e.x + R(), y: e.y + R(), z: z0 + sz * 0.95, vx: rnd(-0.6, 0.6), vy: rnd(-0.6, 0.6), vz: 0.9, life: 0.5, img: P2.drop ? P2.drop[0] : fx.hit[1], size: 0.05, grav: true, add: true, fade: true, tint: [150, 200, 255] }); } // svettdroppar av rädsla
+}
+function gfxEZap(x, y, tint) { // elektrisk: blå/vita strålar laddar fienden vid strålens slut
+  if (!gfxE.on || !tint || !ents || !(tint[2] > 200 && tint[0] < 200)) return;
+  let best = null, bd = 0.5; for (const e of ents) { if (e.dead) continue; const d = Math.abs(e.x - x) + Math.abs(e.y - y); if (d < bd) { bd = d; best = e; } }
+  if (best) best.gShockT = tmr + 0.5;
+}
+function gfxEIntroTick(dt) { // bossintrot: när namnet kommer upp (bossBanner) – vrål-pose, chockvåg och band
+  if (bossBanner > gfxEIntro.bbPrev + 0.3 && (boss || guardianE)) { gfxEIntro.t = 0; gfxEIntro.b = boss || guardianE; gfxEIntro.roared = false; gfxE.intros++; }
+  gfxEIntro.bbPrev = bossBanner; if (gfxEIntro.t < 0) return;
+  gfxEIntro.t += dt; const b = gfxEIntro.b; if (bossBanner <= 0 || !b || b.dead) { gfxEIntro.t = -1; return; }
+  if (!gfxEIntro.roared && gfxEIntro.t > 0.5) { gfxEIntro.roared = true; gfxE.roars++; // vrålet: damm och en ring längs golvet, ljus
+    flashes.push({ x: b.x, y: b.y, t: 0.5, r: 6, col: [255, 150, 90] });
+    if (!gfxELow()) { gfxERing(b.x, b.y, 16, 4, [230, 190, 140], 0.09); if (fx.parts.smoke) for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; gfxEPart({ x: b.x + Math.cos(a) * 0.5, y: b.y + Math.sin(a) * 0.5, z: 0.05, vx: Math.cos(a) * 1.6, vy: Math.sin(a) * 1.6, vz: 0.2, life: 0.9, frames: fx.parts.smoke, img: fx.parts.smoke[0], size: 0.3, drift: true, tint: [190, 170, 140] }); } } }
+}
+function gfxEIntroPose(o, plX, plY) { // bossen vrålar: sträcker på sig och darrar en stund efter att namnet kommit upp
+  if (!gfxE.on || gfxEIntro.t < 0 || gfxEIntro.b !== o) return;
+  if (!settings.lowfx && bossBanner > 0.15) { const k = 0.6 + 0.4 * Math.sin(tmr * 8), f = Math.min(1, bossBanner / 0.6); spriteOutline = (0xff000000 | (((40 * k * f) | 0) << 16) | (((90 * k * f) | 0) << 8) | ((255 * k * f) | 0)) >>> 0; } // fokus: glödande kant medan namnet visas
+  if (settings.reduceMotion) return; const r = gfxEIntro.t - 0.45; if (r <= 0 || r >= 1.2) return;
+  const s = Math.sin(r / 1.2 * Math.PI), j = Math.sin(tmr * 80) * 0.045 * s; spriteSY *= 1 + 0.12 * s; spriteSX *= 1 + 0.05 * s; gfxEOff.x += plX * j; gfxEOff.y += plY * j;
+}
+function gfxEIntroBars(g) { // svarta band upp och ned medan bossen presenteras (ritas före namnet; hörnen ritas ovanpå)
+  if (!gfxE.on || gfxEIntro.t < 0 || state !== 'play') return; const k = clamp(Math.min(gfxEIntro.t / 0.35, bossBanner / 0.5), 0, 1); if (k <= 0) return;
+  const h = Math.round(16 * k * (2 - k)); g.fillStyle = '#000'; g.fillRect(0, 0, W, h); g.fillRect(0, VH - h, W, h); gfxE.bars++;
+}
+function gfxESubA() { // undertiteln tonar in först när namnet har landat (efter 0,25 s)
+  if (!gfxE.on || gfxEIntro.t < 0 || settings.reduceMotion) return 1;
+  return clamp((gfxEIntro.t - 0.25) / 0.2, 0, 1);
+}
+function gfxEBossName(s, a) { // bossens namn slår in: stort → normalt, med en kort skakning (reduceMotion: som förut)
+  const g = ctx; g.font = '16px "PressStart2P"'; const w = g.measureText(plain(s)).width, t = gfxE.on && gfxEIntro.t >= 0 ? gfxEIntro.t : 9, rm = !!settings.reduceMotion;
+  const k = rm ? 1 : 1 + 1.6 * Math.max(0, 1 - t / 0.22) ** 2, sh = rm ? 0 : clamp(settings.shake ?? 1, 0, 1) * (t > 0.22 && t < 0.6 ? (0.6 - t) * 8 : 0);
+  if (k === 1 && !sh) { txt(s, (W - w) / 2, 50, '#ff5030', 2, true, a); return; }
+  g.save(); g.translate(W / 2 + Math.sin(tmr * 90) * sh, 44 + Math.cos(tmr * 70) * sh * 0.6); g.scale(k, k); g.translate(-W / 2, -44); txt(s, (W - w) / 2, 50, '#ff5030', 2, true, a * Math.min(1, 0.3 + t * 4)); g.restore();
+}
 // ---------- Grafik: världen (VÄRLD) – rinnande vätskor, levande ljus, luftpartiklar, glimtande föremål, kistor, dörrdamm och sotmärken ----------
 // Vätskorna animeras i texturrymden (egna buffertar, 15 gånger/s) så golvloopen i render() är orörd. settings.lowfx (och gfxW.off) stänger av allt.
-const gfxW = { off: false, t: 0, acc: 0, ticks: 0, lvl: null, used: [], scanT: 0, buf: {}, active: false, lastL: 0, air: 0, embers: 0, bubbles: 0, glints: 0, chests: 0, doors: 0, scorch: 0, bolts: 0 };
+const gfxW = { off: false, t: 0, acc: 0, ticks: 0, lvl: null, used: [], scanT: 0, buf: {}, active: false, lastL: 0, air: 0, embers: 0, bubbles: 0, glints: 0, chests: 0, doors: 0, scorch: 0, bolts: 0, spins: 0, steps: 0, mech: 0 };
 const GFXW_LIQ = { // [textur, textur för ruta 2, { a: våghöjd i texlar, s: vågfart, sx/sy: flöde (texlar/s), glow: pulsens styrka, gs: pulsens fart, shine: blänk, hot: glödande }]
   lava: ['floor_lava', 'floor_lava2', { a: 1.6, s: 1.1, sx: 2.2, sy: 1.1, glow: 0.2, gs: 2.1, shine: 0.3, hot: 1 }],
   molten: ['floor_molten', '', { a: 1.4, s: 1.3, sx: 3, sy: 0, glow: 0.22, gs: 2.6, shine: 0.3, hot: 1 }],
@@ -11878,6 +12130,7 @@ const GFXW_LIQ = { // [textur, textur för ruta 2, { a: våghöjd i texlar, s: v
 };
 const GFXW_BUB = { water: [200, 230, 255], deep: [150, 200, 255], shallow: [210, 235, 255], acid: [150, 255, 90], sludge: [150, 170, 90], honey: [255, 210, 90], ink: [120, 110, 170], sporepool: [190, 255, 150], piranha: [200, 230, 255], oasis: [200, 240, 255] };
 const gfxWOn = () => !gfxW.off && !settings.lowfx;
+const gfxWPuff = () => (fx.parts.smoke || fx.parts.dust || fx.hit)[0]; // mjuk puff med genomskinlig kant (part_dust är en mörk 3×3-ruta)
 function gfxWRestore() { // tillbaka till de orörda texturerna (lowfx slogs på mitt i våningen)
   for (const k in GFXW_LIQ) { const i = animTex[k], s = tex[GFXW_LIQ[k][0]]; if (i !== undefined && s) floorTexs[i] = s; }
   gfxW.active = false;
@@ -11932,11 +12185,17 @@ function gfxWFlick(t) { // facklor fladdrar mjukare och mer oregelbundet; lavans
   if (t.prop) return 0.5 * 0.06 * Math.sin(tmr * 3.1 + t.ph * 2.3) * Math.sin(tmr * 1.7 + t.ph); // ljus, eldfat, lyktor: svagare fladder
   return 0.06 * Math.sin(tmr * 3.1 + t.ph * 2.3) * Math.sin(tmr * 1.7 + t.ph) - (Math.sin(tmr * 0.9 + t.ph * 5) > 0.96 ? 0.12 : 0);
 }
+function gfxWRad(t) { // ljusradiens fladder (0 = av): facklor och eldfat mest, lavan långsamt, andra dolda ljus inte alls
+  if (!gfxWOn()) return 0;
+  if (t.hidden && !t.prop) return t.str === 0.45 && t.r === 3 ? 0.12 * Math.sin(gfxW.t * 1.3 + t.ph) : 0;
+  return (t.prop ? 0.5 : 1) * (0.22 * Math.sin(tmr * 2.3 + t.ph * 1.9) + 0.1 * Math.sin(tmr * 5.7 + t.ph * 0.7));
+}
 const gfxWFlame = o => gfxWOn() ? 1 + 0.07 * Math.sin(tmr * 11 + o.ph * 3) + 0.05 * Math.sin(tmr * 4.3 + o.ph) : 1; // lågan andas
 const GFXW_SWAY = { 'ǐ': 0.05, 'ű': 0.03, '"': 0.02, '³': 0.025 }; // hängande rekvisita: svängens storlek (världsenheter)
-const gfxWSway = o => gfxWOn() ? GFXW_SWAY[o.ch] * (Math.sin(tmr * 1.6 + (o.ph || 0) * 3) + 0.3 * Math.sin(tmr * 3.7 + (o.ph || 0))) : 0;
+const gfxWSway = o => gfxWOn() ? GFXW_SWAY[o.ch] * (settings.reduceMotion ? 0.4 : 1) * (Math.sin(tmr * 1.6 + (o.ph || 0) * 3) + 0.3 * Math.sin(tmr * 3.7 + (o.ph || 0))) : 0;
 const gfxWChestZ = o => o.open && o.t < 0.35 && !settings.lowfx ? Math.sin(o.t / 0.35 * Math.PI) * 0.07 : 0; // kistan hoppar när locket slår upp
-function gfxWLight(fl) { // blixten lyser upp marken under öppen himmel
+function gfxWLight(fl) { // blixten lyser upp marken under öppen himmel; golvet runt utgången glöder grönt och pulserar
+  if (lvl.exit && gfxWOn()) fl(lvl.exit.x + 0.5, lvl.exit.y + 0.5, 0.3 + 0.2 * Math.sin(tmr * 2.6), 4, [110, 255, 150]);
   if (lightning > 0.05 && lvl.sky && cellSky && !settings.noFlash && gfxWOn()) {
     const k = lightning * 0.8, x0 = Math.max(0, (P.x | 0) - 9), x1 = Math.min(mw - 1, (P.x | 0) + 9), y0 = Math.max(0, (P.y | 0) - 9), y1 = Math.min(mh - 1, (P.y | 0) + 9);
     for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const i = y * mw + x; if (cellSky[i]) light[i] += k; }
@@ -11947,23 +12206,95 @@ function gfxWItem(o, d2, plX, plY) { // plockbara föremål: skugga på golvet o
   if (fx.parts.shadow) drawSprite(fx.parts.shadow[0], o.x, o.y, 0.022, 0, false, null, 0, 0);
   const ph = (tmr * 0.45 + o.x * 0.37 + o.y * 0.61) % 1;
   if (ph < 0.08 && fx.parts.star) { const k = Math.sin(ph / 0.08 * Math.PI); drawSprite(fx.parts.star[0], o.x + plX * 0.12, o.y + plY * 0.12, 0.12 * k, 0.2 + 0.04 * Math.sin(tmr * 3 + o.x), false, 2.2, 0, 0, true, [255, 250, 220]); gfxW.glints++; }
+  const sx = gfxWSpin(o); if (sx !== 1) { spriteSX = sx; gfxW.spins++; } // föremålet ritas efter detta med spriteSX (nollställs per sprite)
+}
+const GFXW_SPIN = { key: 1, rune: 1, legend: 1, cardpick: 1, scroll: 1, shard: 1, page: 1, battery: 1, goldpile: 0, gold: 0 }; // 1 = snurrar runt, annars gungar lätt
+function gfxWSpin(o) { // nycklar, runor, vapen och kort snurrar (bredden följer |cos|), drycker och lådor gungar; reduceMotion lugnar
+  const sl = settings.reduceMotion ? 0.4 : 1, a = tmr * 1.7 * sl + o.x * 1.3 + o.y * 0.7;
+  if (o.type === 'gold' || o.type === 'goldpile') return 1; // mynten har egna snurrbilder
+  if (GFXW_SPIN[o.type] || (gfxW.wset || (gfxW.wset = new Set(WEAPONS.map(w => w.id)))).has(o.type)) return Math.max(0.14, Math.abs(Math.cos(a)));
+  return 1 + 0.05 * Math.sin(a * 1.6);
 }
 function gfxWChest(c) { // locket slår upp: gnistor, damm och ett kort sken
   if (!gfxWOn() || !fx.hit) return; gfxW.chests++;
   flashes.push({ x: c.x, y: c.y, t: 0.18, r: 3, col: c.rare ? [255, 220, 120] : [255, 190, 110] });
   for (let i = 0; i < (c.rare ? 16 : 10); i++) { const a = rnd(0, TAU), sp = rnd(0.6, 1.8); particles.push({ x: c.x, y: c.y, z: 0.3, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, vz: rnd(1.5, 3), life: rnd(0.5, 0.9), maxLife: 0.9, img: fx.hit[2] || fx.hit[1], size: 0.045, add: true, tint: [255, 215, 110], grav: true }); }
-  for (let i = 0; i < 5; i++) { const a = i / 5 * TAU; particles.push({ x: c.x + Math.cos(a) * 0.2, y: c.y + Math.sin(a) * 0.2, z: 0.05, vx: Math.cos(a) * 0.8, vy: Math.sin(a) * 0.8, vz: 0.15, life: 0.6, maxLife: 0.6, img: (fx.parts.dust || fx.hit)[0], size: 0.1, fade: true, drift: true, tint: [170, 150, 120] }); }
+  for (let i = 0; i < 5; i++) { const a = i / 5 * TAU; particles.push({ x: c.x + Math.cos(a) * 0.2, y: c.y + Math.sin(a) * 0.2, z: 0.05, vx: Math.cos(a) * 0.8, vy: Math.sin(a) * 0.8, vz: 0.15, life: 0.6, maxLife: 0.6, img: gfxWPuff(), size: 0.1, fade: true, drift: true, tint: [170, 150, 120] }); }
+}
+const GFXW_STEPLIQ = { 'Ĕ': 'shallow', 'Đ': 'deep', 'Ǜ': 'acid', 'Ȳ': 'sludge', 'Ɩ': 'honey', 'Ŭ': 'ink', 'Ȃ': 'piranha', 'ȴ': 'oasis', 'Ť': 'sporepool', '-': 'water' };
+function gfxWStep() { // fotsteg: plask och ringar i vätskor, dammpuffar på torr mark när man springer
+  if (!gfxWOn() || !map || particles.length > 200 || P.jz > 0.05) return;
+  const ch = cellUnder(), sp = Math.hypot(P.vx, P.vy), a = Math.atan2(P.vy, P.vx), bx = P.x - Math.cos(a) * 0.25, by = P.y - Math.sin(a) * 0.25, lq = GFXW_STEPLIQ[ch];
+  if (lq) { gfxW.steps++; const tint = GFXW_BUB[lq] || [200, 230, 255];
+    if (ch !== '-') for (let i = 0; i < 6; i++) { const b = i / 6 * TAU; particles.push({ x: bx + Math.cos(b) * 0.12, y: by + Math.sin(b) * 0.12, z: 0.01, vx: Math.cos(b) * 0.7, vy: Math.sin(b) * 0.7, vz: 0, life: 0.45, maxLife: 0.45, img: fx.hit[1], size: 0.03, add: true, tint, fade: true }); } // ringar på ytan
+    for (let i = 0; i < 3; i++) particles.push({ x: bx, y: by, z: 0.03, vx: rnd(-0.6, 0.6) + P.vx * 0.1, vy: rnd(-0.6, 0.6) + P.vy * 0.1, vz: rnd(0.8, 1.5), life: 0.35, maxLife: 0.35, img: (fx.parts.drop || fx.hit)[0], size: 0.03, grav: true, tint }); // stänk
+    return; }
+  if (sp < 3.2) return;
+  const n = ((lvl.floors || [lvl.floor])[cellFloor ? cellFloor[(P.y | 0) * mw + (P.x | 0)] : 0] || '') + ' ' + (lvl.biome || '');
+  if (!/sand|desert|dirt|gravel|ash|cave|mine|dust|tomb|ruin|basalt|volcano|sawdust/.test(n)) return;
+  gfxW.steps++; const tint = /sand|desert|tomb/.test(n) ? [215, 185, 130] : /ash|basalt|volcano/.test(n) ? [120, 110, 105] : [160, 140, 115];
+  for (let i = 0; i < 2; i++) particles.push({ x: bx + rnd(-0.1, 0.1), y: by + rnd(-0.1, 0.1), z: 0.03, vx: -Math.cos(a) * rnd(0.2, 0.5) + rnd(-0.2, 0.2), vy: -Math.sin(a) * rnd(0.2, 0.5) + rnd(-0.2, 0.2), vz: rnd(0.05, 0.2), life: 0.6, maxLife: 0.6, img: gfxWPuff(), size: rnd(0.06, 0.1), fade: true, drift: true, tint });
+}
+function gfxWMech(dt) { // fällor, spakar, tryckplattor, hemliga väggar, portaler och utgången: reaktioner när något slår om
+  const cap = particles.length < 200, dust = gfxWPuff();
+  for (const o of props) { if (!o.def || o.broken) continue; const dx = o.x - P.x, dy = o.y - P.y; if (dx * dx + dy * dy > 144) continue;
+    const up = !!o.up, used = !!o.used;
+    if (o.gUp === undefined) { o.gUp = up; o.gUsed = used; continue; }
+    if (up !== o.gUp) { o.gUp = up; o.gPoseT = tmr; gfxW.mech++; // spikar skjuter upp / plattan trycks ned
+      if (cap) for (let i = 0; i < (up ? 6 : 4); i++) { const a = rnd(0, TAU); particles.push({ x: o.x + Math.cos(a) * 0.15, y: o.y + Math.sin(a) * 0.15, z: 0.03, vx: Math.cos(a) * rnd(0.4, 1), vy: Math.sin(a) * rnd(0.4, 1), vz: up ? rnd(0.6, 1.4) : 0.1, life: 0.5, maxLife: 0.5, img: up ? fx.hit[2] || fx.hit[1] : dust, size: up ? 0.035 : 0.08, add: up, grav: up, fade: !up, drift: !up, tint: up ? [230, 220, 200] : [160, 145, 120] }); } }
+    if (used && !o.gUsed) { o.gUsed = true; o.gPoseT = tmr; gfxW.mech++; // spaken slår om, altaret tänds, brunnen töms …
+      if (cap) for (let i = 0; i < 8; i++) { const a = i / 8 * TAU; particles.push({ x: o.x, y: o.y, z: (o.size || 0.5) * 0.6, vx: Math.cos(a) * rnd(0.6, 1.4), vy: Math.sin(a) * rnd(0.6, 1.4), vz: rnd(0.5, 1.5), life: 0.6, maxLife: 0.6, img: fx.hit[2] || fx.hit[1], size: 0.04, add: true, grav: true, tint: PROP_GLOW[o.ch] || [255, 220, 140] }); } }
+    else if (!used && o.gUsed) o.gUsed = false;
+    if (cap && !used && o.def.use && o.def.light && dx * dx + dy * dy < 64 && Math.random() < dt * 2.5) particles.push({ x: o.x + rnd(-0.2, 0.2), y: o.y + rnd(-0.2, 0.2), z: (o.size || 0.5) * 0.5, vx: 0, vy: 0, vz: rnd(0.25, 0.5), life: 1.4, maxLife: 1.4, img: fx.hit[1], size: 0.03, add: true, fade: true, drift: true, sway: rnd(0, 6), frames: fx.hit, tint: PROP_GLOW[o.ch] || [255, 220, 140] }); } // altare, brunnar och liknande: ljuspartiklar stiger
+  if (!cap) return;
+  for (const k in doors) { const d = doors[k]; if (!d.secret || d.open <= 0.02 || d.open >= 0.98 || d.target !== 1) continue; // hemliga väggen glider: damm och grus rinner
+    if (Math.random() < dt * 14 && Math.abs(d.x + 0.5 - P.x) + Math.abs(d.y + 0.5 - P.y) < 12) particles.push({ x: d.x + rnd(0.1, 0.9), y: d.y + rnd(0.1, 0.9), z: rnd(0.4, 0.95), vx: rnd(-0.2, 0.2), vy: rnd(-0.2, 0.2), vz: -0.2, life: 0.8, maxLife: 0.8, img: dust, size: rnd(0.05, 0.1), grav: Math.random() < 0.5, fade: true, tint: [150, 140, 120] }); }
+  const swirl = (x, y, r, col, rate) => { if (Math.random() > dt * rate) return; const a = rnd(0, TAU); particles.push({ x: x + Math.cos(a) * r, y: y + Math.sin(a) * r, z: rnd(0.05, 0.9), vx: -Math.sin(a) * 1.4 - Math.cos(a) * 0.5, vy: Math.cos(a) * 1.4 - Math.sin(a) * 0.5, vz: 0.15, life: 0.7, maxLife: 0.7, img: fx.hit[1], size: 0.035, add: true, fade: true, drift: true, tint: col }); gfxW.mech++; };
+  if (lvl.exit && Math.abs(lvl.exit.x + 0.5 - P.x) + Math.abs(lvl.exit.y + 0.5 - P.y) < 14) swirl(lvl.exit.x + 0.5, lvl.exit.y + 0.5, 0.5, [140, 255, 160], 10); // utgången virvlar
+  for (const p of portals) if (Math.abs(p.x - P.x) + Math.abs(p.y - P.y) < 14) swirl(p.x, p.y, 0.55, p.kind === 'gold' ? [255, 220, 90] : p.kind === 'boss' ? [255, 170, 120] : [190, 140, 255], 12); // portalerna drar in ljus
+}
+function gfxWPropPose(o) { // rekvisitan reagerar: spikar sticker upp med överslag, plattan sjunker, spaken fjädrar
+  if (!gfxWOn() || !o.def) return; const d = o.def;
+  if (d.trap === 'plate' && !o.up) spriteSY = 0.6; // nedtryckt
+  const k = tmr - (o.gPoseT || -9); if (k < 0 || k > 0.35) return; const s = Math.sin(k / 0.35 * Math.PI) * (1 - k / 0.35);
+  if (d.trap && o.up) { spriteSY *= 1 + 0.35 * s; spriteSX *= 1 - 0.12 * s; } else { spriteSY *= 1 - 0.15 * s; spriteSX *= 1 + 0.1 * s; }
+}
+function gfxWExit(e, d2) { // utgången: pulserande ljuspelare + en ring av ljus som roterar runt den (syns på håll)
+  const x = e.x + 0.5, y = e.y + 0.5, p = 0.5 + 0.5 * Math.sin(tmr * 2.6), beam = fx.parts.beam ? fx.parts.beam[0] : fx.hit[1];
+  spriteSX = 3.2; drawSprite(beam, x, y, 0.98, 0, false, 0.7 + 0.35 * p, 0, 0, true, [90, 255, 140]); // bred mjuk glöd
+  spriteSX = 1.3; drawSprite(beam, x, y, 0.98, 0, false, 1.2 + 0.5 * p, 0, 0, true, [150, 255, 180]); spriteSX = 1; gfxW.exitN = (gfxW.exitN || 0) + 1;
+  if (d2 > 400) return; // ringen bara på närmare håll
+  const n = 10, r = 0.42, rot = tmr * 1.6;
+  for (let i = 0; i < n; i++) { const a = rot + i / n * TAU, z = 0.08 + 0.05 * Math.sin(tmr * 3 + i) + (i % 2) * 0.25 * (0.5 + 0.5 * Math.sin(tmr * 1.3 + i));
+    drawSprite(fx.hit[1], x + Math.cos(a) * r, y + Math.sin(a) * r, 0.08 + 0.03 * p, z, false, 2.4, 0, 0, true, [150, 255, 170]); }
+}
+function gfxWDeathFx(e) { // fiender som dör i vatten plaskar, i lava fräser de (ånga och glöd)
+  if (!gfxWOn() || !map || e.boss) return; const c = map[e.y | 0] && map[e.y | 0][e.x | 0], lq = GFXW_STEPLIQ[c], hot = c === '_' || c === 'Ź';
+  if (!lq && !hot) return; gfxW.deathFx = (gfxW.deathFx || 0) + 1; const cap = particles.length < 220;
+  if (hot) { play('steam_hiss', 0.5, rnd(0.9, 1.1), { x: e.x, y: e.y });
+    if (cap) for (let i = 0; i < 7; i++) { const sm = fx.parts.steam || fx.parts.smoke || fx.hit; particles.push({ x: e.x + rnd(-0.3, 0.3), y: e.y + rnd(-0.3, 0.3), z: rnd(0.05, 0.3), vx: rnd(-0.2, 0.2), vy: rnd(-0.2, 0.2), vz: rnd(0.4, 0.8), life: rnd(0.9, 1.5), maxLife: 1.5, frames: sm, img: sm[0], size: rnd(0.18, 0.3), fade: true, drift: true, tint: [225, 220, 215] }); }
+    if (cap) for (let i = 0; i < 6; i++) particles.push({ x: e.x, y: e.y, z: 0.1, vx: rnd(-1, 1), vy: rnd(-1, 1), vz: rnd(1, 2.2), life: 0.6, maxLife: 0.6, img: (fx.parts.lavadrop || fx.fireball)[0], size: 0.04, add: true, grav: true, tint: [255, 150, 50] });
+    flashes.push({ x: e.x, y: e.y, t: 0.15, r: 2, col: [255, 120, 40] }); return; }
+  play('splash', 0.55, rnd(0.8, 1), { x: e.x, y: e.y }); const tint = GFXW_BUB[lq] || [200, 230, 255];
+  if (cap) for (let i = 0; i < 8; i++) { const b = i / 8 * TAU; particles.push({ x: e.x + Math.cos(b) * 0.2, y: e.y + Math.sin(b) * 0.2, z: 0.01, vx: Math.cos(b) * 1.1, vy: Math.sin(b) * 1.1, vz: 0, life: 0.6, maxLife: 0.6, img: fx.hit[1], size: 0.04, add: true, tint, fade: true }); }
+  if (cap) for (let i = 0; i < 8; i++) particles.push({ x: e.x, y: e.y, z: 0.05, vx: rnd(-1, 1), vy: rnd(-1, 1), vz: rnd(1.5, 3), life: 0.6, maxLife: 0.6, img: (fx.parts.drop || fx.hit)[0], size: 0.04, grav: true, tint });
+}
+function gfxWDefer(fn) { // kistans kortval väntar ~0,3 s så att locket och gnistorna hinner synas (direkt med lowfx)
+  if (!gfxWOn() || state !== 'play') { fn(); return; }
+  gfxW.deferN = (gfxW.deferN || 0) + 1; let n = 0;
+  const go = () => { if (state === 'title' || state === 'dead' || state === 'runover') return; if (state === 'play' || ++n > 60) fn(); else setTimeout(go, 150); };
+  setTimeout(go, 300);
 }
 function gfxWScorch(x, y, r) { // brännmärken på väggarna runt en explosion
   if (settings.lowfx || gfxW.off || !map || solid(x, y)) return;
   const R = Math.min(3.2, r + 0.7);
-  if (!lvl.sky && particles.length < 200) for (let i = 0; i < 5; i++) { const a = rnd(0, TAU), d = rnd(0.3, R); const px2 = x + Math.cos(a) * d, py2 = y + Math.sin(a) * d; if (!solid(px2, py2)) particles.push({ x: px2, y: py2, z: 0.97, vx: 0, vy: 0, vz: rnd(-0.2, 0), life: rnd(0.8, 1.3), maxLife: 1.3, img: (fx.parts.dust || fx.hit)[0], size: rnd(0.04, 0.07), grav: true, tint: [150, 135, 115] }); } // damm och grus faller från taket
+  if (!lvl.sky && particles.length < 200) for (let i = 0; i < 5; i++) { const a = rnd(0, TAU), d = rnd(0.3, R); const px2 = x + Math.cos(a) * d, py2 = y + Math.sin(a) * d; if (!solid(px2, py2)) particles.push({ x: px2, y: py2, z: 0.97, vx: 0, vy: 0, vz: rnd(-0.2, 0), life: rnd(0.8, 1.3), maxLife: 1.3, img: gfxWPuff(), size: rnd(0.04, 0.07), grav: true, tint: [150, 135, 115] }); } // damm och grus faller från taket
   for (let i = 0; i < 8; i++) { const a = i / 8 * TAU + rnd(-0.2, 0.2), dx = Math.cos(a), dy = Math.sin(a), h = cast(x, y, dx, dy, R); if (h && h.mx !== undefined && h.dist < R) { wallMark(h, dx, dy, rnd(0.12, 0.4) + (1 - h.dist / R) * 0.15, 'scorch'); gfxW.scorch++; } }
 }
 function gfxWDoors() { // dörrar dammar när de börjar öppnas
   for (const k in doors) { const d = doors[k];
     if (d.target === 1 && !d.gfxDust) { d.gfxDust = true; const dx = d.x + 0.5 - P.x, dy = d.y + 0.5 - P.y;
-      if (dx * dx + dy * dy < 144 && particles.length < 200) { gfxW.doors++; for (let i = 0; i < 7; i++) particles.push({ x: d.x + 0.5 + rnd(-0.45, 0.45), y: d.y + 0.5 + rnd(-0.45, 0.45), z: Math.random() < 0.5 ? 0.03 : rnd(0.7, 0.95), vx: rnd(-0.4, 0.4), vy: rnd(-0.4, 0.4), vz: rnd(-0.2, 0.2), life: rnd(0.7, 1.2), maxLife: 1.2, img: (fx.parts.dust || fx.hit)[0], size: rnd(0.07, 0.12), fade: true, drift: true, tint: [160, 145, 120] }); } }
+      if (dx * dx + dy * dy < 144 && particles.length < 200) { gfxW.doors++; for (let i = 0; i < 7; i++) particles.push({ x: d.x + 0.5 + rnd(-0.45, 0.45), y: d.y + 0.5 + rnd(-0.45, 0.45), z: Math.random() < 0.5 ? 0.03 : rnd(0.7, 0.95), vx: rnd(-0.4, 0.4), vy: rnd(-0.4, 0.4), vz: rnd(-0.2, 0.2), life: rnd(0.7, 1.2), maxLife: 1.2, img: gfxWPuff(), size: rnd(0.07, 0.12), fade: true, drift: true, tint: [160, 145, 120] }); } }
     else if (d.target === 0 && d.open <= 0.01) d.gfxDust = false; }
 }
 function gfxWAir(dt) { // biomernas egna luftpartiklar (det som väder-tabellen saknar), i världen och få
@@ -11998,12 +12329,12 @@ function gfxWUpdate(dt) { // anropas från updateWeather varje bildruta
   gfxW.t += dt; gfxW.scanT -= dt; if (gfxW.scanT <= 0) { gfxW.scanT = 1; gfxWScan(); }
   gfxW.acc += dt; if (gfxW.acc >= 1 / 15) { gfxW.acc = 0; for (const k of gfxW.used) { gfxWWarp(k); floorTexs[animTex[k]] = gfxW.buf[k]; } gfxW.active = gfxW.used.length > 0; gfxW.ticks++; if (gfxW.hasBan) gfxWBanner(); }
   if (lightning > gfxW.lastL + 0.5) gfxW.bolts++; gfxW.lastL = lightning;
-  gfxWDoors();
+  gfxWDoors(); gfxWMech(dt);
   if (particles.length > 180) return; // taket på partiklar delas med strider – miljön ger vika först
   gfxWAir(dt); gfxWTorchFx(dt); gfxWLiquidFx(dt);
 }
 function gfxWApi() { // window.__game.gfxW: tillstånd och mätning för t105
-  return { st: gfxW, on: gfxWOn, set: o => Object.assign(gfxW, o), used: () => gfxW.used.slice(), isBuf: k => animTex[k] !== undefined && !!gfxW.buf[k] && floorTexs[animTex[k]] === gfxW.buf[k], scorch: gfxWScorch, torches: () => torches, bolt: () => { lightning = 1; }, sky: (x, y) => !!(cellSky && cellSky[(y | 0) * mw + (x | 0)]), biomes: () => Object.keys(BIOME_FX),
+  return { st: gfxW, on: gfxWOn, set: o => Object.assign(gfxW, o), used: () => gfxW.used.slice(), isBuf: k => animTex[k] !== undefined && !!gfxW.buf[k] && floorTexs[animTex[k]] === gfxW.buf[k], scorch: gfxWScorch, torches: () => torches, bolt: () => { lightning = 1; }, sky: (x, y) => !!(cellSky && cellSky[(y | 0) * mw + (x | 0)]), biomes: () => Object.keys(BIOME_FX), rad: () => torches.filter(t => !t.hidden).slice(0, 4).map(gfxWRad), spin: o => gfxWSpin(o), step: gfxWStep,
     warpMs: (n = 200) => { if (!gfxW.used.length && !gfxW.hasBan) return 0; const t0 = performance.now(); for (let i = 0; i < n; i++) { for (const k of gfxW.used) gfxWWarp(k); if (gfxW.hasBan) gfxWBanner(); } return (performance.now() - t0) / n; }, lightning: () => lightning, // warpMs: en uppdatering av alla vätskor
     sum: k => { const b = gfxW.buf[k]; if (!b) return 0; let s = 0; for (let i = 0; i < b.data.length; i += 7) s = (s + b.data[i] * (i + 1)) % 1000000007; return s; },
     marks: () => { let n = 0; for (const a of wallMarks.values()) for (const m of a) if (m.kind === 'scorch') n++; return n; },

@@ -89,5 +89,37 @@ const fin = await ev(() => ({ d: document.getElementById('ro-depth').textContent
 chk(+early < fin.kills, `FIENDER börjar lågt (${early} av ${fin.kills})`);
 chk(fin.d === String(fin.run) && fin.k === String(fin.kills), `siffrorna räknas upp till rätt värden (${fin.d}/${fin.run}, ${fin.k}/${fin.kills}; tidigt ${early})`);
 await shot('dead_done');
+// ---- omgång 2: skärmen och spelarens kropp ----
+const B = () => ev(() => __game.meny.body());
+chk((await B()).dead > 0.9, 'döden: färgen rinner ur och kanten sluter sig (dead → 1)');
+{ const c = await ev(() => ({ p: __game.P.pitch, r: __game.P.roll })); chk(c.p < -15 && c.r > 0.4, `döden: kameran glider ned mot golvet och lägger sig på sidan (blick ${c.p.toFixed(1)}, lutning ${c.r.toFixed(2)})`); }
+chk(await pg.waitForFunction('__game.meny.body().pre && __game.state() === "dead"', { timeout: 8000 }).then(() => true).catch(() => false), 'startskärmens nästa bana förgenereras på dödsskärmen (efter uppräkningen)');
+await ev(() => __game.showTitle()); await pg.waitForFunction('__game.meny.title().frames > 5 && !__game.meny.body().pre', { timeout: 8000 }).catch(() => {});
+m = await M(); chk(m.t.on && !(await B()).pre && m.t.genMs < 120, `startskärmen tar den förgenererade banan utan ryck (${Math.round(m.t.genMs)} ms, ${m.t.biome})`);
+await ev(() => { localStorage.removeItem('krypta.run'); __game.begin('new'); }); await wait(600); await pg.keyboard.press('Escape'); await wait(500);
+await ev(() => { if (window.CardUI && CardUI.isOpen()) CardUI.close(); __game.resume && __game.resume(); });
+await pg.waitForFunction('__game.state() === "play" && __game.banner() <= 0', { timeout: 15000 }).catch(() => {});
+chk(Math.abs(await ev(() => __game.P.pitch)) < 3, 'ny runda: dödskamerans blick är nollställd');
+let n0 = (await B()).n;
+await ev(() => { const P = __game.P; P.iframe = 0; P.hp = 100; __game.hurtPlayer(6, P.x + Math.cos(P.a + 1.6) * 2, P.y + Math.sin(P.a + 1.6) * 2, 'melee'); });
+await pg.waitForFunction(n => __game.meny.body().n > n, n0, { timeout: 2000 }).catch(() => {}); await shot('body_hit');
+await ev(() => { __game.P.hp = Math.min(__game.P.hp + 25, 300); });
+chk(await pg.waitForFunction('__game.meny.body().edge > 0.2', { timeout: 2000 }).then(() => true).catch(() => false), 'upplockning: kanten tonas');
+await ev(() => { const P = __game.P; P.dashT = 0.17; P.vx = Math.cos(P.a) * 11; P.vy = Math.sin(P.a) * 11; });
+chk(await pg.waitForFunction('__game.meny.body().dashK > 0.3', { timeout: 1500, polling: 16 }).then(() => true).catch(() => false), 'rusning: fartlinjer och mörk kant');
+await ev(() => { Object.defineProperty(__game.P, 'swim', { get: () => true, set: () => {}, configurable: true }); }); // tvingar "under ytan" en stund
+chk(await pg.waitForFunction('__game.meny.body().swim > 0.6', { timeout: 3000 }).then(() => true).catch(() => false), 'under ytan: vågor och blå kant'); await shot('body_swim');
+{ const wm = (await B()).waveMs; chk(wm < 1.5, `vågorna kostar ${wm.toFixed(2)} ms per bildruta (< 1,5)`); }
+await ev(() => { delete __game.P.swim; __game.P.swim = false; });
+await ev(() => { __game.P.hp = 15; }); const beats = []; for (let i = 0; i < 30; i++) { beats.push((await B()).beat); await wait(45); }
+chk(Math.max(...beats) - Math.min(...beats) > 0.25, `låg hälsa: pulsen slår (${Math.min(...beats).toFixed(2)}–${Math.max(...beats).toFixed(2)})`); await shot('body_lowhp');
+await ev(() => { __game.P.hp = 100; __game.pause(); }); await wait(500); await shot('body_pause'); await ev(() => __game.resume()); await wait(200);
+const e0 = (await B()).exit; await ev(() => __game.floorDone());
+chk(await pg.waitForFunction(e => __game.meny.body().exit > e, e0, { timeout: 2000 }).then(() => true).catch(() => false), 'utgången: virvel och blixt');
+chk(await ev(() => getComputedStyle(document.getElementById('floorend'), '::after').animationName) === 'fe-flash', 'nivåslutet öppnas med en vit blixt (fe-flash)');
+await ev(() => { __game.settings.noFlash = true; }); await wait(100);
+chk(await ev(() => { const fe = document.getElementById('floorend'); fe.classList.add('exitflash'); const s = getComputedStyle(fe, '::after'); const r = s.display === 'none' || s.animationName === 'none'; fe.classList.remove('exitflash'); return r; }), 'noFlash: ingen blixt över nivåslutet');
+chk(await ev(() => { const s = getComputedStyle(document.getElementById('floorend'), '::after'); return s.animationName === 'none' || s.content === 'none'; }), 'blixten spelas inte upp igen utan att man gått ut (exitflash)');
+await ev(() => { __game.settings.noFlash = false; });
 if (fails) console.log(`FAIL ${fails} kontroller misslyckades`);
 await done();

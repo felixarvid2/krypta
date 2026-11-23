@@ -33,6 +33,8 @@ chk(await goS('sunken', true), 'sjunkna staden: hittade vatten');
 await wait(2500); a = await st();
 chk(a.used.some(k => /water|deep|shallow/.test(k)), 'vattnet animeras (' + a.used.join('+') + ')');
 chk(a.used.length > 0 && await ev(k => __game.gfxW.isBuf(k), a.used[0]), 'vattnets golvtextur är bufferten');
+const stp = await ev(() => { const g = __game, m = g.mapRef(), s0 = g.gfxW.st.steps; let p = null; for (let y = 2; y < m.length - 2 && !p; y++) for (let x = 2; x < m[0].length - 2 && !p; x++) if ('-ĔĐ'.includes(m[y][x])) p = [x, y]; if (!p) return null; const ox = g.P.x, oy = g.P.y; g.P.x = p[0] + 0.5; g.P.y = p[1] + 0.5; g.P.vx = 4; g.P.vy = 0; g.P.jz = 0; g.gfxW.step(); const s1 = g.gfxW.st.steps; g.P.x = ox; g.P.y = oy; g.P.vx = 0; return s1 - s0; });
+chk(stp > 0, 'fotsteg i vatten plaskar (' + stp + ')');
 // 3. katedralen: aska i luften; kryptan: gnistor från facklor
 await goS('cathedral', false); a = await st(); await wait(2500); b = await st();
 chk(b.air > a.air, `katedralen: aska singlar ned (${a.air} → ${b.air})`);
@@ -42,7 +44,10 @@ a = await st(); await wait(3000); b = await st();
 chk(!near || b.embers > a.embers, `kryptan: gnistor stiger ur facklorna (${a.embers} → ${b.embers})`);
 // 4. kista, dörr, sot, föremål
 const ch = await ev(() => { const g = __game, c = g.chests().find(c => !c.open); if (!c) return null; c.locked = false; c.cursed = false; g.P.x = c.x + 1; g.P.y = c.y; const n = g.particles().length; g.openChest(c); return { n, m: g.particles().length }; });
-a = await st(); await wait(300); for (let i = 0; i < 6 && await ev(() => CardUI.isOpen()); i++) { await pg.keyboard.press(i % 2 ? 'Digit1' : 'Escape'); await wait(450); } // kistan kan ge ett kortval – riktiga tangenter
+a = await st(); const ui0 = await ev(() => CardUI.isOpen());
+let uiT = -1; { const t0 = Date.now(); try { await pg.waitForFunction(() => CardUI.isOpen(), null, { timeout: 4000 }); uiT = Date.now() - t0; } catch (e) { /* inget kortval */ } }
+chk(!ch || (!ui0 && uiT >= 0), `kistan: kortvalet väntar tills locket och gnistorna synts (direkt: ${ui0}, efter ${uiT} ms)`);
+for (let i = 0; i < 6 && await ev(() => CardUI.isOpen()); i++) { await pg.keyboard.press(i % 2 ? 'Digit1' : 'Escape'); await wait(450); } // kistan kan ge ett kortval – riktiga tangenter
 if (await ev(() => __game.state() === 'pause')) { await ev(() => __game.resume()); await wait(200); }
 chk(!ch || (a.chests >= 1 && ch.m > ch.n), 'kistan slår upp med gnistor ' + JSON.stringify(ch));
 const dr = await ev(() => { const g = __game, m = g.mapRef(); for (const d of Object.values(g.doors())) { if (d.target !== 0 || d.secret) continue; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (m[d.y + dy] && m[d.y + dy][d.x + dx] === '.') { g.P.x = d.x + dx + 0.5; g.P.y = d.y + dy + 0.5; d.target = 1; return true; } } return null; });
@@ -53,6 +58,13 @@ chk(sc.m1 > sc.m0, `explosionen lämnar sotmärken på väggarna (${sc.m0} → $
 await ev(() => { const g = __game; g.items().push({ x: g.P.x + Math.cos(g.P.a) * 1.5, y: g.P.y + Math.sin(g.P.a) * 1.5, type: 'health', taken: false }); });
 a = await st(); await wait(3000); b = await st();
 chk(b.glints > a.glints, `föremålen glimtar (${a.glints} → ${b.glints})`);
+// 4c. föremål snurrar, ljusradien andas, fotsteg dammar/plaskar, fällor reagerar
+chk(await ev(() => { const g = __game; return g.gfxW.spin({ type: 'key', x: 1, y: 1 }) < 1.001 && g.gfxW.spin({ type: 'gold', x: 1, y: 1 }) === 1; }), 'nyckeln snurrar (spriteSX), mynten har egna bilder');
+a = { spins: await ev(() => __game.gfxW.st.spins) }; await wait(1500); b = { spins: await ev(() => __game.gfxW.st.spins) }; chk(b.spins > a.spins, `föremål ritas vridna (${a.spins} → ${b.spins})`);
+const rads = await ev(async () => { const g = __game, r1 = g.gfxW.rad(); await new Promise(r => setTimeout(r, 400)); return [r1, g.gfxW.rad()]; });
+chk(rads[0].length === 0 || rads[0].some((v, i) => Math.abs(v - rads[1][i]) > 1e-4), 'facklornas ljusradie fladdrar ' + JSON.stringify(rads[0].map(v => +v.toFixed(3))));
+const mech = await ev(async () => { const g = __game, pr = g.props().find(o => o.def && o.def.trap); if (!pr) return null; g.P.x = pr.x + 1.5; g.P.y = pr.y; const m0 = g.gfxW.st.mech; await new Promise(r => setTimeout(r, 200)); pr.up = !pr.up; await new Promise(r => setTimeout(r, 300)); return g.gfxW.st.mech - m0; });
+chk(mech === null || mech > 0, 'fällan reagerar när den slår om (' + mech + ')');
 // 4b. fanan på vägg 5 vajar (texturen byts mot en animerad buffert) och lowfx återställer den
 const fan = await ev(() => { const g = __game; for (let s = 1; s < 200; s++) for (const d of [1, 2, 3, 4]) { const L = Gen.floor(s * 7919 + d, d, { biome: 'dungeon' }); if (!L.map.some(r => r.indexOf('5') >= 0)) continue; g.run().depth = d; g.startLevel(L); g.ents().length = 0; g.P.hp = 99999; return true; } return false; });
 if (fan) { await wait(300); a = { t: await ev(() => __game.gfxW.st.banTicks || 0) }; await wait(1000); b = { t: await ev(() => __game.gfxW.st.banTicks || 0) };
@@ -74,6 +86,11 @@ const sc2 = await ev(() => { const g = __game, m = g.mapRef(), m0 = g.gfxW.marks
 chk(sc2 === 0, 'lowfx: inga nya sotmärken (' + sc2 + ')');
 await ev(() => { __game.settings.lowfx = false; }); await wait(800);
 chk(await ev(() => __game.gfxW.isBuf('lava')), 'lowfx av igen: lavan animeras igen');
+// 6b. utgångens ljuspelare ritas; fiender som dör i lava fräser
+await wait(300); const ex = await ev(async () => { const g = __game, n0 = g.gfxW.st.exitN || 0, e = g.lvl().exit; if (!e) return null; g.P.x = e.x + 2.5; g.P.y = e.y + 0.5; g.P.a = Math.PI; await new Promise(r => setTimeout(r, 500)); return (g.gfxW.st.exitN || 0) - n0; });
+chk(ex === null || ex > 0, 'utgångens ljuspelare ritas (' + ex + ')');
+const df = await ev(() => { const g = __game, m = g.mapRef(); let p = null; for (let y = 2; y < m.length - 2 && !p; y++) for (let x = 2; x < m[0].length - 2 && !p; x++) if (m[y][x] === '_') p = [x + 0.5, y + 0.5]; if (!p) return null; const d0 = g.gfxW.st.deathFx || 0, e = g.spawnEnemy('S', p[0], p[1]); g.hurtEnemy(e, 99999, e.x, e.y); return { dead: e.dead, n: (g.gfxW.st.deathFx || 0) - d0 }; });
+chk(df === null || (df.dead && df.n > 0), 'fienden som dör i lavan fräser ' + JSON.stringify(df));
 // 7. mätning: bildrutetid med och utan (samma sidladdning)
 const bm = await ev(() => { const g = __game; const r = { on: [], off: [] }; for (const off of [true, false, true, false]) { g.gfxW.set({ off }); g.gfxW.bench(30); r[off ? 'off' : 'on'].push(g.gfxW.bench(150).mean); } g.gfxW.set({ off: false }); return { on: Math.min(...r.on), off: Math.min(...r.off) }; });
 console.log(`     bildrutetid vulkanen: utan ${bm.off.toFixed(2)} ms, med ${bm.on.toFixed(2)} ms (${((bm.on / bm.off - 1) * 100).toFixed(1)} %)`);
