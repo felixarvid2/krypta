@@ -1414,7 +1414,9 @@ function makeBoss(x, y) {
 
 // ---------- Kollision / kartfrågor ----------
 function cellAt(x, y) { if (x < 0 || y < 0 || x >= mw || y >= mh) return '1'; return map[y | 0][x | 0]; }
-function isWallChar(c) { return c === 'Ȭ' || c === 'ȭ' || c === 'Ȯ' || c === 'ȯ' || c === 'Ȱ' || c === 'ȱ' || c === 'Ȑ' || c === 'ȑ' || c === 'Ȓ' || c === 'ȓ' || c === 'Ȕ' || c === 'ȕ' || c === 'Ǯ' || c === 'ǯ' || c === 'ǰ' || c === 'ǿ' || c === 'Ȁ' || c === 'ȁ' || c === 'ǒ' || c === 'Ǔ' || c === 'ǔ' || c === 'Ǡ' || c === 'ǡ' || c === 'Ǣ' || c === 'Ɵ' || c === 'Ơ' || c === 'ơ' || c === 'Ƣ' || c === 'ƣ' || c === 'Ƥ' || c === 'Ɗ' || c === 'Ƌ' || c === 'ƌ' || c === 'Ɠ' || c === 'Ɣ' || c === 'ƕ' || c === 'ũ' || c === 'Ū' || c === 'ū' || c === 'ŵ' || c === 'Ŷ' || c === 'ŷ' || c === 'ŝ' || c === 'Ş' || c === 'ş' || c === 'Š' || c === 'š' || c === 'Ţ' || c === 'Ĺ' || c === 'ĺ' || c === 'Ļ' || c === 'ļ' || c === 'Ľ' || c === 'ľ' || c === 'Ą' || c === 'Ć' || c === 'Ĉ' || c === 'Ċ' || c === 'Č' || c === 'Ď' || (c >= '0' && c <= '9') || c === '#' || c === '%' || c === '~' || c === '&' || c === '=' || c === '{' || c === 'Ø' || c === '¦' || c === 'Ò' || c === '¤' || c === 'È' || c === 'Ì' || c === 'Ù'; } // Ø frusen mur, ¦ frostbossens vägg // 0 träsk, { sprucken vägg // 6 skog, 7 kyrkogårdsmur, 8 grotta, 9 husvägg, #%~&= bossväggar
+const IWC = Object.create(null); // isWallChar per tecken (strålkastningen frågar för varje steg)
+function isWallChar(c) { const r = IWC[c]; return r !== undefined ? r : (IWC[c] = isWallChar0(c)); }
+function isWallChar0(c) { return c === 'Ȭ' || c === 'ȭ' || c === 'Ȯ' || c === 'ȯ' || c === 'Ȱ' || c === 'ȱ' || c === 'Ȑ' || c === 'ȑ' || c === 'Ȓ' || c === 'ȓ' || c === 'Ȕ' || c === 'ȕ' || c === 'Ǯ' || c === 'ǯ' || c === 'ǰ' || c === 'ǿ' || c === 'Ȁ' || c === 'ȁ' || c === 'ǒ' || c === 'Ǔ' || c === 'ǔ' || c === 'Ǡ' || c === 'ǡ' || c === 'Ǣ' || c === 'Ɵ' || c === 'Ơ' || c === 'ơ' || c === 'Ƣ' || c === 'ƣ' || c === 'Ƥ' || c === 'Ɗ' || c === 'Ƌ' || c === 'ƌ' || c === 'Ɠ' || c === 'Ɣ' || c === 'ƕ' || c === 'ũ' || c === 'Ū' || c === 'ū' || c === 'ŵ' || c === 'Ŷ' || c === 'ŷ' || c === 'ŝ' || c === 'Ş' || c === 'ş' || c === 'Š' || c === 'š' || c === 'Ţ' || c === 'Ĺ' || c === 'ĺ' || c === 'Ļ' || c === 'ļ' || c === 'Ľ' || c === 'ľ' || c === 'Ą' || c === 'Ć' || c === 'Ĉ' || c === 'Ċ' || c === 'Č' || c === 'Ď' || (c >= '0' && c <= '9') || c === '#' || c === '%' || c === '~' || c === '&' || c === '=' || c === '{' || c === 'Ø' || c === '¦' || c === 'Ò' || c === '¤' || c === 'È' || c === 'Ì' || c === 'Ù'; } // Ø frusen mur, ¦ frostbossens vägg // 0 träsk, { sprucken vägg // 6 skog, 7 kyrkogårdsmur, 8 grotta, 9 husvägg, #%~&= bossväggar
 const isPropChar = c => c === 't' || c === 'n' || !!(PROP_DEFS[c] && PROP_DEFS[c].block); // träd, gravstenar och möbler: blockerar men är sprites
 const isDoorChar = c => c === 'D' || c === 'G' || c === '*' || c === '|' || c === ']'; // | galler som öppnas med spak, ] låst dörr
 function doorAt(x, y) { return doors[(x | 0) + ',' + (y | 0)]; }
@@ -1663,8 +1665,10 @@ function updateWeather(dt) {
 
 // ---------- Rendering ----------
 let fogR = 0, fogG = 0, fogB = 0, fogK = 0.085;
+let sfD = -1, sfK = -1, sfF = 1; // shadeFog: senaste avstånd och dimtäthet → dimfaktorn (golvrader och väggkolumner har samma avstånd i hela raden)
 function shadeFog(c, L, dist, ci = -1) {
-  const ff = Math.exp(-dist * fogK);
+  if (dist !== sfD || fogK !== sfK) { sfD = dist; sfK = fogK; sfF = Math.exp(-dist * fogK); }
+  const ff = sfF;
   const k = L * ff;
   let kr = k, kg = k, kb = k;
   if (ci >= 0 && lcol) { const j = ci * 3; kr += lcol[j] * ff; kg += lcol[j + 1] * ff; kb += lcol[j + 2] * ff; if (kr < 0) kr = 0; if (kg < 0) kg = 0; if (kb < 0) kb = 0; } // färgat ljus
@@ -1918,7 +1922,7 @@ function drawSprite(img, wx, wy, size, z, flip, fixedLight, whiteFlash = 0, minL
   const tx = inv * (dirY * rx - dirX * ry), ty = inv * (-plY * rx + plX * ry);
   if (ty < 0.12) return;
   const scale = PSC / ty;
-  const sh = scale * size * spriteSY, sw = scale * size * img.w / img.h * spriteSX;
+  const sh = scale * size * spriteSY, sw = scale * size * img.w / img.h * spriteSX, vsc = img.h / sh;
   const cx = (W / 2) * (1 + tx / ty);
   const bottom = hor + scale * (camZ - z);
   const topY = bottom - sh, left = cx - sw / 2;
@@ -1934,7 +1938,7 @@ function drawSprite(img, wx, wy, size, z, flip, fixedLight, whiteFlash = 0, minL
     let u = Math.floor((x - left) / sw * img.w); if (flip) u = img.w - 1 - u;
     if (u < 0 || u >= img.w) continue;
     for (let y = y0; y <= y1; y++) {
-      const v = Math.floor((y - topY) / sh * img.h);
+      const v = ((y - topY) * vsc) | 0;
       if (v < 0 || v >= img.h) continue;
       let c = img.data[v * img.w + u];
       const al = c >>> 24;
