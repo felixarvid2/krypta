@@ -111,6 +111,41 @@ def brimfly_draw(d,mx,my,st,X0,Y0,i):
     d.ellipse((px-r-1,py-r-1,px+r+1,py+r+1),fill=(120,40,10,255))
     d.ellipse((px-r,py-r,px+r,py+r),fill=(232,180,32,255))
     d.ellipse((px-r*0.6,py-r*0.7,px+r*0.2,py),fill=(255,240,140,255))
+# version 23: slaktarkroken (hookchain: närstrid, extra lägena throw/empty, kedjan ut mot siktet) och bombarden (bombard: kanonkula + krutrök)
+TARGET['bombard']=(146,214,24); HARD.update(('hookchain','bombard'))
+BLUNDERSMOKE['bombard']=[(0,10),(1,18),(2,25),(3,31),(4,35)]
+BALLFLY={'bombard':[(0,0.1),(1,0.4),(2,0.75),(3,None),None]}   # kanonkulan rakt mot siktet (steg, andel av sträckan)
+HOOKLINE={'hookchain':[None,0.55,1.0,0.95]}                   # kedjan och kroken i kastets rutor (andel av sträckan mot siktet)
+HOOKHOLD={'hookchain':[1.0]}                                  # läget empty: kedjan sträckt till kroken
+
+
+def ballfly_draw(d,mx,my,st,X0,Y0,i):
+    """Version 23: bombarden: en tung svart järnkula som far rakt mot siktet med fartstreck bakom; krymper med avståndet."""
+    k,f=st
+    if f is None: return
+    ax,ay=AIM[0]-X0,AIM[1]-Y0
+    px,py=mx+(ax-mx)*f,my+(ay-my)*f; s=max(0.4,1.3-f*0.9); r=8*s
+    for j in range(3):
+        tx,ty=mx+(ax-mx)*max(0,f-0.08*(j+1)),my+(ay-my)*max(0,f-0.08*(j+1))
+        d.line([(tx-r*0.5,ty),(tx+r*0.5,ty)],fill=(150,150,150,255),width=1)
+    d.ellipse((px-r-1,py-r-1,px+r+1,py+r+1),fill=OUTC+(255,))
+    d.ellipse((px-r,py-r,px+r,py+r),fill=(58,60,66,255))
+    d.ellipse((px-r*0.6,py-r*0.7,px,py-r*0.1),fill=(120,124,134,255))
+
+
+def hookline_draw(d,mx,my,f,X0,Y0,i):
+    """Version 23: slaktarkroken: kedjan (länkar) från handen ut mot siktet och den stora kroken längst ut."""
+    ax,ay=AIM[0]-X0+6,AIM[1]-Y0+8
+    ex,ey=mx+(ax-mx)*f,my+(ay-my)*f
+    n=max(3,int(np.hypot(ex-mx,ey-my)/4))
+    for j in range(1,n+1):
+        t=j/n; x,y=mx+(ex-mx)*t,my+(ey-my)*t+np.sin(t*np.pi)*4*(1-f*0.6)
+        c=(150,154,162,255) if j%2 else (90,94,102,255)
+        d.ellipse((x-1.5,y-1,x+1.5,y+1),fill=OUTC+(255,)); d.point((x,y),fill=c)
+    s=max(0.9,1.4-f*0.5)
+    d.arc((ex-6*s,ey-2*s,ex+6*s,ey+10*s),200,520,fill=OUTC+(255,),width=max(2,int(3*s)))
+    d.arc((ex-6*s,ey-2*s,ex+6*s,ey+10*s),200,520,fill=(200,204,212,255),width=1)
+    d.polygon([(ex+5*s,ey+2*s),(ex+8*s,ey-2*s),(ex+4*s,ey)],fill=(220,224,230,255))
 
 
 def blundersmoke_draw(d,mx,my,st,X0,Y0,i):
@@ -686,6 +721,12 @@ for w,st in d.items():
         atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(BLUNDERSMOKE[w]),lambda m,st:(m[0]-st[1]*1.4-14,m[1]-st[1]*1.4-16,m[0]+st[1]*1.2+8,m[1]+st[1]+6),blundersmoke_draw)
     if w in BRIMFLY:   # version 22
         atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(BRIMFLY[w]),lambda m,st:(min(m[0],AIM[0])-14,max(0,min(m[1],AIM[1])-50),max(m[0],AIM[0])+14,m[1]+10),brimfly_draw)
+    if w in BALLFLY:   # version 23
+        atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(BALLFLY[w]),lambda m,st:(min(m[0],AIM[0])-14,min(m[1],AIM[1])-14,max(m[0],AIM[0])+14,m[1]+10),ballfly_draw)
+    if w in HOOKLINE:
+        atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(HOOKLINE[w],'throw'),lambda m,f:(min(m[0],AIM[0])-14,min(m[1],AIM[1])-8,max(m[0],AIM[0])+20,m[1]+8),hookline_draw)
+    if w in HOOKHOLD:
+        atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(HOOKHOLD[w],'empty'),lambda m,f:(min(m[0],AIM[0])-14,min(m[1],AIM[1])-8,max(m[0],AIM[0])+20,m[1]+8),hookline_draw)
     atlas.save(OUT+f'assets/gfx/fp_{w}.png',optimize=True)
     if w in MUZZLE_IDLE: mz=[mz[0] if i in states['fire'] else m for i,m in enumerate(mz)]   # bågen: utan pil räknas mynningen från vilobilden
     out[w]={'x':x,'y':y,'w':fw,'h':fh,'states':states,'muzzle':mz,'dur':{'fire':round(st['fire_dur'],3),**{k:round(v,3) for k,v in st.get('durs',{}).items()}}}
