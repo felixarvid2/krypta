@@ -185,7 +185,13 @@ def save_prop(name, frames, w=None, h=None):
     return save(im, G_OUT + f'prop_{name}.png', len(frames))
 
 
+# Ersatta av AI-texturer (tools/cfart/, Cloudflare Workers AI + efterbehandling): skrivs inte över härifrån.
+CFART = {'wall_prisonstone.png', 'wall_cellbars.png', 'floor_prison.png'}
+
+
 def finish(rgb, name, colors=48, half=True):
+    if name in CFART:
+        return None
     im = Image.fromarray(np.clip(rgb, 0, 255).astype(np.uint8), 'RGB')
     if half:
         im = im.resize((im.width * 2, im.height * 2), Image.NEAREST)
