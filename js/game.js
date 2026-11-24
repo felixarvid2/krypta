@@ -3,9 +3,18 @@
 // Varje runda: genererade våningar (Gen), kort som ger bonusar (Cards/CardUI), guld, butik, elitfiender
 // och en boss på sista våningen. Döden avslutar rundan; själar ger upplåsningar till nästa.
 (() => {
-const W = 320, H = 200, HUD_H = 0, VH = H - HUD_H, HORIZON = VH >> 1;
-const WOY = HORIZON - 83; // vapnen sänks lika mycket som horisonten
+const SW = 320, H = 200, HUD_H = 0, SVH = H - HUD_H, SHOR = SVH >> 1; // skärmens mått (fasta)
+let W = SW, VH = SVH, HORIZON = SHOR; // världsritningen byter till den större bufferten när man tittar upp/ned (lkBegin/lkEnd)
+const WOY = SHOR - 83; // vapnen sänks lika mycket som horisonten
 const PSC = 166; // projektionens skala (den gamla vyhöjden): vyn fyller hela höjden utan att väggarna sträcks
+// Titta upp/ned utan förvrängning: världen ritas med vågrät kamera i en större buffert och vrids sedan till skärmen (en homografi per rad, lkProject).
+const LK_MAX = 0.61, LK_TOT = 0.68; // största blick upp/ned (35°) och största totala vinkel med rekyl och dödskamera
+function lkDims(th) { // buffertens bredd/höjd och horisontens rad som rymmer hela skärmen vid vinkeln th
+  const c = Math.cos(th), s = Math.sin(th), y0 = -SHOR / PSC, y1 = (SVH - 1 - SHOR) / PSC, z0 = y0 * s + c, z1 = y1 * s + c;
+  const hor = Math.ceil(-PSC * (y0 * c - s) / z0) + 2;
+  return { TW: 2 * Math.ceil(SW / 2 / Math.min(z0, z1) + 2), TH: hor + Math.ceil(PSC * (y1 * c - s) / z1) + 3, hor };
+}
+const LK_W = Math.max(lkDims(LK_TOT).TW, lkDims(-LK_TOT).TW), LK_H = Math.max(lkDims(LK_TOT).TH, lkDims(-LK_TOT).TH);
 const HUD_CELLS = [0, 60, 112, 198, 266]; // statuslistens fält: hälsa, skydd, ammo, vapen, våning
 let BASE_PLANE = 0.75; // sätts från synfältet (FOV) i inställningarna
 const applyFov = () => { BASE_PLANE = Math.tan(clamp(settings.fov, 60, 100) * Math.PI / 360); };
@@ -16,11 +25,13 @@ const cycleOf = d => Math.floor((d - 1) / (FLOORS + 1));
 const cyclePos = d => (d - 1) % (FLOORS + 1) + 1;
 const canvas = document.getElementById('screen');
 const ctx = canvas.getContext('2d');
-canvas.width = W; canvas.height = H;
+canvas.width = SW; canvas.height = H;
 ctx.imageSmoothingEnabled = false;
-const frame = ctx.createImageData(W, VH);
-const px = new Uint32Array(frame.data.buffer);
-const zbuf = new Float32Array(W);
+const frame = ctx.createImageData(SW, SVH);
+const spx = new Uint32Array(frame.data.buffer); // skärmens bildpunkter
+const tpx = new Uint32Array(LK_W * LK_H); // den större bufferten för upp/ned-blicken
+let px = spx; // där världen ritas just nu (spx, eller tpx under lkBegin–lkEnd)
+const zbuf = new Float32Array(LK_W);
 const params = new URLSearchParams(location.search);
 const TAU = Math.PI * 2;
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -34,7 +45,7 @@ const store = {
 };
 const DEVICE = (() => { try { return matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window ? 'mobil' : 'dator'; } catch (e) { return 'dator'; } })(); // inställningar sparas per enhetstyp
 const settings = Object.assign({ sens: 1, vol: 0.8, muted: false, diff: 1, fov: 74, gamma: 1, shake: 1, xstyle: 'kors', xcolor: '', fps: false, lowfx: false, bob: true,
-  vibrate: true, lefty: false, btnScale: 1, map: 1 }, store.get('settings.' + DEVICE, null) || store.get('settings', {}));
+  vibrate: true, lefty: false, btnScale: 1, map: 1, mouseLook: DEVICE !== 'mobil', invertY: false }, store.get('settings.' + DEVICE, null) || store.get('settings', {}));
 if (params.has('diff')) settings.diff = clamp(+params.get('diff'), 0, 4);
 const saveSettings = () => { store.set('settings.' + DEVICE, settings); store.set('settings', settings); };
 applyFov();
@@ -1150,7 +1161,7 @@ const WEAPON_CHAR = { g: 'shotgun', r: 'rifle', m: 'smg', d: 'dbshotgun', b: 'cr
 const WF = window.WEAPON_FRAMES;
 
 // ---------- Spelstate ----------
-const P = { pitch: 0, ryaw: 0, burst: 0, burstT: 0, chainN: 0, iframe: 0, slowT: 0, kickT: 0, lastWeapon: 0, boom: 0, x: 2, y: 2, a: 0, vx: 0, vy: 0, hp: 100, armor: 0, shield: 0, shieldT: 0, haste: 0, weapon: 0, has: [true, false, false, false, false, false, false, false],
+const P = { pitch: 0, look: 0, ryaw: 0, burst: 0, burstT: 0, chainN: 0, iframe: 0, slowT: 0, kickT: 0, lastWeapon: 0, boom: 0, x: 2, y: 2, a: 0, vx: 0, vy: 0, hp: 100, armor: 0, shield: 0, shieldT: 0, haste: 0, weapon: 0, has: [true, false, false, false, false, false, false, false],
   ammo: { p9: 36, r556: 0, shells: 0, bolts: 0, flares: 0 }, mags: [9, 0, 0, 0, 0, 0, 0, 0], flash: 0, bob: 0, bobAmp: 0, hurt: 0, pick: 0, shake: 0, camZ: 0.5, deadT: 0,
   jz: 0, jv: 0, dj: false, crouch: 0, slide: 0, stam: 1, stamT: 0, dashT: 0, dashCd: 0, grenades: 2, keys: 0, combo: 0, comboT: 0, runK: 0, roll: 0, landT: 0 };
 const WS = { state: 'draw', t: 0, aim: 0, next: -1, shot: 99, cd: 0, swayX: 0, swayY: 0, spread: 0, shellPhase: '', spin: 0, focus: 0, hunt: false, kick: 0, boost: false, tried: false, nameT: 0, punch: 0, lowWarned: {}, inspect: 0, idleT: 0, throwT: -1 };
@@ -1352,7 +1363,7 @@ function startLevel(level) {
   if (run.floorCurse) for (const e of ents) if (!e.boss) { e.hp = e.maxHp = e.maxHp * 1.2; e.d = { ...e.d, dmg: e.d.dmg * 1.3 }; }
   if (!boss && !merchants.length && run.depth >= 2 && lrng.next() < 0.15) { const sp = randomFreeCell(lrng); if (sp) { merchants.push({ x: sp[0], y: sp[1], stock: null, wander: true }); map[sp[1] | 0][sp[0] | 0] = 'M'; logEvent('VANDRANDE KÖPMAN'); } } // vandrande köpman
   if (floorEvent === 'mist') fogMul = 1.8; else fogMul = 1;
-  P.vx = P.vy = 0; P.flash = 0; P.hurt = 0; P.roll = 0; P.camZ = 0.5; P.deadT = 0; P.shake = 0; P.haste = 0; if (P.deathPitch) { P.pitch = 0; P.deathPitch = false; } // dödskamerans nedåtblick nollställs
+  P.vx = P.vy = 0; P.flash = 0; P.hurt = 0; P.roll = 0; P.camZ = 0.5; P.deadT = 0; P.shake = 0; P.haste = 0; P.look = 0; if (P.deathPitch) { P.pitch = 0; P.deathPitch = false; } // dödskamerans nedåtblick nollställs
   P.hp = Math.min(P.hp, maxHp()); P.shield = mod('shield');
   WS.state = 'draw'; WS.t = 0; WS.aim = 0; WS.shot = 99;
   hurtDir = []; msgs.length = 0;
@@ -1682,14 +1693,14 @@ function buildGrade() { // färgtonen som uppslagstabeller; ljusstyrkan (gamma) 
   for (let c = 0; c < 3; c++) for (let i = 0; i < 256; i++) gradeLUT[c][i] = 255 * Math.pow(i / 255, gam) * g[c];
 }
 function applyGrade() {
-  const [lr, lg, lb] = gradeLUT;
+  const [lr, lg, lb] = gradeLUT, px = spx; // alltid skärmens bildpunkter (efter upp/ned-projektionen)
   for (let i = 0; i < px.length; i++) { const c = px[i]; px[i] = 0xff000000 | (lb[(c >> 16) & 255] << 16) | (lg[(c >> 8) & 255] << 8) | lr[c & 255]; }
   if (settings.cb && CB[settings.cb]) daltonize(CB[settings.cb]);
 }
 // färgblindlägen: simulera färgseendet och flytta skillnaden till färger som syns (daltonisering)
 const CB = { protan: [0.152, 1.053, -0.205, 0.115, 0.786, 0.099, -0.004, -0.048, 1.052], deutan: [0.367, 0.861, -0.228, 0.280, 0.673, 0.047, -0.012, 0.043, 0.969], tritan: [1.256, -0.077, -0.179, -0.078, 0.931, 0.148, 0.005, 0.691, 0.304] };
 function daltonize(m) {
-  for (let i = 0; i < px.length; i++) {
+  const px = spx; for (let i = 0; i < px.length; i++) {
     const c = px[i], r = c & 255, g = (c >> 8) & 255, b = (c >> 16) & 255;
     const er = r - (m[0] * r + m[1] * g + m[2] * b), eg = g - (m[3] * r + m[4] * g + m[5] * b), eb = b - (m[6] * r + m[7] * g + m[8] * b);
     const g2 = clamp(g + 0.7 * er + eg, 0, 255), b2 = clamp(b + 0.7 * er + eb, 0, 255);
@@ -1800,35 +1811,88 @@ const wallTexFor = { 1: 'wall_brick_stone_center', 2: 'wall_brick_small_stone', 
   0: 'wall_swamp', '{': 'wall_cracked', 'Ø': 'wall_frost', '¦': 'wall_boss_frost', 'Ò': 'wall_obsidian', '¤': 'wall_boss_volcano', 'È': 'wall_sandstone', 'Ì': 'wall_hieroglyph', 'Ù': 'wall_boss_pharaoh', 'ǒ': 'wall_hull', 'Ǔ': 'wall_rigging', 'ǔ': 'wall_boss_captain', 'Ǡ': 'wall_labtile', 'ǡ': 'wall_jars', 'Ǣ': 'wall_boss_alchemist', 'Ǯ': 'wall_tent', 'ǯ': 'wall_cage', 'Ȑ': 'wall_timber', 'ȑ': 'wall_orevein', 'Ȓ': 'wall_boss_foreman', 'ȓ': 'wall_brass2', 'Ȕ': 'wall_starchart', 'ȕ': 'wall_boss_starseer', 'Ȭ': 'wall_sewerbrick', 'ȭ': 'wall_pipes', 'Ȯ': 'wall_boss_ratking', 'ȯ': 'wall_dune', 'Ȱ': 'wall_mesa', 'ȱ': 'wall_boss_sphinx', 'ɇ': 'wall_prisonstone', 'Ɉ': 'wall_cellbars', 'ɉ': 'wall_boss_executioner', 'Ɋ': 'wall_shack', 'ɋ': 'wall_quay', 'Ɍ': 'wall_boss_tidepriest', 'ɠ': 'wall_bathmosaic', 'ɡ': 'wall_bathcolumn', 'ɢ': 'wall_boss_bathmaster', 'ɭ': 'wall_flesh', 'ɮ': 'wall_bone', 'ɯ': 'wall_boss_pyrelord', 'ɼ': 'wall_abattoirtile', 'ɽ': 'wall_coldroom', 'ɾ': 'wall_boss_butcher', 'ʈ': 'wall_palisade', 'ʉ': 'wall_earthwork', 'ʊ': 'wall_boss_warlord', 'ǰ': 'wall_boss_ringmaster', 'ǿ': 'wall_junglestone', 'Ȁ': 'wall_jungle', 'ȁ': 'wall_boss_serpent', 'Ɵ': 'wall_hedge', 'Ơ': 'wall_gardenwall', 'ơ': 'wall_boss_gardener', 'Ƣ': 'wall_dream', 'ƣ': 'wall_dreamshift', 'Ƥ': 'wall_boss_sandman', 'Ɗ': 'wall_cathedral', 'Ƌ': 'wall_stainedglass', 'ƌ': 'wall_boss_cardinal', 'Ɠ': 'wall_wax', 'Ɣ': 'wall_honeycomb', 'ƕ': 'wall_boss_queenbee', 'ũ': 'wall_bookshelf', 'Ū': 'wall_libpanel', 'ū': 'wall_boss_librarian', 'ŵ': 'wall_ironplate', 'Ŷ': 'wall_furnace', 'ŷ': 'wall_boss_colossus', 'ŝ': 'wall_mycel', 'Ş': 'wall_mushroomcap', 'ş': 'wall_boss_mycelmother', 'Š': 'wall_marble', 'š': 'wall_mirror', 'Ţ': 'wall_boss_mirrorking', 'Ĺ': 'wall_brass', 'ĺ': 'wall_gear', 'Ļ': 'wall_boss_clockmaker', 'ļ': 'wall_cloudstone', 'Ľ': 'wall_stormwall', 'ľ': 'wall_boss_thunderbird', 'Ą': 'wall_crystal', 'Ć': 'wall_crystal_vein', 'Ĉ': 'wall_boss_crystalqueen', 'Ċ': 'wall_ruin_sunken', 'Č': 'wall_coral', 'Ď': 'wall_boss_leviathan', '#': 'wall_boss_demon', '%': 'wall_boss_beast', '~': 'wall_boss_nightmare', '&': 'wall_boss_ogre', '=': 'wall_boss_ghost' }; // väktar- och bossrum
 // golvtextur per ruta (floorMask) och öppen himmel (sky) räknas fram när våningen startar
 let cellFloor = null, cellSky = null, floorTexs = [], props = [], hazGrid = null, animTex = {};
-const colAng = new Float32Array(W);
-let plane = BASE_PLANE, view = { dirX: 1, dirY: 0, plX: 0, plY: BASE_PLANE, hor: HORIZON, camZ: 0.5, a: 0 };
+const colAng = new Float32Array(LK_W);
+let plane = BASE_PLANE, view = { dirX: 1, dirY: 0, plX: 0, plY: BASE_PLANE, hor: HORIZON, camZ: 0.5, a: 0, pk: 1 };
+// ---------- Titta upp/ned: buffert, radtabeller och projektion till skärmen ----------
+// En kamera som lutas kring sin mittpunkt ger en homografi av bildplanet. Vid lutning kring x-axeln är djupet z detsamma längs en skärmrad,
+// så varje skärmrad v läser en enda rad i den vågräta bufferten (rowY), utdragen 1/z i sidled. Bara de rader och kolumner som läses ritas (need, xa, xb).
+const LK = { on: false, th: 0, TW: SW, TH: SVH, hor: SHOR, c: 1, s: 0, need: new Uint8Array(LK_H), xa: new Int16Array(LK_H), xb: new Int16Array(LK_H), rowY: new Int16Array(SVH), rowZ: new Float64Array(SVH), rowU: new Float64Array(SVH), sU: new Float64Array(LK_H), sZ: new Float64Array(LK_H), clamps: 0 }; // sZ > 0: raden läses glest (var sZ:e punkt från sU) – golvet ritar bara de punkterna
+const lookActive = () => settings.mouseLook !== false && Math.abs(P.look || 0) > 1e-4;
+function lookBy(d) { // mus, högerspak och lodrätt drag: d > 0 = nedåt (som movementY); INVERTERA UPP/NED vänder
+  P.look = clamp((P.look || 0) - d * (settings.invertY ? -1 : 1), -LK_MAX, LK_MAX);
+}
+function lkBegin() { // väljer bufferten för den här bildrutan; false = vanlig rendering direkt på skärmen (som förut)
+  LK.on = false;
+  if (!lookActive()) return false;
+  const th = clamp(P.look + Math.atan(P.pitch / PSC), -LK_TOT, LK_TOT), d = lkDims(th), c = Math.cos(th), s = Math.sin(th), need = LK.need, half = d.TW / 2;
+  LK.th = th; LK.c = c; LK.s = s; LK.TW = d.TW; LK.TH = d.TH; LK.hor = d.hor;
+  need.fill(0, 0, d.TH);
+  for (let v = 0; v < SVH; v++) {
+    const yn = (v - SHOR) / PSC, iz = 1 / (yn * s + c), ty0 = Math.round(d.hor + PSC * (yn * c - s) * iz), ty = clamp(ty0, 0, d.TH - 1), hw = SW / 2 * iz;
+    if (ty !== ty0) LK.clamps++;
+    const a = Math.max(0, Math.floor(half - hw) - 1), b = Math.min(d.TW - 1, Math.ceil(half + hw) + 1);
+    const u0 = half + 0.5 - hw;
+    LK.rowY[v] = ty; LK.rowZ[v] = iz; LK.rowU[v] = u0;
+    if (need[ty]) { LK.xa[ty] = Math.min(LK.xa[ty], a); LK.xb[ty] = Math.max(LK.xb[ty], b); LK.sZ[ty] = 0; } else { need[ty] = 1; LK.xa[ty] = a; LK.xb[ty] = b; LK.sZ[ty] = iz > 1 ? iz : 0; LK.sU[ty] = u0; }
+  }
+  LK.on = true; W = d.TW; VH = d.TH; HORIZON = d.hor; px = tpx;
+  return true;
+}
+function lkEnd() { W = SW; VH = SVH; HORIZON = SHOR; px = spx; } // tillbaka till skärmens mått före allt som ritas i skärmkoordinater
+function lkProject() { // tpx → spx (närmaste granne)
+  const TW = LK.TW;
+  for (let v = 0; v < SVH; v++) {
+    const row = LK.rowY[v] * TW, iz = LK.rowZ[v], o = v * SW;
+    let u = LK.rowU[v];
+    for (let x = 0; x < SW; x++) { spx[o + x] = tpx[row + (u | 0)]; u += iz; }
+  }
+}
+function lkToScreen(u, v) { // buffertpunkt → skärmpunkt (för skadesiffror och livmätare); k = skalan i punkten
+  const X = (u - LK.TW / 2), Y = (v - LK.hor) / PSC, z = LK.c - Y * LK.s;
+  if (z <= 0.05) return null;
+  return { x: SW / 2 + X / z, y: SHOR + PSC * (Y * LK.c + LK.s) / z, k: 1 / z };
+}
 function render() {
+  const lk = lkBegin();
+  try { renderWorld(W, VH, px); if (lk) lkProject(); } finally { if (lk) lkEnd(); }
+  renderPost();
+}
+function renderWorld(W, VH, px) { // måtten och bufferten som parametrar (snabbare än de globala let-variablerna i de heta looparna)
   [fogR, fogG, fogB] = lvl.fog || [0, 0, 0];
   if (floorEvent === 'bloodmoon') { fogR = Math.min(255, fogR + 40); fogG = fogG * 0.6; fogB = fogB * 0.6; }
   if (lightning > 0 && !settings.noFlash) { const k = lightning * 120; fogR = Math.min(255, fogR + k); fogG = Math.min(255, fogG + k); fogB = Math.min(255, fogB + k * 1.2); } // blixten lyser upp dimman
   const sh = shakeAmt();
   const a = P.a + sh * 0.035 * Math.sin(tmr * 37);
   const dirX = Math.cos(a), dirY = Math.sin(a), plX = -dirY * plane, plY = dirX * plane;
+  const pk = W / SW, qX = plX * pk, qY = plY * pk, nd = LK.on ? LK.need : null; // upp/ned-blicken: bredare buffert med samma skala (qX/qY), och bara raderna som skärmen läser (nd)
   const camZ = P.camZ + Math.sin(P.bob * 2) * 0.012 * P.bobAmp - (P.camSink || 0); P.camSink = Math.max(0, (P.camSink || 0) - 0.02); // kvicksand och simning sänker kameran
-  const hor = HORIZON + Math.round(sh * 6 * Math.sin(tmr * 53 + 1) + P.pitch);
-  view = { dirX, dirY, plX, plY, hor, camZ, a };
+  const hor = HORIZON + Math.round(sh * 6 * Math.sin(tmr * 53 + 1) + (LK.on ? 0 : P.pitch)); // med upp/ned-blicken ingår rekylen i vinkeln
+  view = { dirX, dirY, plX: qX, plY: qY, hor, camZ, a, pk };
   const ce = tex[lvl.ceil] || tex.floor_stone, sky = spr.sky, outdoor = !!lvl.sky;
+  if (skyZenOf !== sky) skyPrep(sky);
   skyFx = outdoor && !settings.lowfx;
-  for (let x = 0; x < W; x++) { const camX = 2 * x / W - 1; colAng[x] = Math.atan2(dirY + plY * camX, dirX + plX * camX); }
+  const sdat = nd !== null && skyFx && spr.moon ? skyClean : sky.data; // upp/ned-blicken: panoramats målade måne syns annars som en andra måne bredvid spr.moon
+  for (let x = 0; x < W; x++) { const camX = 2 * x / W - 1; colAng[x] = Math.atan2(dirY + qY * camX, dirX + qX * camX); }
+  if (skyFx && spr.moon) for (let x = 0; x < W; x++) { const da = colAng[x] - MOON_A; moonDa[x] = Math.atan2(Math.sin(da), Math.cos(da)); }
   // golv och tak (eller natthimmel där rutan är öppen)
   for (let y = 0; y < VH; y++) {
+    if (nd !== null && !nd[y]) continue;
     const isFloor = y > hor;
     if (y === hor) { for (let x = 0; x < W; x++) px[y * W + x] = 0xff000000 | (fogB << 16) | (fogG << 8) | fogR; continue; }
     const rowDist = isFloor ? PSC * camZ / (y - hor) : PSC * (1 - camZ) / (hor - y);
     const dim = isFloor ? 1 : 0.62;
-    const x0 = P.x + (dirX - plX) * rowDist, y0 = P.y + (dirY - plY) * rowDist;
-    const stx = (2 * plX * rowDist) / W, sty = (2 * plY * rowDist) / W;
-    const sv = Math.min(sky.h - 1, Math.max(0, (sky.h * (1 - (hor - y) / Math.max(40, hor + 30))) | 0)) * sky.w; // himlens rad
-    let fx2 = x0, fy2 = y0;
-    for (let x = 0; x < W; x++) {
+    const x0 = P.x + (dirX - qX) * rowDist, y0 = P.y + (dirY - qY) * rowDist;
+    const stx = (2 * qX * rowDist) / W, sty = (2 * qY * rowDist) / W;
+    const sk = (hor - y) / Math.max(40, hor - HORIZON + SHOR + 30), skm = ((sk - 1) * SKY_TOPR / 14) % 2; // sk > 1 bara när man tittar upp: ovanför panoramat
+    const skb = sk > 1 ? Math.min(1, (sk - 1) * 0.7) : 0, skb1 = 1 - skb; // där speglas de översta molnraderna (ovanför den målade månen) och tonar mot zenitfärgen
+    const sv = Math.min(sky.h - 1, Math.max(0, (sk > 1 ? (skm < 1 ? skm : 2 - skm) * 13 : sky.h * (1 - sk)) | 0)) * sky.w; // himlens rad
+    const sz = nd !== null ? LK.sZ[y] : 0, xa = nd === null ? 0 : sz ? LK.sU[y] | 0 : LK.xa[y], xb = nd !== null ? LK.xb[y] : W - 1;
+    let fx2 = x0 + stx * xa, fy2 = y0 + sty * xa, us = sz ? LK.sU[y] : 0;
+    for (let x = xa; x <= xb;) {
       const cx = Math.floor(fx2), cy = Math.floor(fy2), inside = cx >= 0 && cy >= 0 && cx < mw && cy < mh, ci = cy * mw + cx;
       if (!isFloor && (inside ? cellSky[ci] : outdoor)) { // öppen himmel: panoramat följer blickriktningen
-        let c = sky.data[sv + ((((colAng[x] / TAU) + 1) * sky.w) | 0) % sky.w];
+        let c = sdat[sv + ((((colAng[x] / TAU) + 1) * sky.w) | 0) % sky.w];
+        if (skb > 0) c = 0xff000000 | (((((c >> 16) & 255) * skb1 + skyZen[2] * skb) | 0) << 16) | (((((c >> 8) & 255) * skb1 + skyZen[1] * skb) | 0) << 8) | (((c & 255) * skb1 + skyZen[0] * skb) | 0);
         if (skyFx) c = skyPixel(c, x, y, hor);
         px[y * W + x] = c;
       } else {
@@ -1836,12 +1900,15 @@ function render() {
         const u = ((fx2 - cx) * t.w) | 0, v = ((fy2 - cy) * t.h) | 0;
         px[y * W + x] = shadeFog(t.data[v * t.w + u], (inside ? light[ci] : lvl.ambient) * dim, rowDist, inside ? ci : -1);
       }
-      fx2 += stx; fy2 += sty;
+      if (sz === 0) { x++; fx2 += stx; fy2 += sty; } else { us += sz; const nx = us | 0; fx2 += stx * (nx - x); fy2 += sty * (nx - x); x = nx; } // gles rad: hoppa till nästa punkt som läses
     }
   }
-  // väggar
+  renderWalls(W, VH, px, dirX, dirY, qX, qY, hor, camZ, nd);
+  renderSprites(plX, plY);
+}
+function renderWalls(W, VH, px, dirX, dirY, qX, qY, hor, camZ, nd) { // väggar (egen funktion: egen inbäddningsbudget, så att shadeFog bäddas in både här och i golvloopen)
   for (let x = 0; x < W; x++) {
-    const camX = 2 * x / W - 1, rdx = dirX + plX * camX, rdy = dirY + plY * camX;
+    const camX = 2 * x / W - 1, rdx = dirX + qX * camX, rdy = dirY + qY * camX;
     const hit = cast(P.x, P.y, rdx, rdy, 48, true);
     const perp = Math.max(0.05, hit.dist);
     zbuf[x] = perp;
@@ -1858,7 +1925,7 @@ function render() {
     const y0 = Math.max(0, Math.ceil(top)), y1 = Math.min(VH - 1, Math.floor(top + lh - 0.001));
     const step = t.h / lh;
     let v = (y0 - top) * step;
-    for (let y = y0; y <= y1; y++) { px[y * W + x] = shadeFog(t.data[Math.min(t.h - 1, v | 0) * t.w + u], L, perp, wci); v += step; }
+    for (let y = y0; y <= y1; y++) { if (nd === null || nd[y]) px[y * W + x] = shadeFog(t.data[Math.min(t.h - 1, v | 0) * t.w + u], L, perp, wci); v += step; }
     if (hit.mx !== undefined && wallMarks.size) { // kulhål och blodstänk
       const marks = wallMarks.get((hit.my * mw + hit.mx) * 4 + faceOf(hit.side, rdx, rdy));
       if (marks) for (const m of marks) {
@@ -1873,7 +1940,8 @@ function render() {
       }
     }
   }
-  // sprites bakifrån och fram
+}
+function renderSprites(plX, plY) { // sprites bakifrån och fram (egen funktion: renderWorld hålls liten nog för att shadeFog ska bäddas in i golv- och väggloopen)
   const list = [];
   for (const e of ents) list.push({ x: e.x, y: e.y, k: 'e', o: e });
   ropePoints(list); drawV9World(list); drawV11World(list); drawV13World(list); drawV14World(list); drawV15World(list); drawV17World(list); drawV18World(list); drawV19World(list); drawV20World(list); drawV21World(list); drawV22World(list); drawV23World(list);
@@ -2008,6 +2076,8 @@ function render() {
       drawSprite(fx.fireball[Math.floor(tmr * 16) % 8], o.x, o.y, o.big ? 0.5 : o.kind === 'gren' || o.kind === 'spark' ? 0.18 : o.kind === 'flare' ? 0.26 : 0.3, o.z - 0.15, false, 2.4, 0, 0, true, PROJ_TINT[o.kind] || null); }
     else drawSprite(o.img, o.x, o.y, o.size, o.z, false, o.add ? (o.fade ? 2 * Math.min(1, o.life * 2, (o.maxLife - o.life) * 2) : 2) : null, 0, 0, o.add, o.tint || null);
   } catch (err) { spriteError(err, s); }
+}
+function renderPost() { // färgton, gråning, lutning och utskrift – alltid i skärmens 320×200
   applyGrade();
   if (P.hp < maxHp() * 0.3 && state === 'play' && settings.lowHpGray !== false) desaturate(0.55 * (1 - P.hp / (maxHp() * 0.3))); // låg HP: bilden gråas
   if (Math.abs(P.roll) > 0.002 && (state === 'play' || state === 'dead')) { // lutning vid sidosteg och fall vid döden
@@ -2019,9 +2089,19 @@ function render() {
 }
 let skyFx = false, bossIntro = 0;
 const MOON_A = 0.9;
+const SKY_TOPR = 24, skyZen = [0, 0, 0]; let skyZenOf = null, skyClean = null; // ovanför panoramat: rader per himmelshöjd (130 px) och zenitfärgen (medel av de 14 översta raderna)
+function skyPrep(sky) { // zenitfärgen och en kopia av panoramat utan den målade månen (raderna fylls i från sidorna)
+  skyZenOf = sky; const s = [0, 0, 0], n = 14 * sky.w, d = sky.data, w = sky.w; for (let i = 0; i < n; i++) { const c = d[i]; s[0] += c & 255; s[1] += (c >> 8) & 255; s[2] += (c >> 16) & 255; } for (let k = 0; k < 3; k++) skyZen[k] = s[k] / n;
+  skyClean = Uint32Array.from(d); let x0 = w, x1 = -1, y0 = sky.h, y1 = -1;
+  for (let y = 0; y < sky.h >> 1; y++) for (let x = 0; x < w; x++) { const c = d[y * w + x]; if ((c & 255) + ((c >> 8) & 255) + ((c >> 16) & 255) > 330) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); } }
+  if (x1 < 0 || x1 - x0 > w / 8) return; x0 -= 3; x1 += 3; y0 = Math.max(0, y0 - 2); y1 += 2;
+  for (let y = y0; y <= y1; y++) { const a = d[y * w + (x0 + w) % w], b = d[y * w + (x1 + w) % w]; for (let x = x0 + 1; x < x1; x++) { const k = (x - x0) / (x1 - x0), m = ch => Math.round(((a >> ch) & 255) * (1 - k) + ((b >> ch) & 255) * k);
+    skyClean[y * w + (x + w) % w] = 0xff000000 | (m(16) << 16) | (m(8) << 8) | m(0); } }
+}
+const moonDa = new Float64Array(LK_W); // vinkeln från månen per kolumn (räknas en gång per bildruta i renderWorld)
 function skyPixel(c, x, y, hor) { // månen, molnen och stjärnfall på natthimlen
   const a = colAng[x], top = hor - y;
-  if (spr.moon) { let da = a - MOON_A; da = Math.atan2(Math.sin(da), Math.cos(da)); const mx = (da / 0.16 + 0.5) * spr.moon.w, my = spr.moon.h - (top - 34) / 26 * spr.moon.h;
+  if (spr.moon) { const da = moonDa[x]; const mx = (da / 0.16 + 0.5) * spr.moon.w, my = spr.moon.h - (top - 34) / 26 * spr.moon.h;
     if (mx >= 0 && mx < spr.moon.w && my >= 0 && my < spr.moon.h) { const m = spr.moon.data[(my | 0) * spr.moon.w + (mx | 0)]; if (m >>> 24) c = floorEvent === 'bloodmoon' ? (m & 0xff00ffff) | 0x60 << 8 : m; } }
   if (spr.clouds && top > 6 && top < 30) { const cl = spr.clouds, u = ((((a / TAU) + 1) * cl.w * 2 + tmr * 3) | 0) % cl.w, v = ((top - 6) / 24 * cl.h) | 0; const m = cl.data[(cl.h - 1 - v) * cl.w + u]; if (m >>> 24) c = m; }
   if (lvl && lvl.biome === 'volcano') c = (c & 0xff000000) | (Math.min(255, ((c >> 16) & 255) * 0.5) << 16) | (Math.min(255, ((c >> 8) & 255) * 0.6 + 8) << 8) | Math.min(255, (c & 255) * 1.3 + 40 + (top > 20 ? 0 : (20 - top) * 2)); // röd himmel av glöd och rök
@@ -2031,7 +2111,7 @@ function skyPixel(c, x, y, hor) { // månen, molnen och stjärnfall på natthiml
 }
 const rollCan = document.createElement('canvas'); rollCan.width = W; rollCan.height = VH; const rollCtx = rollCan.getContext('2d');
 function desaturate(k) {
-  for (let i = 0; i < px.length; i++) { const c = px[i], r = c & 255, g = (c >> 8) & 255, b = (c >> 16) & 255, l = (r * 0.3 + g * 0.59 + b * 0.11);
+  const px = spx; for (let i = 0; i < px.length; i++) { const c = px[i], r = c & 255, g = (c >> 8) & 255, b = (c >> 16) & 255, l = (r * 0.3 + g * 0.59 + b * 0.11);
     px[i] = 0xff000000 | (((b + (l - b) * k) | 0) << 16) | (((g + (l - g) * k) | 0) << 8) | ((r + (l - r) * k) | 0); }
 }
 // Tecknar en billboard-sprite. size = höjd i världsenheter, z = höjd över golvet. tint = [r,g,b] färgton.
@@ -2055,27 +2135,29 @@ function drawSprite(img, wx, wy, size, z, flip, fixedLight, whiteFlash = 0, minL
   const ff = Math.exp(-ty * fogK);
   const aMul = additive && fixedLight != null ? Math.min(1.2, fixedLight / 2) : 1; // additiva sprites: fixedLight styr styrkan (uttoning)
   const tr = tint ? tint[0] / 255 * 1.3 : 1, tg = tint ? tint[1] / 255 * 1.3 : 1, tb = tint ? tint[2] / 255 * 1.3 : 1;
+  const nd = px === tpx ? LK.need : null, bp = px, bw = W; // upp/ned-blicken: bara raderna som skärmen läser
   for (let x = x0; x <= x1; x++) {
     if (ty >= zbuf[x]) continue;
     let u = Math.floor((x - left) / sw * img.w); if (flip) u = img.w - 1 - u;
     if (u < 0 || u >= img.w) continue;
     for (let y = y0; y <= y1; y++) {
+      if (nd !== null && !nd[y]) continue;
       const v = ((y - topY) * vsc) | 0;
       if (v < 0 || v >= img.h) continue;
       let c = img.data[v * img.w + u];
       const al = c >>> 24;
-      if (al < 100) { if (spriteOutline && ty < zbuf[x] && ((u > 0 && img.data[v * img.w + u - 1] >>> 24 >= 100) || (u < img.w - 1 && img.data[v * img.w + u + 1] >>> 24 >= 100) || (v > 0 && img.data[(v - 1) * img.w + u] >>> 24 >= 100) || (v < img.h - 1 && img.data[(v + 1) * img.w + u] >>> 24 >= 100))) px[y * W + x] = spriteOutline; continue; } // kontur (inställning)
+      if (al < 100) { if (spriteOutline && ty < zbuf[x] && ((u > 0 && img.data[v * img.w + u - 1] >>> 24 >= 100) || (u < img.w - 1 && img.data[v * img.w + u + 1] >>> 24 >= 100) || (v > 0 && img.data[(v - 1) * img.w + u] >>> 24 >= 100) || (v < img.h - 1 && img.data[(v + 1) * img.w + u] >>> 24 >= 100))) bp[y * bw + x] = spriteOutline; continue; } // kontur (inställning)
       if (ghost && ((x * 7 + y * 13) % 10) < ghost * 10) continue; // gravrövaren: bara några pixlar syns
-      const i = y * W + x;
+      const i = y * bw + x;
       if (additive) { // eld lyser: additiv blandning
-        const d = px[i], k = ff * (al / 255) * aMul;
+        const d = bp[i], k = ff * (al / 255) * aMul;
         const r = Math.min(255, (d & 255) + (c & 255) * k * tr), g = Math.min(255, ((d >> 8) & 255) + ((c >> 8) & 255) * k * tg), b = Math.min(255, ((d >> 16) & 255) + ((c >> 16) & 255) * k * tb);
-        px[i] = 0xff000000 | (b << 16) | (g << 8) | r;
+        bp[i] = 0xff000000 | (b << 16) | (g << 8) | r;
       } else {
         if (tint) c = 0xff000000 | (Math.min(255, ((c >> 16) & 255) * tb) << 16) | (Math.min(255, ((c >> 8) & 255) * tg) << 8) | Math.min(255, (c & 255) * tr);
         let col = shadeFog(c, L, ty, sci);
         if (whiteFlash > 0) { const f = Math.min(1, whiteFlash * 6); col = 0xff000000 | ((((col >> 16) & 255) * (1 - f) + 255 * f) << 16) | ((((col >> 8) & 255) * (1 - f) + 255 * f) << 8) | (((col & 255) * (1 - f) + 255 * f) | 0); }
-        px[i] = col;
+        bp[i] = col;
       }
     }
   }
@@ -2086,6 +2168,13 @@ function project(wx, wy, z) {
   const rx = wx - P.x, ry = wy - P.y, inv = 1 / (plX * dirY - dirX * plY);
   const tx = inv * (dirY * rx - dirX * ry), ty = inv * (-plY * rx + plX * ry);
   if (ty < 0.2) return null;
+  if (LK.on) { // bilden var vriden: räkna i bufferten och för över till skärmen
+    const bx = Math.round((LK.TW / 2) * (1 + tx / ty));
+    if (bx < 0 || bx >= LK.TW || zbuf[bx] < ty) return null;
+    const q = lkToScreen(bx, hor + (PSC / ty) * (camZ - z));
+    if (!q || q.x < 0 || q.x >= SW) return null;
+    return { sx: Math.round(q.x), sy: q.y, scale: PSC / ty * q.k };
+  }
   const sx = Math.round((W / 2) * (1 + tx / ty));
   if (sx < 0 || sx >= W || zbuf[sx] < ty) return null;
   return { sx, sy: hor + (PSC / ty) * (camZ - z), scale: PSC / ty };
@@ -3157,7 +3246,7 @@ function fire() {
     if (!stopped && left > 0 && wallDist < 30) { // kulnedslag på väggen
       const hx = P.x + dx * (wallDist - 0.04), hy = P.y + dy * (wallDist - 0.04);
       if (p < 3) spawnImpact(hx, hy, rnd(0.25, 0.7));
-      if (p < 4 && wallDist === wall.dist) wallMark(wall, dx, dy, P.camZ + rnd(-0.06, 0.06) + P.pitch * -0.004, 'hole');
+      if (p < 4 && wallDist === wall.dist) wallMark(wall, dx, dy, P.camZ + rnd(-0.06, 0.06) + P.pitch * -0.004 + (lookActive() ? Math.tan(P.look) * wallDist : 0), 'hole'); // kulhålet hamnar där siktet pekar (upp/ned-blicken)
       if (p === 0) sparks(hx, hy, P.camZ, 3);
       if (p < 2) wpImpact(hx, hy, P.camZ, wall.cell, dx, dy); // Grafik: nedslag efter väggmaterial
       if (p === 0 && Math.random() < 0.5) play(wallMat(wall.cell) === 'metal' ? 'ricochet' : wallMat(wall.cell) === 'wood' ? 'kick' : Math.random() < 0.6 ? 'bullet_wall' : 'ricochet', 0.3, rnd(0.8, 1.3), { x: hx, y: hy });
@@ -6094,6 +6183,7 @@ function update(dt) {
     fwd -= touch.my; str += touch.mx; if (autoWalk && settings.oneHand && !touch.mag) fwd += 1; // enhandsläget: gå framåt
     const overEnemy = ents.some(e => !e.dead && Math.abs(Math.atan2(Math.sin(Math.atan2(e.y - P.y, e.x - P.x) - P.a), Math.cos(Math.atan2(e.y - P.y, e.x - P.x) - P.a))) < Math.max(0.03, 0.3 / Math.hypot(e.x - P.x, e.y - P.y)));
     P.a += touch.look * 0.011 * settings.sens * (1 - WS.aim * 0.35) * (overEnemy ? 0.55 : 1);
+    if (settings.mouseLook === true && touch.lookY) lookBy(touch.lookY * 0.011 * settings.sens * (1 - WS.aim * 0.35)); // lodrätt drag (pekskärm, om inställningen är på)
     WS.swayX = clamp(WS.swayX + touch.look * 0.25, -10, 10); WS.swayY = clamp(WS.swayY + touch.lookY * 0.15, -6, 6);
     touch.look = 0; touch.lookY = 0;
   }
@@ -6174,6 +6264,7 @@ function pollGamepad(dt) {
   }
   if (state === 'play') {
     P.a += rx * Math.abs(rx) * 3.2 * dt * settings.sens * (1 - WS.aim * 0.45); P.pitch = clamp(P.pitch, -20, 20);
+    if (settings.mouseLook !== false && ry) lookBy(ry * Math.abs(ry) * 3.2 * dt * settings.sens * (1 - WS.aim * 0.45)); // högerspaken upp/ned
     const fire = (g.buttons[7] && g.buttons[7].value > 0.4) || false; if (fire !== !!gp.fire) { mouseDown = fire; gp.fire = fire; }
     aimDown = (g.buttons[6] && g.buttons[6].value > 0.4) || (aimDown && !gp.active);
     if (edge(gpb('jump'))) jump(); if (edge(gpb('use'))) useKey(); if (edge(gpb('swap'))) cycleWeapon(1); if (edge(gpb('lamp'))) toggleLamp(); if (edge(gpb('stone'))) throwStone(); if (edge(gpb('dash'))) dash(0, 0); if (edge(gpb('reload'))) reloadKey(); if (edge(gpb('potion'))) { if (P.potions && P.potions.length) drinkPotion(); else inspect(); } if (edge(gpb('ability'))) useAbility();
@@ -7686,6 +7777,8 @@ function openSettings(onClose) {
     const check = (label, key, after) => { const i = document.createElement('input'); i.type = 'checkbox'; i.checked = !!settings[key]; row(label, i); i.onchange = () => { settings[key] = i.checked; saveSettings(); if (after) after(); }; };
     select('SPRÅK / LANGUAGE', 'lang', [['en', 'ENGLISH'], ['sv', 'SVENSKA']], () => { saveSettings(); setTimeout(() => location.reload(), 150); }); // språket byts genom att sidan laddas om
     range('KÄNSLIGHET', 'sens', 0.2, 3, 0.1, v => v.toFixed(1));
+    check('TITTA UPP/NED MED MUSEN', 'mouseLook', () => { if (!settings.mouseLook) P.look = 0; });
+    check('INVERTERA UPP/NED', 'invertY');
     range('SYNFÄLT', 'fov', 60, 100, 2, v => v + '°', applyFov);
     range('VOLYM', 'vol', 0, 1, 0.05, v => Math.round(v * 100) + '%', applyVolume);
     range('LJUSSTYRKA', 'gamma', 0.6, 1.6, 0.05, v => Math.round(v * 100) + '%', () => { if (lvl) buildGrade(); });
@@ -7786,7 +7879,7 @@ function settingsTabs(c) { // MENY: inställningarna i flikar (BILD, LJUD, SPEL,
   const ORDER = ['BILD', 'LJUD', 'SPEL', 'KONTROLL', 'TILLGÄNGLIGHET', 'ÖVRIGT'], kids = [...c.children], groups = {}; let cur = 'BILD';
   for (const k of kids) {
     if (k.classList.contains('cu-sec')) { const n = k.textContent.trim(); cur = TAB[n] || (/MOBIL|KNAPP|KONTROLL|STYR/.test(n) ? 'KONTROLL' : /LJUD/.test(n) ? 'LJUD' : /TILLGÄNG|HJÄLP/.test(n) ? 'TILLGÄNGLIGHET' : 'ÖVRIGT'); }
-    let t = cur; if (cur === 'BILD') { const l = k.textContent || ''; if (/^(KÄNSLIGHET|VIBRATION|VÄNSTERHÄNT|KNAPPSTORLEK)/.test(l)) t = 'KONTROLL'; else if (/^VOLYM/.test(l)) t = 'LJUD'; }
+    let t = cur; if (cur === 'BILD') { const l = k.textContent || ''; if (/^(KÄNSLIGHET|VIBRATION|VÄNSTERHÄNT|KNAPPSTORLEK|TITTA UPP|INVERTERA)/.test(l)) t = 'KONTROLL'; else if (/^VOLYM/.test(l)) t = 'LJUD'; }
     k.dataset.tab = t; (groups[t] = groups[t] || []).push(k);
   }
   const tabs = ORDER.filter(t => groups[t]).concat(Object.keys(groups).filter(t => !ORDER.includes(t)));
@@ -7976,6 +8069,7 @@ addEventListener('mousemove', e => {
   if (document.pointerLockElement === canvas && state === 'play') {
     const s = 0.0026 * settings.sens * (1 - WS.aim * 0.35);
     P.a += e.movementX * s;
+    if (settings.mouseLook !== false) lookBy(e.movementY * s); // titta upp/ned med samma känslighet som i sidled
     WS.swayX = clamp(WS.swayX + e.movementX * 0.05, -10, 10); WS.swayY = clamp(WS.swayY + e.movementY * 0.03, -6, 6);
   }
 });
@@ -13191,7 +13285,7 @@ function gfxETele(o) { // skyttar: glöd i handen strax före skottet
   drawSprite(settings.lowfx ? fx.hit[1] : fx.fireball[Math.floor(tmr * 16) % 8], o.x - dirX * 0.08, o.y - dirY * 0.08, 0.12 + 0.14 * k, o.d.size * 0.55 - 0.06 * k, false, 0.9 + k * 0.9, 0, 0, true, col);
 }
 function gfxEBoss(o) { // bossar: skugga, tyngre träffreaktion (skakning), fasbytets puls och dödsanimationens skakningar
-  gfxEOff.x = gfxEOff.y = gfxEOff.z = gfxEOff.f = 0; if (!gfxE.on) return; const sk = clamp(settings.shake ?? 1, 0, 1), nf = settings.noFlash ? 0 : 1, plX = view.plX * sk, plY = view.plY * sk, sz = o.d.size * (o.formK || 1);
+  gfxEOff.x = gfxEOff.y = gfxEOff.z = gfxEOff.f = 0; if (!gfxE.on) return; const sk = clamp(settings.shake ?? 1, 0, 1), nf = settings.noFlash ? 0 : 1, plX = view.plX / (view.pk || 1) * sk, plY = view.plY / (view.pk || 1) * sk, sz = o.d.size * (o.formK || 1);
   if (fx.parts.shadow && !o.hidden && !(o.dying > 0)) drawSprite(fx.parts.shadow[0], o.x, o.y, 0.05 * sz, 0, false, null, 0, 0);
   const hk = tmr - (o.gHitT || -9);
   if (hk >= 0 && hk < 0.2) { const j = Math.sin(tmr * 95) * 0.05 * (1 - hk / 0.2) * (o.gHitK || 0.5); gfxEOff.x = plX * j; gfxEOff.y = plY * j; const s = Math.sin(hk / 0.2 * Math.PI) * 0.05; spriteSY = 1 - s; spriteSX = 1 + s * 0.6; }
@@ -13538,6 +13632,10 @@ function gfxWApi() { // window.__game.gfxW: tillstånd och mätning för t105
   window.__game.hudRects = () => { const L = hudLay(); return { hp: L.hp, ammo: L.ammo, map: L.map }; }; window.__game.settings = window.__game.settings || settings; window.__game.say = say; window.__game.msgs = () => msgs; // HUD-hörnen i spelkoordinater (320×200) – pekkontrollerna trycker på dem
   window.__game.gfxE = gfxEApi(); // FIENDER: räknare och av/på för t104
   window.__game.v20 = v20api; window.__game.v21 = v21api; window.__game.v22 = v22api; window.__game.v23 = v23api; window.__game.gfxW = gfxWApi(); window.__game.weaponFrame = () => { const r = weaponFrame(); return { idx: r.idx, dx: r.dx, dy: r.dy }; }; window.__game.fogK = () => fogK;
+  window.__game.look = { LK, max: LK_MAX, tot: LK_TOT, bufW: LK_W, bufH: LK_H, dims: lkDims, project, // upp/ned-blicken för t111
+    probe: () => { tpx.fill(0); spx.fill(0); const c0 = LK.clamps, lk = lkBegin(); try { renderWorld(W, VH, px); if (lk) lkProject(); } finally { if (lk) lkEnd(); } // världen utan färgton; ofyllda punkter har alfa 0
+      let holes = 0, h = 2166136261; for (let i = 0; i < spx.length; i++) { const c = spx[i]; if (!(c >>> 24)) holes++; h = Math.imul(h ^ c, 16777619); }
+      return { on: LK.on, holes, clamps: LK.clamps - c0, TW: LK.TW, TH: LK.TH, hash: h >>> 0, px: Array.from(spx) }; } };
   if (params.has('autostart')) begin('new');
 })();
 document.getElementById('start').addEventListener('click', () => startMode('new'));
