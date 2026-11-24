@@ -4,7 +4,7 @@
 import { setup } from './head.mjs';
 const PORT = 9104;
 const { pg, ev, wait, ok, start, done, shot } = await setup(PORT, 'out/t104');
-await start('&seed=t104');
+await start('&seed=t104&biome=frost'); // biomen låst: nya biomer ändrar vilken värld fröet ger (Molnborgens tomrum dödar skytten)
 // ingen erfarenhet (annars kan ett nivåval öppnas och frysa spelet), inga gamla fiender
 await ev(() => { __game.run().practice = {}; for (const e of __game.ents()) { e.dead = true; e.gibbed = true; } const P = __game.P; P.iframe = 99999; P.hp = 999; __game.settings.autoLowFx = false; __game.settings.lowfx = false; });
 // spelet kan gå långsamt på en belastad dator (dt är högst 0,05 s per bildruta): vänta på villkor i speltid, inte fasta tider
