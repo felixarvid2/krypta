@@ -21,7 +21,7 @@
 // Allt är valfritt: utan AudioContext eller filer gör anropen ingenting.
 (function () {
   'use strict';
-  const HI = ['forest', 'courtyard', 'swamp', 'frost', 'volcano', 'tomb', 'crystal', 'sunken', 'clock', 'sky', 'fungus', 'mirror', 'library', 'foundry', 'cathedral', 'hive', 'garden', 'dream', 'ship', 'lab', 'circus', 'jungle', 'mine', 'observatory', 'sewer', 'desert', 'prison', 'harbor', 'bathhouse', 'purgatory']; // spår som har ett intensitetslager <spår>_hi.ogg
+  const HI = ['forest', 'courtyard', 'swamp', 'frost', 'volcano', 'tomb', 'crystal', 'sunken', 'clock', 'sky', 'fungus', 'mirror', 'library', 'foundry', 'cathedral', 'hive', 'garden', 'dream', 'ship', 'lab', 'circus', 'jungle', 'mine', 'observatory', 'sewer', 'desert', 'prison', 'harbor', 'bathhouse', 'purgatory', 'abattoir', 'battlefield']; // spår som har ett intensitetslager <spår>_hi.ogg
   // efterklang: längd (RT60), ljushet (lågpass i början -> slutet), förfördröjning, tidiga reflexer, våt nivå
   const REVERBS = {
     crypt: { len: 1.7, bright: 6000, dark: 1800, pre: 0.012, taps: [[0.017, 0.5], [0.029, 0.35], [0.041, 0.3], [0.056, 0.2]], wet: 0.24 },

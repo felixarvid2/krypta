@@ -4260,6 +4260,197 @@ def main_v22():
 
 
 
+# ---------- version 23: Slakteriet och Slagfältet (ritade motiv, inga betal-API:er) ----------
+V23_DRAWN = {  # kort-id: (ritfunktion, storlek, förskjutning y, (gloriatyp, färg))
+    'vaxduksforkladet': ('apron23', 0.86, 0, ('ring', (220, 200, 190))),
+    'kedjehandskarna': ('mailglove', 0.86, 0, ('rays', (190, 195, 210))),
+    'flugsmallan': ('swatter', 0.88, 0, ('stars', (120, 200, 90))),
+    'lerstovlarna': ('mudboots', 0.86, 0, ('ring', (140, 100, 60))),
+    'vaktposten': ('spyglass23', 0.88, 0, ('rays', (230, 200, 120))),
+    'slaktarkniven': ('cleaver23', 0.88, 0, ('stars', (210, 210, 225))),
+    'krutkaggen': ('powderkeg23', 0.86, 0, ('ring', (255, 160, 60))),
+    'stormstegen': ('ladder23', 0.88, 0, ('rays', (170, 150, 120))),
+    'kylrumsnyckeln': ('coldkey', 0.88, 0, ('stars', (160, 220, 255))),
+    'fanbararen': ('banner23', 0.9, 0, ('ring', (200, 50, 40))),
+    'styckaren': ('saw23', 0.88, 0, ('rays', (220, 220, 230))),
+    'kanonmynningen': ('muzzle23', 0.88, 0, ('ring', (255, 110, 40))),
+    'slaktmastarens_forklade': ('bigapron', 0.9, 0, ('stars', (200, 60, 60))),
+    'krigsherrens_fana': ('warflag', 0.92, 0, ('rays', (232, 184, 64))),
+    'kvarnstenen': ('grinder23', 0.9, 0, ('ring', (170, 40, 40))),
+    'det_sista_slaget': ('helmsword', 0.92, 0, ('stars', (200, 210, 230))),
+}
+V23_PACTS = {'pakt_slaktarkrok': 'hookchain', 'pakt_bombard': 'bombard'}
+V23_UPGRADES = {  # kort-id: (vapen, ritfunktion, gloriafärg)
+    'langa_kattingen': ('hookchain', 'longchain', (190, 190, 200)), 'block_och_talja': ('hookchain', 'pulley', (220, 180, 110)),
+    'snabba_handen': ('hookchain', 'fasthand', (150, 220, 255)), 'hullingkroken': ('hookchain', 'barbhook', (220, 60, 60)),
+    'hardade_kulan': ('bombard', 'hardball', (200, 200, 220)), 'vallstudsen': ('bombard', 'bounce23', (255, 200, 90)),
+    'karteschen': ('bombard', 'grapeshot', (255, 230, 120)), 'laddstaken': ('bombard', 'rammer', (190, 150, 100)),
+}
+TILE23C, BLOOD23, MUD23, MEAT23, GHOST23 = (215, 215, 205, 255), (130, 20, 25, 255), (110, 80, 50, 255), (190, 90, 90, 255), (180, 210, 230, 220)
+
+
+def art23(kind):
+    im = Image.new('RGBA', (400, 400))
+    d = ImageDraw.Draw(im)
+    if kind == 'apron23':
+        poly(d, [(150, 60), (250, 60), (250, 120), (320, 160), (300, 360), (100, 360), (80, 160), (150, 120)], TILE23C); d.line((150, 60, 120, 20), fill=INK, width=8); d.line((250, 60, 280, 20), fill=INK, width=8)
+        for i in range(5): d.ellipse((120 + i * 30, 220 + (i % 2) * 40, 150 + i * 30, 250 + (i % 2) * 40), fill=BLOOD23)
+    elif kind == 'mailglove':
+        rrect(d, (120, 160, 280, 360), 30, STEEL)
+        for i, x in enumerate((120, 160, 200, 240)): rrect(d, (x, 50 + (i % 2) * 20, x + 34, 190), 14, STEEL)
+        for y in range(180, 350, 30):
+            for x in range(130, 270, 30): d.ellipse((x, y, x + 20, y + 20), outline=INK, width=3)
+    elif kind == 'swatter':
+        d.line((80, 360, 230, 160), fill=WOOD, width=18); rrect(d, (190, 40, 350, 200), 20, (70, 140, 60, 255))
+        for i in range(5): d.line((200 + i * 30, 50, 200 + i * 30, 190), fill=(40, 90, 40, 255), width=4)
+        for x, y in ((90, 90), (130, 60), (60, 160)): d.ellipse((x, y, x + 20, y + 14), fill=INK)
+    elif kind == 'mudboots':
+        for x in (70, 210):
+            poly(d, [(x, 60), (x + 80, 60), (x + 80, 280), (x + 130, 300), (x + 130, 350), (x, 350)], (60, 50, 40, 255)); d.rectangle((x, 260, x + 130, 350), fill=MUD23)
+    elif kind == 'spyglass23':
+        poly(d, [(60, 300), (300, 100), (330, 140), (90, 340)], GOLD19); poly(d, [(290, 90), (350, 40), (380, 90), (320, 140)], STEEL)
+        d.ellipse((40, 290, 110, 360), fill=(150, 200, 230, 255), outline=INK, width=6)
+    elif kind == 'cleaver23':
+        rrect(d, (120, 80, 340, 240), 12, STEEL); d.ellipse((290, 100, 320, 130), fill=(60, 50, 60, 255)); rrect(d, (40, 200, 160, 240), 12, WOOD); d.line((130, 240, 330, 240), fill=(250, 250, 255, 255), width=6)
+    elif kind == 'powderkeg23':
+        d.ellipse((90, 70, 310, 130), fill=WOOD, outline=INK, width=6); rrect(d, (90, 100, 310, 340), 40, WOOD)
+        for y in (140, 300): d.line((90, y, 310, y), fill=IRON19, width=14)
+        d.line((200, 80, 240, 20), fill=(60, 50, 40, 255), width=6); poly(d, [(240, 20), (270, 0), (255, 30)], (255, 200, 60, 255))
+    elif kind == 'ladder23':
+        d.line((120, 380, 160, 20), fill=WOOD, width=20); d.line((280, 380, 320, 20), fill=WOOD, width=20)
+        for i in range(6): d.line((125 + i * 6, 340 - i * 60, 285 + i * 6, 340 - i * 60), fill=WOOD, width=14)
+    elif kind == 'coldkey':
+        d.ellipse((50, 50, 200, 200), outline=(160, 220, 255, 255), width=24); rrect(d, (180, 110, 370, 140), 8, (160, 220, 255, 255)); rrect(d, (310, 135, 335, 200), 4, (160, 220, 255, 255))
+        for x, y in ((90, 260), (160, 300), (240, 250)): poly(d, [(x, y - 25), (x + 8, y), (x, y + 25), (x - 8, y)], (230, 245, 255, 255))
+    elif kind == 'banner23':
+        d.line((100, 380, 100, 20), fill=WOOD, width=16); poly(d, [(108, 40), (330, 70), (290, 150), (340, 230), (108, 210)], (180, 40, 35, 255)); d.ellipse((170, 90, 250, 170), fill=GOLD19)
+    elif kind == 'saw23':
+        poly(d, [(60, 160), (330, 100), (340, 220), (60, 250)], STEEL)
+        for i in range(9): poly(d, [(70 + i * 30, 250 - i * 3), (85 + i * 30, 280 - i * 3), (100 + i * 30, 247 - i * 3)], STEEL)
+        rrect(d, (320, 120, 390, 230), 20, WOOD)
+    elif kind == 'muzzle23':
+        d.ellipse((60, 60, 340, 340), fill=IRON19, outline=INK, width=10); d.ellipse((120, 120, 280, 280), fill=(20, 15, 10, 255))
+        for i in range(8): a = i * math.pi / 4; poly(d, [(200 + math.cos(a) * 150, 200 + math.sin(a) * 150), (200 + math.cos(a + 0.2) * 200, 200 + math.sin(a + 0.2) * 200), (200 + math.cos(a - 0.2) * 200, 200 + math.sin(a - 0.2) * 200)], FLAME22)
+    elif kind == 'bigapron':
+        poly(d, [(130, 40), (270, 40), (270, 110), (350, 150), (330, 380), (70, 380), (50, 150), (130, 110)], (200, 190, 175, 255))
+        rrect(d, (150, 200, 250, 280), 10, (150, 140, 130, 255)); d.line((160, 220, 330, 60), fill=STEEL, width=14); poly(d, [(330, 60), (370, 30), (360, 90)], STEEL)
+        for i in range(6): d.ellipse((90 + i * 40, 300 + (i % 2) * 30, 120 + i * 40, 330 + (i % 2) * 30), fill=BLOOD23)
+    elif kind == 'warflag':
+        d.line((80, 390, 80, 10), fill=WOOD, width=18); poly(d, [(90, 30), (360, 50), (320, 120), (360, 200), (90, 190)], (40, 40, 60, 255))
+        poly(d, [(180, 70), (220, 70), (230, 150), (170, 150)], GOLD19); d.line((150, 110, 250, 110), fill=GOLD19, width=10)
+    elif kind == 'grinder23':
+        rrect(d, (90, 140, 310, 360), 20, IRON19); poly(d, [(80, 40), (320, 40), (260, 140), (140, 140)], STEEL)
+        for i in range(6): d.line((110 + i * 36, 200, 110 + i * 36, 340), fill=INK, width=8)
+        d.ellipse((300, 190, 380, 270), outline=STEEL, width=12); d.line((340, 230, 380, 160), fill=STEEL, width=12)
+    elif kind == 'helmsword':
+        d.line((200, 390, 200, 120), fill=STEEL, width=24); d.line((130, 300, 270, 300), fill=GOLD19, width=18)
+        poly(d, [(110, 160), (200, 40), (290, 160), (270, 220), (130, 220)], GHOST23, 6); d.rectangle((150, 150, 250, 170), fill=INK)
+        poly(d, [(110, 160), (60, 60), (130, 120)], GOLD19); poly(d, [(290, 160), (340, 60), (270, 120)], GOLD19)
+    elif kind == 'longchain':
+        for i in range(8): d.ellipse((30 + i * 42, 300 - i * 34, 80 + i * 42, 340 - i * 34), outline=STEEL, width=10)
+        d.arc((300, 20, 380, 100), 90, 360, fill=STEEL, width=14)
+    elif kind == 'pulley':
+        d.ellipse((110, 60, 290, 240), fill=WOOD, outline=INK, width=8); d.ellipse((180, 130, 220, 170), fill=IRON19)
+        d.line((115, 150, 115, 380), fill=(190, 160, 110, 255), width=10); d.line((285, 150, 285, 330), fill=(190, 160, 110, 255), width=10); d.arc((250, 310, 320, 380), 0, 360, fill=STEEL, width=10)
+    elif kind == 'fasthand':
+        rrect(d, (200, 130, 330, 300), 30, (200, 160, 130, 255))
+        for i in range(6): d.line((30, 100 + i * 40, 180, 100 + i * 40), fill=(150, 220, 255, 255), width=10)
+    elif kind == 'barbhook':
+        d.arc((90, 140, 290, 340), 0, 200, fill=STEEL, width=26); d.line((290, 240, 290, 40), fill=STEEL, width=22)
+        poly(d, [(90, 230), (60, 170), (125, 210)], STEEL); d.ellipse((150, 330, 175, 360), fill=BLOOD23); d.ellipse((200, 350, 220, 375), fill=BLOOD23)
+    elif kind == 'hardball':
+        d.ellipse((70, 70, 330, 330), fill=(70, 70, 80, 255), outline=INK, width=8); d.ellipse((120, 110, 190, 170), fill=(200, 200, 220, 255))
+        for i in range(4): d.line((20, 120 + i * 50, 60, 120 + i * 50), fill=(200, 200, 220, 255), width=8)
+    elif kind == 'bounce23':
+        d.rectangle((330, 20, 380, 380), fill=(120, 100, 80, 255)); d.line((40, 340, 320, 160), fill=(255, 220, 120, 255), width=8); d.line((320, 160, 60, 40), fill=(255, 220, 120, 255), width=8)
+        d.ellipse((30, 300, 110, 380), fill=(70, 70, 80, 255), outline=INK, width=6)
+    elif kind == 'grapeshot':
+        for i in range(12): x, y = 90 + (i % 4) * 70, 90 + (i // 4) * 80; d.ellipse((x, y, x + 56, y + 56), fill=(80, 80, 90, 255), outline=INK, width=5)
+    elif kind == 'rammer':
+        d.line((40, 360, 300, 100), fill=WOOD, width=18); d.ellipse((270, 40, 370, 140), fill=(60, 50, 40, 255), outline=INK, width=6)
+        for i in range(4): d.line((290 + i * 8, 60 + i * 20, 350, 60 + i * 20), fill=(140, 120, 90, 255), width=5)
+    return im
+
+
+def draw_hookchain():
+    """Slaktarkroken: en köttkrok på en kedja med ett träskaft."""
+    im = Image.new('RGBA', (620, 300))
+    d = ImageDraw.Draw(im)
+    rrect(d, (10, 120, 170, 160), 12, WOOD)
+    for i in range(6):
+        d.ellipse((160 + i * 50, 115, 220 + i * 50, 165), outline=STEEL, width=10)
+    d.line((470, 140, 560, 140), fill=STEEL, width=20)
+    d.arc((470, 120, 610, 290), 270, 180, fill=STEEL, width=22)
+    poly(d, [(472, 210), (450, 170), (500, 195)], STEEL)
+    return im.crop(im.getbbox())
+
+
+def draw_bombard():
+    """Bombarden: en kort handkanon av svart järn med träkolv och en kanonkula i mynningen."""
+    im = Image.new('RGBA', (640, 640))
+    d = ImageDraw.Draw(im)
+    bronze, dark = (190, 130, 60, 255), (120, 80, 35, 255)
+    poly(d, [(40, 560), (110, 600), (250, 420), (190, 380)], WOOD)
+    poly(d, [(180, 420), (460, 140), (520, 200), (240, 480)], bronze)
+    poly(d, [(450, 110), (600, 40), (610, 70), (540, 210), (510, 230)], bronze)
+    for t in (0.3, 0.55, 0.8):
+        x0, y0, x1, y1 = 180 + 280 * t, 420 - 280 * t, 240 + 280 * t, 480 - 280 * t
+        d.line((x0 - 10, y0 - 10, x1 + 10, y1 + 10), fill=dark, width=16)
+    d.ellipse((540, 20, 630, 110), fill=(30, 25, 20, 255), outline=INK, width=6)
+    d.ellipse((560, 40, 610, 90), fill=(70, 70, 80, 255), outline=INK, width=4)
+    return im.crop(im.getbbox())
+
+
+GUNS.update({'hookchain': draw_hookchain, 'bombard': draw_bombard})
+
+
+def drawn_card23(cid, kind, size, dy, halo):
+    big = purple_bg()
+    big.alpha_composite(halo19(*halo))
+    g = art23(kind)
+    g = shade(g.crop(g.getbbox()))
+    k = S * 4 * size / max(g.size)
+    g = g.resize((max(1, int(g.width * k)), max(1, int(g.height * k))), Image.LANCZOS)
+    pos = ((S * 4 - g.width) // 2, int((S * 4 - g.height) / 2 + dy * S * 4))
+    add_glow(big, g, pos, (0, 0, 0), 12)
+    big.alpha_composite(g, pos)
+    save(big, cid)
+
+
+def v23_upgrade(cid, w, kind, col):
+    big = purple_bg()
+    big.alpha_composite(halo19('ring', col))
+    g = art23(kind)
+    g = shade(g.crop(g.getbbox()))
+    k = S * 4 * 0.72 / max(g.size)
+    g = g.resize((max(1, int(g.width * k)), max(1, int(g.height * k))), Image.LANCZOS)
+    big.alpha_composite(g, ((S * 4 - g.width) // 2, (S * 4 - g.height) // 2 - 14))
+    b = gun(w, int(S * 4 * 0.42))
+    pos = (S * 4 - b.width - 10, S * 4 - b.height - 12)
+    add_glow(big, b, pos, (0, 0, 0), 10)
+    add_glow(big, b, pos, (255, 200, 90), 4)
+    big.alpha_composite(b, pos)
+    save(big, cid)
+
+
+def main_v23():
+    assert len(V23_DRAWN) == 16 and len(V23_UPGRADES) == 8
+    kinds = [k for k, _, _, _ in V23_DRAWN.values()] + [k for _, k, _ in V23_UPGRADES.values()]
+    assert len(kinds) == len(set(kinds)), 'varje motiv ritas bara en gång'
+    n = 0
+    for cid, (kind, size, dy, halo) in V23_DRAWN.items():
+        drawn_card23(cid, kind, size, dy, halo)
+        n += 1
+    for cid, w in V23_PACTS.items():
+        pact(cid, w)
+        n += 1
+    for cid, (w, kind, col) in V23_UPGRADES.items():
+        v23_upgrade(cid, w, kind, col)
+        n += 1
+    near_dupes(list(V23_DRAWN) + list(V23_PACTS) + list(V23_UPGRADES))
+    return n
+
+
 def main():
     assert len(CARDS) == len(set(CARDS)) == 50, len(CARDS)
     srcs = list(V5.values()) + [s for _, s in V5_UPGRADES.values()]
@@ -4301,6 +4492,9 @@ def main():
     if ONLY == 'v20':
         print(main_v20(), 'kortbilder ->', OUT)
         return
+    if ONLY == 'v23':
+        print(main_v23(), 'kortbilder ->', OUT)
+        return
     if ONLY == 'v21':
         print(main_v21(), 'kortbilder ->', OUT)
         return
@@ -4335,6 +4529,7 @@ def main():
         n += main_v19()
         n += main_v20()
         n += main_v21()
+        n += main_v23()
         n += main_v22()
     print(n, 'kortbilder ->', OUT)
 

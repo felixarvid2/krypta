@@ -227,6 +227,15 @@ const MOD_KEYS = {
   runeQuiet: 'Chans att en runcirkel inte kallar fram några demoner',
   tridentDmg: 'Andel extra skada med treudden',
   brimstoneDmg: 'Andel extra skada med svavelmortern',
+  // version 23: Slakteriet och Slagfältet – blodhalt golv, köttkvarnar, flugsvärmar, djup lera, katapultstenar, spöksoldaternas formationer, slaktarkroken och bombarden
+  slickGrip: 'Andel bättre grepp på blodhalt golv',
+  grinderResist: 'Andel mindre skada av köttkvarnar',
+  fliesResist: 'Andel mindre skada av flugsvärmar',
+  mudWalk: 'Andel mindre inbromsning i djup lera (100 % = du kan hoppa ur den)',
+  catapultSense: 'Andel längre varning för katapultstenar',
+  formationBreak: 'Andel mer skada genom spöksoldaternas sköldar',
+  hookDmg: 'Andel extra skada med slaktarkroken',
+  bombardDmg: 'Andel extra skada med bombarden',
 };
 const KEYS = Object.keys(MOD_KEYS);
 
@@ -1002,6 +1011,38 @@ const DEFS = [
   ['havsgudens_vrede', 'HAVSGUDENS VREDE', 'sallsynt', { tridentDmg: 0.4, steamSight: -0.3 }, 1, '+40 % SKADA MED\nTREUDDEN\n-30 % SIKT I ÅNGAN', { curse: true, bad: 1 }],
   // legendariska
   ['eldfurstens_horn', 'ELDFURSTENS HORN', 'legendarisk', { streamResist: 0.3, runeQuiet: 0.3, brimstoneDmg: 0.3, shieldBreak: 0.3 }, 1, '30 % SKYDD MOT ELDFLODER\n30 % TOMMA RUNCIRKLAR\n+30 % SKADA MED SVAVLET\n+30 % GENOM SKÖLDAR', { unlock: 50 }],
+  // ---- version 23: pakter och uppgraderingar för slaktarkroken och bombarden ----
+  ['pakt_slaktarkrok', 'STYCKMÄSTARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nKROKEN BEHÖVER INGEN AMMO\n4 UNIKA UPPGRADERINGAR\nBARA SLAKTARKROK RESTEN AV RUNDAN', { pact: 'hookchain', bad: 1 }],
+  ['pakt_bombard', 'ARTILLERISTENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR KANONKULOR\n4 UNIKA UPPGRADERINGAR\nBARA BOMBARD RESTEN AV RUNDAN', { pact: 'bombard', bad: 1 }],
+  ['langa_kattingen', 'LÅNGA KÄTTINGEN', 'ovanlig', {}, 1, 'KROKEN NÅR\nTVÅ RUTOR LÄNGRE', { weapon: 'hookchain', wup: 'hk_reach' }],
+  ['block_och_talja', 'BLOCK OCH TALJA', 'sallsynt', {}, 1, 'KROKEN DRAR IN\nSTÖRRE FIENDER', { weapon: 'hookchain', wup: 'hk_pull' }],
+  ['snabba_handen', 'SNABBA HANDEN', 'ovanlig', {}, 1, 'KORTARE NEDKYLNING', { weapon: 'hookchain', wup: 'hk_fast' }],
+  ['hullingkroken', 'HULLINGKROKEN', 'sallsynt', {}, 1, 'KROKEN FÅR\nFIENDER ATT BLÖDA', { weapon: 'hookchain', wup: 'hk_bleed' }],
+  ['hardade_kulan', 'HÄRDADE KULAN', 'sallsynt', {}, 1, 'KULAN TAPPAR MINDRE\nKRAFT GENOM FIENDER', { weapon: 'bombard', wup: 'bd_pierce' }],
+  ['vallstudsen', 'VALLSTUDSEN', 'ovanlig', {}, 1, 'KULAN STUDSAR\nTRE GÅNGER', { weapon: 'bombard', wup: 'bd_bounce' }],
+  ['karteschen', 'KARTESCHEN', 'legendarisk', {}, 1, 'TOLV KULOR I\nDRUVHAGLET', { weapon: 'bombard', wup: 'bd_grape' }],
+  ['laddstaken', 'LADDSTAKEN', 'ovanlig', {}, 1, 'SNABBARE SKOTT', { weapon: 'bombard', wup: 'bd_fast' }],
+  // ---- version 23: blodhalt golv, köttkvarnar, flugor, lera, katapulter, formationer, kroken och bombarden (Slakteriet och Slagfältet) ----
+  // vanliga
+  ['vaxduksforkladet', 'VAXDUKSFÖRKLÄDET', 'vanlig', { slickGrip: 0.2 }, 3, '20 % BÄTTRE GREPP\nPÅ BLODHALT GOLV'],
+  ['kedjehandskarna', 'KEDJEHANDSKARNA', 'vanlig', { grinderResist: 0.2 }, 3, '20 % MINDRE SKADA\nAV KÖTTKVARNAR'],
+  ['flugsmallan', 'FLUGSMÄLLAN', 'vanlig', { fliesResist: 0.2 }, 3, '20 % MINDRE SKADA\nAV FLUGSVÄRMAR'],
+  ['lerstovlarna', 'LERSTÖVLARNA', 'vanlig', { mudWalk: 0.2 }, 3, '20 % LÄTTARE\nI DJUP LERA'],
+  ['vaktposten', 'VAKTPOSTEN', 'vanlig', { catapultSense: 0.2 }, 3, '20 % LÄNGRE VARNING\nFÖR KATAPULTSTENAR'],
+  ['slaktarkniven', 'SLAKTARKNIVEN', 'vanlig', { hookDmg: 0.12 }, 3, '+12 % SKADA MED\nSLAKTARKROKEN'],
+  ['krutkaggen', 'KRUTKAGGEN', 'vanlig', { bombardDmg: 0.12 }, 3, '+12 % SKADA MED\nBOMBARDEN', { unlock: 10 }],
+  // ovanliga
+  ['stormstegen', 'STORMSTEGEN', 'ovanlig', { formationBreak: 0.15, catapultSense: 0.15 }, 2, '+15 % SKADA GENOM\nSPÖKSKÖLDAR\n15 % LÄNGRE VARNING\nFÖR KATAPULTSTENAR', { unlock: 15 }],
+  ['kylrumsnyckeln', 'KYLRUMSNYCKELN', 'ovanlig', { grinderResist: 0.3, fliesResist: 0.15 }, 2, '30 % MINDRE SKADA\nAV KÖTTKVARNAR\n15 % MINDRE SKADA\nAV FLUGSVÄRMAR', { unlock: 15 }],
+  ['fanbararen', 'FANBÄRAREN', 'ovanlig', { formationBreak: 0.25, critChance: 0.03 }, 2, '+25 % SKADA GENOM\nSPÖKSKÖLDAR\n+3 % KRITCHANS'],
+  ['styckaren', 'STYCKAREN', 'ovanlig', { hookDmg: 0.2, dmg: 0.04 }, 2, '+20 % SKADA MED\nSLAKTARKROKEN\n+4 % SKADA'],
+  ['kanonmynningen', 'KANONMYNNINGEN', 'ovanlig', { bombardDmg: 0.4, slickGrip: -0.3 }, 1, '+40 % SKADA MED\nBOMBARDEN\n-30 % GREPP I BLODET', { curse: true, bad: 1 }],
+  // sällsynta
+  ['slaktmastarens_forklade', 'SLAKTMÄSTARENS FÖRKLÄDE', 'sallsynt', { slickGrip: 0.3, grinderResist: 0.3, fliesResist: 0.2 }, 1, '30 % BÄTTRE GREPP\nPÅ BLODHALT GOLV\n30 % SKYDD MOT KVARNAR\n20 % SKYDD MOT FLUGOR', { unlock: 25 }],
+  ['krigsherrens_fana', 'KRIGSHERRENS FANA', 'sallsynt', { mudWalk: 0.3, formationBreak: 0.3, bombardDmg: 0.2 }, 1, '30 % LÄTTARE I LERAN\n+30 % GENOM SPÖKSKÖLDAR\n+20 % SKADA MED\nBOMBARDEN', { unlock: 25 }],
+  ['kvarnstenen', 'KVARNSTENEN', 'sallsynt', { hookDmg: 0.4, grinderResist: -0.3 }, 1, '+40 % SKADA MED\nSLAKTARKROKEN\n-30 % SKYDD MOT KVARNAR', { curse: true, bad: 1 }],
+  // legendariska
+  ['det_sista_slaget', 'DET SISTA SLAGET', 'legendarisk', { catapultSense: 0.3, mudWalk: 0.3, hookDmg: 0.3, fliesResist: 0.3 }, 1, '30 % LÄNGRE KATAPULTVARNING\n30 % LÄTTARE I LERAN\n+30 % SKADA MED KROKEN\n30 % SKYDD MOT FLUGOR', { unlock: 50 }],
 ];
 
 // ---------- Set och synergier ----------
@@ -1052,6 +1093,9 @@ const SETS = {
   fordomda: { name: 'DEN FÖRDÖMDES VÄG', text: '25 % SKYDD MOT ELDFLODER\n25 % CHANS ATT RUNCIRKLAR ÄR TOMMA\n+20 % SKADA MED SVAVELMORTERN', mods: { streamResist: 0.25, runeQuiet: 0.25, brimstoneDmg: 0.2 } },
   fangelset: { name: 'FÅNGENS VÄG', text: '25 % CHANS ATT LARMPLATTOR ÄR TYSTA\n25 % KORTARE BRAND\n+20 % SKADA MED MORGONSTJÄRNAN', mods: { alarmQuiet: 0.25, burnResist: 0.25, flailDmg: 0.2 } },
   fiskelaget: { name: 'FISKARENS VÄG', text: '25 % BÄTTRE SIKT I DIMMAN\n25 % MINDRE INSNÄRJNING I NÄT\n20 % MINDRE SKADA AV MÅSAR', mods: { fogSight: 0.25, netResist: 0.25, gullResist: 0.2 } },
+  // version 23: SLAKTARENS VÄG (Slakteriet: blodhalt golv, köttkvarnar och flugor) och FÄLTHERRENS VÄG (Slagfältet: lera, katapulter och formationer)
+  slakteriet: { name: 'SLAKTARENS VÄG', text: '25 % BÄTTRE GREPP PÅ BLODHALT GOLV\n25 % MINDRE SKADA AV KÖTTKVARNAR\n20 % MINDRE SKADA AV FLUGSVÄRMAR', mods: { slickGrip: 0.25, grinderResist: 0.25, fliesResist: 0.2 } },
+  slagfaltet: { name: 'FÄLTHERRENS VÄG', text: '25 % LÄTTARE I DJUP LERA\n25 % LÄNGRE VARNING FÖR KATAPULTSTENAR\n+20 % SKADA GENOM SPÖKSKÖLDAR', mods: { mudWalk: 0.25, catapultSense: 0.25, formationBreak: 0.2 } },
   karavanen: { name: 'KARAVANENS VÄG', text: '25 % MER LÄKNING UR OASER\n25 % BÄTTRE SIKT I SANDSTORMEN\n20 % SKYDD MOT HETTA', mods: { oasisHeal: 0.25, stormSight: 0.25, heatResist: 0.2 } },
   templet: { name: 'TEMPLETS VÄG', text: '25 % MINDRE GIFT\n+25 % TUR MED IDOLER OCH LYCKOHJUL\n25 % MINDRE INBROMSNING I LIANER', mods: { poisonResist: 0.25, idolLuck: 0.25, vineWalk: 0.25 } },
   laboratoriet: { name: 'LABORATORIETS VÄG', text: '25 % MINDRE SKADA AV SYRA\n+25 % TUR MED TRANSMUTATION\n20 % CHANS TILL STARK BRYGD', mods: { acidResist: 0.25, transmuteLuck: 0.25, brewLuck: 0.2 } },
@@ -1073,6 +1117,7 @@ const SYN = { eld: 'ELD', krit: 'KRIT', gift: 'GIFT', frost: 'FROST', blixt: 'BL
   gruva: 'GRUVAN', vagn: 'GRUVVAGNAR', malm: 'MALM', stjarna: 'STJÄRNOR', meteor: 'METEORER',
   kloak: 'KLOAKERNA', slam: 'SLAM', oken: 'ÖKNEN', sabel: 'SABEL', falla: 'FÄLLOR',
   fangelse: 'FÄNGELSET', hamn: 'FISKELÄGET', morgon: 'MORGONSTJÄRNAN', skrot: 'SKROT',
+  slakteri: 'SLAKTERIET', slagfalt: 'SLAGFÄLTET', krok: 'SLAKTARKROKEN', bombard: 'BOMBARDEN',
   badhus: 'BADHUSET', skarseld: 'SKÄRSELDEN', treudd: 'TREUDDEN', svavel: 'SVAVEL' };
 // set och syn för alla kort samlas här: id: [set eller '', syn-taggar...]
 const TAGS = {
@@ -1208,6 +1253,10 @@ const TAGS = {
   tysta_sulor: ['fangelset', 'fangelse'], brannsalvan: ['fangelset', 'fangelse'], nyckelknippan: ['fangelset', 'fangelse'], vaktarens_ring: ['fangelset', 'fangelse', 'morgon'],
   natkniven: ['fiskelaget', 'hamn'], mashatten: ['fiskelaget', 'hamn'], mistlyktan: ['fiskelaget', 'hamn'], fyrvaktaren: ['fiskelaget', 'hamn'], tidvattnets_snacka: ['fiskelaget', 'hamn', 'skrot'],
   krabbtangen: ['', 'hamn'], kulkedjan: ['', 'morgon'], krutpasen: ['', 'skrot'], skrotsmedjan: ['', 'skrot', 'hamn'], tungviktaren: ['', 'morgon', 'krit'], sjodimman: ['', 'hamn'], glodande_jarnet: ['', 'morgon', 'fangelse'],
+  // version 23: SLAKTARENS VÄG (Slakteriet) och FÄLTHERRENS VÄG (Slagfältet); slakteriet, slagfältet, kroken och bombarden
+  vaxduksforkladet: ['slakteriet', 'slakteri'], kedjehandskarna: ['slakteriet', 'slakteri'], flugsmallan: ['slakteriet', 'slakteri'], kylrumsnyckeln: ['slakteriet', 'slakteri'], slaktmastarens_forklade: ['slakteriet', 'slakteri', 'krok'],
+  lerstovlarna: ['slagfaltet', 'slagfalt'], vaktposten: ['slagfaltet', 'slagfalt'], fanbararen: ['slagfaltet', 'slagfalt', 'krit'], krigsherrens_fana: ['slagfaltet', 'slagfalt', 'bombard'], det_sista_slaget: ['slagfaltet', 'slagfalt', 'krok'],
+  slaktarkniven: ['', 'krok'], krutkaggen: ['', 'bombard'], stormstegen: ['', 'slagfalt'], styckaren: ['', 'krok'], kanonmynningen: ['', 'bombard', 'slakteri'], kvarnstenen: ['', 'krok', 'slakteri'],
   brynet: ['', 'sabel'], spannfjadern: ['', 'falla'], jagarens_snara: ['', 'falla'], damaskusstalet: ['', 'sabel', 'krit'], igelburken: ['', 'slam', 'oken'], sandens_kniv: ['', 'sabel', 'oken'],
 };
 
@@ -1351,6 +1400,8 @@ const FMT = {
   fogSight: ['p', 'SIKT I DIMMAN'], flailDmg: ['p', 'SKADA MED MORGONSTJÄRNAN'], blunderDmg: ['p', 'SKADA MED TROMBONEN'], burnResist: ['p', 'SKYDD MOT BRAND'],
   scaldResist: ['p', 'SKYDD MOT SKÅLLNING'], steamSight: ['p', 'SIKT I ÅNGAN'], coldPoolHeal: ['p', 'LÄKNING UR KALLBAD'], shieldBreak: ['p', 'SKADA GENOM SKÖLDAR'],
   streamResist: ['p', 'SKYDD MOT ELDFLODER'], runeQuiet: ['p', 'TOMMA RUNCIRKLAR'], tridentDmg: ['p', 'SKADA MED TREUDDEN'], brimstoneDmg: ['p', 'SKADA MED SVAVELMORTERN'],
+  slickGrip: ['p', 'GREPP PÅ BLODHALT GOLV'], grinderResist: ['p', 'SKYDD MOT KÖTTKVARNAR'], fliesResist: ['p', 'SKYDD MOT FLUGSVÄRMAR'], mudWalk: ['p', 'LÄTTARE I DJUP LERA'],
+  catapultSense: ['p', 'VARNING FÖR KATAPULTSTENAR'], formationBreak: ['p', 'SKADA GENOM SPÖKSKÖLDAR'], hookDmg: ['p', 'SKADA MED SLAKTARKROKEN'], bombardDmg: ['p', 'SKADA MED BOMBARDEN'],
 };
 const INVERT = { damageTaken: true };
 const num = v => String(Math.round(v * 100) / 100).replace('.', ',');
@@ -1558,7 +1609,7 @@ const WEAPON_NAME = { pistol: 'PISTOL', shotgun: 'HAGELGEVÄR', rifle: 'GEVÄR',
   knives: 'KASTKNIVAR', hammer: 'STRIDSHAMMARE', musket: 'MUSKÖT', harpoon: 'HARPUN', boomerang: 'BUMERANG', prism: 'PRISMA',
   sawlauncher: 'SÅGBLAD', windgun: 'VINDBÖSSA', spear: 'SPJUT', sporelauncher: 'SPORKASTARE', mirrorshield: 'SPEGELSKÖLD', whip: 'PISKA',
   runebook: 'RUNBOK', steamcannon: 'ÅNGKANON', censer: 'RÖKELSEKAR', hivelauncher: 'BIKASTARE',
-  shears: 'TRÄDGÅRDSSAX', dreamstaff: 'DRÖMSTAV', chaincannon: 'KEDJEKANON', acidsprayer: 'SYRASPRUTA', pinthrower: 'KÄGLEKASTARE', blowgun: 'BLÅSRÖR', pickaxe: 'HACKA', starlance: 'STJÄRNLANS', scimitar: 'KROKSABEL', flail: 'MORGONSTJÄRNA', blunderbuss: 'TROMBON', trident: 'TREUDD', brimstone: 'SVAVELMORTER', trapthrower: 'FÄLLKASTARE' };
+  shears: 'TRÄDGÅRDSSAX', dreamstaff: 'DRÖMSTAV', chaincannon: 'KEDJEKANON', acidsprayer: 'SYRASPRUTA', pinthrower: 'KÄGLEKASTARE', blowgun: 'BLÅSRÖR', pickaxe: 'HACKA', starlance: 'STJÄRNLANS', scimitar: 'KROKSABEL', flail: 'MORGONSTJÄRNA', blunderbuss: 'TROMBON', trident: 'TREUDD', brimstone: 'SVAVELMORTER', trapthrower: 'FÄLLKASTARE', hookchain: 'SLAKTARKROK', bombard: 'BOMBARD' };
 // etikett ovanför kortets namn: förbannelse, pakt, aktiv förmåga ('AKTIV · 8 S'), vilket vapen uppgraderingen hör till eller sammansmält
 const activeTag = card => 'AKTIV · ' + num(card.cd || 0) + ' S';
 function tag(card) {

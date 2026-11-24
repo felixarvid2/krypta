@@ -199,6 +199,10 @@ const ACH = [
   ['pyrelord', 'ELDEN SLOCKNAR', 'BESEGRA ELDFURSTEN', p => !!(p.bossWins || {}).pyrelord],
   ['trident20', 'FISKSPJUTET', 'FÅNGA 20 FIENDER MED DEN KASTADE TREUDDEN', p => (p.tridentThrowKills || 0) >= 20, p => [p.tridentThrowKills || 0, 20]],
   ['rune10', 'RUNSKRIVAREN', 'KLIV IN I TIO RUNCIRKLAR', p => (p.runeCircles || 0) >= 10, p => [p.runeCircles || 0, 10]],
+  ['butcher', 'KVARNEN STANNAR', 'BESEGRA SLAKTMÄSTAREN', p => !!(p.bossWins || {}).butcher],
+  ['warlord', 'SLAGET ÄR ÖVER', 'BESEGRA KRIGSHERREN', p => !!(p.bossWins || {}).warlord],
+  ['hook20', 'KÖTTKROKEN', 'DRA IN 20 FIENDER MED SLAKTARKROKEN', p => (p.hookPulls || 0) >= 20, p => [p.hookPulls || 0, 20]],
+  ['formation5', 'FORMATIONSBRYTAREN', 'BRYT FEM FORMATIONER AV SPÖKSOLDATER', p => (p.formations || 0) >= 5, p => [p.formations || 0, 5]],
   ['trap20', 'PÄLSJÄGAREN', 'FÅNGA 20 FIENDER I BJÖRNSAXAR', p => (p.trapSnaps || 0) >= 20, p => [p.trapSnaps || 0, 20]],
   ['sluice10', 'SLUSSVAKTEN', 'VRID SLUSSRATTEN TIO GÅNGER', p => (p.sluices || 0) >= 10, p => [p.sluices || 0, 10]],
   ['ringmaster', 'FÖRESTÄLLNINGEN ÄR SLUT', 'BESEGRA CIRKUSDIREKTÖREN', p => !!(p.bossWins || {}).ringmaster],
@@ -231,7 +235,12 @@ function checkAch() {
   dqCheck();
 }
 function showNews() {
-  CardUI.list('NYHETER', 'VERSION 22: BADHUSET OCH SKÄRSELDEN', [
+  CardUI.list('NYHETER', 'VERSION 23: SLAKTERIET OCH SLAGFÄLTET', [
+    { label: 'VERSION 23 – SLAKTERIET OCH SLAGFÄLTET', head: true, color: '#d05050' },
+    { label: 'TVÅ NYA BIOMER', text: 'SLAKTERIET: KAKLADE SLAKTHALLAR, KYLRUM MED KÖTTKROKAR SOM GUNGAR, BLODHALT GOLV DÄR DU GLIDER OCH KÖTTKVARNAR SOM MAL ALLT – ÄVEN FIENDER DU KNUFFAR IN. DET EVIGA SLAGFÄLTET UNDER GRÅ HIMMEL: LERA, SKYTTEGRAVAR, PALISSADER, DJUP LERA SOM DU INTE KAN HOPPA UR, SPJUTPÅLAR OCH KATAPULTSTENAR SOM SLÅR NED PÅ MARKERADE RUTOR.' },
+    { label: 'TVÅ NYA VAPEN', text: 'SLAKTARKROKEN (KASTAS PÅ KEDJA OCH DRAR IN FIENDEN – STORA FIENDER DRAR IN DIG – OCH SLÅR SEDAN) OCH BOMBARDEN (EN TUNG KANONKULA SOM GÅR IGENOM FIENDER OCH STUDSAR I VÄGGEN – HÖGERKLICK SKJUTER DRUVHAGEL) – MED PAKTER.' },
+    { label: 'ÅTTA NYA FIENDER OCH TVÅ BOSSAR', text: 'SLAKTARE SOM KASTAR KÖTTYXOR, GRISMÄN SOM RUSAR, FLUGSVÄRMAR OCH STYCKADE SOM KRYPER. SPÖKSOLDATER I FORMATION MED SKÖLDAR, SPÖKBÅGSKYTTAR, SPÖKRYTTARE SOM RUSAR I RAKA LINJER OCH KRÅKOR. SLAKTMÄSTAREN OCH KRIGSHERREN VÄNTAR LÄNGST IN.' },
+    { label: 'MER', text: '16 NYA KORT, TVÅ NYA SET, FYRA PRESTATIONER OCH NY MUSIK FÖR BÅDA BIOMERNA OCH BOSSARNA.' },
     { label: 'VERSION 22 – BADHUSET OCH SKÄRSELDEN', head: true, color: '#ff7a50' },
     { label: 'TVÅ NYA BIOMER', text: 'BADHUSET I FÖRFALL: MARMOR OCH MOSAIK, HETA BASSÄNGER SOM SKÅLLAR, ÅNGGALLER SOM SKYMMER SIKTEN, KALLBAD SOM SLÄCKER ELD OCH LÄKER, STATYER OCH FONTÄNER. SKÄRSELDEN UNDER BLODRÖD HIMMEL: ASKFÄLT, ELDFLODER SOM DRAR DIG MED STRÖMMEN, MURAR AV BEN OCH KÖTT, KEDJADE SJÄLAR OCH RUNCIRKLAR SOM KALLAR FRAM DEMONER.' },
     { label: 'TVÅ NYA VAPEN', text: 'TREUDDEN (LÅNG STÖT SOM GENOMBORRAR – HÖGERKLICK KASTAR DEN, OCH DEN KOMMER TILLBAKA) OCH SVAVELMORTERN (ETT BRINNANDE SVAVELKLOT I BÅGE SOM EXPLODERAR OCH LÄMNAR ELD – HÖGERKLICK SKJUTER RAKT FRAM) – MED PAKTER.' },
@@ -354,6 +363,9 @@ function showManual() {
     { label: 'VÄRLDEN', head: true, color: '#ffd24a' }, { label: 'LAVA', text: 'BRÄNNER – HOPPA ÖVER.' }, { label: 'VATTEN OCH NÄT', text: 'SAKTAR NED. NÄT BRINNER.' }, { label: 'IS', text: 'HALT.' },
     { label: 'NYCKLAR', text: 'ÖPPNAR LÅSTA DÖRRAR OCH KISTOR.' }, { label: 'SPAKAR', text: 'ÖPPNAR JÄRNGALLER NÅGONSTANS PÅ VÅNINGEN.' }, { label: 'SPRUCKNA VÄGGAR', text: 'SPRÄNG DEM MED GRANATER ELLER KRUTFAT.' },
     { label: 'SMEDJAN', text: 'GER VAPNET +12 % SKADA PER NIVÅ OCH FÄSTER RUNOR.' },
+    { label: 'VERSION 23', head: true, color: '#d05050' }, { label: 'SLAKTERIET', text: 'PÅ DET BLODHALA GOLVET GLIDER DU OCH BROMSAR SENT – FIENDERNA OCKSÅ. KÖTTKVARNAR MAL (12 SKADA/S); KNUFFADE FIENDER TAR DUBBELT. FLUGSVÄRMAR DRAS TILL LIKEN.' },
+    { label: 'SLAGFÄLTET', text: 'DJUP LERA SAKTAR DIG 45 % OCH DU KAN INTE HOPPA UR DEN. VAR SJUNDE SEKUND LANDAR EN KATAPULTSTEN PÅ VARJE MARKERAD RUTA (30 SKADA) – SE SKUGGAN OCH LYSSNA EFTER VISSLANDET. SPJUTPÅLAR STICKER. SPÖKSOLDATERNAS SKÖLDAR TAR SKOTT FRAMIFRÅN – MINDRE NÄR FORMATIONEN ÄR BRUTEN.' },
+    { label: 'KROKEN OCH BOMBARDEN', text: 'SLAKTARKROKEN NÅR 6 RUTOR: SMÅ FIENDER DRAS IN, STORA DRAR IN DIG – SEDAN SLÅR KROKEN (45 SKADA). BOMBARDENS KULA GÖR 80 SKADA, GÅR IGENOM FIENDER (25 % MINDRE PER FIENDE) OCH STUDSAR EN GÅNG. HÖGERKLICK: DRUVHAGEL MED 8 KULOR PÅ KORT HÅLL.' },
     { label: 'VERSION 22', head: true, color: '#ff7a50' }, { label: 'BADHUSET', text: 'HETA BASSÄNGER SAKTAR DIG OCH SKÅLLAR (3 SKADA/S). ÅNGGALLREN VÄLLER UPP ÅNGA TVÅ SEKUNDER VAR SJÄTTE – DÅ SER DU KNAPPT NÅGOT, MEN ÅNGVÅLNADERNA SYNS. KALLBAD SLÄCKER ELD OCH LÄKER UPP TILL HALV HÄLSA (30 HP PER BAD).' },
     { label: 'SKÄRSELDEN', text: 'ELDFLODERNA BRÄNNER (6 SKADA/S) OCH DRAR DIG MED STRÖMMEN. KLIVER DU I EN RUNCIRKEL KALLAS TVÅ ELDIMPAR FRAM. ASKVANDRARE RESER SIG EN GÅNG – SPRÄNG ELLER BRÄNN DEM. GLADIATORENS SKÖLD TAR SKOTT FRAMIFRÅN.' },
     { label: 'TREUDDEN OCH SVAVELMORTERN', text: 'TREUDDENS STÖT NÅR 2,2 RUTOR OCH GÅR IGENOM TVÅ FIENDER. KASTAD (HÖGERKLICK) GÖR DEN 90 SKADA OCH KOMMER TILLBAKA EFTER 1,2 S – UNDER TIDEN SLÅSS DU MED NÄVARNA. SVAVELKLOTET EXPLODERAR OCH LÄMNAR ELD I 3 S.' },
@@ -581,6 +593,15 @@ const ENEMY_DEFS = {
   'ɶ': { name: 'PLÅGAD SJÄL', sheet: 'lostsoul', move: 'movement', hp: 6, speed: 1.8, melee: true, dmg: 12, range: 0.9, cd: 99, size: 0.7, growl: 'lostsoul', growlVol: 0.6, score: 200, atkFps: 12, hitAt: 0.5, ai: 'lostsoul', float: true, tip: 'STÖRTAR MOT DIG OCH EXPLODERAR – SKJUT DEN I LUFTEN' },
   'ɷ': { name: 'KÖTTBJÄSSE', sheet: 'fleshbrute', move: 'movement', hp: 46, speed: 0.8, melee: true, dmg: 18, range: 1.5, cd: 1.6, size: 1.45, growl: 'fleshbrute', growlVol: 0.9, score: 560, atkFps: 9, hitAt: 0.6, ai: 'fleshbrute', tip: 'RUSAR OCH SLÅR I MARKEN – HOPPA ÖVER CHOCKVÅGEN' },
   'ɸ': { name: 'ASKVANDRARE', sheet: 'ashwalker', move: 'movement', hp: 18, speed: 0.75, melee: true, dmg: 12, range: 1.2, cd: 1.4, size: 1.05, growl: 'ashwalker', growlVol: 0.7, score: 300, atkFps: 9, hitAt: 0.55, ai: 'ashwalker', tip: 'RESER SIG UR ASKAN EN GÅNG – SPRÄNG ELLER BRÄNN DEN' },
+  // version 23: Slakteriet och Slagfältet
+  'ʄ': { name: 'SLAKTARE', sheet: 'butcher', move: 'movement', hp: 24, speed: 1.0, melee: true, dmg: 13, range: 1.3, cd: 1.3, size: 1.1, growl: 'butcher', growlVol: 0.85, score: 340, atkFps: 10, hitAt: 0.55, ai: 'butcher', tip: 'KASTAR KÖTTYXOR PÅ AVSTÅND – GÅ NÄRA ELLER TA SKYDD' },
+  'ʅ': { name: 'GRISMAN', sheet: 'pigman', move: 'movement', hp: 20, speed: 1.2, melee: true, dmg: 11, range: 1.1, cd: 1.2, size: 1.05, growl: 'pigman', growlVol: 0.85, score: 280, atkFps: 11, hitAt: 0.5, ai: 'pigman', tip: 'RUSAR OCH KNUFFAR – KLIV ÅT SIDAN, DÅ SLÅR DEN I VÄGGEN' },
+  'ʆ': { name: 'FLUGSVÄRM', sheet: 'flies', move: 'movement', hp: 3, speed: 2.0, melee: true, dmg: 3, range: 0.9, cd: 0.9, size: 0.55, growl: 'flies', growlVol: 0.3, score: 60, atkFps: 12, hitAt: 0.5, ai: 'flies', float: true, tip: 'SVAG MEN KOMMER I MOLN – DRAS TILL LIKEN' },
+  'ʇ': { name: 'STYCKAD', sheet: 'crawler', move: 'movement', hp: 10, speed: 2.1, melee: true, dmg: 8, range: 0.9, cd: 0.9, size: 0.7, growl: 'crawler', growlVol: 0.7, score: 200, atkFps: 12, hitAt: 0.5, ai: 'crawler', tip: 'KRYPER SNABBT LÄNGS GOLVET – SIKTA LÅGT' },
+  'ʐ': { name: 'SPÖKSOLDAT', sheet: 'ghostsoldier', move: 'movement', hp: 18, speed: 1.0, melee: true, dmg: 11, range: 1.3, cd: 1.3, size: 1.0, growl: 'ghostsoldier', growlVol: 0.7, score: 300, atkFps: 10, hitAt: 0.5, ai: 'ghostsoldier', tip: 'SKÖLDEN TAR SKOTT FRAMIFRÅN – BRYT FORMATIONEN' },
+  'ʑ': { name: 'SPÖKBÅGSKYTT', sheet: 'ghostarcher', move: 'movement', hp: 12, speed: 1.0, melee: false, dmg: 6, range: 10, cd: 99, size: 1.0, growl: 'ghostarcher', growlVol: 0.7, score: 280, atkFps: 10, hitAt: 0.5, ai: 'ghostarcher', kite: 5, tip: 'SKJUTER PILSKURAR OM TRE – SPRING I SIDLED' },
+  'ʒ': { name: 'SPÖKRYTTARE', sheet: 'ghostrider', move: 'movement', hp: 34, speed: 1.3, melee: true, dmg: 16, range: 1.3, cd: 1.5, size: 1.35, growl: 'ghostrider', growlVol: 0.9, score: 520, atkFps: 10, hitAt: 0.5, ai: 'ghostrider', tip: 'RUSAR I LÅNGA RAKA LINJER – KLIV UR VÄGEN' },
+  'ʓ': { name: 'KRÅKOR', sheet: 'crows', move: 'movement', hp: 4, speed: 2.4, melee: true, dmg: 4, range: 1.0, cd: 1.0, size: 0.6, growl: 'crows', growlVol: 0.4, score: 90, atkFps: 12, hitAt: 0.5, ai: 'crows', float: true, tip: 'FLOCKEN DYKER – SKJUT DEN NÄR DEN KOMMER' },
   'Ǩ': { name: 'KIMÄR', sheet: 'chimera', move: 'movement', hp: 34, speed: 1.1, melee: true, dmg: 16, range: 1.4, cd: 1.4, size: 1.4, growl: 'chimera', score: 520, atkFps: 10, hitAt: 0.55, ai: 'chimera', tip: 'BETT, ELD OCH GIFT I TUR OCH ORDNING – LÄR DIG RYTMEN' },
   'Ƒ': { name: 'KORGOSSE', sheet: 'choirboy', move: 'movement', hp: 6, speed: 1.0, melee: false, dmg: 5, range: 9, cd: 2.6, size: 0.85, growl: 'choirboy', score: 220, atkFps: 10, hitAt: 0.5, ai: 'choirboy', kite: 6, tip: 'LÄKER OCH SKYDDAR DE ANDRA – DÖDA HONOM FÖRST' },
   'ƒ': { name: 'BOTGÖRARE', sheet: 'flagellant', move: 'movement', hp: 14, speed: 1.4, melee: true, dmg: 12, range: 1.0, cd: 1.0, size: 1.05, growl: 'flagellant', score: 260, atkFps: 11, hitAt: 0.5, ai: 'flagellant', tip: 'BLIR FARLIGARE JU MER SKADAD DEN ÄR – DÖDA DEN SNABBT' },
@@ -652,6 +673,8 @@ const BOSSES = {
   tidepriest: { title: 'HAVETS RÖST', name: 'TIDVATTENPRÄSTEN', hp: 480, speed: 1.0, size: 4.2, dmg: 17, range: 2.2, arena: 'harbor', phaseMsg: ['TIDVATTENPRÄSTEN HÖJER SNÄCKSTAVEN', 'TIDVATTENPRÄSTEN RASAR – HAVET STIGER!'] },
   bathmaster: { title: 'TERMERNAS HERRE', name: 'BADMÄSTAREN', hp: 500, speed: 0.85, size: 4.4, dmg: 18, range: 2.4, arena: 'bathhouse', phaseMsg: ['BADMÄSTAREN DOPPAR SKOPAN', 'BADMÄSTAREN RASAR – VATTNET KOKAR!'] },
   pyrelord: { title: 'SKÄRSELDENS FURSTE', name: 'ELDFURSTEN', hp: 540, speed: 1.0, size: 4.6, dmg: 20, range: 2.4, arena: 'purgatory', phaseMsg: ['ELDFURSTEN SPRÄNGER MARKEN', 'ELDFURSTEN RASAR – ALLT BRINNER!'] },
+  butcher: { title: 'KÖTTETS HERRE', name: 'SLAKTMÄSTAREN', hp: 520, speed: 0.9, size: 4.5, dmg: 19, range: 2.4, arena: 'abattoir', phaseMsg: ['SLAKTMÄSTAREN VÄSSAR KÖTTYXAN', 'SLAKTMÄSTAREN RASAR – KVARNARNA GÅR FÖR FULLT!'] },
+  warlord: { title: 'DET EVIGA SLAGETS FÄLTHERRE', name: 'KRIGSHERREN', hp: 540, speed: 1.0, size: 4.6, dmg: 20, range: 2.4, arena: 'battlefield', phaseMsg: ['KRIGSHERREN SAMLAR SINA LEDER', 'KRIGSHERREN RASAR – HELA HÄREN ANFALLER!'] },
   ringmaster: { title: 'MANEGENS HERRE', name: 'CIRKUSDIREKTÖREN', hp: 470, speed: 1.1, size: 4.0, dmg: 17, range: 2.2, arena: 'circus', phaseMsg: ['DIREKTÖREN PRESENTERAR NÄSTA NUMMER', 'DIREKTÖREN RASAR – FÖRESTÄLLNINGEN MÅSTE GÅ VIDARE!'] },
   serpent: { title: 'TEMPLETS GUD', name: 'DEN FJÄDRADE ORMEN', hp: 480, speed: 1.2, size: 4.4, dmg: 18, range: 2.4, arena: 'jungle', phaseMsg: ['ORMEN RESER SINA FJÄDRAR', 'ORMEN RASAR – DJUNGELN VAKNAR!'] },
   cardinal: { title: 'BLODMÄSSANS HERDE', name: 'KARDINALEN', hp: 480, speed: 0.9, size: 4.0, dmg: 18, range: 2.2, arena: 'cathedral', phaseMsg: ['KARDINALEN HÖJER RÖKELSEKARET', 'KARDINALEN RASAR – KATEDRALEN BLÖDER!'] },
@@ -738,6 +761,12 @@ const PROP_DEFS = {
   'ɲ': { img: 'chainedsoul', n: 2, size: 1.0, block: true, fb: 'statue' },
   'ɳ': { img: 'bonepillar', n: 1, size: 1.1, block: true, fb: 'statue' },
   'ɴ': { img: 'brimpot', n: 2, anim: 4, size: 0.75, block: true, light: 1.2, lightR: 6, fb: 'candles' },
+  'ʁ': { img: 'meathook', n: 2, size: 0.8, block: false, v21hit: true, fb: 'crate' },
+  'ʂ': { img: 'butcherblock', n: 1, size: 0.7, block: true, fb: 'crate' },
+  'ʃ': { img: 'bandsaw', n: 2, anim: 6, size: 0.95, block: true, fb: 'statue' },
+  'ʍ': { img: 'catapult', n: 1, size: 1.1, block: true, fb: 'statue' },
+  'ʎ': { img: 'warbanner', n: 2, anim: 3, size: 1.0, block: true, fb: 'statue' },
+  'ʏ': { img: 'stakes', n: 1, size: 0.75, block: true, fb: 'statue' },
   'ɏ': { img: 'hangcage', n: 2, size: 0.75, block: false, v21hit: true, fb: 'crate' },
   'ɐ': { img: 'rack', n: 1, size: 0.9, block: true, fb: 'statue' },
   'ɑ': { img: 'gallows', n: 2, size: 1.3, block: true, fb: 'statue' },
@@ -814,7 +843,7 @@ const ELITE_MODS = [
   { id: 'prismatic', name: 'PRISMATISK', tint: [255, 160, 230] },
   { id: 'gusty', name: 'STORMVIND', tint: [220, 245, 255] },
 ];
-const NEW_ENEMIES = ['U', 'X', 'Y', '!', '@', '^', '+', 'Å', 'Ä', 'Ö', 'É', 'Ü', 'Ñ', 'Æ', 'Þ', 'Ð', 'Ý', 'Ã', 'Õ', 'Ê', 'Î', 'Ô', 'Ë', 'Í', 'Ï', 'Ó', 'Ú', 'Û', 'Ā', 'Ă', 'ĳ', 'Ĵ', 'ĵ', 'Ķ', 'ķ', 'ĸ', 'Ō', 'ō', 'Ŏ', 'ŏ', 'Ő', 'ő', 'ŗ', 'Ř', 'ř', 'Ś', 'ś', 'Ŝ', 'Ų', 'ų', 'Ŵ', 'Ž', 'ž', 'ſ', 'Ƅ', 'ƅ', 'Ɔ', 'Ƈ', 'ƈ', 'Ɖ', 'Ƒ', 'ƒ', 'Ɯ', 'Ƙ', 'ƙ', 'ƚ', 'ƫ', 'Ƭ', 'ƭ', 'Ʈ', 'Ư', 'ư', 'Ǖ', 'ǖ', 'Ǘ', 'ǘ', 'Ǚ', 'ǚ', 'ǣ', 'Ǥ', 'ǥ', 'Ǧ', 'ǧ', 'Ǩ', 'Ƿ', 'Ǹ', 'ǹ', 'Ǻ', 'ǻ', 'Ǽ', 'Ȉ', 'ȉ', 'Ȋ', 'ȋ', 'Ȍ', 'ȍ', 'ȡ', 'Ȣ', 'ȣ', 'Ȥ', 'ȥ', 'Ȧ', 'ȧ', 'Ȩ', 'ȼ', 'Ƚ', 'Ⱦ', 'ȿ', 'ɀ', 'Ɂ', 'ɂ', 'Ƀ', 'ɕ', 'ɖ', 'ɗ', 'ɘ', 'ə', 'ɚ', 'ɛ', 'ɜ', 'ɩ', 'ɪ', 'ɫ', 'ɬ', 'ɵ', 'ɶ', 'ɷ', 'ɸ'];
+const NEW_ENEMIES = ['U', 'X', 'Y', '!', '@', '^', '+', 'Å', 'Ä', 'Ö', 'É', 'Ü', 'Ñ', 'Æ', 'Þ', 'Ð', 'Ý', 'Ã', 'Õ', 'Ê', 'Î', 'Ô', 'Ë', 'Í', 'Ï', 'Ó', 'Ú', 'Û', 'Ā', 'Ă', 'ĳ', 'Ĵ', 'ĵ', 'Ķ', 'ķ', 'ĸ', 'Ō', 'ō', 'Ŏ', 'ŏ', 'Ő', 'ő', 'ŗ', 'Ř', 'ř', 'Ś', 'ś', 'Ŝ', 'Ų', 'ų', 'Ŵ', 'Ž', 'ž', 'ſ', 'Ƅ', 'ƅ', 'Ɔ', 'Ƈ', 'ƈ', 'Ɖ', 'Ƒ', 'ƒ', 'Ɯ', 'Ƙ', 'ƙ', 'ƚ', 'ƫ', 'Ƭ', 'ƭ', 'Ʈ', 'Ư', 'ư', 'Ǖ', 'ǖ', 'Ǘ', 'ǘ', 'Ǚ', 'ǚ', 'ǣ', 'Ǥ', 'ǥ', 'Ǧ', 'ǧ', 'Ǩ', 'Ƿ', 'Ǹ', 'ǹ', 'Ǻ', 'ǻ', 'Ǽ', 'Ȉ', 'ȉ', 'Ȋ', 'ȋ', 'Ȍ', 'ȍ', 'ȡ', 'Ȣ', 'ȣ', 'Ȥ', 'ȥ', 'Ȧ', 'ȧ', 'Ȩ', 'ȼ', 'Ƚ', 'Ⱦ', 'ȿ', 'ɀ', 'Ɂ', 'ɂ', 'Ƀ', 'ɕ', 'ɖ', 'ɗ', 'ɘ', 'ə', 'ɚ', 'ɛ', 'ɜ', 'ɩ', 'ɪ', 'ɫ', 'ɬ', 'ɵ', 'ɶ', 'ɷ', 'ɸ', 'ʄ', 'ʅ', 'ʆ', 'ʇ', 'ʐ', 'ʑ', 'ʒ', 'ʓ'];
 async function loadEnemySheet(k, d) {
   const sets = {};
   for (const [st, file] of [['idle', 'idle'], ['move', d.move], ['attack', 'attack'], ['pain', 'take_damage'], ['death', 'death']]) { const img = await load(`${A}gfx/enemies-${d.sheet}_${file}.png`); sets[st] = strip(img, Math.max(1, Math.round(img.width / (d.fw || img.height)))); } // kvadratiska rutor
@@ -826,10 +855,10 @@ async function loadEnemySheet(k, d) {
 const BOSS_FW = { flame: 0 }; // bossrutornas bredd när de inte är kvadratiska
 async function loadAll(setStatus) {
   const walls = ['wall_brick_stone_center', 'wall_brick_small_stone', 'wall_rock', 'wall_stone', 'wall_brick_stone_center_banner', 'door_metal_gate', 'door_wood',
-    'wall_forest', 'wall_cemetery', 'wall_cave', 'wall_house', 'wall_house_window', ...BOSS_IDS.map(b => 'wall_boss_' + b), 'wall_swamp', 'wall_cracked', 'door_locked', 'wall_frost', 'wall_ice_crystal', 'wall_obsidian', 'wall_boss_volcano', 'wall_sandstone', 'wall_hieroglyph', 'wall_crystal', 'wall_crystal_vein', 'wall_ruin_sunken', 'wall_coral', 'wall_brass', 'wall_gear', 'wall_gear2', 'wall_cloudstone', 'wall_stormwall', 'wall_mycel', 'wall_mushroomcap', 'wall_marble', 'wall_mirror', 'wall_bookshelf', 'wall_libpanel', 'wall_ironplate', 'wall_furnace', 'wall_cathedral', 'wall_stainedglass', 'wall_wax', 'wall_honeycomb', 'wall_hedge', 'wall_gardenwall', 'wall_dream', 'wall_dreamshift', 'wall_hull', 'wall_rigging', 'wall_labtile', 'wall_jars', 'wall_tent', 'wall_cage', 'wall_junglestone', 'wall_jungle', 'wall_timber', 'wall_orevein', 'wall_brass2', 'wall_starchart', 'wall_sewerbrick', 'wall_pipes', 'wall_dune', 'wall_mesa', 'wall_prisonstone', 'wall_cellbars', 'wall_shack', 'wall_quay', 'wall_bathmosaic', 'wall_bathcolumn', 'wall_flesh', 'wall_bone'];
+    'wall_forest', 'wall_cemetery', 'wall_cave', 'wall_house', 'wall_house_window', ...BOSS_IDS.map(b => 'wall_boss_' + b), 'wall_swamp', 'wall_cracked', 'door_locked', 'wall_frost', 'wall_ice_crystal', 'wall_obsidian', 'wall_boss_volcano', 'wall_sandstone', 'wall_hieroglyph', 'wall_crystal', 'wall_crystal_vein', 'wall_ruin_sunken', 'wall_coral', 'wall_brass', 'wall_gear', 'wall_gear2', 'wall_cloudstone', 'wall_stormwall', 'wall_mycel', 'wall_mushroomcap', 'wall_marble', 'wall_mirror', 'wall_bookshelf', 'wall_libpanel', 'wall_ironplate', 'wall_furnace', 'wall_cathedral', 'wall_stainedglass', 'wall_wax', 'wall_honeycomb', 'wall_hedge', 'wall_gardenwall', 'wall_dream', 'wall_dreamshift', 'wall_hull', 'wall_rigging', 'wall_labtile', 'wall_jars', 'wall_tent', 'wall_cage', 'wall_junglestone', 'wall_jungle', 'wall_timber', 'wall_orevein', 'wall_brass2', 'wall_starchart', 'wall_sewerbrick', 'wall_pipes', 'wall_dune', 'wall_mesa', 'wall_prisonstone', 'wall_cellbars', 'wall_shack', 'wall_quay', 'wall_bathmosaic', 'wall_bathcolumn', 'wall_flesh', 'wall_bone', 'wall_abattoirtile', 'wall_coldroom', 'wall_palisade', 'wall_earthwork'];
   const floors = ['floor_stone', 'floor_stone_pattern', 'floor_wood_planks', 'floor_tiles_blue',
-    'floor_ground_grass', 'floor_ground_dirt', 'floor_grass_dead', 'floor_gravel', 'floor_cave', 'floor_mud', 'ceil_cave', ...BOSS_IDS.map(b => 'floor_boss_' + b), 'floor_swamp', 'floor_water', 'floor_water2', 'floor_lava', 'floor_lava2', 'floor_ice', 'floor_snow', 'floor_frost_stone', 'floor_ash', 'floor_basalt', 'floor_pit', 'floor_crack', 'floor_boss_volcano', 'floor_sand', 'floor_gold_tiles', 'floor_quicksand', 'floor_crystal', 'floor_sunken_tiles', 'floor_deepwater', 'floor_deepwater2', 'floor_shallow', 'floor_brass', 'floor_cloud', 'floor_sawtrack', 'floor_void', 'floor_wind', 'floor_moss', 'floor_marble', 'floor_bouncepad', 'floor_sporepool', 'floor_teleport', 'floor_carpet', 'floor_irongrate', 'floor_ink', 'floor_conveyor', 'floor_conveyor2', 'floor_molten', 'floor_vent', 'floor_cathedral', 'floor_hivefloor', 'floor_lightbeam', 'floor_honey', 'floor_garden', 'floor_dream', 'floor_thorns', 'floor_dreammist', 'floor_deck', 'floor_hold', 'floor_labtile', 'floor_rotplank', 'floor_wetdeck', 'floor_acid', 'floor_transmute', 'floor_sawdust', 'floor_ring', 'floor_jungle', 'floor_templestone', 'floor_trapdoor', 'floor_spotlight', 'floor_piranha', 'floor_vines', 'floor_minedirt', 'floor_planks2', 'floor_brasstile', 'floor_rail', 'floor_rail_h', 'floor_rail_v', 'floor_gas2', 'floor_cavein', 'floor_starmap', 'floor_domeslit', 'floor_sewer', 'floor_grate', 'floor_desertsand', 'floor_ruintile', 'floor_sludge', 'floor_spray', 'floor_oasis', 'floor_mirage', 'floor_prison', 'floor_straw', 'floor_dock', 'floor_cobble', 'floor_alarmplate', 'floor_net', 'floor_bathtile', 'floor_mosaic', 'floor_ashfield', 'floor_brimstone', 'floor_hotpool', 'floor_steamvent', 'floor_coldpool', 'floor_firestream', 'floor_runecircle'];
-  const OPTIONAL = /_boss_|swamp|water|lava|ice|cracked|locked|frost|snow|obsidian|ash|basalt|pit|crack|sand|hieroglyph|gold_tiles|crystal|sunken|deepwater|shallow|coral|ruin|brass|gear|cloud|storm|sawtrack|void|wind|mycel|mushroom|marble|mirror|moss|bouncepad|sporepool|teleport|bookshelf|libpanel|ironplate|furnace|carpet|irongrate|ink|conveyor|molten|vent|cathedral|stainedglass|wax|honeycomb|hivefloor|lightbeam|honey|hedge|gardenwall|dream|garden|thorns|hull|rigging|labtile|jars|deck|hold|rotplank|acid|transmute|tent|cage|jungle|templestone|sawdust|ring|trapdoor|spotlight|piranha|vines|timber|orevein|brass2|starchart|minedirt|planks2|brasstile|rail|gas2|cavein|starmap|domeslit|sewer|pipes|dune|mesa|grate|desertsand|ruintile|sludge|spray|oasis|mirage|prisonstone|cellbars|shack|quay|floor_prison|straw|dock|cobble|alarmplate|floor_net|bathmosaic|bathcolumn|flesh|wall_bone|bathtile|mosaic|ashfield|floor_brimstone|hotpool|steamvent|coldpool|firestream|runecircle/;
+    'floor_ground_grass', 'floor_ground_dirt', 'floor_grass_dead', 'floor_gravel', 'floor_cave', 'floor_mud', 'ceil_cave', ...BOSS_IDS.map(b => 'floor_boss_' + b), 'floor_swamp', 'floor_water', 'floor_water2', 'floor_lava', 'floor_lava2', 'floor_ice', 'floor_snow', 'floor_frost_stone', 'floor_ash', 'floor_basalt', 'floor_pit', 'floor_crack', 'floor_boss_volcano', 'floor_sand', 'floor_gold_tiles', 'floor_quicksand', 'floor_crystal', 'floor_sunken_tiles', 'floor_deepwater', 'floor_deepwater2', 'floor_shallow', 'floor_brass', 'floor_cloud', 'floor_sawtrack', 'floor_void', 'floor_wind', 'floor_moss', 'floor_marble', 'floor_bouncepad', 'floor_sporepool', 'floor_teleport', 'floor_carpet', 'floor_irongrate', 'floor_ink', 'floor_conveyor', 'floor_conveyor2', 'floor_molten', 'floor_vent', 'floor_cathedral', 'floor_hivefloor', 'floor_lightbeam', 'floor_honey', 'floor_garden', 'floor_dream', 'floor_thorns', 'floor_dreammist', 'floor_deck', 'floor_hold', 'floor_labtile', 'floor_rotplank', 'floor_wetdeck', 'floor_acid', 'floor_transmute', 'floor_sawdust', 'floor_ring', 'floor_jungle', 'floor_templestone', 'floor_trapdoor', 'floor_spotlight', 'floor_piranha', 'floor_vines', 'floor_minedirt', 'floor_planks2', 'floor_brasstile', 'floor_rail', 'floor_rail_h', 'floor_rail_v', 'floor_gas2', 'floor_cavein', 'floor_starmap', 'floor_domeslit', 'floor_sewer', 'floor_grate', 'floor_desertsand', 'floor_ruintile', 'floor_sludge', 'floor_spray', 'floor_oasis', 'floor_mirage', 'floor_prison', 'floor_straw', 'floor_dock', 'floor_cobble', 'floor_alarmplate', 'floor_net', 'floor_bathtile', 'floor_mosaic', 'floor_ashfield', 'floor_brimstone', 'floor_hotpool', 'floor_steamvent', 'floor_coldpool', 'floor_firestream', 'floor_runecircle', 'floor_abattoir', 'floor_bloodgrate', 'floor_battlemud', 'floor_trench', 'floor_bloodslick', 'floor_grinder', 'floor_deepmud', 'floor_target'];
+  const OPTIONAL = /_boss_|swamp|water|lava|ice|cracked|locked|frost|snow|obsidian|ash|basalt|pit|crack|sand|hieroglyph|gold_tiles|crystal|sunken|deepwater|shallow|coral|ruin|brass|gear|cloud|storm|sawtrack|void|wind|mycel|mushroom|marble|mirror|moss|bouncepad|sporepool|teleport|bookshelf|libpanel|ironplate|furnace|carpet|irongrate|ink|conveyor|molten|vent|cathedral|stainedglass|wax|honeycomb|hivefloor|lightbeam|honey|hedge|gardenwall|dream|garden|thorns|hull|rigging|labtile|jars|deck|hold|rotplank|acid|transmute|tent|cage|jungle|templestone|sawdust|ring|trapdoor|spotlight|piranha|vines|timber|orevein|brass2|starchart|minedirt|planks2|brasstile|rail|gas2|cavein|starmap|domeslit|sewer|pipes|dune|mesa|grate|desertsand|ruintile|sludge|spray|oasis|mirage|prisonstone|cellbars|shack|quay|floor_prison|straw|dock|cobble|alarmplate|floor_net|bathmosaic|bathcolumn|flesh|wall_bone|bathtile|mosaic|ashfield|floor_brimstone|hotpool|steamvent|coldpool|firestream|runecircle|abattoir|coldroom|palisade|earthwork|bloodgrate|battlemud|trench|bloodslick|grinder|deepmud|floor_target/;
   for (const n of walls.concat(floors)) { try { tex[n] = pixels(await load(A + 'wall/' + n + '.png')); } catch (e) { if (!OPTIONAL.test(n)) throw e; } }
   for (const [n, k] of [['wall_wax', 0.66], ['wall_honeycomb', 0.7], ['floor_hivefloor', 0.62], ['floor_boss_queenbee', 0.68], ['wall_labtile', 0.74], ['floor_labtile', 0.76], ['floor_transmute', 0.78], ['floor_boss_alchemist', 0.76], ['floor_brasstile', 0.8], ['wall_brass2', 0.86], ['floor_starmap', 0.86], ['floor_ruintile', 0.78], ['floor_desertsand', 0.86], ['wall_dune', 0.9], ['wall_mesa', 0.9], ['floor_boss_sphinx', 0.85], ['floor_oasis', 0.9]]) { const t = tex[n]; if (!t) continue; const d = t.data; for (let i = 0; i < d.length; i++) { const v = d[i]; d[i] = (v & 0xff000000) | (Math.round(((v >>> 16) & 255) * k) << 16) | (Math.round(((v >>> 8) & 255) * k) << 8) | Math.round((v & 255) * k); } } // bikupans vax och laboratoriets kakel är ljusare än de andra biomernas
   tex.wall_swamp = tex.wall_swamp || tex.wall_forest; tex.wall_cracked = tex.wall_cracked || tex.wall_brick_stone_center; tex.door_locked = tex.door_locked || tex.door_wood;
@@ -857,7 +886,10 @@ async function loadAll(setStatus) {
   tex.wall_bathmosaic = tex.wall_bathmosaic || tex.wall_marble || tex.wall_stone; tex.wall_bathcolumn = tex.wall_bathcolumn || tex.wall_bathmosaic; tex.wall_flesh = tex.wall_flesh || tex.wall_cathedral || tex.wall_stone; tex.wall_bone = tex.wall_bone || tex.wall_cemetery || tex.wall_stone; /* version 22 */
   tex.floor_bathtile = tex.floor_bathtile || tex.floor_marble || tex.floor_stone; tex.floor_mosaic = tex.floor_mosaic || tex.floor_bathtile; tex.floor_ashfield = tex.floor_ashfield || tex.floor_ash || tex.floor_stone; tex.floor_brimstone = tex.floor_brimstone || tex.floor_basalt || tex.floor_ashfield;
   tex.floor_hotpool = tex.floor_hotpool || tex.floor_shallow || tex.floor_water; tex.floor_steamvent = tex.floor_steamvent || tex.floor_vent || tex.floor_bathtile; tex.floor_coldpool = tex.floor_coldpool || tex.floor_shallow || tex.floor_water; tex.floor_firestream = tex.floor_firestream || tex.floor_lava; tex.floor_runecircle = tex.floor_runecircle || tex.floor_teleport || tex.floor_ashfield;
-  tex.wall_tent = tex.wall_tent || tex.wall_house || tex.wall_stone; tex.wall_cage = tex.wall_cage || tex.wall_tent; tex.wall_junglestone = tex.wall_junglestone || tex.wall_ruin_sunken || tex.wall_stone; tex.wall_jungle = tex.wall_jungle || tex.wall_forest || tex.wall_junglestone; // version 18
+  tex.wall_abattoirtile = tex.wall_abattoirtile || tex.wall_labtile || tex.wall_stone; tex.wall_coldroom = tex.wall_coldroom || tex.wall_abattoirtile; tex.wall_palisade = tex.wall_palisade || tex.wall_timber || tex.wall_stone; tex.wall_earthwork = tex.wall_earthwork || tex.wall_cave || tex.wall_stone; /* version 23 */
+  tex.floor_abattoir = tex.floor_abattoir || tex.floor_labtile || tex.floor_stone; tex.floor_bloodgrate = tex.floor_bloodgrate || tex.floor_grate || tex.floor_abattoir; tex.floor_battlemud = tex.floor_battlemud || tex.floor_mud || tex.floor_stone; tex.floor_trench = tex.floor_trench || tex.floor_planks2 || tex.floor_battlemud;
+  tex.floor_bloodslick = tex.floor_bloodslick || tex.floor_abattoir; tex.floor_grinder = tex.floor_grinder || tex.floor_sawtrack || tex.floor_abattoir; tex.floor_deepmud = tex.floor_deepmud || tex.floor_swamp || tex.floor_battlemud; tex.floor_target = tex.floor_target || tex.floor_battlemud;
+  tex.wall_tent = tex.wall_tent || tex.wall_house || tex.wall_stone; tex.wall_cage =tex.wall_cage || tex.wall_tent; tex.wall_junglestone = tex.wall_junglestone || tex.wall_ruin_sunken || tex.wall_stone; tex.wall_jungle = tex.wall_jungle || tex.wall_forest || tex.wall_junglestone; // version 18
   tex.floor_sawdust = tex.floor_sawdust || tex.floor_sand || tex.floor_wood_planks; tex.floor_ring = tex.floor_ring || tex.floor_carpet || tex.floor_sawdust; tex.floor_jungle = tex.floor_jungle || tex.floor_ground_dirt; tex.floor_templestone = tex.floor_templestone || tex.floor_stone_pattern;
   tex.floor_trapdoor = tex.floor_trapdoor || tex.floor_wood_planks; tex.floor_spotlight = tex.floor_spotlight || tex.floor_lightbeam || tex.floor_sawdust; tex.floor_piranha = tex.floor_piranha || tex.floor_shallow || tex.floor_water; tex.floor_vines = tex.floor_vines || tex.floor_thorns || tex.floor_jungle;
   tex.floor_wetdeck = tex.floor_wetdeck || tex.floor_shallow || tex.floor_deck; tex.floor_acid = tex.floor_acid || tex.floor_sporepool || tex.floor_swamp; tex.floor_transmute = tex.floor_transmute || tex.floor_teleport || tex.floor_labtile;
@@ -896,7 +928,7 @@ async function loadAll(setStatus) {
     ogre: [['idle', 4], ['walk', 6], ['attack', 7]], ghost: [['idle', 7], ['chase', 4], ['shriek', 4], ['vanish', 7], ['appear', 6]] };
   bossFx.frost = {}; // isdraken: valfria bilder, 124 px breda rutor
   for (const a of ['idle', 'attack', 'cast', 'hurt', 'death']) { try { const img = await load(`${A}gfx/boss_frost_${a}.png`); bossFx.frost[a] = strip(img, Math.max(1, Math.round(img.width / (img.height === 59 ? 124 : img.height)))); } catch (e) { /* saknas */ } }
-  for (const id of ['crystalqueen', 'leviathan', 'clockmaker', 'thunderbird', 'mycelmother', 'mirrorking', 'librarian', 'colossus', 'cardinal', 'queenbee', 'gardener', 'sandman', 'captain', 'alchemist', 'ringmaster', 'serpent', 'foreman', 'starseer', 'ratking', 'sphinx', 'executioner', 'tidepriest', 'bathmaster', 'pyrelord']) { bossFx[id] = {}; for (const a of ['idle', 'attack', 'cast', 'hurt', 'death', 'submerge', 'dive']) { try { const img = await load(`${A}gfx/boss_${id}_${a}.png`); bossFx[id][a] = strip(img, Math.max(1, Math.round(img.width / img.height))); } catch (e) { /* valfri */ } }
+  for (const id of ['crystalqueen', 'leviathan', 'clockmaker', 'thunderbird', 'mycelmother', 'mirrorking', 'librarian', 'colossus', 'cardinal', 'queenbee', 'gardener', 'sandman', 'captain', 'alchemist', 'ringmaster', 'serpent', 'foreman', 'starseer', 'ratking', 'sphinx', 'executioner', 'tidepriest', 'bathmaster', 'pyrelord', 'butcher', 'warlord']) { bossFx[id] = {}; for (const a of ['idle', 'attack', 'cast', 'hurt', 'death', 'submerge', 'dive']) { try { const img = await load(`${A}gfx/boss_${id}_${a}.png`); bossFx[id][a] = strip(img, Math.max(1, Math.round(img.width / img.height))); } catch (e) { /* valfri */ } }
     if (!bossFx[id].idle) delete bossFx[id]; else for (const a of ['attack', 'cast', 'hurt', 'submerge', 'dive']) bossFx[id][a] = bossFx[id][a] || bossFx[id].idle; }
   bossFx.pharaoh = {}; // faraonen: valfria bilder
   for (const a of ['idle', 'attack', 'cast', 'hurt', 'death']) { try { const img = await load(`${A}gfx/boss_pharaoh_${a}.png`); bossFx.pharaoh[a] = strip(img, Math.max(1, Math.round(img.width / img.height))); } catch (e) { /* saknas */ } }
@@ -912,7 +944,7 @@ async function loadAll(setStatus) {
   }
   setStatus('Laddar vapen…');
   for (const n of WEAPONS.map(w => w.id)) {
-    if (['axe', 'flamer', 'launcher', 'nailgun', 'staff', 'bow', 'knives', 'hammer', 'musket', 'harpoon', 'boomerang', 'prism', 'sawlauncher', 'windgun', 'spear', 'sporelauncher', 'mirrorshield', 'whip', 'runebook', 'steamcannon', 'censer', 'hivelauncher', 'shears', 'dreamstaff', 'chaincannon', 'acidsprayer', 'pinthrower', 'blowgun', 'pickaxe', 'starlance', 'scimitar', 'trapthrower', 'flail', 'blunderbuss', 'trident', 'brimstone'].includes(n)) { try { wimg[n] = await load(`${A}gfx/fp_${n}.png`); spr['pick_' + n] = pixels(await load(`${A}gfx/pick_${n}.png`)); } catch (e) { wimg[n] = wimg.pistol; spr['pick_' + n] = spr.pick_pistol; } continue; } // nya vapen: valfria bilder
+    if (['axe', 'flamer', 'launcher', 'nailgun', 'staff', 'bow', 'knives', 'hammer', 'musket', 'harpoon', 'boomerang', 'prism', 'sawlauncher', 'windgun', 'spear', 'sporelauncher', 'mirrorshield', 'whip', 'runebook', 'steamcannon', 'censer', 'hivelauncher', 'shears', 'dreamstaff', 'chaincannon', 'acidsprayer', 'pinthrower', 'blowgun', 'pickaxe', 'starlance', 'scimitar', 'trapthrower', 'flail', 'blunderbuss', 'trident', 'brimstone', 'hookchain', 'bombard'].includes(n)) { try { wimg[n] = await load(`${A}gfx/fp_${n}.png`); spr['pick_' + n] = pixels(await load(`${A}gfx/pick_${n}.png`)); } catch (e) { wimg[n] = wimg.pistol; spr['pick_' + n] = spr.pick_pistol; } continue; } // nya vapen: valfria bilder
     wimg[n] = await load(`${A}gfx/fp_${n}.png`);
     spr['pick_' + n] = pixels(await load(`${A}gfx/pick_${n}.png`));
   }
@@ -953,14 +985,14 @@ async function loadAll(setStatus) {
   }
   for (const k of ['rune_fire', 'rune_ice', 'rune_poison', 'rune_storm', 'rune_blood', 'rune_echo', 'ab_blink', 'ab_slowmo', 'ab_bubble', 'ab_summon', 'ab_quake']) { try { const im = await load(`${A}gfx/${k}.png`); spr[k] = pixels(im); hudImg[k] = im; } catch (e) { /* valfri */ } }
   try { spr.meat = pixels(await load(`${A}gfx/item_meat.png`)); } catch (e) { /* valfri */ }
-  for (const [k, f] of [['page', 'item_page'], ['battery', 'item_battery'], ['stone', 'item_stone'], ['tome', 'item_tome'], ['gear', 'item_gear'], ['feather', 'item_feather'], ['sporesack', 'item_sporesack'], ['inkflask', 'item_inkflask'], ['beehive', 'item_beehive'], ['dreamflask', 'item_dreamflask'], ['chaincrate', 'item_chaincrate'], ['acidflask', 'item_acidflask'], ['pinbox', 'item_pinbox'], ['dartquiver', 'item_dartquiver'], ['stardust', 'item_stardust'], ['traps', 'item_trapbox'], ['scrap', 'item_scrap'], ['brimstone', 'item_brimstone']]) { try { spr[k] = pixels(await load(`${A}gfx/${f}.png`)); } catch (e) { /* valfri */ } }
-  spr.chaincrate = spr.chaincrate || spr.ammo; spr.acidflask = spr.acidflask || spr.ammo; spr.pinbox = spr.pinbox || spr.ammo; spr.dartquiver = spr.dartquiver || spr.ammo; spr.stardust = spr.stardust || spr.ammo; spr.traps = spr.traps || spr.ammo; if (!spr.scrap) { try { spr.scrap = pixels(await load(`${A}gfx/pick_scrap.png`)); } catch (e) { spr.scrap = spr.ammo; } } spr.brimstone = spr.brimstone || spr.ammo; try { fx.props.beartrap = strip(await load(`${A}gfx/prop_beartrap.png`), 2); } catch (e) { /* valfri */ } /* version 19: stjärnstoftsflaskan */ // version 18: kägellådan och pilkogret // version 17: utan bild blir kulkistan och syraflaskan en ammolåda
+  for (const [k, f] of [['page', 'item_page'], ['battery', 'item_battery'], ['stone', 'item_stone'], ['tome', 'item_tome'], ['gear', 'item_gear'], ['feather', 'item_feather'], ['sporesack', 'item_sporesack'], ['inkflask', 'item_inkflask'], ['beehive', 'item_beehive'], ['dreamflask', 'item_dreamflask'], ['chaincrate', 'item_chaincrate'], ['acidflask', 'item_acidflask'], ['pinbox', 'item_pinbox'], ['dartquiver', 'item_dartquiver'], ['stardust', 'item_stardust'], ['traps', 'item_trapbox'], ['scrap', 'item_scrap'], ['brimstone', 'item_brimstone'], ['cannonballs', 'item_cannonballs']]) { try { spr[k] = pixels(await load(`${A}gfx/${f}.png`)); } catch (e) { /* valfri */ } }
+  spr.chaincrate = spr.chaincrate || spr.ammo; spr.acidflask = spr.acidflask || spr.ammo; spr.pinbox = spr.pinbox || spr.ammo; spr.dartquiver = spr.dartquiver || spr.ammo; spr.stardust = spr.stardust || spr.ammo; spr.traps = spr.traps || spr.ammo; if (!spr.scrap) { try { spr.scrap = pixels(await load(`${A}gfx/pick_scrap.png`)); } catch (e) { spr.scrap = spr.ammo; } } spr.brimstone = spr.brimstone || spr.ammo; spr.cannonballs = spr.cannonballs || spr.ammo; try { fx.props.beartrap = strip(await load(`${A}gfx/prop_beartrap.png`), 2); } catch (e) { /* valfri */ } /* version 19: stjärnstoftsflaskan */ // version 18: kägellådan och pilkogret // version 17: utan bild blir kulkistan och syraflaskan en ammolåda
   for (const k of ['icon_eye', 'icon_ear', 'icon_air', 'icon_xp', 'icon_wind', 'icon_time', 'icon_spore', 'icon_ink', 'icon_bless', 'icon_honey', 'icon_mist', 'icon_thorns', 'icon_acid', 'icon_gold2', 'icon_spotlight', 'icon_poison2', 'icon_steal', 'icon_gas', 'icon_lowgrav', 'icon_sludge', 'icon_storm', 'icon_leech']) { try { hudImg[k] = await load(`${A}gfx/${k}.png`); } catch (e) { /* valfri */ } }
   for (const k of ['potion_heal', 'potion_rage', 'potion_ghost', 'potion_speed', 'potion_ice', 'potion_unknown']) { try { const im = await load(`${A}gfx/${k}.png`); spr[k] = pixels(im); hudImg[k] = im; } catch (e) { /* valfri */ } }
   try { fx.crateBits = strip(await load(A + 'gfx/prop_crate_broken.png'), 4); } catch (e) { fx.crateBits = null; }
   fx.parts = {}; // biompartiklar (tools/props/make.py); saknas en används träffgnistan
   for (const [n, k] of [['web', 1], ['page', 2], ['ink2', 2], ['steam', 3], ['spore2', 2], ['glassshard', 2], ['whip', 1], ['illusion', 2], ['chain', 1], ['root', 2], ['tongue', 1], ['legend', 2], ['dirt', 2], ['gear', 2], ['spark2', 2], ['feather', 2], ['wind', 3], ['lightning2', 2], ['cloud', 2], ['bubble', 2], ['shard', 2], ['splash_big', 4], ['prismbeam', 1], ['note', 2], ['note2', 2], ['smoke3', 3], ['honey', 2], ['petal', 2], ['dreamsand', 2], ['ink', 2], ['harpoonrope', 1], ['knife', 1], ['bandage', 2], ['sand', 2], ['smoke2', 4], ['beam', 1], ['dust_mote', 1], ['nail', 1], ['arrow', 1], ['lightning', 4], ['ashfall', 2], ['lavadrop', 2], ['heat', 1], ['snow', 2], ['footprint', 1], ['breath', 2], ['icicle', 1], ['flame', 4], ['blood_trail', 2], ['eye', 1], ['leaf', 4], ['firefly', 2], ['drop', 1], ['rain', 1], ['fog', 1], ['bat', 4], ['ember', 2], ['dust', 1], ['wisp', 4], ['shell', 1], ['blood_pool', 3],
-    ['gib', 4], ['spore', 2], ['webshot', 1], ['scorch', 1], ['hole', 2], ['ash', 2], ['smoke', 4], ['ice', 3], ['gas', 2], ['skull', 2], ['log', 2], ['rock', 1], ['shadow', 1], ['zzz', 1], ['star', 1], ['meteor', 2], ['acid', 2], ['chainball', 2], ['bubble2', 2], ['feather2', 2], ['confetti', 3], ['pin', 2], ['dart', 1], ['leaf2', 2], ['popcorn', 2], ['laser', 1], ['coal', 2], ['stardust', 3], ['meteor2', 2], ['gasbubble', 2], ['sludge', 2], ['sand2', 2], ['steam2', 2], ['steam3', 2], ['ash2', 2], ['brimstone', 2]]) {
+    ['gib', 4], ['spore', 2], ['webshot', 1], ['scorch', 1], ['hole', 2], ['ash', 2], ['smoke', 4], ['ice', 3], ['gas', 2], ['skull', 2], ['log', 2], ['rock', 1], ['shadow', 1], ['zzz', 1], ['star', 1], ['meteor', 2], ['acid', 2], ['chainball', 2], ['bubble2', 2], ['feather2', 2], ['confetti', 3], ['pin', 2], ['dart', 1], ['leaf2', 2], ['popcorn', 2], ['laser', 1], ['coal', 2], ['stardust', 3], ['meteor2', 2], ['gasbubble', 2], ['sludge', 2], ['sand2', 2], ['steam2', 2], ['steam3', 2], ['ash2', 2], ['brimstone', 2], ['flies', 2], ['ghostwisp', 2], ['mud', 2]]) {
     try { fx.parts[n] = strip(await load(`${A}gfx/part_${n}.png`), k); } catch (e) { /* valfri */ }
   }
   try { await document.fonts.load('8px "PressStart2P"'); } catch (e) { /* reservtypsnitt */ }
@@ -1010,7 +1042,10 @@ const SOUNDS = ['shot', 'boom', 'pickup', 'health', 'hurt', 'splat', 'weapon', '
   'tidepriest_chant', 'tidepriest_roar', 'tide_tentacle', 'wave_crash', 'prison_alarm_bell', 'cage_fall', 'net_snag', 'barrel_fish', 'foghorn', 'flail_swing', 'flail_hit', 'flail_spin', 'blunder_fire', 'blunder_double', 'scrap_pickup', 'prison_hum', 'harbor_hum',
   'attendant', 'towel_snap', 'steamghost', 'gladiator', 'gladiator_block', 'net_throw', 'moldcrawler', 'mold_spore_burst', 'fireimp', 'fireimp_ball', 'lostsoul', 'lostsoul_boom', 'fleshbrute', 'ground_slam', 'ashwalker', 'ash_reform',
   'bathmaster_roar', 'scald_splash', 'bath_dive', 'pyrelord_roar', 'fire_rain', 'flame_pillar', 'fissure', 'steam_vent', 'cold_pool', 'hot_pool', 'rune_circle', 'chained_soul', 'trident_stab', 'trident_throw', 'trident_return',
-  'brimstone_fire', 'brimstone_boom', 'brimstone_pickup', 'bathhouse_hum', 'purgatory_hum'];
+  'brimstone_fire', 'brimstone_boom', 'brimstone_pickup', 'bathhouse_hum', 'purgatory_hum',
+  'butcher', 'cleaver_throw', 'pigman', 'pig_charge', 'flies', 'crawler', 'ghostsoldier', 'ghost_shield_bash', 'ghostarcher', 'arrow_volley', 'ghostrider', 'hoofbeats', 'crows', 'meatmaster_roar', 'hook_throw', 'chain_pull',
+  'grinder', 'grinder_start', 'warlord_roar', 'war_horn', 'catapult_whistle', 'catapult_impact', 'sword_whirl', 'blood_slick', 'deep_mud', 'meathook_creak', 'bandsaw', 'stakes_hit', 'banner_flap', 'hookchain_throw', 'hookchain_hit',
+  'bombard_fire', 'bombard_grape', 'cannonball_bounce', 'cannonball_pickup', 'abattoir_hum', 'battlefield_hum'];
 async function loadSounds() {
   actx = new (window.AudioContext || window.webkitAudioContext)();
   master = actx.createGain(); master.connect(actx.destination); applyVolume();
@@ -1101,14 +1136,17 @@ const WEAPONS = [
   // version 22: treudden och svavelmortern
   { id: 'trident', name: 'TREUDDEN', short: 'TREUDD', ammo: 'none', mag: 1, dmg: 40, pellets: 1, spread: 0, delay: 0.6, auto: true, sound: ['trident_stab', 0.7, 0], flash: 0, kick: 0.9, reload: 0, falloff: [2, 3, 1], recoil: [0], trident: true, noShell: true, silent: true },
   { id: 'brimstone', name: 'SVAVELMORTERN', short: 'SVAVEL', ammo: 'brimstone', mag: 4, dmg: 60, pellets: 1, spread: 0, delay: 0.9, auto: false, sound: ['brimstone_fire', 0.9, 0], flash: 1.2, kick: 1.8, reload: 1.9, falloff: [30, 40, 1], recoil: [0.01], brimstone: true, noShell: true },
+  // version 23: slaktarkroken och bombarden
+  { id: 'hookchain', name: 'SLAKTARKROKEN', short: 'KROK', ammo: 'none', mag: 1, dmg: 45, pellets: 1, spread: 0, delay: 1.2, auto: true, sound: ['hookchain_throw', 0.9, 0], flash: 0, kick: 1.0, reload: 0, falloff: [2, 3, 1], recoil: [0], hookchain: true, noShell: true, silent: true },
+  { id: 'bombard', name: 'BOMBARDEN', short: 'BOMBARD', ammo: 'cannonballs', mag: 1, dmg: 80, pellets: 1, spread: 0, delay: 0.9, auto: false, sound: ['bombard_fire', 1.0, 0], flash: 1.8, kick: 2.4, reload: 1.5, falloff: [30, 40, 1], recoil: [0.04], bombard: true, noShell: true },
 ];
 const AMMO = { p9: { name: '9MM', max: 200 }, r556: { name: '5.56', max: 150 }, shells: { name: 'PATRONER', max: 50 }, bolts: { name: 'BULTAR', max: 40 }, flares: { name: 'BLOSS', max: 24 },
   fuel: { name: 'BRÄNSLE', max: 240 }, lgren: { name: 'GRANATER', max: 24 }, none: { name: 'NÄRSTRID', max: 1 },
-  nails: { name: 'SPIKAR', max: 300 }, mana: { name: 'MANA', max: 0 }, arrows: { name: 'PILAR', max: 40 }, knives: { name: 'KNIVAR', max: 30 }, balls: { name: 'KULOR', max: 40 }, harpoons: { name: 'HARPUNER', max: 20 }, crystals: { name: 'KRISTALLER', max: 140 }, gears: { name: 'KUGGHJUL', max: 60 }, spores: { name: 'SPORER', max: 30 }, ink: { name: 'BLÄCK', max: 60 }, bees: { name: 'BIN', max: 40 }, dreams: { name: 'DRÖMMAR', max: 24 }, chainballs: { name: 'KEDJEKULOR', max: 20 }, acid: { name: 'SYRA', max: 200 }, pins: { name: 'KÄGLOR', max: 36 }, darts: { name: 'GIFTPILAR', max: 60 }, stars: { name: 'STJÄRNSTOFT', max: 30 }, traps: { name: 'FÄLLOR', max: 16 }, scrap: { name: 'SKROT', max: 40 }, brimstone: { name: 'SVAVEL', max: 20 } };
-const NOAMMO = () => ({ p9: 36, r556: 0, shells: 0, bolts: 0, flares: 0, fuel: 0, lgren: 0, none: 1, nails: 0, mana: 0, arrows: 0, knives: 0, balls: 0, harpoons: 0, crystals: 0, gears: 0, spores: 0, ink: 0, bees: 0, dreams: 0, chainballs: 0, acid: 0, pins: 0, darts: 0, stars: 0, traps: 0, scrap: 0, brimstone: 0 });
+  nails: { name: 'SPIKAR', max: 300 }, mana: { name: 'MANA', max: 0 }, arrows: { name: 'PILAR', max: 40 }, knives: { name: 'KNIVAR', max: 30 }, balls: { name: 'KULOR', max: 40 }, harpoons: { name: 'HARPUNER', max: 20 }, crystals: { name: 'KRISTALLER', max: 140 }, gears: { name: 'KUGGHJUL', max: 60 }, spores: { name: 'SPORER', max: 30 }, ink: { name: 'BLÄCK', max: 60 }, bees: { name: 'BIN', max: 40 }, dreams: { name: 'DRÖMMAR', max: 24 }, chainballs: { name: 'KEDJEKULOR', max: 20 }, acid: { name: 'SYRA', max: 200 }, pins: { name: 'KÄGLOR', max: 36 }, darts: { name: 'GIFTPILAR', max: 60 }, stars: { name: 'STJÄRNSTOFT', max: 30 }, traps: { name: 'FÄLLOR', max: 16 }, scrap: { name: 'SKROT', max: 40 }, brimstone: { name: 'SVAVEL', max: 20 }, cannonballs: { name: 'KANONKULOR', max: 20 } };
+const NOAMMO = () => ({ p9: 36, r556: 0, shells: 0, bolts: 0, flares: 0, fuel: 0, lgren: 0, none: 1, nails: 0, mana: 0, arrows: 0, knives: 0, balls: 0, harpoons: 0, crystals: 0, gears: 0, spores: 0, ink: 0, bees: 0, dreams: 0, chainballs: 0, acid: 0, pins: 0, darts: 0, stars: 0, traps: 0, scrap: 0, brimstone: 0, cannonballs: 0 });
 const weaponIndex = id => WEAPONS.findIndex(w => w.id === id);
 // tecknet för vapnet på kartan (gen.js) -> vapnets id
-const WEAPON_CHAR = { g: 'shotgun', r: 'rifle', m: 'smg', d: 'dbshotgun', b: 'crossbow', s: 'flaregun', p: 'sniper', 'å': 'axe', 'ä': 'flamer', 'ö': 'launcher', 'é': 'nailgun', 'ü': 'staff', 'ñ': 'bow', 'ô': 'knives', 'û': 'hammer', 'ï': 'musket', 'À': 'harpoon', 'Á': 'boomerang', 'Â': 'prism', 'Į': 'sawlauncher', 'į': 'windgun', 'Ĳ': 'spear', 'Ŕ': 'sporelauncher', 'ŕ': 'mirrorshield', 'Ŗ': 'whip', 'ƀ': 'runebook', 'Ɓ': 'steamcannon', 'ƛ': 'censer', 'Ɲ': 'hivelauncher', 'Ʊ': 'shears', 'Ʋ': 'dreamstaff', 'Ǫ': 'chaincannon', 'Ǭ': 'acidsprayer', 'ǽ': 'pinthrower', 'Ȏ': 'blowgun', 'ȩ': 'pickaxe', 'Ȫ': 'starlance', 'Ʉ': 'scimitar', 'Ʌ': 'trapthrower', 'ɝ': 'flail', 'ɞ': 'blunderbuss', 'ɹ': 'trident', 'ɺ': 'brimstone' };
+const WEAPON_CHAR = { g: 'shotgun', r: 'rifle', m: 'smg', d: 'dbshotgun', b: 'crossbow', s: 'flaregun', p: 'sniper', 'å': 'axe', 'ä': 'flamer', 'ö': 'launcher', 'é': 'nailgun', 'ü': 'staff', 'ñ': 'bow', 'ô': 'knives', 'û': 'hammer', 'ï': 'musket', 'À': 'harpoon', 'Á': 'boomerang', 'Â': 'prism', 'Į': 'sawlauncher', 'į': 'windgun', 'Ĳ': 'spear', 'Ŕ': 'sporelauncher', 'ŕ': 'mirrorshield', 'Ŗ': 'whip', 'ƀ': 'runebook', 'Ɓ': 'steamcannon', 'ƛ': 'censer', 'Ɲ': 'hivelauncher', 'Ʊ': 'shears', 'Ʋ': 'dreamstaff', 'Ǫ': 'chaincannon', 'Ǭ': 'acidsprayer', 'ǽ': 'pinthrower', 'Ȏ': 'blowgun', 'ȩ': 'pickaxe', 'Ȫ': 'starlance', 'Ʉ': 'scimitar', 'Ʌ': 'trapthrower', 'ɝ': 'flail', 'ɞ': 'blunderbuss', 'ɹ': 'trident', 'ɺ': 'brimstone', 'ʔ': 'hookchain', 'ʕ': 'bombard' };
 const WF = window.WEAPON_FRAMES;
 
 // ---------- Spelstate ----------
@@ -1207,11 +1245,11 @@ function weaponFor(depth) { // ett nytt vapen per våning i slumpad ordning; de 
   return P.has[weaponIndex(WEAPON_CHAR[want])] ? null : want;
 }
 // biomer: varje varv går igenom alla fem i slumpad ordning (?biome=id för test)
-const BIOME_IDS = ['dungeon', 'caves', 'graveyard', 'forest', 'courtyard', 'swamp', 'frost', 'volcano', 'tomb', 'crystal', 'sunken', 'clock', 'sky', 'fungus', 'mirror', 'library', 'foundry', 'cathedral', 'hive', 'garden', 'dream', 'ship', 'lab', 'circus', 'jungle', 'mine', 'observatory', 'sewer', 'desert', 'prison', 'harbor', 'bathhouse', 'purgatory'];
+const BIOME_IDS = ['dungeon', 'caves', 'graveyard', 'forest', 'courtyard', 'swamp', 'frost', 'volcano', 'tomb', 'crystal', 'sunken', 'clock', 'sky', 'fungus', 'mirror', 'library', 'foundry', 'cathedral', 'hive', 'garden', 'dream', 'ship', 'lab', 'circus', 'jungle', 'mine', 'observatory', 'sewer', 'desert', 'prison', 'harbor', 'bathhouse', 'purgatory', 'abattoir', 'battlefield'];
 let practice = null; // övningsläge: { biome } eller { boss }
 const biomeFor = depth => run && run.practice && run.practice.biome ? run.practice.biome : BIOME_IDS.includes(params.get('biome')) ? params.get('biome') : run && run.biomeChoice && run.biomeChoice[depth] ? run.biomeChoice[depth]
   : lateLast(RNG(run.seed).fork('biom' + cycleOf(depth)).shuffle(BIOME_IDS.slice()))[(cyclePos(depth) - 1) % BIOME_IDS.length];
-const BIOME_LATE = ['garden', 'dream', 'lab', 'circus', 'jungle', 'observatory', 'desert', 'harbor', 'purgatory']; // sena biomer: aldrig först i en omgång (och aldrig först i avgrundens sexvåningsvarv)
+const BIOME_LATE = ['garden', 'dream', 'lab', 'circus', 'jungle', 'observatory', 'desert', 'harbor', 'purgatory', 'battlefield']; // sena biomer: aldrig först i en omgång (och aldrig först i avgrundens sexvåningsvarv)
 function lateLast(order) { // trädgården, drömriket, laboratoriet, cirkusen, djungeltemplet och observatoriet är sena biomer: aldrig först i en omgång
   const LATE = BIOME_LATE;
   if (LATE.includes(order[0])) { const i = order.findIndex(b => !LATE.includes(b)); if (i > 0) [order[0], order[i]] = [order[i], order[0]]; }
@@ -1262,7 +1300,7 @@ function startLevel(level) {
   guardianE = null; kills = 0; totalEnemies = 0; secrets = 0; totalSecrets = 0; itemsTaken = 0; totalItems = 0; levelTime = 0; boss = null; bossBanner = 0;
   light = new Float32Array(mw * mh); lcol = settings.colorLight === false ? null : new Float32Array(mw * mh * 3); seen = new Uint8Array(mw * mh); flow = new Int16Array(mw * mh).fill(-1); flowCell = -1;
   const lrng = RNG(RNG.hash(run.seed + ':spawn:' + run.depth));
-  const itemOf = { h: 'health', a: 'ammo', A: 'armor', $: 'goldpile', ',': 'grenade', '}': 'key', "'": 'scroll', '¥': 'potion', 'ª': 'rune', 'ð': 'meat', 'þ': 'page', '¼': 'battery', '½': 'stones', 'Ģ': 'tome', 'Ŋ': 'gear', 'ŋ': 'feather', 'Ũ': 'sporesack', 'Ƃ': 'inkflask', 'ƞ': 'beehive', 'Ƴ': 'dreamflask', 'ǫ': 'chaincrate', 'ǭ': 'acidflask', 'Ǿ': 'pinbox', 'ȏ': 'dartquiver', 'ȫ': 'stardust', 'Ɇ': 'traps', 'ɟ': 'scrap', 'ɻ': 'brimstone', ...WEAPON_CHAR };
+  const itemOf = { h: 'health', a: 'ammo', A: 'armor', $: 'goldpile', ',': 'grenade', '}': 'key', "'": 'scroll', '¥': 'potion', 'ª': 'rune', 'ð': 'meat', 'þ': 'page', '¼': 'battery', '½': 'stones', 'Ģ': 'tome', 'Ŋ': 'gear', 'ŋ': 'feather', 'Ũ': 'sporesack', 'Ƃ': 'inkflask', 'ƞ': 'beehive', 'Ƴ': 'dreamflask', 'ǫ': 'chaincrate', 'ǭ': 'acidflask', 'Ǿ': 'pinbox', 'ȏ': 'dartquiver', 'ȫ': 'stardust', 'Ɇ': 'traps', 'ɟ': 'scrap', 'ɻ': 'brimstone', 'ʖ': 'cannonballs', ...WEAPON_CHAR };
   for (let y = 0; y < mh; y++) for (let x = 0; x < mw; x++) {
     const c = map[y][x], cx = x + 0.5, cy = y + 0.5;
     if (c === 'P') { P.x = cx; P.y = cy; P.a = startAngle(x, y); map[y][x] = '.'; }
@@ -1285,7 +1323,7 @@ function startLevel(level) {
   ghosts = []; echoes = []; quakeT = 8;
   floorTexs = (lvl.floors || [lvl.floor]).map(n => tex[n] || tex.floor_stone);
   cellFloor = new Uint8Array(mw * mh); cellSky = new Uint8Array(mw * mh); props = []; hazGrid = new Uint8Array(mw * mh);
-  const hazTex = { '_': 'floor_lava', '-': 'floor_water', ':': 'floor_ice', '¬': 'floor_crack', '·': 'floor_pit', '¯': 'floor_quicksand', 'Đ': 'floor_deepwater', 'Ĕ': 'floor_shallow', 'Ń': 'floor_void', 'ń': 'floor_wind', 'Ŀ': 'floor_sawtrack', 'ţ': 'floor_bouncepad', 'Ť': 'floor_sporepool', 'ť': 'floor_teleport', 'Ŭ': 'floor_ink', 'Ÿ': 'floor_conveyor', 'Ź': 'floor_molten', 'ź': 'floor_vent', 'ƍ': 'floor_lightbeam', 'Ɩ': 'floor_honey', 'ƥ': 'floor_thorns', 'Ʀ': 'floor_dreammist', 'Ǎ': 'floor_rotplank', 'Ǐ': 'floor_wetdeck', 'Ǜ': 'floor_acid', 'ǜ': 'floor_transmute', 'Ǳ': 'floor_trapdoor', 'ǲ': 'floor_spotlight', 'Ȃ': 'floor_piranha', 'ȃ': 'floor_vines', 'Ȗ': 'floor_rail', 'ȗ': 'floor_gas2', 'Ș': 'floor_cavein', 'ș': 'floor_starmap', 'Ț': 'floor_domeslit', 'Ȳ': 'floor_sludge', 'ȳ': 'floor_spray', 'ȴ': 'floor_oasis', 'ȵ': 'floor_mirage', 'ɍ': 'floor_alarmplate', 'Ɏ': 'floor_net', 'ɣ': 'floor_hotpool', 'ɤ': 'floor_steamvent', 'ɥ': 'floor_coldpool', 'ɰ': 'floor_firestream', 'ɱ': 'floor_runecircle' }, hazIdx = {}, nBase = floorTexs.length;
+  const hazTex = { '_': 'floor_lava', '-': 'floor_water', ':': 'floor_ice', '¬': 'floor_crack', '·': 'floor_pit', '¯': 'floor_quicksand', 'Đ': 'floor_deepwater', 'Ĕ': 'floor_shallow', 'Ń': 'floor_void', 'ń': 'floor_wind', 'Ŀ': 'floor_sawtrack', 'ţ': 'floor_bouncepad', 'Ť': 'floor_sporepool', 'ť': 'floor_teleport', 'Ŭ': 'floor_ink', 'Ÿ': 'floor_conveyor', 'Ź': 'floor_molten', 'ź': 'floor_vent', 'ƍ': 'floor_lightbeam', 'Ɩ': 'floor_honey', 'ƥ': 'floor_thorns', 'Ʀ': 'floor_dreammist', 'Ǎ': 'floor_rotplank', 'Ǐ': 'floor_wetdeck', 'Ǜ': 'floor_acid', 'ǜ': 'floor_transmute', 'Ǳ': 'floor_trapdoor', 'ǲ': 'floor_spotlight', 'Ȃ': 'floor_piranha', 'ȃ': 'floor_vines', 'Ȗ': 'floor_rail', 'ȗ': 'floor_gas2', 'Ș': 'floor_cavein', 'ș': 'floor_starmap', 'Ț': 'floor_domeslit', 'Ȳ': 'floor_sludge', 'ȳ': 'floor_spray', 'ȴ': 'floor_oasis', 'ȵ': 'floor_mirage', 'ɍ': 'floor_alarmplate', 'Ɏ': 'floor_net', 'ɣ': 'floor_hotpool', 'ɤ': 'floor_steamvent', 'ɥ': 'floor_coldpool', 'ɰ': 'floor_firestream', 'ɱ': 'floor_runecircle', 'ɿ': 'floor_bloodslick', 'ʀ': 'floor_grinder', 'ʋ': 'floor_deepmud', 'ʌ': 'floor_target' }, hazIdx = {}, nBase = floorTexs.length;
   for (const [ch, n] of Object.entries(hazTex)) { hazIdx[ch] = floorTexs.length; floorTexs.push(tex[n]); }
   animTex = { lava: hazIdx['_'], water: hazIdx['-'], ice: hazIdx[':'], pit: hazIdx['·'], deep: hazIdx['Đ'], shallow: hazIdx['Ĕ'], acid: hazIdx['Ǜ'], sludge: hazIdx['Ȳ'], honey: hazIdx['Ɩ'], ink: hazIdx['Ŭ'], molten: hazIdx['Ź'], sporepool: hazIdx['Ť'], piranha: hazIdx['Ȃ'], oasis: hazIdx['ȴ'] }; let lavaLights = 0; crumbles = {};
   for (let y = 0; y < mh; y++) for (let x = 0; x < mw; x++) {
@@ -1309,7 +1347,7 @@ function startLevel(level) {
   }
   prepareTorchLight();
   quests = null; run.inSecret = !!lvl.secret; boulders = []; smokes = []; tornados = [];
-  pickFloorEvent(lrng); setupQuests(lrng); addCobwebs(lrng); lockChests(lrng); setupNpcFloor(lrng); setupV8(lrng); setupV9(); setupV11(); setupV13(); setupV14(); setupV15(); setupV16(); setupV17(); setupV18(); setupV19(); setupV20(); setupV21(); setupV22(); setupLoop();
+  pickFloorEvent(lrng); setupQuests(lrng); addCobwebs(lrng); lockChests(lrng); setupNpcFloor(lrng); setupV8(lrng); setupV9(); setupV11(); setupV13(); setupV14(); setupV15(); setupV16(); setupV17(); setupV18(); setupV19(); setupV20(); setupV21(); setupV22(); setupV23(); setupLoop();
   if (dmod('giants')) for (const e of ents) if (!e.boss) { e.hp = e.maxHp = e.maxHp * 1.3; e.d = { ...e.d, size: e.d.size * 1.2, score: e.d.score * 1.5 }; }
   if (run.floorCurse) for (const e of ents) if (!e.boss) { e.hp = e.maxHp = e.maxHp * 1.2; e.d = { ...e.d, dmg: e.d.dmg * 1.3 }; }
   if (!boss && !merchants.length && run.depth >= 2 && lrng.next() < 0.15) { const sp = randomFreeCell(lrng); if (sp) { merchants.push({ x: sp[0], y: sp[1], stock: null, wander: true }); map[sp[1] | 0][sp[0] | 0] = 'M'; logEvent('VANDRANDE KÖPMAN'); } } // vandrande köpman
@@ -1491,7 +1529,7 @@ function makeBoss(x, y) {
 function cellAt(x, y) { if (x < 0 || y < 0 || x >= mw || y >= mh) return '1'; return map[y | 0][x | 0]; }
 const IWC = Object.create(null); // isWallChar per tecken (strålkastningen frågar för varje steg)
 function isWallChar(c) { const r = IWC[c]; return r !== undefined ? r : (IWC[c] = isWallChar0(c)); }
-function isWallChar0(c) { return c === 'ɠ' || c === 'ɡ' || c === 'ɢ' || c === 'ɭ' || c === 'ɮ' || c === 'ɯ' || c === 'ɇ' || c === 'Ɉ' || c === 'ɉ' || c === 'Ɋ' || c === 'ɋ' || c === 'Ɍ' || c === 'Ȭ' || c === 'ȭ' || c === 'Ȯ' || c === 'ȯ' || c === 'Ȱ' || c === 'ȱ' || c === 'Ȑ' || c === 'ȑ' || c === 'Ȓ' || c === 'ȓ' || c === 'Ȕ' || c === 'ȕ' || c === 'Ǯ' || c === 'ǯ' || c === 'ǰ' || c === 'ǿ' || c === 'Ȁ' || c === 'ȁ' || c === 'ǒ' || c === 'Ǔ' || c === 'ǔ' || c === 'Ǡ' || c === 'ǡ' || c === 'Ǣ' || c === 'Ɵ' || c === 'Ơ' || c === 'ơ' || c === 'Ƣ' || c === 'ƣ' || c === 'Ƥ' || c === 'Ɗ' || c === 'Ƌ' || c === 'ƌ' || c === 'Ɠ' || c === 'Ɣ' || c === 'ƕ' || c === 'ũ' || c === 'Ū' || c === 'ū' || c === 'ŵ' || c === 'Ŷ' || c === 'ŷ' || c === 'ŝ' || c === 'Ş' || c === 'ş' || c === 'Š' || c === 'š' || c === 'Ţ' || c === 'Ĺ' || c === 'ĺ' || c === 'Ļ' || c === 'ļ' || c === 'Ľ' || c === 'ľ' || c === 'Ą' || c === 'Ć' || c === 'Ĉ' || c === 'Ċ' || c === 'Č' || c === 'Ď' || (c >= '0' && c <= '9') || c === '#' || c === '%' || c === '~' || c === '&' || c === '=' || c === '{' || c === 'Ø' || c === '¦' || c === 'Ò' || c === '¤' || c === 'È' || c === 'Ì' || c === 'Ù'; } // Ø frusen mur, ¦ frostbossens vägg // 0 träsk, { sprucken vägg // 6 skog, 7 kyrkogårdsmur, 8 grotta, 9 husvägg, #%~&= bossväggar
+function isWallChar0(c) { return c === 'ɼ' || c === 'ɽ' || c === 'ɾ' || c === 'ʈ' || c === 'ʉ' || c === 'ʊ' || c === 'ɠ' || c === 'ɡ' || c === 'ɢ' || c === 'ɭ' || c === 'ɮ' || c === 'ɯ' || c === 'ɇ' || c === 'Ɉ' || c === 'ɉ' || c === 'Ɋ' || c === 'ɋ' || c === 'Ɍ' || c === 'Ȭ' || c === 'ȭ' || c === 'Ȯ' || c === 'ȯ' || c === 'Ȱ' || c === 'ȱ' || c === 'Ȑ' || c === 'ȑ' || c === 'Ȓ' || c === 'ȓ' || c === 'Ȕ' || c === 'ȕ' || c === 'Ǯ' || c === 'ǯ' || c === 'ǰ' || c === 'ǿ' || c === 'Ȁ' || c === 'ȁ' || c === 'ǒ' || c === 'Ǔ' || c === 'ǔ' || c === 'Ǡ' || c === 'ǡ' || c === 'Ǣ' || c === 'Ɵ' || c === 'Ơ' || c === 'ơ' || c === 'Ƣ' || c === 'ƣ' || c === 'Ƥ' || c === 'Ɗ' || c === 'Ƌ' || c === 'ƌ' || c === 'Ɠ' || c === 'Ɣ' || c === 'ƕ' || c === 'ũ' || c === 'Ū' || c === 'ū' || c === 'ŵ' || c === 'Ŷ' || c === 'ŷ' || c === 'ŝ' || c === 'Ş' || c === 'ş' || c === 'Š' || c === 'š' || c === 'Ţ' || c === 'Ĺ' || c === 'ĺ' || c === 'Ļ' || c === 'ļ' || c === 'Ľ' || c === 'ľ' || c === 'Ą' || c === 'Ć' || c === 'Ĉ' || c === 'Ċ' || c === 'Č' || c === 'Ď' || (c >= '0' && c <= '9') || c === '#' || c === '%' || c === '~' || c === '&' || c === '=' || c === '{' || c === 'Ø' || c === '¦' || c === 'Ò' || c === '¤' || c === 'È' || c === 'Ì' || c === 'Ù'; } // Ø frusen mur, ¦ frostbossens vägg // 0 träsk, { sprucken vägg // 6 skog, 7 kyrkogårdsmur, 8 grotta, 9 husvägg, #%~&= bossväggar
 const isPropChar = c => c === 't' || c === 'n' || !!(PROP_DEFS[c] && PROP_DEFS[c].block); // träd, gravstenar och möbler: blockerar men är sprites
 const isDoorChar = c => c === 'D' || c === 'G' || c === '*' || c === '|' || c === ']'; // | galler som öppnas med spak, ] låst dörr
 function doorAt(x, y) { return doors[(x | 0) + ',' + (y | 0)]; }
@@ -1589,7 +1627,7 @@ function updateLight() {
   for (const c of chests) if (!c.open) flashLight(c.x, c.y, 0.18, 2);
   if (lvl.exit) flashLight(lvl.exit.x + 0.5, lvl.exit.y + 0.5, 0.35 + 0.1 * Math.sin(tmr * 3), 3); // utgången lyser
   for (const e of ents) if (e.burn > 0 && !e.dead && !e.dormant) flashLight(e.x, e.y, 0.3, 2, [255, 140, 50]); // brinnande fiender lyser
-  lampLight(flashLight); gfxWLight(flashLight); v21Light(flashLight); v22Light(flashLight); // ficklampan; blixten lyser upp marken (VÄRLD)
+  lampLight(flashLight); gfxWLight(flashLight); v21Light(flashLight); v22Light(flashLight); v23Light(flashLight); // ficklampan; blixten lyser upp marken (VÄRLD)
   if (lvl.beams) for (const b of lvl.beams) flashLight(b.x + 0.5, b.y + 0.5, 0.5, 3, [255, 230, 170]); // ljusstrålar
   for (const p of portals) flashLight(p.x, p.y, 0.7, 4, p.kind === 'gold' ? [255, 220, 90] : (p.biome && portals.length > 1 && BIOME_TINT[p.biome]) || [190, 130, 255]);
   for (let i = 0; i < light.length; i++) { const l = light[i]; if (l > 1.3) light[i] = Math.min(1.8, 1.3 + (l - 1.3) * 0.25); } // mjukt tak: många ljuskällor på samma ställe bränner inte ut bilden
@@ -1612,6 +1650,8 @@ const BIOME_FX = {
   prison: { grade: [1.04, 1.04, 1.08], fogK: 0.085, amb: [['prison_hum', 0.3, 1], ['amb_drip', 0.18, 0.85]], weather: 'drips' },
   bathhouse: { grade: [1.02, 1.0, 0.96], fogK: 0.085, amb: [['bathhouse_hum', 0.3, 1], ['amb_drip', 0.2, 1.05]], weather: 'drips' },
   purgatory: { grade: [1.14, 0.84, 0.74], fogK: 0.065, amb: [['purgatory_hum', 0.34, 1], ['amb_wind', 0.12, 0.8]], weather: 'ash' },
+  abattoir: { grade: [1.06, 0.95, 0.93], fogK: 0.08, amb: [['abattoir_hum', 0.32, 1], ['amb_drip', 0.16, 0.9]], weather: 'drips' },
+  battlefield: { grade: [0.97, 0.96, 0.97], fogK: 0.06, amb: [['battlefield_hum', 0.34, 1], ['amb_wind', 0.14, 0.85]], weather: 'ash' },
   harbor: { grade: [0.9, 0.98, 1.04], fogK: 0.07, amb: [['harbor_hum', 0.32, 1], ['amb_wind', 0.12, 0.9]], weather: 'groundfog' },
   mine: { grade: [0.98, 0.9, 0.8], fogK: 0.11, amb: [['mine_hum', 0.3, 1], ['amb_drip', 0.15, 0.8]], weather: 'dust' },
   observatory: { grade: [0.82, 0.84, 1.02], fogK: 0.085, amb: [['observatory_hum', 0.3, 1], ['drone', 0.1, 1.3]], weather: 'sparkle' },
@@ -1633,8 +1673,8 @@ const BIOME_FX = {
   frost: { grade: [0.9, 0.98, 1.14], fogK: 0.09, amb: [['wind_cold', 0.3, 1], ['amb_wind', 0.15, 0.7]], weather: 'snow' },
   swamp: { grade: [0.9, 1.04, 0.86], fogK: 0.12, amb: [['amb_frogs', 0.3, 0.85], ['amb_drip', 0.18, 0.7], ['amb_wind', 0.12, 0.8]], weather: 'swamp' },
 };
-const BIOME_TINT = { prison: [170, 180, 200], harbor: [150, 200, 210], bathhouse: [200, 230, 240], purgatory: [255, 90, 50], sewer: [150, 190, 110], desert: [240, 200, 130], mine: [230, 180, 120], observatory: [170, 160, 255], circus: [255, 150, 140], jungle: [150, 230, 120], ship: [150, 200, 225], lab: [160, 255, 150], garden: [200, 240, 170], dream: [210, 160, 255], cathedral: [255, 170, 170], hive: [255, 215, 120], library: [255, 215, 160], foundry: [255, 170, 110], fungus: [170, 255, 190], mirror: [220, 230, 255], clock: [255, 210, 120], sky: [200, 225, 255], crystal: [190, 160, 255], sunken: [130, 210, 230], tomb: [255, 220, 130], volcano: [255, 120, 60], dungeon: [255, 200, 140], caves: [140, 200, 255], graveyard: [180, 180, 255], forest: [140, 255, 140], courtyard: [255, 255, 200], swamp: [160, 255, 120], frost: [190, 240, 255] };
-const BIOME_NAME = { dungeon: 'KRYPTAN', caves: 'GROTTORNA', graveyard: 'KYRKOGÅRDEN', forest: 'SKOGEN', courtyard: 'BORGGÅRDEN', swamp: 'TRÄSKET', frost: 'FROSTFÄSTET', volcano: 'VULKANEN', tomb: 'GRAVKAMMAREN', crystal: 'KRISTALLGROTTORNA', sunken: 'DEN SJUNKNA STADEN', clock: 'KLOCKTORNET', sky: 'MOLNBORGEN', fungus: 'SVAMPRIKET', mirror: 'SPEGELPALATSET', library: 'BIBLIOTEKET', foundry: 'GJUTERIET', cathedral: 'BLODKATEDRALEN', hive: 'BIKUPAN', garden: 'TRÄDGÅRDEN', dream: 'DRÖMRIKET', ship: 'SPÖKSKEPPET', lab: 'LABORATORIET', circus: 'CIRKUSEN', jungle: 'DJUNGELTEMPLET', mine: 'GRUVAN', observatory: 'OBSERVATORIET', sewer: 'KLOAKERNA', desert: 'ÖKNEN', prison: 'JÄRNFÄNGELSET', harbor: 'FISKELÄGET', bathhouse: 'BADHUSET', purgatory: 'SKÄRSELDEN' };
+const BIOME_TINT = { prison: [170, 180, 200], harbor: [150, 200, 210], bathhouse: [200, 230, 240], purgatory: [255, 90, 50], abattoir: [230, 130, 120], battlefield: [190, 180, 160], sewer: [150, 190, 110], desert: [240, 200, 130], mine: [230, 180, 120], observatory: [170, 160, 255], circus: [255, 150, 140], jungle: [150, 230, 120], ship: [150, 200, 225], lab: [160, 255, 150], garden: [200, 240, 170], dream: [210, 160, 255], cathedral: [255, 170, 170], hive: [255, 215, 120], library: [255, 215, 160], foundry: [255, 170, 110], fungus: [170, 255, 190], mirror: [220, 230, 255], clock: [255, 210, 120], sky: [200, 225, 255], crystal: [190, 160, 255], sunken: [130, 210, 230], tomb: [255, 220, 130], volcano: [255, 120, 60], dungeon: [255, 200, 140], caves: [140, 200, 255], graveyard: [180, 180, 255], forest: [140, 255, 140], courtyard: [255, 255, 200], swamp: [160, 255, 120], frost: [190, 240, 255] };
+const BIOME_NAME = { dungeon: 'KRYPTAN', caves: 'GROTTORNA', graveyard: 'KYRKOGÅRDEN', forest: 'SKOGEN', courtyard: 'BORGGÅRDEN', swamp: 'TRÄSKET', frost: 'FROSTFÄSTET', volcano: 'VULKANEN', tomb: 'GRAVKAMMAREN', crystal: 'KRISTALLGROTTORNA', sunken: 'DEN SJUNKNA STADEN', clock: 'KLOCKTORNET', sky: 'MOLNBORGEN', fungus: 'SVAMPRIKET', mirror: 'SPEGELPALATSET', library: 'BIBLIOTEKET', foundry: 'GJUTERIET', cathedral: 'BLODKATEDRALEN', hive: 'BIKUPAN', garden: 'TRÄDGÅRDEN', dream: 'DRÖMRIKET', ship: 'SPÖKSKEPPET', lab: 'LABORATORIET', circus: 'CIRKUSEN', jungle: 'DJUNGELTEMPLET', mine: 'GRUVAN', observatory: 'OBSERVATORIET', sewer: 'KLOAKERNA', desert: 'ÖKNEN', prison: 'JÄRNFÄNGELSET', harbor: 'FISKELÄGET', bathhouse: 'BADHUSET', purgatory: 'SKÄRSELDEN', abattoir: 'SLAKTERIET', battlefield: 'DET EVIGA SLAGFÄLTET' };
 const biomeFx = () => BIOME_FX[lvl && lvl.biome] || BIOME_FX.dungeon;
 const gradeLUT = [new Uint8ClampedArray(256), new Uint8ClampedArray(256), new Uint8ClampedArray(256)];
 function buildGrade() { // färgtonen som uppslagstabeller; ljusstyrkan (gamma) från inställningarna ingår
@@ -1677,7 +1717,7 @@ function stopAmbient() { for (const a of ambLoops) try { a.s.stop(); } catch (e)
 function startAmbient() {
   stopAmbient();
   ambLoops = biomeFx().amb.map(([n, v, r]) => play(n, v, r, { loop: true, amb: true })).filter(Boolean);
-  if (window.Music) { Music.reverb(boss ? 'boss' : { dungeon: 'crypt', caves: 'cave', courtyard: 'crypt', lab: 'crypt', circus: 'crypt', mine: 'cave', observatory: 'crypt', sewer: 'cave', prison: 'crypt', bathhouse: 'cave' }[lvl.biome] || 'outdoor'); playMusic(); }
+  if (window.Music) { Music.reverb(boss ? 'boss' : { dungeon: 'crypt', caves: 'cave', courtyard: 'crypt', lab: 'crypt', circus: 'crypt', mine: 'cave', observatory: 'crypt', sewer: 'cave', prison: 'crypt', bathhouse: 'cave', abattoir: 'crypt' }[lvl.biome] || 'outdoor'); playMusic(); }
   ambient = ambLoops[0] || null;
 }
 function setMusic(on) { // bossmusik under bosstrider, annars biomens musik
@@ -1687,7 +1727,7 @@ function setMusic(on) { // bossmusik under bosstrider, annars biomens musik
   if (!on && musicLoop) { try { musicLoop.s.stop(); } catch (e) { /* redan stoppad */ } musicLoop = null; }
 }
 let musicLoop = null;
-function playMusic() { if (!window.Music) return; if (settings.music === false) { Music.stop(1); return; } const b = boss || guardianE; Music.play(state === 'title' || !lvl ? 'title' : lvl.hub ? 'hub' : lvl.secret && !musicSnd ? 'secret' : musicSnd ? (b && b.id === 'frost' ? 'boss2' : b && b.id === 'flame' ? 'boss3' : b && b.id === 'pharaoh' ? 'boss4' : b && b.id === 'crystalqueen' ? 'boss5' : b && b.id === 'leviathan' ? 'boss6' : b && b.id === 'monk' ? 'boss8' : b && b.id === 'clockmaker' ? 'boss7' : b && b.id === 'thunderbird' ? 'boss8' : b && b.id === 'mycelmother' ? 'boss9' : b && b.id === 'mirrorking' ? 'boss10' : b && b.id === 'librarian' ? 'boss11' : b && b.id === 'colossus' ? 'boss12' : b && b.id === 'cardinal' ? 'boss13' : b && b.id === 'queenbee' ? 'boss14' : b && b.id === 'gardener' ? 'boss15' : b && b.id === 'sandman' ? 'boss16' : b && b.id === 'captain' ? 'boss17' : b && b.id === 'alchemist' ? 'boss18' : b && b.id === 'ringmaster' ? 'boss19' : b && b.id === 'serpent' ? 'boss20' : b && b.id === 'foreman' ? 'boss21' : b && b.id === 'starseer' ? 'boss22' : b && b.id === 'ratking' ? 'boss23' : b && b.id === 'sphinx' ? 'boss24' : b && b.id === 'executioner' ? 'boss25' : b && b.id === 'tidepriest' ? 'boss26' : b && b.id === 'bathmaster' ? 'boss27' : b && b.id === 'pyrelord' ? 'boss28' : 'boss') : lvl.biome || 'dungeon'); }
+function playMusic() { if (!window.Music) return; if (settings.music === false) { Music.stop(1); return; } const b = boss || guardianE; Music.play(state === 'title' || !lvl ? 'title' : lvl.hub ? 'hub' : lvl.secret && !musicSnd ? 'secret' : musicSnd ? (b && b.id === 'frost' ? 'boss2' : b && b.id === 'flame' ? 'boss3' : b && b.id === 'pharaoh' ? 'boss4' : b && b.id === 'crystalqueen' ? 'boss5' : b && b.id === 'leviathan' ? 'boss6' : b && b.id === 'monk' ? 'boss8' : b && b.id === 'clockmaker' ? 'boss7' : b && b.id === 'thunderbird' ? 'boss8' : b && b.id === 'mycelmother' ? 'boss9' : b && b.id === 'mirrorking' ? 'boss10' : b && b.id === 'librarian' ? 'boss11' : b && b.id === 'colossus' ? 'boss12' : b && b.id === 'cardinal' ? 'boss13' : b && b.id === 'queenbee' ? 'boss14' : b && b.id === 'gardener' ? 'boss15' : b && b.id === 'sandman' ? 'boss16' : b && b.id === 'captain' ? 'boss17' : b && b.id === 'alchemist' ? 'boss18' : b && b.id === 'ringmaster' ? 'boss19' : b && b.id === 'serpent' ? 'boss20' : b && b.id === 'foreman' ? 'boss21' : b && b.id === 'starseer' ? 'boss22' : b && b.id === 'ratking' ? 'boss23' : b && b.id === 'sphinx' ? 'boss24' : b && b.id === 'executioner' ? 'boss25' : b && b.id === 'tidepriest' ? 'boss26' : b && b.id === 'bathmaster' ? 'boss27' : b && b.id === 'pyrelord' ? 'boss28' : b && b.id === 'butcher' ? 'boss29' : b && b.id === 'warlord' ? 'boss30' : 'boss') : lvl.biome || 'dungeon'); }
 function applyMixer() { if (window.Music) Music.setVolumes({ music: settings.music === false ? 0 : settings.musicVol ?? 0.6, sfx: settings.sfxVol ?? 1, amb: settings.ambVol ?? 0.8 }); }
 let intensity = 0;
 function updateAudioMood(dt) { // musiken intensivare i strid, dov ljudbild vid låg hälsa
@@ -1757,7 +1797,7 @@ function shadeFog(c, L, dist, ci = -1) {
 }
 const wallTexFor = { 1: 'wall_brick_stone_center', 2: 'wall_brick_small_stone', 3: 'wall_rock', 4: 'wall_stone', 5: 'wall_brick_stone_center_banner',
   6: 'wall_forest', 7: 'wall_cemetery', 8: 'wall_cave', 9: 'wall_house',
-  0: 'wall_swamp', '{': 'wall_cracked', 'Ø': 'wall_frost', '¦': 'wall_boss_frost', 'Ò': 'wall_obsidian', '¤': 'wall_boss_volcano', 'È': 'wall_sandstone', 'Ì': 'wall_hieroglyph', 'Ù': 'wall_boss_pharaoh', 'ǒ': 'wall_hull', 'Ǔ': 'wall_rigging', 'ǔ': 'wall_boss_captain', 'Ǡ': 'wall_labtile', 'ǡ': 'wall_jars', 'Ǣ': 'wall_boss_alchemist', 'Ǯ': 'wall_tent', 'ǯ': 'wall_cage', 'Ȑ': 'wall_timber', 'ȑ': 'wall_orevein', 'Ȓ': 'wall_boss_foreman', 'ȓ': 'wall_brass2', 'Ȕ': 'wall_starchart', 'ȕ': 'wall_boss_starseer', 'Ȭ': 'wall_sewerbrick', 'ȭ': 'wall_pipes', 'Ȯ': 'wall_boss_ratking', 'ȯ': 'wall_dune', 'Ȱ': 'wall_mesa', 'ȱ': 'wall_boss_sphinx', 'ɇ': 'wall_prisonstone', 'Ɉ': 'wall_cellbars', 'ɉ': 'wall_boss_executioner', 'Ɋ': 'wall_shack', 'ɋ': 'wall_quay', 'Ɍ': 'wall_boss_tidepriest', 'ɠ': 'wall_bathmosaic', 'ɡ': 'wall_bathcolumn', 'ɢ': 'wall_boss_bathmaster', 'ɭ': 'wall_flesh', 'ɮ': 'wall_bone', 'ɯ': 'wall_boss_pyrelord', 'ǰ': 'wall_boss_ringmaster', 'ǿ': 'wall_junglestone', 'Ȁ': 'wall_jungle', 'ȁ': 'wall_boss_serpent', 'Ɵ': 'wall_hedge', 'Ơ': 'wall_gardenwall', 'ơ': 'wall_boss_gardener', 'Ƣ': 'wall_dream', 'ƣ': 'wall_dreamshift', 'Ƥ': 'wall_boss_sandman', 'Ɗ': 'wall_cathedral', 'Ƌ': 'wall_stainedglass', 'ƌ': 'wall_boss_cardinal', 'Ɠ': 'wall_wax', 'Ɣ': 'wall_honeycomb', 'ƕ': 'wall_boss_queenbee', 'ũ': 'wall_bookshelf', 'Ū': 'wall_libpanel', 'ū': 'wall_boss_librarian', 'ŵ': 'wall_ironplate', 'Ŷ': 'wall_furnace', 'ŷ': 'wall_boss_colossus', 'ŝ': 'wall_mycel', 'Ş': 'wall_mushroomcap', 'ş': 'wall_boss_mycelmother', 'Š': 'wall_marble', 'š': 'wall_mirror', 'Ţ': 'wall_boss_mirrorking', 'Ĺ': 'wall_brass', 'ĺ': 'wall_gear', 'Ļ': 'wall_boss_clockmaker', 'ļ': 'wall_cloudstone', 'Ľ': 'wall_stormwall', 'ľ': 'wall_boss_thunderbird', 'Ą': 'wall_crystal', 'Ć': 'wall_crystal_vein', 'Ĉ': 'wall_boss_crystalqueen', 'Ċ': 'wall_ruin_sunken', 'Č': 'wall_coral', 'Ď': 'wall_boss_leviathan', '#': 'wall_boss_demon', '%': 'wall_boss_beast', '~': 'wall_boss_nightmare', '&': 'wall_boss_ogre', '=': 'wall_boss_ghost' }; // väktar- och bossrum
+  0: 'wall_swamp', '{': 'wall_cracked', 'Ø': 'wall_frost', '¦': 'wall_boss_frost', 'Ò': 'wall_obsidian', '¤': 'wall_boss_volcano', 'È': 'wall_sandstone', 'Ì': 'wall_hieroglyph', 'Ù': 'wall_boss_pharaoh', 'ǒ': 'wall_hull', 'Ǔ': 'wall_rigging', 'ǔ': 'wall_boss_captain', 'Ǡ': 'wall_labtile', 'ǡ': 'wall_jars', 'Ǣ': 'wall_boss_alchemist', 'Ǯ': 'wall_tent', 'ǯ': 'wall_cage', 'Ȑ': 'wall_timber', 'ȑ': 'wall_orevein', 'Ȓ': 'wall_boss_foreman', 'ȓ': 'wall_brass2', 'Ȕ': 'wall_starchart', 'ȕ': 'wall_boss_starseer', 'Ȭ': 'wall_sewerbrick', 'ȭ': 'wall_pipes', 'Ȯ': 'wall_boss_ratking', 'ȯ': 'wall_dune', 'Ȱ': 'wall_mesa', 'ȱ': 'wall_boss_sphinx', 'ɇ': 'wall_prisonstone', 'Ɉ': 'wall_cellbars', 'ɉ': 'wall_boss_executioner', 'Ɋ': 'wall_shack', 'ɋ': 'wall_quay', 'Ɍ': 'wall_boss_tidepriest', 'ɠ': 'wall_bathmosaic', 'ɡ': 'wall_bathcolumn', 'ɢ': 'wall_boss_bathmaster', 'ɭ': 'wall_flesh', 'ɮ': 'wall_bone', 'ɯ': 'wall_boss_pyrelord', 'ɼ': 'wall_abattoirtile', 'ɽ': 'wall_coldroom', 'ɾ': 'wall_boss_butcher', 'ʈ': 'wall_palisade', 'ʉ': 'wall_earthwork', 'ʊ': 'wall_boss_warlord', 'ǰ': 'wall_boss_ringmaster', 'ǿ': 'wall_junglestone', 'Ȁ': 'wall_jungle', 'ȁ': 'wall_boss_serpent', 'Ɵ': 'wall_hedge', 'Ơ': 'wall_gardenwall', 'ơ': 'wall_boss_gardener', 'Ƣ': 'wall_dream', 'ƣ': 'wall_dreamshift', 'Ƥ': 'wall_boss_sandman', 'Ɗ': 'wall_cathedral', 'Ƌ': 'wall_stainedglass', 'ƌ': 'wall_boss_cardinal', 'Ɠ': 'wall_wax', 'Ɣ': 'wall_honeycomb', 'ƕ': 'wall_boss_queenbee', 'ũ': 'wall_bookshelf', 'Ū': 'wall_libpanel', 'ū': 'wall_boss_librarian', 'ŵ': 'wall_ironplate', 'Ŷ': 'wall_furnace', 'ŷ': 'wall_boss_colossus', 'ŝ': 'wall_mycel', 'Ş': 'wall_mushroomcap', 'ş': 'wall_boss_mycelmother', 'Š': 'wall_marble', 'š': 'wall_mirror', 'Ţ': 'wall_boss_mirrorking', 'Ĺ': 'wall_brass', 'ĺ': 'wall_gear', 'Ļ': 'wall_boss_clockmaker', 'ļ': 'wall_cloudstone', 'Ľ': 'wall_stormwall', 'ľ': 'wall_boss_thunderbird', 'Ą': 'wall_crystal', 'Ć': 'wall_crystal_vein', 'Ĉ': 'wall_boss_crystalqueen', 'Ċ': 'wall_ruin_sunken', 'Č': 'wall_coral', 'Ď': 'wall_boss_leviathan', '#': 'wall_boss_demon', '%': 'wall_boss_beast', '~': 'wall_boss_nightmare', '&': 'wall_boss_ogre', '=': 'wall_boss_ghost' }; // väktar- och bossrum
 // golvtextur per ruta (floorMask) och öppen himmel (sky) räknas fram när våningen startar
 let cellFloor = null, cellSky = null, floorTexs = [], props = [], hazGrid = null, animTex = {};
 const colAng = new Float32Array(W);
@@ -1836,7 +1876,7 @@ function render() {
   // sprites bakifrån och fram
   const list = [];
   for (const e of ents) list.push({ x: e.x, y: e.y, k: 'e', o: e });
-  ropePoints(list); drawV9World(list); drawV11World(list); drawV13World(list); drawV14World(list); drawV15World(list); drawV17World(list); drawV18World(list); drawV19World(list); drawV20World(list); drawV21World(list); drawV22World(list);
+  ropePoints(list); drawV9World(list); drawV11World(list); drawV13World(list); drawV14World(list); drawV15World(list); drawV17World(list); drawV18World(list); drawV19World(list); drawV20World(list); drawV21World(list); drawV22World(list); drawV23World(list);
   for (const it of items) if (!it.taken) list.push({ x: it.x, y: it.y, k: 'i', o: it });
   for (const p of pots) if (!p.broken) list.push({ x: p.x, y: p.y, k: 'p', o: p });
   for (const t of torches) if (!t.hidden) list.push({ x: t.x, y: t.y, k: 't', o: t });
@@ -1954,6 +1994,7 @@ function render() {
     else if (s.k === 'v20' && drawV20Sprite(s)) { /* version 20 */ }
     else if (s.k === 'v21' && drawV21Sprite(s)) { /* version 21 */ }
     else if (s.k === 'v22' && drawV22Sprite(s)) { /* version 22 */ }
+    else if (s.k === 'v23' && drawV23Sprite(s)) { /* version 23 */ }
     else if (s.k === 'rp') drawSprite(fx.parts.harpoonrope ? fx.parts.harpoonrope[0] : fx.hit[1], o.x, o.y, 0.02, o.z, false, null, 0, 0.5, false, [150, 110, 70]);
     else if (s.k === 'f' && o.kind === 'knife') drawSprite(fx.parts.knife ? fx.parts.knife[0] : fx.hit[1], o.x, o.y, 0.04, o.z - 0.03, Math.floor(tmr * 16) % 2 === 0, null, 0, 0.6);
     else if (s.k === 'f' && o.kind === 'bandage') drawSprite(fx.parts.bandage ? fx.parts.bandage[Math.floor(tmr * 10) % fx.parts.bandage.length] : fx.hit[1], o.x, o.y, 0.06, o.z - 0.03, false, null, 0, 0.6, false, fx.parts.bandage ? null : [230, 220, 190]);
@@ -2096,6 +2137,8 @@ function bossFrame(b) {
     case 'ratking': return b.dying && f.death ? at(f.death, b.dying * 6) : b.flash > 0.06 && f.hurt && b.state === 'idle' ? loop(f.hurt, 12) : b.state === 'bite' || b.state === 'spew' ? loop(f.attack, 10) : b.state === 'special' ? loop(f.cast, 9) : loop(f.idle, 6);
     case 'bathmaster': return b.dying && f.death ? at(f.death, b.dying * 6) : b.flash > 0.06 && f.hurt && b.state === 'idle' ? loop(f.hurt, 12) : b.state === 'ladle' || b.state === 'scald' ? loop(f.attack, 10) : b.state === 'dive' || b.state === 'special' ? loop(f.cast, 9) : loop(f.idle, 6);
     case 'pyrelord': return b.dying && f.death ? at(f.death, b.dying * 6) : b.flash > 0.06 && f.hurt && b.state === 'idle' ? loop(f.hurt, 12) : b.state === 'claw' || b.state === 'pillar' ? loop(f.attack, 10) : b.state === 'rain' || b.state === 'special' ? loop(f.cast, 9) : loop(f.idle, 6);
+    case 'butcher': return b.dying && f.death ? at(f.death, b.dying * 6) : b.flash > 0.06 && f.hurt && b.state === 'idle' ? loop(f.hurt, 12) : b.state === 'cleave' ? loop(f.attack, 10) : b.state === 'hook' || b.state === 'meat' || b.state === 'special' ? loop(f.cast, 9) : loop(f.idle, 6);
+    case 'warlord': return b.dying && f.death ? at(f.death, b.dying * 6) : b.flash > 0.06 && f.hurt && b.state === 'idle' ? loop(f.hurt, 12) : b.state === 'sword' || b.state === 'whirl' || b.state === 'ride' ? loop(f.attack, 10) : b.state === 'special' ? loop(f.cast, 9) : loop(f.idle, 6);
     case 'executioner': return b.dying && f.death ? at(f.death, b.dying * 6) : b.flash > 0.06 && f.hurt && b.state === 'idle' ? loop(f.hurt, 12) : b.state === 'chop' || b.state === 'hook' ? loop(f.attack, 10) : b.state === 'special' ? loop(f.cast, 9) : loop(f.idle, 6);
     case 'tidepriest': return b.dying && f.death ? at(f.death, b.dying * 6) : b.flash > 0.06 && f.hurt && b.state === 'idle' ? loop(f.hurt, 12) : b.state === 'staff' || b.state === 'wave' ? loop(f.attack, 10) : b.state === 'tentacles' || b.state === 'special' ? loop(f.cast, 9) : loop(f.idle, 6);
     case 'sphinx': return b.dying && f.death ? at(f.death, b.dying * 6) : b.flash > 0.06 && f.hurt && b.state === 'idle' ? loop(f.hurt, 12) : b.state === 'paw' || b.state === 'eyes' ? loop(f.attack, 10) : b.state === 'special' ? loop(f.cast, 9) : loop(f.idle, 6);
@@ -2133,6 +2176,7 @@ function weaponFrame() { // bildruta och förskjutning: vapnet sticker rakt fram
   else if (st.throw && wp.spear && (WS.spearT || 0) > 0) idx = pick(st.throw, clamp(1 - WS.spearT / 0.35, 0, 0.999)); // spjutet kastas
   else if (st.throw && wp.shears && (WS.shearT || 0) > 0) idx = pick(st.throw, clamp(1 - WS.shearT / 0.4, 0, 0.999)); // saxen kastas
   else if (st.empty && wp.shears && P.shearOut) idx = st.empty[0]; // saxen i luften
+  else if (st.throw && wp.hookchain && v23hook) idx = v23hook.t < 0.25 ? pick(st.throw, v23hook.t / 0.25 * 0.999) : (st.empty || st.throw)[0];
   else if (st.dash && wp.scimitar && (WS.dashT || 0) > 0) idx = pick(st.dash, clamp(1 - WS.dashT / ((f.dur && f.dur.dash) || 0.36), 0, 0.999)); // kroksabelns utfallssteg
   else if (st.ward && wp.runebook && (P.wardT || 0) > tmr) idx = st.ward[Math.floor(tmr * 8) % st.ward.length]; // sidvirveln
   else if (st.block && wp.mirrorshield && WS.block) idx = pick(st.block, clamp((tmr - (WS.blockAt || 0)) / 0.25, 0, 0.999)); // skölden uppe
@@ -2203,7 +2247,7 @@ const WA_RL = {
   ram: [0, 0, 0, 0, 0.18, -4, 46, -0.12, 0.32, -4, 56, -0.12, 0.38, -4, 47, -0.12, 0.48, -4, 57, -0.12, 0.54, -4, 47, -0.12, 0.74, -2, 38, -0.08, 1, 0, 0, 0],
   insp: [0, 0, 0, 0, 0.18, -28, 14, -0.4, 0.44, -32, 12, -0.36, 0.6, 10, 8, 0.28, 0.82, 14, 10, 0.24, 0.95, 0, -3, 0, 1, 0, 0, 0]
 };
-const WA_PROF = { dbshotgun: 'brk', flaregun: 'brk', musket: 'ram', crossbow: 'crank', bow: 'crank', knives: 'crank', pinthrower: 'crank', launcher: 'heavy', flamer: 'heavy', acidsprayer: 'heavy', steamcannon: 'heavy', chaincannon: 'heavy', sawlauncher: 'heavy', hivelauncher: 'heavy', sporelauncher: 'heavy', trapthrower: 'heavy', blunderbuss: 'brk', brimstone: 'heavy' };
+const WA_PROF = { dbshotgun: 'brk', flaregun: 'brk', musket: 'ram', crossbow: 'crank', bow: 'crank', knives: 'crank', pinthrower: 'crank', launcher: 'heavy', flamer: 'heavy', acidsprayer: 'heavy', steamcannon: 'heavy', chaincannon: 'heavy', sawlauncher: 'heavy', hivelauncher: 'heavy', sporelauncher: 'heavy', trapthrower: 'heavy', blunderbuss: 'brk', brimstone: 'heavy', bombard: 'heavy' };
 const waOut = { dx: 0, dy: 0, rot: 0 };
 function waTrack(tr, k, o) { // jämn interpolation mellan nyckelrutorna (smoothstep)
   let i = 0; while (i + 4 < tr.length - 4 && tr[i + 4] < k) i += 4;
@@ -2314,7 +2358,7 @@ function wfxSmoke() { // krok från muzzleSmoke: puffar i skärmen och värme i 
   const n = wp.flash >= 1.4 ? 3 : wp.flash >= 0.9 ? 2 : 1;
   for (let i = 0; i < n; i++) waPuff(WA.mx, WA.my, wp.flash);
 }
-const WA_MELEE = { axe: 1, hammer: 1, pickaxe: 1, scimitar: 1, flail: 1, trident: 1, censer: 1, whip: 1, mirrorshield: 1, shears: 1 };
+const WA_MELEE = { axe: 1, hammer: 1, pickaxe: 1, scimitar: 1, flail: 1, trident: 1, hookchain: 1, censer: 1, whip: 1, mirrorshield: 1, shears: 1 };
 let waGlow = null;
 function waGlowCan() { // liten förritad glöd (ingen gradient per bildruta)
   if (waGlow) return waGlow; waGlow = document.createElement('canvas'); waGlow.width = waGlow.height = 32; const g = waGlow.getContext('2d'), gr = g.createRadialGradient(16, 16, 0, 16, 16, 16);
@@ -2769,7 +2813,7 @@ function drawHUD() {
   if (WS.boost && state === 'play') txt('+15%', W / 2 + 12, HORIZON - 14, '#9fe060', 1, true, 0.8);
   if (state === 'play') { // effekternas 8×8-ikoner (som förr ritades i en rad längst ned) samlas i effektraden vid hälsan
     fxIcons = []; g.drawImage = function (im, x, y, w, h) { if (arguments.length === 5 && y === VH - 22 && w === 8 && h === 8) { if (im && !fxIcons.includes(im)) fxIcons.push(im); return; } return CanvasRenderingContext2D.prototype.drawImage.apply(this, arguments); };
-    try { drawBowAim(g); drawStaffCharge(g); drawAbilityHud(g); drawTutorial(g); drawHammerCharge(g); drawStealthHud(g); drawLampHud(g); drawCues(g); drawMazeTimer(g); drawXpHud(g); drawAirHud(g); drawTimeHud(g); drawDpsHud(g); drawV11Hud(g); drawV13Hud(g); drawV14Hud(g); drawV14Hud2(g); drawV15Hud(g); drawV16Hud(g); drawV17Hud(g); drawV18Hud(g); drawV19Hud(g); drawV20Hud(g); drawV21Hud(g); drawV22Hud(g); drawLoopHud(g); }
+    try { drawBowAim(g); drawStaffCharge(g); drawAbilityHud(g); drawTutorial(g); drawHammerCharge(g); drawStealthHud(g); drawLampHud(g); drawCues(g); drawMazeTimer(g); drawXpHud(g); drawAirHud(g); drawTimeHud(g); drawDpsHud(g); drawV11Hud(g); drawV13Hud(g); drawV14Hud(g); drawV14Hud2(g); drawV15Hud(g); drawV16Hud(g); drawV17Hud(g); drawV18Hud(g); drawV19Hud(g); drawV20Hud(g); drawV21Hud(g); drawV22Hud(g); drawV23Hud(g); drawLoopHud(g); }
     finally { delete g.drawImage; }
     drawFxRow(g, L);
   }
@@ -2927,7 +2971,7 @@ function drawMapCells(mini, s, ox, oy, x0, y0, x1, y1) {
   if (pet && inside(pet.x | 0, pet.y | 0)) { ctx.fillStyle = PETS[pet.id].color; ctx.fillRect(ox + pet.x * s - 1, oy + pet.y * s - 1, 2, 2); }
   for (const a of allies) if (inside(a.x | 0, a.y | 0)) { ctx.fillStyle = '#60ff80'; ctx.fillRect(ox + a.x * s - 1, oy + a.y * s - 1, 2, 2); }
   for (const p of portals) if (inside(p.x | 0, p.y | 0)) { ctx.fillStyle = tmr % 0.6 < 0.3 ? '#c080ff' : '#7040d0'; ctx.fillRect(ox + p.x * s - 2, oy + p.y * s - 2, 4, 4); }
-  v19Map(s, ox, oy, inside); v20Map(s, ox, oy, inside); v21Map(s, ox, oy, inside); v22Map(s, ox, oy, inside);
+  v19Map(s, ox, oy, inside); v20Map(s, ox, oy, inside); v21Map(s, ox, oy, inside); v22Map(s, ox, oy, inside); v23Map(s, ox, oy, inside);
   ctx.fillStyle = '#4dff7a'; ctx.fillRect(ox + P.x * s - 1, oy + P.y * s - 1, 3, 3);
   ctx.fillRect(ox + (P.x + Math.cos(P.a) * 1.4) * s, oy + (P.y + Math.sin(P.a) * 1.4) * s, 1, 1);
 }
@@ -2967,6 +3011,8 @@ function fire() {
   if (wp.flail) { flailSwing(wp); return; } // morgonstjärnan
   if (wp.trident) { tridentStab(wp); return; } // treudden
   if (wp.brimstone) { brimstoneLob(wp); return; } // svavelmortern
+  if (wp.hookchain) { hookThrow(wp); return; }
+  if (wp.bombard) { bombardFire(wp); return; }
   if (wp.starlance && P.mags[P.weapon] > 0) return; // stjärnlansen skjuter när den släpps
   if (P.mags[P.weapon] <= 0) {
     if (!fireHeld) play('click', 0.6, 1.2);
@@ -3398,7 +3444,7 @@ function hurtEnemy(e, dmg, hx, hy, opt = {}) {
   { const r = v17Defend(e, dmg, opt); if (r === null) return false; dmg = r; } // spöken som är immuna
   { const r = v18Defend(e, dmg, opt); if (r === null) return false; dmg = r; } // marionetten som ligger, ormen under jord
   { const r = v19Defend(e, dmg, opt); if (r === null) return false; dmg = r; } // urverksugglan reflekterar
-  dmg = v14Defend(e, dmg, opt); dmg = v15Dmg(e, dmg, opt); dmg = v17Dmg(e, dmg, opt); dmg = v18Dmg(e, dmg, opt); dmg = v21Dmg(e, dmg, opt); dmg = v22Dmg(e, dmg, opt);
+  dmg = v14Defend(e, dmg, opt); dmg = v15Dmg(e, dmg, opt); dmg = v17Dmg(e, dmg, opt); dmg = v18Dmg(e, dmg, opt); dmg = v21Dmg(e, dmg, opt); dmg = v22Dmg(e, dmg, opt); dmg = v23Dmg(e, dmg, opt);
   if (opt.melee && !opt.exec && canExec(e)) return execute(e); // närstrid mot en vacklande fiende: avrättning
   if (e.dummy) { dpsLog.push({ t: tmr, d: dmg }); e.flash = 0.1; spawnNumber ? spawnNumber(e.x, e.y, dmg, opt.crit) : 0; return false; } // provdockan tar ingen skada men räknar
   if (Math.random() < mod('clockSlow')) e.slow = Math.max(e.slow || 0, 2);
@@ -3480,7 +3526,7 @@ function killEnemy(e) {
   else if (e.burn > 0 && !e.boss) { e.gibbed = true; for (let i = 0; i < 6; i++) particles.push({ x: e.x + rnd(-0.2, 0.2), y: e.y + rnd(-0.2, 0.2), z: rnd(0.1, 0.7), vx: rnd(-0.3, 0.3), vy: rnd(-0.3, 0.3), vz: 0.4, life: 1.5, maxLife: 1.5, img: fx.parts.ash ? fx.parts.ash[i % 2] : fx.hit[0], size: 0.07, drift: true }); if (fx.parts.scorch) decals.push({ x: e.x, y: e.y, img: fx.parts.scorch[0], size: 0.08 }); } // brända blir aska
   if (e.leader) leaderDied(e);
   if (lvl && lvl.biome) { const wb = (profile.wkillsBiome = profile.wkillsBiome || {}), bb = (wb[lvl.biome] = wb[lvl.biome] || {}), wid = WEAPONS[P.weapon].id; bb[wid] = (bb[wid] || 0) + 1; }
-  abilityKill(); masteryKill(); v11Kill(e); v13Kill(e); v15Kill(e); v16Kill(e); v17Kill(e); v18Kill(e); v19Kill(e); v20Kill(e); v21Kill(e); v22Kill(e); loopKill(e); legendDropChance(e); if (legendCtx === 'bloodaxe') P.rageT = Math.max(P.rageT || 0, 2.5); if (e.d.ai === 'clocksoldier' && mod('rewindHeal')) heal(mod('rewindHeal'), true); gainXp(e.boss && !e.guardian ? 150 : e.guardian ? 70 : clamp((e.d.score || 100) / 12, 3, 40) * (e.elite ? 2.5 : 1) * (e.minion ? 0.3 : 1)); // erfarenhet: vanliga fiender efter svårighet, väktare och bossar fast
+  abilityKill(); masteryKill(); v11Kill(e); v13Kill(e); v15Kill(e); v16Kill(e); v17Kill(e); v18Kill(e); v19Kill(e); v20Kill(e); v21Kill(e); v22Kill(e); v23Kill(e); loopKill(e); legendDropChance(e); if (legendCtx === 'bloodaxe') P.rageT = Math.max(P.rageT || 0, 2.5); if (e.d.ai === 'clocksoldier' && mod('rewindHeal')) heal(mod('rewindHeal'), true); gainXp(e.boss && !e.guardian ? 150 : e.guardian ? 70 : clamp((e.d.score || 100) / 12, 3, 40) * (e.elite ? 2.5 : 1) * (e.minion ? 0.3 : 1)); // erfarenhet: vanliga fiender efter svårighet, väktare och bossar fast
   if (e.elite) run.wanderElite = (run.wanderElite || 0) + 1; if (e.guardian) run.wanderGuard = (run.wanderGuard || 0) + 1;
   if (quests) for (const q of quests) { if (q.kind === 'wkills' && !q.done && WEAPONS[P.weapon].id === q.weapon) q.have++; if (q.kind === 'elite' && e.elite) q.eliteKilled = true; }
   if ('YÉÅ'.includes(e.type) && Math.random() < 0.15) dropItem('meat', e.x, e.y);
@@ -3572,6 +3618,7 @@ function hitProp(pr, hx, hy, dmg) { // sant om kulan kan fortsätta
   { const r = v20HitProp(pr, hx, hy, dmg); if (r !== undefined) return r; } // råttbon och amforor
   { const r = v21HitProp(pr, hx, hy, dmg); if (r !== undefined) return r; } // hängande burar och fisktunnor
   { const r = v22HitProp(pr, hx, hy, dmg); if (r !== undefined) return r; } // kedjade själar
+  { const r = v23HitProp(pr, hx, hy, dmg); if (r !== undefined) return r; }
   const d = pr.def;
   if (d.bell && !pr.silenced) { pr.silenced = true; play('parry', 0.6, 0.7, { x: pr.x, y: pr.y }); spawnText(pr.x, pr.y, 'TYSTAD', '#c0c0c0'); return false; } // skjut klockan så kan den inte ringa
   if (d.boom) { // krutfatet smäller efter ett ögonblick, kan sätta igång andra fat
@@ -4000,7 +4047,7 @@ function openPetCage(pr) {
 }
 
 // ---------- Vägval: två portaler mot olika biomer ----------
-const BIOME_RISK = { prison: 2, harbor: 3, bathhouse: 2, purgatory: 3, sewer: 3, desert: 3, mine: 3, observatory: 2, circus: 2, jungle: 3, ship: 3, lab: 3, garden: 2, dream: 3, cathedral: 3, hive: 2, library: 2, foundry: 3, fungus: 2, mirror: 3, clock: 2, sky: 3, crystal: 2, sunken: 3, tomb: 2, volcano: 3, dungeon: 1, caves: 1, forest: 1, graveyard: 2, courtyard: 2, swamp: 3, frost: 3 };
+const BIOME_RISK = { prison: 2, harbor: 3, bathhouse: 2, purgatory: 3, abattoir: 2, battlefield: 3, sewer: 3, desert: 3, mine: 3, observatory: 2, circus: 2, jungle: 3, ship: 3, lab: 3, garden: 2, dream: 3, cathedral: 3, hive: 2, library: 2, foundry: 3, fungus: 2, mirror: 3, clock: 2, sky: 3, crystal: 2, sunken: 3, tomb: 2, volcano: 3, dungeon: 1, caves: 1, forest: 1, graveyard: 2, courtyard: 2, swamp: 3, frost: 3 };
 const riskText = b => ['', 'LUGN VÄG', 'FARLIG VÄG: +15 % GULD', 'SVÅR VÄG: +30 % GULD OCH FLER ELITER'][BIOME_RISK[b] || 1];
 function routePortals(p) { // en andra portal mot en annan biom
   if (run && run.abyss) return; // Avgrunden slumpar sina biomer
@@ -4742,7 +4789,7 @@ function showStats() {
   CardUI.list('STATISTIK', 'DITT KRYPTA I SIFFROR', rows, () => refreshTitle());
 }
 // ---------- Version 6: svagheter i bestiariet ----------
-const WEAK = { 'ɩ': 'HÅLL AVSTÅND', 'ɪ': 'SKJUT DEN I ÅNGAN', 'ɫ': 'ANFALL FRÅN SIDAN', 'ɬ': 'DÖDA DEN PÅ AVSTÅND', 'ɵ': 'RÖR DIG HELA TIDEN', 'ɶ': 'SKJUT DEN I LUFTEN', 'ɷ': 'HOPPA ÖVER CHOCKVÅGEN', 'ɸ': 'SPRÄNG ELLER BRÄNN DEN', 'ɕ': 'DÖDA DEN INNAN DEN VISSLAR', 'ɖ': 'HÅLL AVSTÅND', 'ɗ': 'GÅ NÄRA', 'ɘ': 'HAGEL', 'ə': 'GÅ NÄRA', 'ɚ': 'HÅLL DIG FRÅN KANTEN', 'ɛ': 'ANFALL FRÅN SIDAN', 'ɜ': 'HAGEL','ȼ': 'HÅLL DIG BORTA FRÅN SLAMMET', 'Ƚ': 'SPRING UR RINGEN', 'Ⱦ': 'DÖDA DEN SNABBT', 'ȿ': 'SKJUT DEN ELLER HOPPA', 'ɀ': 'HÅLL AVSTÅND', 'Ɂ': 'HAGEL ELLER NÄRSTRID', 'ɂ': 'VÄNTA UT STORMEN', 'Ƀ': 'HÅLL HÄLSAN UPPE', 'ȡ': 'SPRING UR RINGEN', 'Ȣ': 'HÅLL DEN BORTA FRÅN ELDEN', 'ȣ': 'SE EFTER JORDEN', 'Ȥ': 'SKJUT PÅ AVSTÅND', 'ȥ': 'GÅ NÄRA', 'Ȧ': 'RÖR DIG HELA TIDEN', 'ȧ': 'SIDSTEG NÄR DEN DYKER', 'Ȩ': 'GÅ UR STRÅLEN', 'Ƿ': 'SKJUT BALLONGERNA', 'Ǹ': 'SE UPP FÖR STUDSARNA', 'ǹ': 'SKJUT BENEN PÅ NÄRA HÅLL', 'Ǻ': 'GÅ IN MELLAN KNIVARNA', 'ǻ': 'SIDSTEG NÄR DET TAR SATS', 'Ǽ': 'SKJUT DEN MEDAN DEN LIGGER', 'Ȉ': 'ANFALL FRÅN SIDAN', 'ȉ': 'LYSSNA EFTER PILEN', 'Ȋ': 'DÖDA DEN FÖR AMMON', 'ȋ': 'RYGGEN MOT VÄGGEN', 'Ȍ': 'HAGEL OCH ELD', 'ȍ': 'GÅ UR STRÅLEN', 'Ǖ': 'VÄNTA UT DIMMAN', 'ǖ': 'SPRING UR RINGEN', 'Ǘ': 'HÅLL AVSTÅND', 'ǘ': 'DÖDA DEN FÖR GULDET', 'Ǚ': 'SPRING UR RINGEN', 'ǚ': 'HAGEL OCH ELD', 'ǣ': 'SKJUT BÅDA HALVORNA', 'Ǥ': 'ELD', 'ǥ': 'SPRING UR RINGEN', 'Ǧ': 'ELD OCH SPRÄNGMEDEL', 'ǧ': 'SKJUT PÅ AVSTÅND', 'Ǩ': 'LÄR DIG RYTMEN', 'ƫ': 'HÅLL ÖGONEN PÅ DEN', 'Ƭ': 'ELD', 'ƭ': 'HÅLL AVSTÅND', 'Ʈ': 'DÖDA DEN SNABBT', 'Ư': 'SIKTA NOGA', 'ư': 'HÅLL AVSTÅND NÄR DEN DÖR', 'Ƒ': 'DÖDA HONOM FÖRST', 'ƒ': 'DÖDA DEN SNABBT', 'Ɯ': 'SKJUT DEN FÖRST', 'Ƙ': 'HAGEL OCH ELD', 'ƙ': 'SIDSTEG NÄR DEN TAR SATS', 'ƚ': 'HÅLL DIG I RÖRELSE', 'Ƅ': 'LYSSNA EFTER DEN', 'ƅ': 'SKJUT NÄR DEN ÄR UPPE', 'Ɔ': 'DÖDA PRÄSTEN FÖRST', 'Ƈ': 'HOPPA ÖVER NÄTET', 'ƈ': 'HÅLL DIG FRÅN DJUPET', 'Ɖ': 'VÄNTA TILLS DEN FÄSTER SIG', 'Ų': 'SPRÄNGMEDEL', 'ų': 'HÅLL AVSTÅND', 'Ŵ': 'DÖDA DEN FÖRST', 'Ž': 'KYLA OCH VATTEN', 'ž': 'SKJUT PÅ AVSTÅND', 'ſ': 'SKJUT PÅ AVSTÅND', 'ŗ': 'SKJUT PÅ AVSTÅND', 'Ř': 'LOCKA UT DEN UR SPORERNA', 'ř': 'DÖDA DEN FÖRST', 'Ś': 'ANFALL BAKIFRÅN', 'ś': 'HITTA DEN ÄKTA', 'Ŝ': 'HÅLL AVSTÅND', 'Ō': 'HÅLL DIG BAKOM HÖRN', 'ō': 'HOPPA NÄR DEN KOMMER UPP', 'Ŏ': 'DÖDA HONOM FÖRST', 'ŏ': 'RÖR DIG HELA TIDEN', 'Ő': 'GÅ NÄRA', 'ő': 'HOPPA NÄR DEN LANDAR', 'ĳ': 'SLÅ IGEN MEDAN DEN LINDAS UPP', 'Ĵ': 'SÅGBLAD OCH SPRÄNGMEDEL', 'ĵ': 'RÖR DIG UR BUBBLORNA', 'Ķ': 'SIDSTEG NÄR DEN DYKER', 'ķ': 'FLYTTA DIG FRÅN GLÖDEN', 'ĸ': 'VINDBÖSSAN – KNUFFA DEN I TOMRUMMET', 'Ë': 'HAMMARE OCH SPRÄNGMEDEL', 'Í': 'SNABBA VAPEN – DEN HOPPAR', 'Ï': 'HÅLL AVSTÅND FRÅN HAKEN', 'Ó': 'GÅ UR VATTNET', 'Ú': 'EN TRÄFF BRYTER SÅNGEN', 'Û': 'BAKIFRÅN ELLER SPRÄNGMEDEL', 'Ā': 'LAMPAN AVSLÖJAR DEN', 'Ă': 'SKJUT INNAN HON TELEPORTERAR', S: 'HAGEL KROSSAR BEN', K: 'HÅLL AVSTÅND OCH SIDLEDES', V: 'BACKA OCH SKJUT', I: 'SPIKAR OCH HAGEL', L: 'ELD', N: 'DÖDA FÖRST', O: 'DÖDA FÖRST', R: 'LYKTAN AVSLÖJAR DEN', W: 'LÅT DEN KROCKA', U: 'ELD BRÄNNER NÄTEN', X: 'HAGEL', Y: 'TRÄFFA I SPRÅNGET', '!': 'SKJUT PÅ AVSTÅND', '@': 'ANFALL BAKIFRÅN', '^': 'ELD', '+': 'EXPLOSIONER', Q: 'SKJUT KISTOR SOM RÖR SIG',
+const WEAK = { 'ɩ': 'HÅLL AVSTÅND', 'ɪ': 'SKJUT DEN I ÅNGAN', 'ɫ': 'ANFALL FRÅN SIDAN', 'ɬ': 'DÖDA DEN PÅ AVSTÅND', 'ɵ': 'RÖR DIG HELA TIDEN', 'ɶ': 'SKJUT DEN I LUFTEN', 'ɷ': 'HOPPA ÖVER CHOCKVÅGEN', 'ɸ': 'SPRÄNG ELLER BRÄNN DEN', 'ʄ': 'GÅ NÄRA', 'ʅ': 'KLIV ÅT SIDAN', 'ʆ': 'HAGEL', 'ʇ': 'SIKTA LÅGT', 'ʐ': 'BRYT FORMATIONEN', 'ʑ': 'SPRING I SIDLED', 'ʒ': 'KLIV UR VÄGEN', 'ʓ': 'SKJUT NÄR DE DYKER', 'ɕ': 'DÖDA DEN INNAN DEN VISSLAR', 'ɖ': 'HÅLL AVSTÅND', 'ɗ': 'GÅ NÄRA', 'ɘ': 'HAGEL', 'ə': 'GÅ NÄRA', 'ɚ': 'HÅLL DIG FRÅN KANTEN', 'ɛ': 'ANFALL FRÅN SIDAN', 'ɜ': 'HAGEL','ȼ': 'HÅLL DIG BORTA FRÅN SLAMMET', 'Ƚ': 'SPRING UR RINGEN', 'Ⱦ': 'DÖDA DEN SNABBT', 'ȿ': 'SKJUT DEN ELLER HOPPA', 'ɀ': 'HÅLL AVSTÅND', 'Ɂ': 'HAGEL ELLER NÄRSTRID', 'ɂ': 'VÄNTA UT STORMEN', 'Ƀ': 'HÅLL HÄLSAN UPPE', 'ȡ': 'SPRING UR RINGEN', 'Ȣ': 'HÅLL DEN BORTA FRÅN ELDEN', 'ȣ': 'SE EFTER JORDEN', 'Ȥ': 'SKJUT PÅ AVSTÅND', 'ȥ': 'GÅ NÄRA', 'Ȧ': 'RÖR DIG HELA TIDEN', 'ȧ': 'SIDSTEG NÄR DEN DYKER', 'Ȩ': 'GÅ UR STRÅLEN', 'Ƿ': 'SKJUT BALLONGERNA', 'Ǹ': 'SE UPP FÖR STUDSARNA', 'ǹ': 'SKJUT BENEN PÅ NÄRA HÅLL', 'Ǻ': 'GÅ IN MELLAN KNIVARNA', 'ǻ': 'SIDSTEG NÄR DET TAR SATS', 'Ǽ': 'SKJUT DEN MEDAN DEN LIGGER', 'Ȉ': 'ANFALL FRÅN SIDAN', 'ȉ': 'LYSSNA EFTER PILEN', 'Ȋ': 'DÖDA DEN FÖR AMMON', 'ȋ': 'RYGGEN MOT VÄGGEN', 'Ȍ': 'HAGEL OCH ELD', 'ȍ': 'GÅ UR STRÅLEN', 'Ǖ': 'VÄNTA UT DIMMAN', 'ǖ': 'SPRING UR RINGEN', 'Ǘ': 'HÅLL AVSTÅND', 'ǘ': 'DÖDA DEN FÖR GULDET', 'Ǚ': 'SPRING UR RINGEN', 'ǚ': 'HAGEL OCH ELD', 'ǣ': 'SKJUT BÅDA HALVORNA', 'Ǥ': 'ELD', 'ǥ': 'SPRING UR RINGEN', 'Ǧ': 'ELD OCH SPRÄNGMEDEL', 'ǧ': 'SKJUT PÅ AVSTÅND', 'Ǩ': 'LÄR DIG RYTMEN', 'ƫ': 'HÅLL ÖGONEN PÅ DEN', 'Ƭ': 'ELD', 'ƭ': 'HÅLL AVSTÅND', 'Ʈ': 'DÖDA DEN SNABBT', 'Ư': 'SIKTA NOGA', 'ư': 'HÅLL AVSTÅND NÄR DEN DÖR', 'Ƒ': 'DÖDA HONOM FÖRST', 'ƒ': 'DÖDA DEN SNABBT', 'Ɯ': 'SKJUT DEN FÖRST', 'Ƙ': 'HAGEL OCH ELD', 'ƙ': 'SIDSTEG NÄR DEN TAR SATS', 'ƚ': 'HÅLL DIG I RÖRELSE', 'Ƅ': 'LYSSNA EFTER DEN', 'ƅ': 'SKJUT NÄR DEN ÄR UPPE', 'Ɔ': 'DÖDA PRÄSTEN FÖRST', 'Ƈ': 'HOPPA ÖVER NÄTET', 'ƈ': 'HÅLL DIG FRÅN DJUPET', 'Ɖ': 'VÄNTA TILLS DEN FÄSTER SIG', 'Ų': 'SPRÄNGMEDEL', 'ų': 'HÅLL AVSTÅND', 'Ŵ': 'DÖDA DEN FÖRST', 'Ž': 'KYLA OCH VATTEN', 'ž': 'SKJUT PÅ AVSTÅND', 'ſ': 'SKJUT PÅ AVSTÅND', 'ŗ': 'SKJUT PÅ AVSTÅND', 'Ř': 'LOCKA UT DEN UR SPORERNA', 'ř': 'DÖDA DEN FÖRST', 'Ś': 'ANFALL BAKIFRÅN', 'ś': 'HITTA DEN ÄKTA', 'Ŝ': 'HÅLL AVSTÅND', 'Ō': 'HÅLL DIG BAKOM HÖRN', 'ō': 'HOPPA NÄR DEN KOMMER UPP', 'Ŏ': 'DÖDA HONOM FÖRST', 'ŏ': 'RÖR DIG HELA TIDEN', 'Ő': 'GÅ NÄRA', 'ő': 'HOPPA NÄR DEN LANDAR', 'ĳ': 'SLÅ IGEN MEDAN DEN LINDAS UPP', 'Ĵ': 'SÅGBLAD OCH SPRÄNGMEDEL', 'ĵ': 'RÖR DIG UR BUBBLORNA', 'Ķ': 'SIDSTEG NÄR DEN DYKER', 'ķ': 'FLYTTA DIG FRÅN GLÖDEN', 'ĸ': 'VINDBÖSSAN – KNUFFA DEN I TOMRUMMET', 'Ë': 'HAMMARE OCH SPRÄNGMEDEL', 'Í': 'SNABBA VAPEN – DEN HOPPAR', 'Ï': 'HÅLL AVSTÅND FRÅN HAKEN', 'Ó': 'GÅ UR VATTNET', 'Ú': 'EN TRÄFF BRYTER SÅNGEN', 'Û': 'BAKIFRÅN ELLER SPRÄNGMEDEL', 'Ā': 'LAMPAN AVSLÖJAR DEN', 'Ă': 'SKJUT INNAN HON TELEPORTERAR', S: 'HAGEL KROSSAR BEN', K: 'HÅLL AVSTÅND OCH SIDLEDES', V: 'BACKA OCH SKJUT', I: 'SPIKAR OCH HAGEL', L: 'ELD', N: 'DÖDA FÖRST', O: 'DÖDA FÖRST', R: 'LYKTAN AVSLÖJAR DEN', W: 'LÅT DEN KROCKA', U: 'ELD BRÄNNER NÄTEN', X: 'HAGEL', Y: 'TRÄFFA I SPRÅNGET', '!': 'SKJUT PÅ AVSTÅND', '@': 'ANFALL BAKIFRÅN', '^': 'ELD', '+': 'EXPLOSIONER', Q: 'SKJUT KISTOR SOM RÖR SIG',
   'Å': 'BRÄNN LIKEN', 'Ä': 'DÖDA FÖRST', 'Ö': 'EXPLOSIONER OCH YXA', 'É': 'SAMLA DEM I EN DÖRR', 'Ü': 'HÅLL AVSTÅND', 'Ñ': 'DÖDA FÖRST – HAN VÄCKER DE DÖDA', 'Æ': 'IS OCH BLIXT', 'Þ': 'FLYTTA DIG NÄR MARKEN GLÖDER', 'Ð': 'ANFALL BAKIFRÅN', 'Ý': 'BÅGE PÅ AVSTÅND' };
 // ---------- Version 6: fotoläget har filter ----------
 const PHOTO_FILTERS = ['', 'svartvit', 'sepia', 'nattseende'];
@@ -5221,7 +5268,7 @@ function showChronicle(onClose) { // krönikan som meny
   if (profile.pageEnd) rows.push({ label: CHRONICLE_END.t, text: CHRONICLE_END.b, color: '#ffd24a' });
   CardUI.list('KRÖNIKAN', `${have.size} AV ${CHRONICLE.length} SIDOR`, rows, () => { if (state === 'title') refreshTitle(); else if (onClose) onClose(); });
 }
-const NARRATOR = { bathhouse: 'BADHUSET. VATTNET ÄR VARMT – ALLDELES FÖR VARMT.', purgatory: 'SKÄRSELDEN. HÄR BRINNER DE SOM INTE FICK KOMMA IN.', prison: 'JÄRNFÄNGELSET. HÄR SITTER INGEN AV SITT STRAFF.', harbor: 'FISKELÄGET. DIMMAN TAR DEN SOM GÅR FÖR NÄRA VATTNET.',sewer: 'KLOAKERNA. ALLT SOM SPOLAS NED HAMNAR HÄR – ÄVEN DU.', desert: 'ÖKNEN. SANDEN MINNS ALLA SOM GÅTT VILSE.', mine: 'GRUVAN. NÅGON GRÄVDE FÖR DJUPT.', observatory: 'OBSERVATORIET. STJÄRNORNA TITTAR TILLBAKA.', circus: 'CIRKUSEN. FÖRESTÄLLNINGEN SLUTADE ALDRIG – PUBLIKEN GICK BARA HEM.', jungle: 'DJUNGELTEMPLET. RÖR INTE GULDET.', ship: 'SPÖKSKEPPET. HAVET GER INTE TILLBAKA SINA DÖDA.', lab: 'LABORATORIET. HÄR BLANDAS LIV OCH DÖD I GLAS.', dungeon: 'KRYPTAN. HÄR BÖRJADE ALLT.', caves: 'GROTTORNA. BERGET ANDAS HÄR NERE.', graveyard: 'KYRKOGÅRDEN. DE DÖDA VILAR INTE LÄNGRE.', forest: 'SKOGEN SOM SJÖNK.', courtyard: 'BORGGÅRDEN. REGNET HAR ALDRIG SLUTAT.', swamp: 'TRÄSKET. VARJE STEG ÄR ETT VAD.', frost: 'FROSTFÄSTET. TIDEN HAR FRUSIT.', volcano: 'VULKANEN. ELDKUNGENS RIKE.', tomb: 'GRAVKAMMAREN. FARAONENS GULD VÄNTAR.', crystal: 'KRISTALLGROTTORNA. LJUSET BRYTS I TUSEN DELAR.', sunken: 'DEN SJUNKNA STADEN. HÅLL ANDAN.', clock: 'KLOCKTORNET. TIDEN ÄR EN MASKIN HÄR.', sky: 'MOLNBORGEN. TITTA INTE NED.', fungus: 'SVAMPRIKET. ANDAS INTE FÖR DJUPT.', mirror: 'SPEGELPALATSET. LITA INTE PÅ DET DU SER.', library: 'DET FÖRBJUDNA BIBLIOTEKET. TYST, DE LÄSER.', foundry: 'GJUTERIET. ALLT HÄR BLIR TILL METALL.', cathedral: 'BLODKATEDRALEN. HÄR BER INGEN LÄNGRE.', hive: 'BIKUPAN. LYSSNA PÅ SURRET.', garden: 'DEN DÖDA TRÄDGÅRDEN. BLINKA INTE.', dream: 'DRÖMRIKET. INGET HÄR ÄR VAD DET SER UT ATT VARA.' };
+const NARRATOR = { abattoir: 'SLAKTERIET. HÄR HÄNGER ALLT PÅ KROKAR – SNART ÄVEN DU.', battlefield: 'DET EVIGA SLAGFÄLTET. KRIGET TOG SLUT FÖR LÄNGE SEDAN. INGEN SA DET TILL DE DÖDA.', bathhouse: 'BADHUSET. VATTNET ÄR VARMT – ALLDELES FÖR VARMT.', purgatory: 'SKÄRSELDEN. HÄR BRINNER DE SOM INTE FICK KOMMA IN.', prison: 'JÄRNFÄNGELSET. HÄR SITTER INGEN AV SITT STRAFF.', harbor: 'FISKELÄGET. DIMMAN TAR DEN SOM GÅR FÖR NÄRA VATTNET.',sewer: 'KLOAKERNA. ALLT SOM SPOLAS NED HAMNAR HÄR – ÄVEN DU.', desert: 'ÖKNEN. SANDEN MINNS ALLA SOM GÅTT VILSE.', mine: 'GRUVAN. NÅGON GRÄVDE FÖR DJUPT.', observatory: 'OBSERVATORIET. STJÄRNORNA TITTAR TILLBAKA.', circus: 'CIRKUSEN. FÖRESTÄLLNINGEN SLUTADE ALDRIG – PUBLIKEN GICK BARA HEM.', jungle: 'DJUNGELTEMPLET. RÖR INTE GULDET.', ship: 'SPÖKSKEPPET. HAVET GER INTE TILLBAKA SINA DÖDA.', lab: 'LABORATORIET. HÄR BLANDAS LIV OCH DÖD I GLAS.', dungeon: 'KRYPTAN. HÄR BÖRJADE ALLT.', caves: 'GROTTORNA. BERGET ANDAS HÄR NERE.', graveyard: 'KYRKOGÅRDEN. DE DÖDA VILAR INTE LÄNGRE.', forest: 'SKOGEN SOM SJÖNK.', courtyard: 'BORGGÅRDEN. REGNET HAR ALDRIG SLUTAT.', swamp: 'TRÄSKET. VARJE STEG ÄR ETT VAD.', frost: 'FROSTFÄSTET. TIDEN HAR FRUSIT.', volcano: 'VULKANEN. ELDKUNGENS RIKE.', tomb: 'GRAVKAMMAREN. FARAONENS GULD VÄNTAR.', crystal: 'KRISTALLGROTTORNA. LJUSET BRYTS I TUSEN DELAR.', sunken: 'DEN SJUNKNA STADEN. HÅLL ANDAN.', clock: 'KLOCKTORNET. TIDEN ÄR EN MASKIN HÄR.', sky: 'MOLNBORGEN. TITTA INTE NED.', fungus: 'SVAMPRIKET. ANDAS INTE FÖR DJUPT.', mirror: 'SPEGELPALATSET. LITA INTE PÅ DET DU SER.', library: 'DET FÖRBJUDNA BIBLIOTEKET. TYST, DE LÄSER.', foundry: 'GJUTERIET. ALLT HÄR BLIR TILL METALL.', cathedral: 'BLODKATEDRALEN. HÄR BER INGEN LÄNGRE.', hive: 'BIKUPAN. LYSSNA PÅ SURRET.', garden: 'DEN DÖDA TRÄDGÅRDEN. BLINKA INTE.', dream: 'DRÖMRIKET. INGET HÄR ÄR VAD DET SER UT ATT VARA.' };
 function narrate() { // berättaren vid nya biomer första gången
   if (!lvl || !lvl.biome || !NARRATOR[lvl.biome]) return; profile.narrated = profile.narrated || [];
   if (profile.narrated.includes(lvl.biome)) return; profile.narrated.push(lvl.biome); saveProfile();
@@ -5895,7 +5942,7 @@ function swearPact(id) { // vapenpakt: bara ett vapen resten av rundan, men det 
   run.pact = id;
   const i = WEAPONS.findIndex(w => w.id === id), wp = WEAPONS[i];
   if (!P.has[i]) { P.has[i] = true; P.mags[i] = effMag(i); }
-  P.ammo[wp.ammo] = Math.min(AMMO[wp.ammo].max, P.ammo[wp.ammo] + ({ p9: 40, r556: 40, shells: 12, bolts: 14, flares: 8, fuel: 120, lgren: 10, nails: 100, arrows: 15, knives: 14, balls: 12, harpoons: 6, crystals: 40, gears: 12, spores: 8, ink: 16, bees: 10, dreams: 6, chainballs: 4, acid: 60, pins: 8, darts: 16, stars: 6, traps: 4, scrap: 8, brimstone: 4 }[wp.ammo] || 0));
+  P.ammo[wp.ammo] = Math.min(AMMO[wp.ammo].max, P.ammo[wp.ammo] + ({ p9: 40, r556: 40, shells: 12, bolts: 14, flares: 8, fuel: 120, lgren: 10, nails: 100, arrows: 15, knives: 14, balls: 12, harpoons: 6, crystals: 40, gears: 12, spores: 8, ink: 16, bees: 10, dreams: 6, chainballs: 4, acid: 60, pins: 8, darts: 16, stars: 6, traps: 4, scrap: 8, brimstone: 4, cannonballs: 4 }[wp.ammo] || 0));
   for (let k = 0; k < WEAPONS.length; k++) if (k !== i) P.has[k] = false;
   if (P.weapon !== i) { P.weapon = i; WS.state = 'draw'; WS.t = 0; WS.next = -1; }
   say('DU HAR SVURIT DIG TILL ' + wp.name, 3); play('secret', 0.7, 0.7);
@@ -6091,7 +6138,7 @@ function update(dt) {
   for (const e of ents) try { if (e.boss) updateBoss(e, edt); else updateEnemy(e, edt); } catch (err) { spriteError(err, { o: e }); if (e.renderFail > 30 && !e.boss) { e.dead = true; e.gibbed = true; } } // en trasig fiende får inte stoppa spelet
   try { gfxETick(dt); } catch (err) { spriteError(err, null); } // FIENDER: spawn, blodpölar, bossfaser och bossdöd (bara visning)
   updateProjectiles(edt); updateFuses(dt); updatePortals(dt); updateHazards(dt); updateProps(dt); updateGroundFires(dt); updateBossFx(dt); updateWorldEvents(dt); updateSpores(dt); updateIcicles(dt);
-  updateV20(dt); updateV21(dt); updateV22(dt); updatePet(dt); updateAllies(dt); updatePotions(dt); updateNpcTalk(dt); updateTorchFx(dt); updateHeat(dt); updateAbility(dt); questTick(); updateSmokes(dt); updateTomb(dt); updateTornados(dt); beamDust(dt); updateLamp(dt); updateMaze(dt); practiceTick(dt); sneakMusicTick(dt); updateWater(dt); updateCrystal(dt); harpoonTick(dt); talentTick(); updateV9(dt); rootsTick(dt); updateV11(dt); updateV13(dt); updateV14(dt); updateV15(dt); updateV16(dt); updateV17(dt); updateV18(dt); updateV19(dt); loopTick(dt); P.vanishT = Math.max(0, (P.vanishT || 0) - dt);
+  updateV20(dt); updateV21(dt); updateV22(dt); updateV23(dt); updatePet(dt); updateAllies(dt); updatePotions(dt); updateNpcTalk(dt); updateTorchFx(dt); updateHeat(dt); updateAbility(dt); questTick(); updateSmokes(dt); updateTomb(dt); updateTornados(dt); beamDust(dt); updateLamp(dt); updateMaze(dt); practiceTick(dt); sneakMusicTick(dt); updateWater(dt); updateCrystal(dt); harpoonTick(dt); talentTick(); updateV9(dt); rootsTick(dt); updateV11(dt); updateV13(dt); updateV14(dt); updateV15(dt); updateV16(dt); updateV17(dt); updateV18(dt); updateV19(dt); loopTick(dt); P.vanishT = Math.max(0, (P.vanishT || 0) - dt);
   if (secrets > (P.secLast || 0)) { run.wanderSecret = (run.wanderSecret || 0) + 1; } P.secLast = secrets; updateSurvival(dt); ghostTick(dt); tutTick(dt); feelTick(dt);
   if (cmode('onehit')) P.armor = 0;
   for (let i = decals.length - 1; i >= 0; i--) if (decals[i].life !== undefined && (decals[i].life -= dt) <= 0) decals.splice(i, 1);
@@ -6176,14 +6223,15 @@ function updateMovement(dt, fwd, str) {
   // fart: vatten, lera, nät och is
   const fl = lvl.floors ? lvl.floors[cellFloor ? cellFloor[(P.y | 0) * mw + (P.x | 0)] : 0] || '' : '';
   let terrain = 1;
-  if (!immune && ground) { if (c === '-') terrain = 0.62; else if (c === '"') terrain = 0.42; else if (/mud|swamp/.test(fl)) terrain = 0.85; }
+  if (!immune && ground) { if (c === '-') terrain = 0.62; else if (c === '"') terrain = 0.42; else if (/mud|swamp/.test(fl) && !/battlemud|deepmud/.test(fl)) terrain = 0.85; }
   if (c === '"' && !immune) { P.webT = (P.webT || 0) + dt; if (P.webT > 0.4) { P.webT = 0; play('web', 0.35, rnd(0.9, 1.1)); } }
-  const maxSp = (running ? 4.7 : 3.1) * (1 - WS.aim * 0.4) * (1 + mod('moveSpeed') + (dmod('light') ? 0.25 : 0)) * (P.haste > 0 ? 1.35 : 1) * (P.speedT > 0 ? 1.4 : 1) * (P.slowT > 0 ? 0.55 : 1) * (P.crouch > 0.5 && P.slide <= 0 ? 0.55 : 1) * terrain * (P.swim ? 0.6 * (1 + mod('swimSpeed')) : 1) * (P.timeSlow || 1) * (P.rootT > 0 ? 0.08 : 1) * (WS.block ? 0.55 : 1) * v13Slow() * v15Slow() * v16Slow() * v17Slow() * v18Slow() * v19Slow() * v20Slow() * v21Slow() * v22Slow();
+  const maxSp = (running ? 4.7 : 3.1) * (1 - WS.aim * 0.4) * (1 + mod('moveSpeed') + (dmod('light') ? 0.25 : 0)) * (P.haste > 0 ? 1.35 : 1) * (P.speedT > 0 ? 1.4 : 1) * (P.slowT > 0 ? 0.55 : 1) * (P.crouch > 0.5 && P.slide <= 0 ? 0.55 : 1) * terrain * (P.swim ? 0.6 * (1 + mod('swimSpeed')) : 1) * (P.timeSlow || 1) * (P.rootT > 0 ? 0.08 : 1) * (WS.block ? 0.55 : 1) * v13Slow() * v15Slow() * v16Slow() * v17Slow() * v18Slow() * v19Slow() * v20Slow() * v21Slow() * v22Slow() * v23Slow();
   let tx = 0, ty = 0;
   if (Math.abs(fwd) + Math.abs(str) > 0.05) { const l = Math.hypot(fwd, str), sp = Math.min(1, l) / l * maxSp; tx = (Math.cos(P.a) * fwd - Math.sin(P.a) * str) * sp; ty = (Math.sin(P.a) * fwd + Math.cos(P.a) * str) * sp; }
   let k = Math.min(1, dt * (tx || ty ? 10 : 12));
   if (c === ':' && ground && !immune) k *= 0.12; // is: halt
   else if (c === 'Ǐ' && ground && !immune) k *= v17Grip(); // sköljt däck: halt
+  else if (c === 'ɿ' && ground && !immune) k *= v23Grip();
   if (P.slide > 0) k *= 0.08; // glidning: farten håller i sig
   if (!ground) k *= 0.35; // i luften styr man sämre
   if (P.dashT > 0) { P.dashT -= dt; k = 0; dashHits(); }
@@ -6209,6 +6257,7 @@ function updateMovement(dt, fwd, str) {
 }
 function jump() {
   if (state !== 'play' || P.swim) return;
+  if (v23NoJump()) return;
   if (onGround()) { if (P.stam < 0.1) return; stat('jumps'); P.jv = 3.4; P.jz = 0.001; P.stam = Math.max(0, P.stam - 0.12); P.stamT = 0.9; play('jump', 0.4, rnd(0.95, 1.05)); P.crouch = 0; slideJump(); return; }
   if ((mod('doubleJump') > 0 || (run && run.featherFloor === run.depth) || (P.owlJumpT || 0) > tmr) && !P.dj) { P.dj = true; P.jv = 3.0; play('jump', 0.45, 1.25); spawnPuff(P.x, P.y, 4); }
 }
@@ -6258,6 +6307,7 @@ function pickUp(it, bought) {
   if (it.type === 'legend') { giveLegend(it.legend, 'DU HITTADE'); return true; }
   if (it.type === 'dreamflask') { const n = 4; if (P.ammo.dreams >= AMMO.dreams.max) return false; P.ammo.dreams = Math.min(AMMO.dreams.max, (P.ammo.dreams || 0) + n); say(`+${n} DRÖMMAR`, 1.2); play('dream_pickup', 0.6); return true; }
   if (it.type === 'brimstone') { const n = 3; if (P.ammo.brimstone >= AMMO.brimstone.max) return false; P.ammo.brimstone = Math.min(AMMO.brimstone.max, (P.ammo.brimstone || 0) + n); say(`+${n} SVAVEL`, 1.2); play('brimstone_pickup', 0.8, 1); return true; }
+  if (it.type === 'cannonballs') { const n = 3; if ((P.ammo.cannonballs || 0) >= AMMO.cannonballs.max) return false; P.ammo.cannonballs = Math.min(AMMO.cannonballs.max, (P.ammo.cannonballs || 0) + n); say(`+${n} KANONKULOR`, 1.2); play('cannonball_pickup', 0.8, 1); return true; }
   if (it.type === 'fish') { if (P.hp >= maxHp()) return false; heal(5); say('FISKRENS: +5 HÄLSA', 1.2); play('health', 0.5, 1.3); return true; }
   if (it.type === 'scrap') { const n = 6; if (P.ammo.scrap >= AMMO.scrap.max) return false; P.ammo.scrap = Math.min(AMMO.scrap.max, (P.ammo.scrap || 0) + n); say(`+${n} SKROT`, 1.2); play('scrap_pickup', 0.8, 1); return true; }
   if (it.type === 'traps') { const n = 3; if (P.ammo.traps >= AMMO.traps.max) return false; P.ammo.traps = Math.min(AMMO.traps.max, (P.ammo.traps || 0) + n); say(`+${n} FÄLLOR`, 1.2); play('pickup', 0.7, 1.2); return true; }
@@ -6285,7 +6335,7 @@ function pickUp(it, bought) {
   else if (it.type === 'shard') { if (P.armor >= 200) return false; P.armor = Math.min(200, P.armor + 10); say('+10 RUSTNING', 1); play('armor', 0.5, 1.4); spawnText(it.x, it.y, '+10', '#9fc4ff'); }
   else if (it.type === 'armor') { if (P.armor >= 200) return false; P.armor = Math.min(200, P.armor + 50); say('+50 RUSTNING', 1.5); play('armor', 0.7); }
   else if (it.type === 'ammo' && run.pact) { // pakten: all ammo blir vapnets egen
-    const k = pactAmmo(), n = Math.round(({ p9: 30, r556: 28, shells: 9, bolts: 8, flares: 5, fuel: 60, lgren: 4, none: 0, nails: 40, arrows: 6, mana: 0, knives: 6, balls: 5, harpoons: 3, crystals: 18, gears: 6, spores: 4, ink: 8, bees: 5, dreams: 3, chainballs: 3, acid: 40, pins: 4, darts: 8, stars: 3, traps: 2, scrap: 4, brimstone: 2 }[k] || 0) * am);
+    const k = pactAmmo(), n = Math.round(({ p9: 30, r556: 28, shells: 9, bolts: 8, flares: 5, fuel: 60, lgren: 4, none: 0, nails: 40, arrows: 6, mana: 0, knives: 6, balls: 5, harpoons: 3, crystals: 18, gears: 6, spores: 4, ink: 8, bees: 5, dreams: 3, chainballs: 3, acid: 40, pins: 4, darts: 8, stars: 3, traps: 2, scrap: 4, brimstone: 2, cannonballs: 2 }[k] || 0) * am);
     if (P.ammo[k] >= AMMO[k].max && !bought) return false;
     P.ammo[k] = Math.min(AMMO[k].max, P.ammo[k] + n); say(`AMMO +${n} ${AMMO[k].name}`, 2); play('pickup', 0.7);
   } else if (it.type === 'ammo') {
@@ -6295,7 +6345,7 @@ function pickUp(it, bought) {
     am *= it.mult || 1;
     const add = { p9: Math.round(18 * am), r556: Math.round((has('rifle') || has('sniper') ? 20 : 8) * am), shells: Math.round((has('shotgun') || has('dbshotgun') ? 6 : 3) * am),
       bolts: Math.round((has('crossbow') ? 5 : 0) * am), flares: Math.round((has('flaregun') ? 3 : 0) * am), fuel: Math.round((has('flamer') ? 40 : 0) * am), lgren: Math.round((has('launcher') ? 3 : 0) * am),
-      nails: Math.round((has('nailgun') ? 30 : 0) * am), arrows: Math.round((has('bow') ? 4 : 0) * am), knives: Math.round((has('knives') ? 4 : 0) * am), balls: Math.round((has('musket') ? 3 : 0) * am), harpoons: Math.round((has('harpoon') ? 2 : 0) * am), crystals: Math.round((has('prism') ? 14 : 0) * am), gears: Math.round((has('sawlauncher') ? 4 : 0) * am), spores: Math.round((has('sporelauncher') ? 2 : 0) * am), ink: Math.round((has('runebook') ? 4 : 0) * am), bees: Math.round((has('hivelauncher') ? 3 : 0) * am), dreams: Math.round((has('dreamstaff') ? 2 : 0) * am), chainballs: Math.round((has('chaincannon') ? 2 : 0) * am), acid: Math.round((has('acidsprayer') ? 25 : 0) * am), pins: Math.round((has('pinthrower') ? 3 : 0) * am), darts: Math.round((has('blowgun') ? 6 : 0) * am), stars: Math.round((has('starlance') ? 3 : 0) * am), traps: Math.round((has('trapthrower') ? 2 : 0) * am), scrap: Math.round((has('blunderbuss') ? 4 : 0) * am), brimstone: Math.round((has('brimstone') ? 2 : 0) * am) };
+      nails: Math.round((has('nailgun') ? 30 : 0) * am), arrows: Math.round((has('bow') ? 4 : 0) * am), knives: Math.round((has('knives') ? 4 : 0) * am), balls: Math.round((has('musket') ? 3 : 0) * am), harpoons: Math.round((has('harpoon') ? 2 : 0) * am), crystals: Math.round((has('prism') ? 14 : 0) * am), gears: Math.round((has('sawlauncher') ? 4 : 0) * am), spores: Math.round((has('sporelauncher') ? 2 : 0) * am), ink: Math.round((has('runebook') ? 4 : 0) * am), bees: Math.round((has('hivelauncher') ? 3 : 0) * am), dreams: Math.round((has('dreamstaff') ? 2 : 0) * am), chainballs: Math.round((has('chaincannon') ? 2 : 0) * am), acid: Math.round((has('acidsprayer') ? 25 : 0) * am), pins: Math.round((has('pinthrower') ? 3 : 0) * am), darts: Math.round((has('blowgun') ? 6 : 0) * am), stars: Math.round((has('starlance') ? 3 : 0) * am), traps: Math.round((has('trapthrower') ? 2 : 0) * am), scrap: Math.round((has('blunderbuss') ? 4 : 0) * am), brimstone: Math.round((has('brimstone') ? 2 : 0) * am), cannonballs: Math.round((has('bombard') ? 2 : 0) * am) };
     add[WEAPONS[P.weapon].ammo] = Math.round(add[WEAPONS[P.weapon].ammo] * 1.5); // mer till vapnet du håller
     for (const k in add) P.ammo[k] = Math.min(AMMO[k].max, P.ammo[k] + add[k]);
     say('AMMO ' + Object.keys(add).filter(k => add[k] > 0).map(k => `+${add[k]} ${AMMO[k].name}`).join(' '), 2); play('pickup', 0.7);
@@ -6304,13 +6354,13 @@ function pickUp(it, bought) {
     const i = weaponIndex(it.type), w = WEAPONS[i];
     if (cmode('pistol') && w.id !== 'pistol') { P.ammo.p9 = Math.min(AMMO.p9.max, P.ammo.p9 + 30); run.gold += 20; say(`BARA PISTOL: ${w.name} BLIR AMMO OCH 20 GULD`, 2.5); play('coin', 0.7); return true; }
     if (run.pact && w.id !== run.pact) { // pakten: andra vapen blir ammo och guld
-      const k = pactAmmo(); P.ammo[k] = Math.min(AMMO[k].max, P.ammo[k] + ({ p9: 30, r556: 30, shells: 8, bolts: 8, flares: 5, fuel: 60, lgren: 4, none: 0, nails: 40, arrows: 6, mana: 0, knives: 6, balls: 5, harpoons: 3, crystals: 18, gears: 6, spores: 4, ink: 8, bees: 5, dreams: 3, chainballs: 3, acid: 40, pins: 4, darts: 8, stars: 3, traps: 2, scrap: 4, brimstone: 2 }[k] || 0)); run.gold += 20;
+      const k = pactAmmo(); P.ammo[k] = Math.min(AMMO[k].max, P.ammo[k] + ({ p9: 30, r556: 30, shells: 8, bolts: 8, flares: 5, fuel: 60, lgren: 4, none: 0, nails: 40, arrows: 6, mana: 0, knives: 6, balls: 5, harpoons: 3, crystals: 18, gears: 6, spores: 4, ink: 8, bees: 5, dreams: 3, chainballs: 3, acid: 40, pins: 4, darts: 8, stars: 3, traps: 2, scrap: 4, brimstone: 2, cannonballs: 2 }[k] || 0)); run.gold += 20;
       say(`EDEN: ${w.name} BLIR AMMO OCH 20 GULD`, 2.5); play('coin', 0.7); return true;
     }
     const first = !P.has[i];
     P.has[i] = true;
     if (first) P.mags[i] = effMag(i);
-    P.ammo[w.ammo] = Math.min(AMMO[w.ammo].max, P.ammo[w.ammo] + ({ p9: 30, r556: 30, shells: 8, bolts: 10, flares: 6, fuel: 80, lgren: 8, none: 0, nails: 70, arrows: 12, mana: 0, knives: 10, balls: 8, harpoons: 5, crystals: 30, gears: 10, spores: 6, ink: 12, bees: 8, dreams: 5, chainballs: 3, acid: 50, pins: 6, darts: 12, stars: 6, traps: 3, scrap: 6, brimstone: 3 }[w.ammo] || 0));
+    P.ammo[w.ammo] = Math.min(AMMO[w.ammo].max, P.ammo[w.ammo] + ({ p9: 30, r556: 30, shells: 8, bolts: 10, flares: 6, fuel: 80, lgren: 8, none: 0, nails: 70, arrows: 12, mana: 0, knives: 10, balls: 8, harpoons: 5, crystals: 30, gears: 10, spores: 6, ink: 12, bees: 8, dreams: 5, chainballs: 3, acid: 50, pins: 6, darts: 12, stars: 6, traps: 3, scrap: 6, brimstone: 3, cannonballs: 3 }[w.ammo] || 0));
     say('DU HITTADE: ' + w.name, 2.5); play('weapon', 0.8);
     if (first && settings.autoSwitch !== false) switchWeapon(i);
   }
@@ -6324,7 +6374,7 @@ function updateWeapon(dt) {
   const moving = Math.hypot(P.vx, P.vy) / 3.1;
   WS.spread = Math.max(WS.spread, moving * 0.012 * (1 - WS.aim * 0.7));
   WS.swayX *= Math.pow(0.0001, dt); WS.swayY *= Math.pow(0.0001, dt);
-  const wantAim = aimDown && (WS.state === 'idle') && !WEAPONS[P.weapon].melee && !WEAPONS[P.weapon].scimitar && !WEAPONS[P.weapon].flail && !WEAPONS[P.weapon].blunderbuss && !WEAPONS[P.weapon].trident && !WEAPONS[P.weapon].brimstone ? 1 : 0;
+  const wantAim = aimDown && (WS.state === 'idle') && !WEAPONS[P.weapon].melee && !WEAPONS[P.weapon].scimitar && !WEAPONS[P.weapon].flail && !WEAPONS[P.weapon].blunderbuss && !WEAPONS[P.weapon].trident && !WEAPONS[P.weapon].brimstone && !WEAPONS[P.weapon].hookchain && !WEAPONS[P.weapon].bombard ? 1 : 0;
   WS.aim += (wantAim - WS.aim) * Math.min(1, dt * 10);
   WS.punch = Math.max(0, WS.punch - dt * 0.35); WS.kick = Math.max(0, WS.kick - dt); WS.nameT = Math.max(0, WS.nameT - dt); P.kickT = Math.max(0, P.kickT - dt);
   plane = BASE_PLANE * (1 - WS.aim * (wp.zoom || 0.22)) * (1 + WS.punch) * (1 + P.runK * 0.07);
@@ -6356,7 +6406,7 @@ function updateWeapon(dt) {
   if (touch.tap > 0) touch.tap -= dt;
   if (P.iframe > 0) P.iframe -= dt;
   const trig = mouseDown || touch.tap > 0 || touch.autoFire;
-  weaponV9Tick(wp, dt); weaponV11Tick(wp, dt); weaponV13Tick(wp, dt); weaponV15Tick(wp, dt); weaponV16Tick(wp, dt); weaponV17Tick(wp, dt, trig); weaponV18Tick(wp, dt, trig); weaponV19Tick(wp, dt, trig); weaponV20Tick(wp, dt, trig); weaponV21Tick(wp, dt, trig); weaponV22Tick(wp, dt, trig);
+  weaponV9Tick(wp, dt); weaponV11Tick(wp, dt); weaponV13Tick(wp, dt); weaponV15Tick(wp, dt); weaponV16Tick(wp, dt); weaponV17Tick(wp, dt, trig); weaponV18Tick(wp, dt, trig); weaponV19Tick(wp, dt, trig); weaponV20Tick(wp, dt, trig); weaponV21Tick(wp, dt, trig); weaponV22Tick(wp, dt, trig); weaponV23Tick(wp, dt, trig);
   if (weaponV7Tick(wp, dt, trig)) return;
   if (wp.melee) { // yxan: håll för laddat slag, högerklick kastar
     if (trig && WS.state === 'idle' && WS.cd <= 0) { WS.charge = (WS.charge || 0) + dt; if (WS.charge > 0.5 && !WS.chargeSnd) { WS.chargeSnd = true; play('axe_charge', 0.4, 1.3); } }
@@ -6580,6 +6630,7 @@ const ENEMY_AI = { // returnerar true när beteendet tar över hela uppdateringe
   alligator: (...a) => AI_V20.alligator(...a), sludgeman: (...a) => AI_V20.sludgeman(...a), plumber: (...a) => AI_V20.plumber(...a), leech: (...a) => AI_V20.leech(...a), scorpion: (...a) => AI_V20.scorpion(...a), nomad: (...a) => AI_V20.nomad(...a), sandwraith: (...a) => AI_V20.sandwraith(...a), vulture: (...a) => AI_V20.vulture(...a),
   turnkey: (...a) => AI_V21.turnkey(...a), convict: (...a) => AI_V21.convict(...a), torturer: (...a) => AI_V21.torturer(...a), watchdog: (...a) => AI_V21.watchdog(...a), drownedfisher: (...a) => AI_V21.drownedfisher(...a), fishman: (...a) => AI_V21.fishman(...a), shorecrab: (...a) => AI_V21.shorecrab(...a), gulls: (...a) => AI_V21.gulls(...a),
   attendant: (...a) => AI_V22.attendant(...a), steamghost: (...a) => AI_V22.steamghost(...a), gladiator: (...a) => AI_V22.gladiator(...a), moldcrawler: (...a) => AI_V22.moldcrawler(...a), fireimp: (...a) => AI_V22.fireimp(...a), lostsoul: (...a) => AI_V22.lostsoul(...a), fleshbrute: (...a) => AI_V22.fleshbrute(...a), ashwalker: (...a) => AI_V22.ashwalker(...a),
+  butcher: (...a) => AI_V23.butcher(...a), pigman: (...a) => AI_V23.pigman(...a), flies: (...a) => AI_V23.flies(...a), crawler: (...a) => AI_V23.crawler(...a), ghostsoldier: (...a) => AI_V23.ghostsoldier(...a), ghostarcher: (...a) => AI_V23.ghostarcher(...a), ghostrider: (...a) => AI_V23.ghostrider(...a), crows: (...a) => AI_V23.crows(...a),
   miner: (...a) => AI_V19.miner(...a), coalgolem: (...a) => AI_V19.coalgolem(...a), moleman: (...a) => AI_V19.moleman(...a), sparkwisp: (...a) => AI_V19.sparkwisp(...a), starspawn: (...a) => AI_V19.starspawn(...a), astronomer: (...a) => AI_V19.astronomer(...a), clockowl: (...a) => AI_V19.clockowl(...a), voidwatcher: (...a) => AI_V19.voidwatcher(...a),
   homunculus: (...a) => AI_V17.homunculus(...a), ooze: (...a) => AI_V17.ooze(...a), apprentice: (...a) => AI_V17.apprentice(...a), mercurygolem: (...a) => AI_V17.mercurygolem(...a), vialwisp: (...a) => AI_V17.vialwisp(...a), chimera: (...a) => AI_V17.chimera(...a),
   choirboy: (...a) => AI_V15.choirboy(...a), flagellant: (...a) => AI_V15.flagellant(...a), cherub: (...a) => AI_V15.cherub(...a), workerbee: (...a) => AI_V15.workerbee(...a), stingerknight: (...a) => AI_V15.stingerknight(...a), larva: (...a) => AI_V15.larva(...a),
@@ -12623,6 +12674,379 @@ TAUNTS.pyrelord = ['BRINN', 'HÄR RENAS ALLA I ELD', 'DIN SJÄL ÄR MIN'];
 const v22api = () => ({ vents: v22vents, pools: v22pools, runes: v22runes, lobs: v22lobs, shots: v22shots, spear: () => v22spear, spores: v22spores, pillars: v22pillars, temp: v22temp, steamK: () => v22steamK, setup: setupV22, slow: v22Slow, dir: (x, y) => v22dir.get(y * mw + x) || null,
   setClock: c => { v22clock = c; }, steam: t => { v22steamForce = t; }, fogBase: () => v22fogBase, lum: (x, y) => lightAt(x, y) });
 
+// ---------- Version 23: Slakteriet och Slagfältet ----------
+// Blodhalt golv, köttkvarnar, djup lera, katapultmål, köttkrokar, spjutpålar, krigsfanor, slaktarkroken och bombarden
+let v23targets = [], v23rocks = [], v23balls = [], v23lobs = [], v23grinders = [], v23temp = [], v23hook = null, v23clock = 0, v23ti = {};
+const V23_FLY = 'ʆ', V23_PIG = 'ʅ', V23_SOLDIER = 'ʐ', V23_ARCHER = 'ʑ', V23_RIDER = 'ʒ';
+function v23Back(x, y) { if (cellFloor) cellFloor[y * mw + x] = lvl.floorMask ? (+lvl.floorMask[y][x] || 0) : 0; }
+function setupV23() {
+  v23targets = []; v23rocks = []; v23balls = []; v23lobs = []; v23grinders = []; v23temp = []; v23hook = null; v23clock = 0;
+  P.v23grindT = 0; P.v23grindAcc = 0.25; P.v23mud = false; P.v23stakeT = 0; P.v23slick = false; WS.hkAim = false; WS.bdAim = false;
+  v23ti = {}; for (const n of ['floor_grinder']) { v23ti[n] = floorTexs.length; floorTexs.push(tex[n] || tex.floor_stone); }
+  for (let y = 0; y < mh; y++) for (let x = 0; x < mw; x++) {
+    const c = map[y][x];
+    if (c === 'ʌ') {
+      // högst åtta katapultmål per bana, var och en med egen fas
+      if (v23targets.length < 8) v23targets.push({ x, y, next: 3 + ((x * 7 + y * 13) % 14) / 2 });
+      else { map[y][x] = '.'; v23Back(x, y); }
+    } else if (c === 'ʀ') v23grinders.push([x, y]);
+  }
+  for (const pr of props) if (pr.ch === 'ʁ') pr.z = 0.8;
+  // tak: högst två spökryttare
+  const rm = new Set(); for (const e of ents.filter(o => o.type === V23_RIDER && !o.minion).slice(2)) rm.add(e);
+  if (rm.size) { ents = ents.filter(e => !rm.has(e)); totalEnemies -= rm.size; }
+  // spöksoldaterna marscherar i grupper om tre
+  const sol = ents.filter(o => o.type === V23_SOLDIER); let gid = 0;
+  for (const e of sol) if (e.v23grp === undefined) { e.v23grp = ++gid; let n = 1; for (const o of sol) if (o.v23grp === undefined && n < 3 && Math.hypot(o.x - e.x, o.y - e.y) < 4) { o.v23grp = gid; n++; } }
+}
+function v23Temp(x, y, t) {
+  if (!map[y] || map[y][x] !== '.' || v23temp.some(o => o.x === x && o.y === y)) return false;
+  const i = y * mw + x; v23temp.push({ x, y, t, f: cellFloor ? cellFloor[i] : 0 }); map[y][x] = 'ʀ';
+  if (cellFloor && v23ti.floor_grinder !== undefined) cellFloor[i] = v23ti.floor_grinder;
+  flowCell = -1; return true;
+}
+function v23ClearTemp() { for (const o of v23temp) if (map[o.y] && map[o.y][o.x] === 'ʀ') { map[o.y][o.x] = '.'; if (cellFloor) cellFloor[o.y * mw + o.x] = o.f; } v23temp = []; flowCell = -1; }
+const v23Grip = () => 0.14 * clamp(1 + 3 * mod('slickGrip'), 0.3, 4);
+const v23Slow = () => (P.v23mud ? 0.55 + 0.45 * clamp(mod('mudWalk'), 0, 1) : 1);
+function v23NoJump() {
+  if (cellUnder() !== 'ʋ' || !onGround() || mod('hazardImmune') > 0 || mod('mudWalk') >= 1) return false;
+  if ((P.v23jumpMsg || 0) < tmr) { P.v23jumpMsg = tmr + 2; play('deep_mud', 0.6, 0.8); say('LERAN HÅLLER FAST DIG', 1); }
+  return true;
+}
+function v23HitProp(pr) {
+  if (pr.ch === 'ʁ') { pr.swing = Math.min(1.5, (pr.swing || 0) + 0.8); if ((pr.creakT || 0) < tmr) { pr.creakT = tmr + 0.8; play('meathook_creak', 0.6, rnd(0.9, 1.1), { x: pr.x, y: pr.y }); } return false; }
+  return undefined;
+}
+function v23Rock(x, y, o = {}) {
+  if (solid(x, y)) return;
+  const T = (o.T || 1) * (o.fixed ? 1 : 1 + clamp(mod('catapultSense'), 0, 2));
+  v23rocks.push({ x, y, t: 0, T, dmg: o.dmg || 30, r: o.r || 1.1, cause: o.cause || 'KATAPULTSTENEN', boss: !!o.boss });
+  const d = Math.hypot(P.x - x, P.y - y); if (d < 16) play('catapult_whistle', 0.25 + 0.6 * (1 - d / 16), rnd(0.95, 1.05), { x, y });
+}
+function v23RockLand(r) {
+  play('catapult_impact', 1, rnd(0.9, 1.1), { x: r.x, y: r.y }); explodeFx(r.x, r.y, 0.2); spawnPuff(r.x, r.y, 6);
+  if (fx.parts.scorch) decals.push({ x: r.x, y: r.y, img: fx.parts.scorch[0], size: 0.12 });
+  const d = Math.hypot(P.x - r.x, P.y - r.y); if (d < 10) P.shake = Math.max(P.shake, 1.2 * (1 - d / 10));
+  if (d < r.r && P.jz < 0.5) { run.cause = r.cause; hurtPlayer(r.dmg * (r.boss ? 1 : trapMul()), r.x, r.y, 'proj'); }
+  for (const e of ents) if (!e.dead && !e.dying && !e.boss && !e.hidden && Math.hypot(e.x - r.x, e.y - r.y) < r.r) hurtEnemy(e, r.dmg, r.x, r.y, { boom: true, noProc: true });
+  for (const pr of props) if (pr.def && !pr.broken && (pr.def.boom || pr.def.crate) && Math.hypot(pr.x - r.x, pr.y - r.y) < r.r) hitProp(pr, r.x, r.y);
+  stat('catapultRocks');
+}
+function v23Meat(src, tx, ty) {
+  for (let i = 0; i < 6 && solid(tx, ty); i++) { tx += (src.x - tx) * 0.2; ty += (src.y - ty) * 0.2; }
+  v23lobs.push({ x0: src.x, y0: src.y, tx, ty, t: 0, T: 0.7 + Math.hypot(tx - src.x, ty - src.y) * 0.05 });
+}
+function updateV23(dt) {
+  v23clock += dt; const ground = P.jz < 0.15, c = cellUnder(), immune = mod('hazardImmune') > 0;
+  // blodhalt golv: farten bromsas långsamt (själva glidningen sker i rörelsen)
+  const slick = c === 'ɿ' && ground && !immune;
+  if (slick && !P.v23slick && Math.hypot(P.vx, P.vy) > 2) { play('blood_slick', 0.5, rnd(0.9, 1.1)); firstHint('bloodslick', 'DET BLODHALA GOLVET – DU GLIDER OCH BROMSAR SENT.'); }
+  P.v23slick = slick;
+  // köttkvarnar: 12 skada per sekund
+  if (c === 'ʀ' && ground && !immune) { P.v23grindT = 0.2; P.v23grindAcc += dt;
+    if (P.v23grindAcc >= 0.5) { P.v23grindAcc = 0; run.cause = 'KÖTTKVARNEN'; hurtPlayer(6 * trapMul() * clamp(1 - mod('grinderResist'), 0, 2), P.x, P.y, 'gas'); play('grinder', 0.7, rnd(0.9, 1.1)); firstHint('grinder', 'KÖTTKVARNARNA MAL ALLT – KNUFFA IN FIENDERNA I STÄLLET.'); } }
+  else { P.v23grindT = Math.max(0, P.v23grindT - dt); P.v23grindAcc = 0.25; }
+  // djup lera: 45 % långsammare och går inte att hoppa från
+  P.v23mud = c === 'ʋ' && ground && !immune;
+  if (P.v23mud && Math.hypot(P.vx, P.vy) > 0.5 && Math.random() < dt * 1.5) { play('deep_mud', 0.35, rnd(0.85, 1.1)); firstHint('deepmud', 'DEN DJUPA LERAN SAKTAR DIG – OCH DU KAN INTE HOPPA UR DEN.'); }
+  // fienderna: glider, mals och fastnar
+  for (const e of ents) { if (e.dead || e.dying || e.boss || e.d.float) { e.v23px = undefined; continue; }
+    const ec = map[e.y | 0] && map[e.y | 0][e.x | 0];
+    if (ec === 'ɿ' && e.v23px !== undefined && !e.knock) { const vx = (e.x - e.v23px) / Math.max(dt, 0.001), vy = (e.y - e.v23py) / Math.max(dt, 0.001); if (Math.hypot(vx, vy) < 8) tryMove(e, vx * 0.55 * dt, vy * 0.55 * dt, 0.3); }
+    if (ec === 'ʀ') { e.v23acc = (e.v23acc || 0) + dt; if (e.v23acc >= 0.5) { e.v23acc = 0; const k = hurtEnemy(e, e.knock ? 12 : 6, e.x, e.y, { noProc: true, quiet: true }); sparks(e.x, e.y, 0.3, 2); if (k) stat('grinderKills'); } }
+    if (ec === 'ʋ') e.slow = Math.max(e.slow || 0, 0.25);
+    e.v23px = e.x; e.v23py = e.y; }
+  // köttkvarnarna låter och stänker
+  for (const [x, y] of v23grinders) { const d = Math.hypot(x + 0.5 - P.x, y + 0.5 - P.y); if (d > 7) continue; if (Math.random() < dt * 0.3) play('grinder', 0.25 * (1 - d / 8), rnd(0.85, 1.1), { x: x + 0.5, y: y + 0.5 }); if (!settings.lowfx && Math.random() < dt * 2) sparks(x + 0.5, y + 0.5, 0.05, 1); }
+  // katapultmålen: var sjunde sekund landar en sten (skugga och visslande först)
+  const warn = 1 + clamp(mod('catapultSense'), 0, 2);
+  for (const t of v23targets) if (v23clock >= t.next - warn) { v23Rock(t.x + 0.5, t.y + 0.5, { T: Math.max(0.05, t.next - v23clock), fixed: true }); t.next += 7; if (Math.hypot(t.x + 0.5 - P.x, t.y + 0.5 - P.y) < 9) firstHint('catapult', 'KATAPULTSTENARNA LANDAR PÅ DE MARKERADE RUTORNA – SE SKUGGAN.'); }
+  for (const r of v23rocks) { r.t += dt; if (r.t >= r.T) { r.done = true; v23RockLand(r); } }
+  v23rocks = v23rocks.filter(r => !r.done);
+  // tillfälliga köttkvarnar (slaktmästaren)
+  for (const o of v23temp) { o.t -= dt; if (o.t <= 0 && map[o.y] && map[o.y][o.x] === 'ʀ') { map[o.y][o.x] = '.'; if (cellFloor) cellFloor[o.y * mw + o.x] = o.f; flowCell = -1; } }
+  v23temp = v23temp.filter(o => o.t > 0);
+  // köttbitar i båge blir flugsvärmar där de landar
+  for (const l of v23lobs) { l.t += dt; if (l.t < l.T) continue; l.done = true; splash(l.tx, l.ty); play('flies', 0.6, rnd(0.9, 1.1), { x: l.tx, y: l.ty });
+    if (ents.filter(e => e.type === V23_FLY && e.minion && !e.dead).length < 8 && freeSpot(l.tx, l.ty, 0.2)) { const e = makeEnemy(V23_FLY, l.tx, l.ty); e.alert = true; e.minion = true; ents.push(e); totalEnemies++; } }
+  v23lobs = v23lobs.filter(l => !l.done);
+  // spjutpålar: 4 skada vid kontakt; köttkrokar och fanor gungar
+  P.v23stakeT = Math.max(0, P.v23stakeT - dt);
+  for (const pr of props) {
+    if (pr.ch === 'ʏ') { if (P.v23stakeT <= 0 && Math.abs(pr.x - P.x) < 0.78 && Math.abs(pr.y - P.y) < 0.78 && P.jz < 0.5) { P.v23stakeT = 0.8; run.cause = 'SPJUTPÅLARNA'; hurtPlayer(4 * trapMul(), pr.x, pr.y, 'melee'); play('stakes_hit', 0.8, rnd(0.9, 1.1), { x: pr.x, y: pr.y }); } }
+    else if (pr.ch === 'ʁ') { pr.swing = Math.max(0, (pr.swing || 0) - dt * 0.4); if (!settings.reduceMotion) pr.off = Math.sin(tmr * 1.4 + (pr.ph || 0)) * (0.03 + 0.08 * pr.swing); if (Math.random() < dt * 0.05 && Math.hypot(pr.x - P.x, pr.y - P.y) < 6) play('meathook_creak', 0.3, rnd(0.85, 1.1), { x: pr.x, y: pr.y }); }
+    else if (pr.ch === 'ʎ') { if (!settings.reduceMotion) pr.off = Math.sin(tmr * 2.1 + (pr.ph || 0)) * 0.025; if (Math.random() < dt * 0.06 && Math.hypot(pr.x - P.x, pr.y - P.y) < 6) play('banner_flap', 0.35, rnd(0.9, 1.1), { x: pr.x, y: pr.y }); }
+    else if (pr.ch === 'ʃ') { if (Math.random() < dt * 0.15 && Math.hypot(pr.x - P.x, pr.y - P.y) < 6) play('bandsaw', 0.3, rnd(0.95, 1.05), { x: pr.x, y: pr.y }); } }
+  // slaktarkroken: ut, fast, dra – och slå
+  if (v23hook) v23HookTick(dt);
+  // bombardens kulor: genom fiender och en studs i väggen
+  for (const b of v23balls) { b.life -= dt; const nx = b.x + b.vx * dt, ny = b.y + b.vy * dt;
+    if (solid(nx, ny)) {
+      if (b.bounces > 0) { b.bounces--; const sx = solid(nx, b.y), sy = solid(b.x, ny); if (sx) b.vx = -b.vx; if (sy) b.vy = -b.vy; if (!sx && !sy) { b.vx = -b.vx; b.vy = -b.vy; } b.vx *= 0.85; b.vy *= 0.85; play('cannonball_bounce', 0.8, rnd(0.9, 1.1), { x: b.x, y: b.y }); sparks(b.x, b.y, 0.4, 3); }
+      else { b.done = true; if (!b.grape) { play('cannonball_bounce', 0.5, 0.8, { x: b.x, y: b.y }); spawnPuff(b.x, b.y, 4); } else sparks(b.x, b.y, 0.4, 1); continue; } }
+    else { b.x = nx; b.y = ny; }
+    for (const e of ents) { if (e.dead || e.dying || e.hidden || e.dormant || b.hit.has(e) || Math.hypot(e.x - b.x, e.y - b.y) > 0.3 + e.d.size * 0.25 * (e.boss ? 1.8 : 1)) continue;
+      b.hit.add(e); const k = hurtEnemy(e, b.dmg, b.x, b.y, {}); hitKill = hitKill || k; hitMark = 0.12; lvlStat.hits++;
+      if (b.grape) { b.done = true; break; }
+      if (k) stat('bombardKills'); else if (!e.boss) tryMove(e, b.vx * 0.02, b.vy * 0.02, 0.3);
+      b.dmg *= up('bd_pierce') ? 0.9 : 0.75; }
+    if (!b.grape && !b.done) breakProps(b.x, b.y, 0.35);
+    if (b.life <= 0) b.done = true; }
+  v23balls = v23balls.filter(b => !b.done);
+  // slagfältet: rök och glöd under den grå himlen
+  if (lvl && lvl.biome === 'battlefield' && !settings.lowfx && Math.random() < dt * 8) { const a = rnd(0, TAU), r = rnd(1, 7), x = P.x + Math.cos(a) * r, y = P.y + Math.sin(a) * r;
+    if (!solid(x, y) && (!cellSky || cellSky[(y | 0) * mw + (x | 0)])) { const ember = Math.random() < 0.35; particles.push({ x, y, z: ember ? rnd(0.1, 0.5) : rnd(0.3, 1.2), vx: rnd(-0.3, 0.3), vy: rnd(-0.3, 0.3), vz: ember ? rnd(0.3, 0.7) : 0.12, life: ember ? 1.6 : 3, maxLife: ember ? 1.6 : 3, img: ember ? (fx.parts.ember ? fx.parts.ember[0] : fx.hit[1]) : (fx.parts.smoke ? fx.parts.smoke[0] : fx.hit[1]), size: ember ? 0.03 : 0.2, fade: true, add: ember, tint: ember ? [255, 150, 60] : [120, 115, 110] }); } }
+}
+function v23HookTick(dt) {
+  const h = v23hook; h.t += dt;
+  if (h.phase === 'out') {
+    h.d += 20 * dt; const hx = P.x + h.dx * h.d, hy = P.y + h.dy * h.d; h.x = hx; h.y = hy;
+    const e = ents.find(o => !o.dead && !o.dying && !o.hidden && !o.dormant && Math.hypot(o.x - hx, o.y - hy) < 0.35 + o.d.size * 0.25 * (o.boss ? 1.8 : 1));
+    if (e) { h.e = e; h.pt = 0; h.phase = e.boss || e.guardian || e.d.size >= (up('hk_pull') ? 1.7 : 1.3) ? 'drag' : 'pull'; play('chain_pull', 0.9, 1, { x: e.x, y: e.y }); if (h.phase === 'pull') { stat('hookPulls'); firstHint('hookchain', 'KROKEN DRAR IN FIENDEN – STORA FIENDER DRAR IN DIG.'); } }
+    else if (solid(hx, hy) || h.d >= h.reach) { h.phase = 'back'; if (solid(hx, hy)) play('ricochet', 0.4, 0.7, { x: hx, y: hy }); }
+  } else if (h.phase === 'pull' || h.phase === 'drag') {
+    const e = h.e;
+    if (!e || e.dead || e.dying) h.phase = 'back';
+    else {
+      const d = Math.hypot(e.x - P.x, e.y - P.y), a = Math.atan2(e.y - P.y, e.x - P.x), sp = 14 * dt, reach = h.phase === 'pull' ? 1.15 : 1.5 + (e.boss ? e.d.size * 0.25 : 0);
+      if (d > reach) { if (h.phase === 'pull') { tryMove(e, -Math.cos(a) * Math.min(sp, d - reach + 0.05), -Math.sin(a) * Math.min(sp, d - reach + 0.05), 0.3); e.state = 'pain'; e.t = 0; } else tryMove(P, Math.cos(a) * Math.min(sp, d - reach + 0.05), Math.sin(a) * Math.min(sp, d - reach + 0.05), 0.24); }
+      h.x = e.x; h.y = e.y; h.d = Math.hypot(e.x - P.x, e.y - P.y); h.pt += dt;
+      if (d <= reach + 0.1 || h.pt > 0.8) { v23HookStrike(e); v23hook = null; return; }
+    }
+  }
+  if (h.phase === 'back') { h.d -= 26 * dt; h.x = P.x + h.dx * Math.max(0, h.d); h.y = P.y + h.dy * Math.max(0, h.d); if (h.d <= 0) v23hook = null; }
+}
+function v23HookDmg() { const w = WEAPONS[weaponIndex('hookchain')]; return (w ? w.dmg : 45) * meleeMul() * (1 + mod('hookDmg')) * (1 + 0.12 * wlvl('hookchain')); }
+function v23HookStrike(e) {
+  WS.shot = 0; WS.kick = 1.1;
+  if (Math.hypot(e.x - P.x, e.y - P.y) > 2.6 + (e.boss ? e.d.size * 0.3 : 0)) return false;
+  const crit = Math.random() < mod('critChance'), dmg = v23HookDmg() * (crit ? 2 + mod('critDmg') : 1);
+  const k = hurtEnemy(e, dmg, e.x, e.y, { melee: true, crit }); hitKill = hitKill || k; hitMark = 0.12; lvlStat.hits++; hitStop = Math.max(hitStop, 0.05); if (crit) hitCrit = true;
+  if (up('hk_bleed') && !k) e.bleed = Math.max(e.bleed || 0, 4);
+  play('hookchain_hit', 1, rnd(0.9, 1.1), { x: e.x, y: e.y });
+  return true;
+}
+function hookThrow(wp) {
+  if (WS.cd > 0 || WS.state !== 'idle' || v23hook) return;
+  WS.cd = effDelay(wp) * (up('hk_fast') ? 0.65 : 1); WS.shot = 9; WS.kick = 0.5; lvlStat.shots++; noise(1.5);
+  v23hook = { x: P.x, y: P.y, dx: Math.cos(P.a), dy: Math.sin(P.a), d: 0.3, reach: 6 + (up('hk_reach') ? 2 : 0), t: 0, phase: 'out', e: null, pt: 0 };
+  play('hookchain_throw', 0.9, rnd(0.95, 1.05)); stat('hookThrows');
+}
+function v23BallDmg() { const w = WEAPONS[weaponIndex('bombard')]; return (w ? w.dmg : 80) * (1 + mod('dmg')) * (1 + mod('bombardDmg')) * (1 + 0.12 * wlvl('bombard')); }
+function bombardFire(wp) {
+  if (WS.cd > 0 || WS.state !== 'idle') return;
+  if (P.mags[P.weapon] <= 0) { if ((P.ammo.cannonballs || 0) > 0) startReload(); else play('click', 0.5, 0.8); return; }
+  WS.shot = 0; WS.cd = effDelay(wp) * (up('bd_fast') ? 0.65 : 1); WS.kick = 1.6; lvlStat.shots++; run.shots = (run.shots || 0) + 1; P.flash = settings.noFlash ? 0 : 0.08;
+  if (Math.random() >= mod('ammoSave')) P.mags[P.weapon]--;
+  play('bombard_fire', 1.0, rnd(0.95, 1.05)); noise(4); P.shake = Math.max(P.shake, 0.8);
+  v23balls.push({ x: P.x + Math.cos(P.a) * 0.4, y: P.y + Math.sin(P.a) * 0.4, vx: Math.cos(P.a) * 15, vy: Math.sin(P.a) * 15, life: 1.6, dmg: v23BallDmg(), bounces: up('bd_bounce') ? 3 : 1, hit: new Set(), grape: false });
+  tryMove(P, -Math.cos(P.a) * 0.15, -Math.sin(P.a) * 0.15, 0.24);
+  if (P.mags[P.weapon] <= 0 && (P.ammo.cannonballs || 0) > 0) setTimeout(() => { if (state === 'play' && WEAPONS[P.weapon].bombard) startReload(); }, 450);
+}
+function bombardGrape(wp) {
+  if (P.mags[P.weapon] <= 0) { if ((P.ammo.cannonballs || 0) > 0) startReload(); return; }
+  WS.shot = 0; WS.cd = effDelay(wp) * (up('bd_fast') ? 0.65 : 1); WS.kick = 1.8; lvlStat.shots++; P.flash = settings.noFlash ? 0 : 0.08;
+  if (Math.random() >= mod('ammoSave')) P.mags[P.weapon]--;
+  play('bombard_grape', 1.0, rnd(0.95, 1.05)); noise(4); P.shake = Math.max(P.shake, 0.8);
+  const n = up('bd_grape') ? 12 : 8, dmg = v23BallDmg() * 0.2;
+  for (let i = 0; i < n; i++) { const a = P.a + rnd(-0.22, 0.22), sp = rnd(12, 15); v23balls.push({ x: P.x + Math.cos(a) * 0.4, y: P.y + Math.sin(a) * 0.4, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 0.32, dmg, bounces: 0, hit: new Set(), grape: true }); }
+  if (P.mags[P.weapon] <= 0 && (P.ammo.cannonballs || 0) > 0) setTimeout(() => { if (state === 'play' && WEAPONS[P.weapon].bombard) startReload(); }, 450);
+}
+function weaponV23Tick(wp, dt, trig) {
+  if (wp.bombard && aimDown && !WS.bdAim && state === 'play' && WS.state === 'idle' && WS.cd <= 0) bombardGrape(wp);
+  WS.bdAim = aimDown;
+}
+function v23Light(fl) {
+  for (const t of v23targets) { const k = clamp(1 - (t.next - v23clock) / 2.5, 0, 1); if (k > 0) fl(t.x + 0.5, t.y + 0.5, 0.15 + 0.6 * k, 2, [255, 150, 60]); }
+  for (const r of v23rocks) fl(r.x, r.y, 0.2 + 0.5 * r.t / r.T, 2, [255, 140, 70]);
+}
+function v23Dmg(e, dmg, opt) {
+  // spöksoldatens sköld tar det mesta framifrån – mindre när formationen är bruten
+  if (e.d.ai === 'ghostsoldier' && !opt.boom && !opt.fall && !opt.infight && !(e.stun > 0)) {
+    const want = Math.atan2(P.y - e.y, P.x - e.x); let off = want - (e.faceA ?? want); off = Math.atan2(Math.sin(off), Math.cos(off));
+    if (Math.abs(off) < 0.9) {
+      const mates = e.v23grp ? ents.filter(o => o !== e && !o.dead && !o.dying && o.v23grp === e.v23grp && Math.hypot(o.x - e.x, o.y - e.y) < 4).length : 0;
+      dmg *= clamp((mates ? 0.35 : 0.65) + mod('formationBreak'), 0, 1);
+      if ((e.shMsg || 0) < tmr) { e.shMsg = tmr + 0.8; spawnText(e.x, e.y, 'SKÖLD', '#c0d0e0'); sparks(e.x, e.y, 0.5, 2); play('ghost_shield_bash', 0.7, rnd(0.9, 1.1), { x: e.x, y: e.y }); }
+    }
+  }
+  return dmg;
+}
+function v23Kill(e) {
+  if (e.boss) { v23ClearTemp(); v23rocks = []; v23lobs = []; }
+  if (e.v23grp && e.d.ai === 'ghostsoldier' && !ents.some(o => o !== e && !o.dead && !o.dying && o.v23grp === e.v23grp)) { stat('formations'); spawnText(e.x, e.y, 'FORMATIONEN BRUTEN', '#c0d0e0'); }
+}
+function v23Map(s, ox, oy, inside) { for (const t of v23targets) if (inside(t.x, t.y) && seen[t.y * mw + t.x]) { ctx.fillStyle = '#ff9030'; ctx.fillRect(ox + t.x * s, oy + t.y * s, s, s); } }
+function drawV23Hud(g) {
+  if (P.v23grindT > 0) { g.fillStyle = `rgba(200,20,20,${0.12 + (settings.noFlash ? 0 : 0.05 * Math.sin(tmr * 9))})`; g.fillRect(0, 0, W, VH); }
+  if (P.v23mud) { g.fillStyle = 'rgba(80,55,30,0.16)'; g.fillRect(0, Math.round(VH * 0.72), W, VH - Math.round(VH * 0.72)); }
+  if (v23hook && WEAPONS[P.weapon].hookchain && v23hook.phase === 'drag') { const t = 'KROKEN DRAR DIG'; txt(t, Math.round((W - textW(t)) / 2), HORIZON + 26, '#e0a0a0', 1, true, 0.7); }
+}
+function drawV23World(list) {
+  for (const r of v23rocks) { list.push({ x: r.x, y: r.y, k: 'v23', t: 'shadow', o: r }); list.push({ x: r.x, y: r.y, k: 'v23', t: 'rock', o: r }); }
+  for (const b of v23balls) list.push({ x: b.x, y: b.y, k: 'v23', t: 'ball', o: b });
+  for (const l of v23lobs) { const k = l.t / l.T; list.push({ x: l.x0 + (l.tx - l.x0) * k, y: l.y0 + (l.ty - l.y0) * k, k: 'v23', t: 'meat', o: l, z: 0.45 + 1.6 * 4 * k * (1 - k) }); }
+  if (v23hook) { const h = v23hook, n = Math.min(8, Math.max(2, Math.round(h.d * 1.5))); for (let i = 1; i < n; i++) { const k = i / n; list.push({ x: P.x + (h.x - P.x) * k, y: P.y + (h.y - P.y) * k, k: 'v23', t: 'link', o: h, z: 0.42 }); } list.push({ x: h.x, y: h.y, k: 'v23', t: 'hook', o: h }); }
+}
+function drawV23Sprite(s) {
+  const o = s.o;
+  if (s.t === 'shadow') { const k = o.t / o.T, n = 10; for (let i = 0; i < n; i++) { const a = i / n * TAU + tmr * 0.5; drawSprite(fx.hit[1], o.x + Math.cos(a) * 0.9, o.y + Math.sin(a) * 0.9, 0.06, 0.01, false, 1.4, 0, 0, true, k > 0.6 ? [255, 120, 60] : [255, 200, 120]); } drawSprite(fx.hit[1], o.x, o.y, 0.25 + 0.5 * k, 0.005, false, 0.2, 0, 0, false, [10, 8, 6]); return true; }
+  if (s.t === 'rock') { const k = o.t / o.T; drawSprite(fx.parts.rock ? fx.parts.rock[0] : fx.hit[1], o.x, o.y, 0.35, 0.2 + 3.2 * (1 - k), false, null, 0, 0.3, false, fx.parts.rock ? null : [110, 100, 90]); return true; }
+  if (s.t === 'ball') { drawSprite(fx.parts.chainball ? fx.parts.chainball[0] : fx.hit[1], s.x, s.y, o.grape ? 0.08 : 0.2, 0.45, false, null, 0, 0.3, false, fx.parts.chainball ? null : [60, 60, 60]); return true; }
+  if (s.t === 'meat') { drawSprite(fx.parts.gib ? fx.parts.gib[Math.floor(tmr * 8) % fx.parts.gib.length] : fx.hit[1], s.x, s.y, 0.22, s.z - 0.1, false, null, 0, 0.3, false, fx.parts.gib ? null : [150, 40, 40]); return true; }
+  if (s.t === 'link') { drawSprite(fx.parts.chain ? fx.parts.chain[0] : fx.hit[1], s.x, s.y, 0.07, s.z, false, null, 0, 0.4, false, fx.parts.chain ? null : [150, 150, 160]); return true; }
+  if (s.t === 'hook') { drawSprite(spr.pick_hookchain || fx.hit[0], s.x, s.y, 0.3, 0.4, false, null, 0, 0.5); return true; }
+  return false;
+}
+function v23ArcProj(p, dt) {
+  // köttyxor och pilar i båge
+  if (infightHit(p)) return;
+  const k = clamp((tmr - (p.t0 || tmr)) / (p.arcT || 1.2), 0, 1); p.z = 0.45 + Math.sin(k * Math.PI) * (p.arcH || 0.35);
+  if (Math.hypot(p.x - P.x, p.y - P.y) < 0.4 && P.jz < 0.6) { p.dead = true; run.cause = p.cause || run.cause; hurtPlayer(p.dmg, p.src.x, p.src.y, 'proj'); return; }
+  if (solid(p.x, p.y) || p.life <= 0) { p.dead = true; sparks(p.x, p.y, 0.4, 3); }
+}
+Object.assign(PROJ_UPD_V8, { v23cleaver: v23ArcProj, v23arrow: v23ArcProj });
+Object.assign(PROJ_DRAW_V8, {
+  v23cleaver: o => drawSprite(fx.parts.knife ? fx.parts.knife[Math.floor(tmr * 14) % fx.parts.knife.length] : fx.hit[0], o.x, o.y, 0.22, o.z - 0.1, Math.floor(tmr * 10) % 2 === 0, null, 0, 0.3, false, fx.parts.knife ? null : [200, 200, 210]),
+  v23arrow: o => drawSprite(fx.parts.dart ? fx.parts.dart[0] : fx.hit[1], o.x, o.y, 0.16, o.z - 0.08, false, 1.2, 0, 0.5, true, [170, 220, 255]),
+});
+
+// ---------- Version 23: slakteriets och slagfältets invånare ----------
+const AI_V23 = {
+  butcher(e, dt, dist, los) {
+    // kastar köttyxor i båge när du håller avstånd
+    e.throwT = (e.throwT ?? rnd(1.5, 3)) - dt;
+    if (e.throwT <= 0 && los && e.alert && dist > 2.2 && dist < 9 && e.state !== 'pain') { e.throwT = rnd(2.8, 4); e.state = 'attack'; e.t = 0; e.didHit = true; const a = Math.atan2(P.y + P.vy * 0.3 - e.y, P.x + P.vx * 0.3 - e.x); v18Shoot(e, a, 6.5, e.d.dmg * 0.8, 'v23cleaver', { life: 1.8, t0: tmr, arcT: dist / 6.5, arcH: 0.4 }); play('cleaver_throw', 0.9, rnd(0.9, 1.1), { x: e.x, y: e.y }); return true; }
+    return false;
+  },
+  pigman(e, dt, dist, los) {
+    // rusar med huvudet före och knuffar dig
+    if (e.v23rush) { const r = e.v23rush, ox = e.x, oy = e.y, sp = e.d.speed * 3.5 * dt; r.t -= dt; tryMove(e, Math.cos(r.a) * sp, Math.sin(r.a) * sp, 0.35); e.state = 'move';
+      if (!r.hit && dist < 1.1 && P.jz < 0.5) { r.hit = true; run.cause = e.d.name; hurtPlayer(e.d.dmg, e.x, e.y, 'melee'); for (let i = 0; i < 6; i++) tryMove(P, Math.cos(r.a) * 0.25, Math.sin(r.a) * 0.25, 0.24); P.shake = Math.max(P.shake, 1); }
+      const wall = Math.hypot(e.x - ox, e.y - oy) < sp * 0.3;
+      if (r.t <= 0 || r.hit || wall) { e.v23rush = null; if (wall) { e.stun = Math.max(e.stun || 0, 0.8); spawnPuff(e.x, e.y, 4); } }
+      return true; }
+    e.rushCd = (e.rushCd ?? rnd(1.5, 3)) - dt;
+    if (e.alert && los && dist > 2.2 && dist < 7 && e.rushCd <= 0 && e.state !== 'pain') { e.rushCd = rnd(4, 6); e.v23rush = { t: 1.7, a: Math.atan2(P.y - e.y, P.x - e.x) }; play('pig_charge', 1, rnd(0.9, 1.1), { x: e.x, y: e.y }); firstHint('pigman', 'GRISMANNEN RUSAR OCH KNUFFAR – KLIV ÅT SIDAN.'); return true; }
+    return false;
+  },
+  flies(e, dt) {
+    // svaga och dras till liken
+    if (!e.v23f) { e.v23f = true; e.d = { ...e.d, dmg: e.d.dmg * clamp(1 - mod('fliesResist'), 0, 1) }; }
+    if (!e.alert) { let best = null, bd = 7; for (const o of ents) if (o.dead && o !== e) { const d = Math.hypot(o.x - e.x, o.y - e.y); if (d < bd && d > 0.5) { bd = d; best = o; } }
+      if (best) { const a = Math.atan2(best.y - e.y, best.x - e.x); tryMove(e, Math.cos(a) * 1.2 * dt, Math.sin(a) * 1.2 * dt, 0.2); e.state = 'move'; return true; } }
+    return false;
+  },
+  crawler() { return false; },
+  ghostsoldier(e, dt) {
+    // skölden mot dig; hela gruppen vaknar samtidigt
+    const want = Math.atan2(P.y - e.y, P.x - e.x); let d = want - (e.faceA ?? want); d = Math.atan2(Math.sin(d), Math.cos(d)); e.faceA = (e.faceA ?? want) + clamp(d, -2.5 * dt, 2.5 * dt);
+    if (e.alert && e.v23grp && !e.v23told) { e.v23told = true; for (const o of ents) if (o.v23grp === e.v23grp && !o.dead && !o.alert) { o.alert = true; o.sleep = false; } firstHint('ghostsoldier', 'SPÖKSOLDATERNA SKYDDAR VARANDRA – BRYT FORMATIONEN.'); }
+    return false;
+  },
+  ghostarcher(e, dt, dist, los) {
+    // pilskurar om tre i båge
+    e.volT = (e.volT ?? rnd(1.5, 3)) - dt;
+    if (e.volT <= 0 && los && e.alert && dist > 2 && dist < 11 && e.state !== 'pain') { e.volT = rnd(3, 4.2); e.state = 'attack'; e.t = 0; e.didHit = true; const a = Math.atan2(P.y - e.y, P.x - e.x); for (let i = -1; i <= 1; i++) v18Shoot(e, a + i * 0.13, 7, e.d.dmg, 'v23arrow', { life: 2.2, t0: tmr, arcT: dist / 7, arcH: 0.5 }); play('arrow_volley', 0.9, rnd(0.95, 1.05), { x: e.x, y: e.y }); return true; }
+    return false;
+  },
+  ghostrider(e, dt, dist, los) {
+    // rusar i en lång rak linje, vänder och rusar igen
+    if (e.v23ride) { const r = e.v23ride; e.state = 'move';
+      if (r.wait > 0) { r.wait -= dt; if (r.wait <= 0) { r.a = Math.atan2(P.y - e.y, P.x - e.x); r.t = 0; r.hit = false; play('hoofbeats', 1, rnd(0.95, 1.05), { x: e.x, y: e.y }); } return true; }
+      r.t += dt; const ox = e.x, oy = e.y, sp = 6 * clamp(e.d.speed / 1.3, 0, 1.5) * dt; tryMove(e, Math.cos(r.a) * sp, Math.sin(r.a) * sp, 0.35);
+      if (!r.hit && dist < 1.0 && P.jz < 0.5) { r.hit = true; run.cause = e.d.name; hurtPlayer(e.d.dmg, e.x, e.y, 'melee'); for (let i = 0; i < 5; i++) tryMove(P, Math.cos(r.a) * 0.2, Math.sin(r.a) * 0.2, 0.24); }
+      if (Math.hypot(e.x - ox, e.y - oy) < sp * 0.3 || r.t > 4) { r.n++; r.wait = 0.9; if (r.n >= 3) { e.v23ride = null; e.rideCd = rnd(3, 5); } }
+      return true; }
+    e.rideCd = (e.rideCd ?? rnd(1, 2.5)) - dt;
+    if (e.alert && los && dist > 2.5 && dist < 14 && e.rideCd <= 0 && e.state !== 'pain') { e.v23ride = { t: 0, n: 0, wait: 0.01, a: 0, hit: false }; play('ghostrider', 0.9, 1, { x: e.x, y: e.y }); firstHint('ghostrider', 'SPÖKRYTTAREN RUSAR I RAKA LINJER – KLIV UR VÄGEN.'); return true; }
+    return false;
+  },
+  crows(e, dt, dist, los) {
+    // flocken dyker mot dig
+    if (e.v23dive) { const v = e.v23dive; v.t -= dt; tryMove(e, Math.cos(v.a) * 5 * dt, Math.sin(v.a) * 5 * dt, 0.2); e.state = 'attack';
+      if (!v.hit && dist < 0.8) { v.hit = true; run.cause = e.d.name; hurtPlayer(e.d.dmg, e.x, e.y, 'melee'); }
+      if (v.t <= 0 || v.hit) e.v23dive = null; return true; }
+    e.diveT = (e.diveT ?? rnd(1, 3)) - dt;
+    if (e.alert && los && dist < 6 && dist > 1.5 && e.diveT <= 0) { e.diveT = rnd(2.5, 4); e.v23dive = { t: 0.7, a: Math.atan2(P.y - e.y, P.x - e.x) }; play('crows', 0.8, rnd(0.95, 1.15), { x: e.x, y: e.y }); return true; }
+    return false;
+  },
+};
+
+// ---------- Version 23: Slaktmästaren och Krigsherren ----------
+function v23Formation(cx, cy, n, withArcher) {
+  const gid = 1000 + Math.floor(Math.random() * 1e6);
+  for (let i = 0; i < n; i++) { let s = null; for (let k = 0; k < 12 && !s; k++) { const a = rnd(0, TAU), r = rnd(2.5, 6), x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r; if (freeSpot(x, y, 0.3) && Math.hypot(x - P.x, y - P.y) > 2.5) s = [x, y]; } if (!s) s = freeSpotFar(3, 6); if (!s) continue;
+    const e = makeEnemy(withArcher && i === n - 1 ? V23_ARCHER : V23_SOLDIER, s[0], s[1]); e.alert = true; e.minion = true; e.v23grp = gid; ents.push(e); totalEnemies++; spawnPuff(s[0], s[1], 8); }
+}
+Object.assign(BOSS_AI, {
+  butcher(b, dt, dist, ang, ph) {
+    // köttyxan, kroken som drar dig och köttbitar som blir flugsvärmar
+    const fast = ph === 3 ? 1.25 : 1;
+    if (b.state === 'idle') b.once23 = false;
+    if (b.state === 'cleave') { if (!b.didHit && b.t > 0.55) { b.didHit = true; play('hookchain_hit', 0.8, 0.7); if (dist < (b.d.range || 2.4) + 1.1 && P.jz < 0.4) { run.cause = b.d.name; hurtPlayer(b.d.dmg, b.x, b.y, 'melee'); } }
+      if (b.t > 1.0) { b.state = 'idle'; b.t = 0; b.cd = rnd(0.8, 1.2) / fast; } return; }
+    if (b.state === 'hook') { if (!b.once23 && b.t > 0.4) { b.once23 = true; play('hook_throw', 1, 1); if (hasLOS(b.x, b.y, P.x, P.y) && dist < 12) { b.v23pull = 0.6; play('chain_pull', 1, 0.9); say('KROKEN DRAR DIG!', 1); } }
+      if (b.v23pull > 0) { b.v23pull -= dt; const d = Math.hypot(P.x - b.x, P.y - b.y); if (d > 2.6) tryMove(P, (b.x - P.x) / d * 9 * dt, (b.y - P.y) / d * 9 * dt, 0.24); }
+      if (b.t > 1.2) { b.state = 'idle'; b.t = 0; b.cd = 0.5 / fast; b.v23pull = 0; } return; }
+    if (b.state === 'meat') { if (!b.once23 && b.t > 0.4) { b.once23 = true; play('meatmaster_roar', 0.6, 1.2); for (let i = 0; i < (ph >= 2 ? 3 : 2); i++) v23Meat(b, P.x + rnd(-2, 2), P.y + rnd(-2, 2)); }
+      if (b.t > 1.1) { b.state = 'idle'; b.t = 0; b.cd = 0.8 / fast; } return; }
+    b.cd -= dt;
+    if (b.cd <= 0) { b.t = 0; b.didHit = false; b.once23 = false; const los = hasLOS(b.x, b.y, P.x, P.y);
+      if (los && dist < 4) { b.state = 'cleave'; bossWarn(b, 'SLAKTMÄSTAREN HÖJER KÖTTYXAN!'); }
+      else if (los) { b.state = Math.random() < 0.55 ? 'hook' : 'meat'; bossWarn(b, b.state === 'hook' ? 'SLAKTMÄSTAREN KASTAR KROKEN!' : 'SLAKTMÄSTAREN SLÄNGER KÖTT!'); } else b.cd = 0.4;
+      return; }
+    if (dist > 3.5) bossMove(b, ang, b.d.speed * fast * dt); else bossMove(b, ang + Math.PI / 2, b.d.speed * dt * 0.5);
+  },
+  warlord(b, dt, dist, ang, ph) {
+    // svärdet, svärdsvirveln och ritten i raka linjer
+    const fast = ph === 3 ? 1.25 : 1;
+    if (b.state === 'idle') b.once23 = false;
+    if (b.state === 'sword') { if (!b.didHit && b.t > 0.55) { b.didHit = true; P.shake = Math.max(P.shake, 1); if (dist < (b.d.range || 2.4) + 1.1 && P.jz < 0.4) { run.cause = b.d.name; hurtPlayer(b.d.dmg, b.x, b.y, 'melee'); } }
+      if (b.t > 1.0) { b.state = 'idle'; b.t = 0; b.cd = rnd(0.8, 1.2) / fast; } return; }
+    if (b.state === 'whirl') { if (!b.once23 && b.t > 0.3) { b.once23 = true; play('sword_whirl', 1, 1); }
+      if (b.t > 0.3 && b.t < 1.4) { b.wacc = (b.wacc || 0) + dt; if (b.wacc >= 0.35) { b.wacc = 0; if (dist < 3.4 && P.jz < 0.5) { run.cause = b.d.name; hurtPlayer(b.d.dmg * 0.45, b.x, b.y, 'melee'); } } bossMove(b, ang, b.d.speed * 0.7 * dt); }
+      if (b.t > 1.6) { b.state = 'idle'; b.t = 0; b.cd = 0.8 / fast; } return; }
+    if (b.state === 'ride') { if (!b.once23) { b.once23 = true; b.rideA = ang; play('hoofbeats', 1.1, 0.9); play('warlord_roar', 0.6, 1.1); }
+      if (b.t > 0.35) { const sp = 7.5 * dt, m = bossMove(b, b.rideA, sp);
+        if (!b.didHit && Math.hypot(P.x - b.x, P.y - b.y) < 1.9 && P.jz < 0.5) { b.didHit = true; run.cause = b.d.name; hurtPlayer(b.d.dmg, b.x, b.y, 'melee'); for (let i = 0; i < 6; i++) tryMove(P, Math.cos(b.rideA) * 0.25, Math.sin(b.rideA) * 0.25, 0.24); }
+        if (m < sp * 0.3 || b.t > 2.4) { b.state = 'idle'; b.t = 0; b.cd = 0.7 / fast; P.shake = Math.max(P.shake, 0.6); } }
+      return; }
+    b.cd -= dt;
+    if (b.cd <= 0) { b.t = 0; b.didHit = false; b.once23 = false; b.wacc = 0; const los = hasLOS(b.x, b.y, P.x, P.y);
+      if (los && dist < 3.5) { b.state = Math.random() < 0.5 ? 'sword' : 'whirl'; bossWarn(b, b.state === 'sword' ? 'KRIGSHERREN HÖJER SVÄRDET!' : 'SVÄRDSVIRVELN!'); }
+      else if (los) { b.state = 'ride'; bossWarn(b, 'KRIGSHERREN RIDER MOT DIG!'); } else b.cd = 0.4;
+      return; }
+    if (dist > 4) bossMove(b, ang, b.d.speed * fast * dt); else bossMove(b, ang + Math.PI / 2, b.d.speed * dt * 0.5);
+  },
+});
+Object.assign(BOSS_SPECIAL, {
+  butcher(b, dt, dist, ang, ph) {
+    if (b.spK) {
+      // köttkvarnarna i arenan sätts igång i faser
+      if (!b.once23) { b.once23 = true; bossWarn(b, 'KÖTTKVARNARNA STARTAR!'); play('grinder_start', 1, 1); play('meatmaster_roar', 0.8);
+        const px = P.x | 0, py = P.y | 0;
+        for (let k = 0; k < 2 + ph; k++) { let cx = 0, cy = 0, okk = false; for (let i = 0; i < 20 && !okk; i++) { const a = rnd(0, TAU), r = rnd(2, 6); cx = (P.x + Math.cos(a) * r) | 0; cy = (P.y + Math.sin(a) * r) | 0; okk = map[cy] && map[cy][cx] === '.' && Math.hypot(cx - px, cy - py) >= 2; }
+          if (okk) for (const [a2, b2] of [[0, 0], [1, 0], [0, 1], [1, 1]]) { const x = cx + a2, y = cy + b2; if (!(x === px && y === py)) v23Temp(x, y, 6); } } }
+      if (b.t > 1.2) { b.state = 'idle'; b.t = 0; b.cd = 0.8; } return; }
+    if (!b.once23) { b.once23 = true; say('SLAKTMÄSTAREN KALLAR PÅ GRISMÄNNEN', 1.5); play('meatmaster_roar', 0.9, 1.1); for (let i = 0; i < 1 + ph; i++) { const s = freeSpotFar(3, 6); if (!s) continue; const e = makeEnemy(V23_PIG, s[0], s[1]); e.alert = true; e.minion = true; ents.push(e); totalEnemies++; spawnPuff(s[0], s[1], 8); } }
+    if (b.t > 0.9) { b.state = 'idle'; b.t = 0; b.cd = 0.6; }
+  },
+  warlord(b, dt, dist, ang, ph) {
+    if (b.spK) {
+      // katapultsalvor över arenan
+      if (!b.once23) { b.once23 = true; bossWarn(b, 'KATAPULTERNA SKJUTER!'); play('war_horn', 1, 0.9);
+        for (let i = 0; i < 5 + ph * 2; i++) { const a = rnd(0, TAU), r = i ? rnd(1, 5) : 0; v23Rock(P.x + Math.cos(a) * r, P.y + Math.sin(a) * r, { T: 1.1 + i * 0.12, dmg: b.d.dmg * 0.8, r: 1.2, cause: b.d.name, boss: true }); } }
+      if (b.t > 1.2) { b.state = 'idle'; b.t = 0; b.cd = 0.8; } return; }
+    if (!b.once23) { b.once23 = true; say('KRIGSHERREN BLÅSER I HORNET', 1.5); play('war_horn', 1, 1); play('warlord_roar', 0.7); if (ents.filter(e => e.minion && !e.dead && e.d.ai === 'ghostsoldier').length < 6) v23Formation(b.x, b.y, 3, ph === 3); }
+    if (b.t > 0.9) { b.state = 'idle'; b.t = 0; b.cd = 0.6; }
+  },
+});
+TAUNTS.butcher = ['FÄRSKT KÖTT', 'IN I KVARNEN MED DIG', 'JAG HAR EN KROK MED DITT NAMN'];
+TAUNTS.warlord = ['SLAGET ÄR INTE ÖVER', 'LED IN DEM I LERAN', 'INGEN LÄMNAR FÄLTET'];
+const v23api = () => ({ targets: v23targets, rocks: v23rocks, balls: v23balls, lobs: v23lobs, temp: v23temp, grinders: v23grinders, hook: () => v23hook, setup: setupV23, slow: v23Slow, grip: v23Grip, noJump: v23NoJump,
+  clock: () => v23clock, setClock: c => { v23clock = c; }, rock: v23Rock, lum: (x, y) => lightAt(x, y) });
+
 // ---------- Grafik: fiender och bossar (FIENDER) – träffreaktion, död, gibs, spawn, skuggor, anfallstelegraf, bossfaser ----------
 // Allt här är bara visning: positioner/skalor räknas fram vid ritningen (gfxEOff) och skrivs aldrig tillbaka till e.x/e.y; inga nya hitStop/slowmo.
 const gfxE = { on: true, hits: 0, deaths: 0, gibs: 0, spawns: 0, tele: 0, phase: 0, bossBooms: 0, pools: 0, splats: 0, parts: 0, poses: 0 };
@@ -13113,7 +13537,7 @@ function gfxWApi() { // window.__game.gfxW: tillstånd och mätning för t105
     pet: () => pet, allies: () => allies, beginMaze, beginBossHunt, beginEnemyPractice, beginAbyss, beginHub, openEditor, styleRef: () => style, arenasRef: () => arenas, arenaCurRef: () => arenaCur, execute, canExec, kickParry, edEncode, edDecode, playCustom, giveLegend, LEGENDS, beginCampaign, pclouds: () => pclouds, tports: () => tports, beginFinale, lightningAt, bubbles: () => timeBubbles, sawsRef: () => saws, voidAt, solid, hasLOS, freeSpot, mapRef: () => map, enterPortal, killAllCheat: () => { for (const e of ents) if (!e.dead && !e.boss) hurtEnemy(e, 99999, e.x, e.y, { noProc: true }); if (boss && !boss.dead) hurtEnemy(boss, 99999, boss.x, boss.y, { noProc: true }); }, talentPick, gainXp, TALENTS, talent, deepAt, tideHigh, pauseMenu, settings, refreshTitle, checkAch, showStats, levelTime: () => levelTime, showTitles, cmode, shareSeed, soundCue, cues: () => cues, deathMap: () => deathMap, findPage, showChronicle, toggleLamp, throwStone, openGambler, openBanker, openWanderer, visibility, addPropAt, openCampfire, openQuestBoard, giveRune, useAbility, quests: () => quests, drinkPotion, swapPotion, givePotion, givePet, spawnAlly, spawnPortal, dropItem, openAlchemist, openPriest, openPetCage, biomeFor, useProp, v19: () => ({ carts: v19carts, loose: v19loose, ports: v19ports, slits: v19slits, mets: v19mets, wells: v19wells, rays: v19rays, beams: v19beams, pend: v19pend, ore: v19ore, setup: setupV19, meteor: v19Meteor, grav: v19Grav, clock: v19clock }), v18: () => ({ trapdoors: v18doors, spotOn: P.spotT > 0, darts: v18darts, beams: v18beams, clock: v18clock }), hitProp, burnThorns, v17: () => ({ lobs, clouds: v17clouds, puddles: v17puddles, tiles: v17tiles, wave: v17wave }) };
   window.__game.hudRects = () => { const L = hudLay(); return { hp: L.hp, ammo: L.ammo, map: L.map }; }; window.__game.settings = window.__game.settings || settings; window.__game.say = say; window.__game.msgs = () => msgs; // HUD-hörnen i spelkoordinater (320×200) – pekkontrollerna trycker på dem
   window.__game.gfxE = gfxEApi(); // FIENDER: räknare och av/på för t104
-  window.__game.v20 = v20api; window.__game.v21 = v21api; window.__game.v22 = v22api; window.__game.gfxW = gfxWApi(); window.__game.weaponFrame = () => { const r = weaponFrame(); return { idx: r.idx, dx: r.dx, dy: r.dy }; }; window.__game.fogK = () => fogK;
+  window.__game.v20 = v20api; window.__game.v21 = v21api; window.__game.v22 = v22api; window.__game.v23 = v23api; window.__game.gfxW = gfxWApi(); window.__game.weaponFrame = () => { const r = weaponFrame(); return { idx: r.idx, dx: r.dx, dy: r.dy }; }; window.__game.fogK = () => fogK;
   if (params.has('autostart')) begin('new');
 })();
 document.getElementById('start').addEventListener('click', () => startMode('new'));

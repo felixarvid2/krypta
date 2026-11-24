@@ -35,7 +35,7 @@ ok(await ev(() => ['scrap', 'flail', 'blunderbuss'].every(t => __game.items().so
 ok(await ev(() => !__game.solid(12.5, 22.5) && !__game.solid(6.5, 18.5) && !__game.solid(4.5, 12.5)), 'larmplatta, nät och hängande bur går att gå på/under');
 ok(await ev(() => __game.solid(8.5, 12.5) && __game.solid(12.5, 16.5)), 'sträckbänken och fisktunnan står i vägen');
 const idx = await ev(() => Object.fromEntries(['flail', 'blunderbuss'].map(id => [id, __game.WEAPONS.findIndex(w => w.id === id)])));
-ok(idx.flail === 40 && idx.blunderbuss === 41 && await ev(() => __game.WEAPONS.length) === 44, 'de två nya vapnen har index 40 och 41 ' + JSON.stringify(idx));
+ok(idx.flail === 40 && idx.blunderbuss === 41 && await ev(() => __game.WEAPONS.length) === 46, 'de två nya vapnen har index 40 och 41 ' + JSON.stringify(idx));
 ok(await ev(() => __game.v21().plates.length === 3 && __game.mapRef()[22][18] === '.'), 'högst tre larmplattor per bana');
 const fm = await ev(C => { const e = __game.ents().find(o => o.type === C.fishman); return { hidden: !!e.hidden, cell: __game.mapRef()[e.y | 0][e.x | 0] }; }, C);
 ok(fm.hidden && fm.cell === 'Đ', 'fiskmannen kliver ned i djupvattnet intill och gömmer sig ' + JSON.stringify(fm));

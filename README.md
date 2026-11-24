@@ -1287,6 +1287,31 @@ Version 7 lägger till 200 förbättringar:
 
 Kombinerade utmaningar multiplicerar själarna. Sparplatsen väljs på startskärmen, och `?fro=XXXX` i adressen fyller i ett delat frö.
 
+## Version 23: Slakteriet och Slagfältet
+
+- **Slakteriet (`abattoir`):** inomhus på djup 2–5. Kaklade slakthallar med slaktkakel (ɼ) och kylrumsväggar (ɽ), kylrum med köttkrokar (ʁ, i taket, gungar och knarrar), slaktbänkar (ʂ) och bandsågar (ʃ). Testa med `?biome=abattoir`.
+  - Blodhalt golv (ɿ) har svag friktion: farten bromsas långsamt och du glider. Fiender glider också.
+  - Köttkvarnar (ʀ) gör 12 skada i sekunden. Fiender som knuffas in tar dubbel skada. Bangeneratorn gör dem aldrig till enda vägen.
+  - Flugsvärmar dras till liken.
+- **Det eviga slagfältet (`battlefield`):** utomhus under grå himmel med rök och glöd, djup 4–5 (en sen biom). Lera, skyttegravar, palissader (ʈ), jordvallar (ʉ), trasiga katapulter (ʍ), krigsfanor (ʎ) som vajar och spjutpålar (ʏ). Testa med `?biome=battlefield`.
+  - Djup lera (ʋ) gör dig 45 % långsammare, och du kan inte hoppa ur den.
+  - Katapultmål (ʌ): var sjunde sekund (i olika takt för varje ruta) landar en sten. En skugga och ett visslande kommer 1 s före. Stenen gör 30 skada inom en ruta och lämnar en krater (bara ett märke). En bana har högst åtta mål.
+  - Spjutpålarna gör 4 skada när du går in i dem.
+  - Slagfältets lergolv (`floor_battlemud`) saktar inte, till skillnad från den gamla leran.
+- **Vapen:**
+  - **Slaktarkroken (ʔ):** kastar en krok på kedja som når 6 rutor. Små fiender dras in till dig. Stora fiender, väktare och bossar drar i stället in dig till dem. Sedan slår kroken (45 skada). Ingen ammo, 1,2 s nedkylning.
+  - **Bombarden (ʕ, ammo kanonkulor från kulpåsar ʖ):** en handkanon med en tung kanonkula (80 skada). Kulan går igenom fiender, tappar 25 % per fiende och studsar en gång i väggar. Högerklick skjuter druvhagel: 8 kulor på kort håll.
+  - Båda har pakter med fyra uppgraderingar var.
+- **Fiender i slakteriet:** slaktaren (ʄ) kastar köttyxor i båge och slåss i närstrid. Grismannen (ʅ) rusar och knuffar dig – kliv åt sidan, så slår den i väggen och blir yr. Flugsvärmen (ʆ) är svag och flyger i moln om tre. Den styckade (ʇ) kryper snabbt längs golvet.
+- **Fiender på slagfältet:** spöksoldaterna (ʐ) går i grupper om tre. Skölden tar 65 % framifrån så länge formationen håller och 35 % när de andra är döda. Spökbågskytten (ʑ) skjuter pilskurar om tre. Spökryttaren (ʒ) rusar i långa raka linjer, vänder och rusar igen (högst två per bana). Kråkorna (ʓ) kommer i flock och dyker.
+- **Bossar:**
+  - **Slaktmästaren:** hugger med köttyxan och kastar en krok som drar dig till honom. Han slänger köttbitar som blir flugsvärmar, sätter igång köttkvarnar i arenan i 6 s och kallar på grismän.
+  - **Krigsherren:** slår med svärdet, svingar en svärdsvirvel och rider i raka linjer. Han blåser i hornet och kallar en formation spöksoldater och beordrar katapultsalvor över arenan.
+  - Båda kan också vara väktare.
+- **Kort:** 16 nya kort, åtta nya kortnycklar och två set: SLAKTARENS VÄG och FÄLTHERRENS VÄG. De nya nycklarna är `slickGrip`, `grinderResist`, `fliesResist`, `mudWalk`, `catapultSense`, `formationBreak`, `hookDmg` och `bombardDmg`. Kortbilderna ritas i `tools/card-art/make.py` (`v23`).
+- **Namnbyten:** lergolvet heter `floor_battlemud` och sköldljudet `ghost_shield_bash`. Ammot heter KANONKULOR (inte KULOR, som musköten redan använder).
+- **Test:** `tools/playtest/t110.mjs` (port 9810).
+
 ## Version 22: Badhuset och Skärselden
 
 - **Badhuset (`bathhouse`):** inomhus på mellandjup. Ett romerskt badhus i förfall med mosaikmarmor (ɠ), pelargångar (ɡ), kakel och mosaikgolv, statyer (ɦ), fontäner (ɧ) och bänkar (ɨ).
