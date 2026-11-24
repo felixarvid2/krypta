@@ -218,6 +218,15 @@ const MOD_KEYS = {
   flailDmg: 'Andel extra skada med morgonstjärnan',
   blunderDmg: 'Andel extra skada med trombonen',
   burnResist: 'Andel kortare tid i brand av glödande järn',
+  // version 22: Badhuset och Skärselden – heta bassänger, ånga, kallbad, sköldar, eldfloder, runcirklar, treudden och svavelmortern (sporerna använder sporeResist)
+  scaldResist: 'Andel mindre skada och inbromsning i heta bassänger',
+  steamSight: 'Andel bättre sikt i ångan från ånggallren',
+  coldPoolHeal: 'Andel snabbare och större läkning ur kallbad',
+  shieldBreak: 'Andel mer skada genom gladiatorernas sköldar',
+  streamResist: 'Andel mindre skada och svagare drag i eldfloder',
+  runeQuiet: 'Chans att en runcirkel inte kallar fram några demoner',
+  tridentDmg: 'Andel extra skada med treudden',
+  brimstoneDmg: 'Andel extra skada med svavelmortern',
 };
 const KEYS = Object.keys(MOD_KEYS);
 
@@ -961,6 +970,38 @@ const DEFS = [
   ['glodande_jarnet', 'DET GLÖDANDE JÄRNET', 'sallsynt', { flailDmg: 0.4, burnResist: -0.3 }, 1, '+40 % SKADA MED\nMORGONSTJÄRNAN\n-30 % SKYDD MOT BRAND', { curse: true, bad: 1 }],
   // legendariska
   ['tidvattnets_snacka', 'TIDVATTNETS SNÄCKA', 'legendarisk', { fogSight: 0.3, crabCrack: 0.3, gullResist: 0.3, blunderDmg: 0.3 }, 1, '30 % BÄTTRE SIKT I DIMMAN\n+30 % GENOM KRABBPANSAR\n30 % MINDRE SKADA AV MÅSAR\n+30 % SKADA MED TROMBONEN', { unlock: 50 }],
+  // ---- version 22: pakter och uppgraderingar för treudden och svavelmortern ----
+  ['pakt_treudd', 'GLADIATORNS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nTREUDDEN BEHÖVER INGEN AMMO\n4 UNIKA UPPGRADERINGAR\nBARA TREUDD RESTEN AV RUNDAN', { pact: 'trident', bad: 1 }],
+  ['pakt_svavelmorter', 'DEMONJÄGARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR SVAVEL\n4 UNIKA UPPGRADERINGAR\nBARA SVAVELMORTER RESTEN AV RUNDAN', { pact: 'brimstone', bad: 1 }],
+  ['langskaftet', 'LÅNGSKAFTET', 'ovanlig', {}, 1, 'LÄNGRE STÖT', { weapon: 'trident', wup: 'tr_reach' }],
+  ['spjutudden', 'SPJUTUDDEN', 'sallsynt', {}, 1, 'STÖTEN GÅR IGENOM\nTRE FIENDER', { weapon: 'trident', wup: 'tr_pierce' }],
+  ['linan', 'LINAN', 'ovanlig', {}, 1, 'TREUDDEN KOMMER\nTILLBAKA FORTARE', { weapon: 'trident', wup: 'tr_return' }],
+  ['snabba_stoten', 'SNABBA STÖTEN', 'ovanlig', {}, 1, 'SNABBARE STÖTAR', { weapon: 'trident', wup: 'tr_fast' }],
+  ['stora_klotet', 'STORA KLOTET', 'sallsynt', {}, 1, 'STÖRRE EXPLOSION', { weapon: 'brimstone', wup: 'bs_big' }],
+  ['eviga_elden', 'EVIGA ELDEN', 'ovanlig', {}, 1, 'ELDEN BRINNER\nDUBBELT SÅ LÄNGE', { weapon: 'brimstone', wup: 'bs_burn' }],
+  ['tre_klot', 'TRE KLOT', 'legendarisk', {}, 1, 'TRE KLOT PÅ EN GÅNG', { weapon: 'brimstone', wup: 'bs_triple' }],
+  ['svavelskopan', 'SVAVELSKOPAN', 'ovanlig', {}, 1, 'SNABBARE SKOTT', { weapon: 'brimstone', wup: 'bs_fast' }],
+  // ---- version 22: heta bassänger, ånga, kallbad, sköldar, eldfloder, runcirklar, treudden och svavlet (Badhuset och Skärselden) ----
+  // vanliga
+  ['badtofflorna', 'BADTOFFLORNA', 'vanlig', { scaldResist: 0.2 }, 3, '20 % MINDRE SKÅLLNING\nI HETA BASSÄNGER'],
+  ['anglasogonen', 'ÅNGGLASÖGONEN', 'vanlig', { steamSight: 0.2 }, 3, '20 % BÄTTRE SIKT\nI ÅNGAN'],
+  ['isbiten', 'ISBITEN', 'vanlig', { coldPoolHeal: 0.2 }, 3, '20 % MER LÄKNING\nUR KALLBAD'],
+  ['murbrackan', 'MURBRÄCKAN', 'vanlig', { shieldBreak: 0.15 }, 3, '+15 % SKADA GENOM\nSKÖLDAR'],
+  ['askmanteln', 'ASKMANTELN', 'vanlig', { streamResist: 0.2 }, 3, '20 % MINDRE SKADA OCH DRAG\nI ELDFLODER'],
+  ['spetsslipen', 'SPETSSLIPEN', 'vanlig', { tridentDmg: 0.12 }, 3, '+12 % SKADA MED\nTREUDDEN'],
+  ['svavelstickan', 'SVAVELSTICKAN', 'vanlig', { brimstoneDmg: 0.12 }, 3, '+12 % SKADA MED\nSVAVELMORTERN', { unlock: 10 }],
+  // ovanliga
+  ['benkritan', 'BENKRITAN', 'ovanlig', { runeQuiet: 0.3, streamResist: 0.15 }, 2, '30 % CHANS ATT RUNCIRKLAR\nÄR TOMMA\n15 % MINDRE SKADA OCH DRAG\nI ELDFLODER', { unlock: 15 }],
+  ['badhandduken', 'BADHANDDUKEN', 'ovanlig', { coldPoolHeal: 0.3, scaldResist: 0.15 }, 2, '30 % MER LÄKNING\nUR KALLBAD\n15 % MINDRE SKÅLLNING'],
+  ['arenasanden', 'ARENASANDEN', 'ovanlig', { shieldBreak: 0.25, critChance: 0.03 }, 2, '+25 % SKADA GENOM\nSKÖLDAR\n+3 % KRITCHANS', { unlock: 15 }],
+  ['havsgaffeln', 'HAVSGAFFELN', 'ovanlig', { tridentDmg: 0.2, dmg: 0.04 }, 2, '+20 % SKADA MED\nTREUDDEN\n+4 % SKADA'],
+  ['eldtungan', 'ELDTUNGAN', 'ovanlig', { brimstoneDmg: 0.4, streamResist: -0.3 }, 1, '+40 % SKADA MED\nSVAVELMORTERN\n-30 % SKYDD MOT ELDFLODER', { curse: true, bad: 1 }],
+  // sällsynta
+  ['termernas_nyckel', 'TERMERNAS NYCKEL', 'sallsynt', { steamSight: 0.3, coldPoolHeal: 0.3, scaldResist: 0.2 }, 1, '30 % BÄTTRE SIKT I ÅNGAN\n30 % MER LÄKNING UR KALLBAD\n20 % MINDRE SKÅLLNING', { unlock: 25 }],
+  ['den_fordomdes_kedja', 'DEN FÖRDÖMDES KEDJA', 'sallsynt', { runeQuiet: 0.3, streamResist: 0.3, tridentDmg: 0.2 }, 1, '30 % TOMMA RUNCIRKLAR\n30 % SKYDD MOT ELDFLODER\n+20 % SKADA MED\nTREUDDEN', { unlock: 25 }],
+  ['havsgudens_vrede', 'HAVSGUDENS VREDE', 'sallsynt', { tridentDmg: 0.4, steamSight: -0.3 }, 1, '+40 % SKADA MED\nTREUDDEN\n-30 % SIKT I ÅNGAN', { curse: true, bad: 1 }],
+  // legendariska
+  ['eldfurstens_horn', 'ELDFURSTENS HORN', 'legendarisk', { streamResist: 0.3, runeQuiet: 0.3, brimstoneDmg: 0.3, shieldBreak: 0.3 }, 1, '30 % SKYDD MOT ELDFLODER\n30 % TOMMA RUNCIRKLAR\n+30 % SKADA MED SVAVLET\n+30 % GENOM SKÖLDAR', { unlock: 50 }],
 ];
 
 // ---------- Set och synergier ----------
@@ -1006,6 +1047,9 @@ const SETS = {
   // version 20: KLOAKERNAS VÄG (Kloakerna: slam, ånga och iglar) och ÖKNENS VÄG (Öknen: oaser, sandstorm och hetta; id karavanen eftersom oknen redan finns sedan version 7)
   kloakerna: { name: 'KLOAKERNAS VÄG', text: '25 % MINDRE INBROMSNING I SLAM\n25 % MINDRE SKADA AV ÅNGAN\n20 % CHANS ATT IGLAR INTE FÄSTER', mods: { sludgeResist: 0.25, sprayResist: 0.25, leechResist: 0.2 } },
   // version 21: FÅNGENS VÄG (Järnfängelset: larmplattor, brand och morgonstjärnan) och FISKARENS VÄG (Fiskeläget: dimma, nät och måsar)
+  // version 22: BADGÄSTENS VÄG (Badhuset: skållning, ånga och kallbad) och DEN FÖRDÖMDES VÄG (Skärselden: eldfloder, runcirklar och svavel)
+  badhuset: { name: 'BADGÄSTENS VÄG', text: '25 % MINDRE SKÅLLNING\n25 % BÄTTRE SIKT I ÅNGAN\n20 % MER LÄKNING UR KALLBAD', mods: { scaldResist: 0.25, steamSight: 0.25, coldPoolHeal: 0.2 } },
+  fordomda: { name: 'DEN FÖRDÖMDES VÄG', text: '25 % SKYDD MOT ELDFLODER\n25 % CHANS ATT RUNCIRKLAR ÄR TOMMA\n+20 % SKADA MED SVAVELMORTERN', mods: { streamResist: 0.25, runeQuiet: 0.25, brimstoneDmg: 0.2 } },
   fangelset: { name: 'FÅNGENS VÄG', text: '25 % CHANS ATT LARMPLATTOR ÄR TYSTA\n25 % KORTARE BRAND\n+20 % SKADA MED MORGONSTJÄRNAN', mods: { alarmQuiet: 0.25, burnResist: 0.25, flailDmg: 0.2 } },
   fiskelaget: { name: 'FISKARENS VÄG', text: '25 % BÄTTRE SIKT I DIMMAN\n25 % MINDRE INSNÄRJNING I NÄT\n20 % MINDRE SKADA AV MÅSAR', mods: { fogSight: 0.25, netResist: 0.25, gullResist: 0.2 } },
   karavanen: { name: 'KARAVANENS VÄG', text: '25 % MER LÄKNING UR OASER\n25 % BÄTTRE SIKT I SANDSTORMEN\n20 % SKYDD MOT HETTA', mods: { oasisHeal: 0.25, stormSight: 0.25, heatResist: 0.2 } },
@@ -1028,7 +1072,8 @@ const SYN = { eld: 'ELD', krit: 'KRIT', gift: 'GIFT', frost: 'FROST', blixt: 'BL
   cirkus: 'CIRKUSEN', rampljus: 'RAMPLJUSET', kniv: 'KNIVAR', kagla: 'KÄGLOR', pil: 'GIFTPILAR', idol: 'IDOLER', djungel: 'DJUNGELN',
   gruva: 'GRUVAN', vagn: 'GRUVVAGNAR', malm: 'MALM', stjarna: 'STJÄRNOR', meteor: 'METEORER',
   kloak: 'KLOAKERNA', slam: 'SLAM', oken: 'ÖKNEN', sabel: 'SABEL', falla: 'FÄLLOR',
-  fangelse: 'FÄNGELSET', hamn: 'FISKELÄGET', morgon: 'MORGONSTJÄRNAN', skrot: 'SKROT' };
+  fangelse: 'FÄNGELSET', hamn: 'FISKELÄGET', morgon: 'MORGONSTJÄRNAN', skrot: 'SKROT',
+  badhus: 'BADHUSET', skarseld: 'SKÄRSELDEN', treudd: 'TREUDDEN', svavel: 'SVAVEL' };
 // set och syn för alla kort samlas här: id: [set eller '', syn-taggar...]
 const TAGS = {
   // eld och explosioner
@@ -1156,6 +1201,10 @@ const TAGS = {
   gummistovlarna: ['kloakerna', 'kloak', 'slam'], angskyddet: ['kloakerna', 'kloak'], saltpasen: ['kloakerna', 'kloak', 'slam'], kloakkartan: ['kloakerna', 'kloak', 'slam'], rattfangaren: ['kloakerna', 'kloak', 'falla'],
   vattenskinnet: ['karavanen', 'oken'], slojan: ['karavanen', 'oken'], turbanen: ['karavanen', 'oken'], karavanledaren: ['karavanen', 'oken'], sfinxens_gata: ['karavanen', 'oken', 'sabel'],
   // version 21: FÅNGENS VÄG (Järnfängelset) och FISKARENS VÄG (Fiskeläget); fängelset, fiskeläget, morgonstjärnan och skrot
+  // version 22: BADGÄSTENS VÄG (Badhuset) och DEN FÖRDÖMDES VÄG (Skärselden); badhuset, skärselden, treudden och svavlet
+  badtofflorna: ['badhuset', 'badhus'], anglasogonen: ['badhuset', 'badhus'], isbiten: ['badhuset', 'badhus'], badhandduken: ['badhuset', 'badhus'], termernas_nyckel: ['badhuset', 'badhus'],
+  askmanteln: ['fordomda', 'skarseld'], benkritan: ['fordomda', 'skarseld'], den_fordomdes_kedja: ['fordomda', 'skarseld', 'treudd'], eldfurstens_horn: ['fordomda', 'skarseld', 'svavel'],
+  murbrackan: ['', 'badhus'], spetsslipen: ['', 'treudd'], svavelstickan: ['', 'svavel'], arenasanden: ['', 'badhus', 'krit'], havsgaffeln: ['', 'treudd'], eldtungan: ['', 'svavel', 'skarseld'], havsgudens_vrede: ['', 'treudd', 'badhus'],
   tysta_sulor: ['fangelset', 'fangelse'], brannsalvan: ['fangelset', 'fangelse'], nyckelknippan: ['fangelset', 'fangelse'], vaktarens_ring: ['fangelset', 'fangelse', 'morgon'],
   natkniven: ['fiskelaget', 'hamn'], mashatten: ['fiskelaget', 'hamn'], mistlyktan: ['fiskelaget', 'hamn'], fyrvaktaren: ['fiskelaget', 'hamn'], tidvattnets_snacka: ['fiskelaget', 'hamn', 'skrot'],
   krabbtangen: ['', 'hamn'], kulkedjan: ['', 'morgon'], krutpasen: ['', 'skrot'], skrotsmedjan: ['', 'skrot', 'hamn'], tungviktaren: ['', 'morgon', 'krit'], sjodimman: ['', 'hamn'], glodande_jarnet: ['', 'morgon', 'fangelse'],
@@ -1300,6 +1349,8 @@ const FMT = {
   stormSight: ['p', 'SIKT I SANDSTORMEN'], scimitarDmg: ['p', 'SKADA MED KROKSABELN'], trapDmg: ['p', 'SKADA MED BJÖRNSAXAR'],
   alarmQuiet: ['p', 'TYSTA LARMPLATTOR'], netResist: ['p', 'SKYDD MOT FISKNÄT'], crabCrack: ['p', 'SKADA GENOM KRABBPANSAR'], gullResist: ['p', 'SKYDD MOT MÅSAR'],
   fogSight: ['p', 'SIKT I DIMMAN'], flailDmg: ['p', 'SKADA MED MORGONSTJÄRNAN'], blunderDmg: ['p', 'SKADA MED TROMBONEN'], burnResist: ['p', 'SKYDD MOT BRAND'],
+  scaldResist: ['p', 'SKYDD MOT SKÅLLNING'], steamSight: ['p', 'SIKT I ÅNGAN'], coldPoolHeal: ['p', 'LÄKNING UR KALLBAD'], shieldBreak: ['p', 'SKADA GENOM SKÖLDAR'],
+  streamResist: ['p', 'SKYDD MOT ELDFLODER'], runeQuiet: ['p', 'TOMMA RUNCIRKLAR'], tridentDmg: ['p', 'SKADA MED TREUDDEN'], brimstoneDmg: ['p', 'SKADA MED SVAVELMORTERN'],
 };
 const INVERT = { damageTaken: true };
 const num = v => String(Math.round(v * 100) / 100).replace('.', ',');
@@ -1507,7 +1558,7 @@ const WEAPON_NAME = { pistol: 'PISTOL', shotgun: 'HAGELGEVÄR', rifle: 'GEVÄR',
   knives: 'KASTKNIVAR', hammer: 'STRIDSHAMMARE', musket: 'MUSKÖT', harpoon: 'HARPUN', boomerang: 'BUMERANG', prism: 'PRISMA',
   sawlauncher: 'SÅGBLAD', windgun: 'VINDBÖSSA', spear: 'SPJUT', sporelauncher: 'SPORKASTARE', mirrorshield: 'SPEGELSKÖLD', whip: 'PISKA',
   runebook: 'RUNBOK', steamcannon: 'ÅNGKANON', censer: 'RÖKELSEKAR', hivelauncher: 'BIKASTARE',
-  shears: 'TRÄDGÅRDSSAX', dreamstaff: 'DRÖMSTAV', chaincannon: 'KEDJEKANON', acidsprayer: 'SYRASPRUTA', pinthrower: 'KÄGLEKASTARE', blowgun: 'BLÅSRÖR', pickaxe: 'HACKA', starlance: 'STJÄRNLANS', scimitar: 'KROKSABEL', flail: 'MORGONSTJÄRNA', blunderbuss: 'TROMBON', trapthrower: 'FÄLLKASTARE' };
+  shears: 'TRÄDGÅRDSSAX', dreamstaff: 'DRÖMSTAV', chaincannon: 'KEDJEKANON', acidsprayer: 'SYRASPRUTA', pinthrower: 'KÄGLEKASTARE', blowgun: 'BLÅSRÖR', pickaxe: 'HACKA', starlance: 'STJÄRNLANS', scimitar: 'KROKSABEL', flail: 'MORGONSTJÄRNA', blunderbuss: 'TROMBON', trident: 'TREUDD', brimstone: 'SVAVELMORTER', trapthrower: 'FÄLLKASTARE' };
 // etikett ovanför kortets namn: förbannelse, pakt, aktiv förmåga ('AKTIV · 8 S'), vilket vapen uppgraderingen hör till eller sammansmält
 const activeTag = card => 'AKTIV · ' + num(card.cd || 0) + ' S';
 function tag(card) {

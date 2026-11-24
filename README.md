@@ -1287,6 +1287,38 @@ Version 7 lägger till 200 förbättringar:
 
 Kombinerade utmaningar multiplicerar själarna. Sparplatsen väljs på startskärmen, och `?fro=XXXX` i adressen fyller i ett delat frö.
 
+## Version 22: Badhuset och Skärselden
+
+- **Badhuset (`bathhouse`):** inomhus på mellandjup. Ett romerskt badhus i förfall med mosaikmarmor (ɠ), pelargångar (ɡ), kakel och mosaikgolv, statyer (ɦ), fontäner (ɧ) och bänkar (ɨ).
+  - Heta bassänger (ɣ) gör dig 25 % långsammare och skållar dig med 3 skada i sekunden. Fiender skållas också.
+  - Ånggaller (ɤ) väller upp ånga i 2 s var sjätte sekund, i olika takt för varje ruta. Inom 3 rutor tjocknar dimman kraftigt, men ångan skadar inte. Ångvålnaderna syns bara i ångan och på nära håll.
+  - Kallbad (ɥ) släcker brand direkt och läker 2 hp/s upp till halva hälsan. Varje bad ger högst 30 hp och tar sedan slut.
+- **Skärselden (`purgatory`):** utomhus under blodröd himmel med askregn. Det är en sen biom. Där finns köttmurar (ɭ), benmurar (ɮ), askfält och svavel, kedjade själar (ɲ) som gungar och jämrar sig, benpelare (ɳ) och svavelgrytor (ɴ) som lyser.
+  - Eldfloder (ɰ) gör 6 skada i sekunden och drar dig 1,2 rutor/s med strömmen. Riktningen tas från `level.streams = [{x,y,dx,dy}]`. Saknas fältet räknas riktningen ut från grannrutorna.
+  - Runcirklar (ɱ) lyser upp i 0,8 s när du kliver i dem och kallar sedan fram två eldimpar. Varje cirkel gör det en gång, och en bana har högst tre.
+  - Ljuset mäts i t109: bilden är tydligt röd (rött > 1,3 × blått) men läsbar.
+- **Vapen:**
+  - **Treudden (ɹ):** en stöt utan ammo som når 2,2 rutor, gör 40 skada och går igenom två fiender. Högerklick kastar den (90 skada), och den kommer tillbaka efter 1,2 s. Under tiden slåss du med nävarna.
+  - **Svavelmortern (ɺ, ammo svavel från svavelklumpar ɻ):** lobbar ett brinnande svavelklot i båge. Klotet landar vid fienden i siktet, exploderar (60 skada, 2 rutors radie) och lämnar eld i 3 s. Högerklick ger ett kort skott rakt fram som exploderar vid träff.
+  - Båda har pakter med fyra uppgraderingar var.
+- **Fiender i badhuset:**
+  - Badvakten (ɩ) snärtar med en blöt handduk som gör dig långsam i 1 s.
+  - Ångvålnaden (ɪ) är nästan osynlig och sliter på dig när den är nära.
+  - Gladiatorn (ɫ) har en sköld som tar 75 % av skadan framifrån, kastar ett nät som snärjer och slåss med en treudd.
+  - Mögelkryparen (ɬ) lämnar giftiga sporer där den dör. Sporerna använder den gamla nyckeln `sporeResist`, och eld bränner bort dem.
+- **Fiender i skärselden:**
+  - Eldimpen (ɵ) är snabb och kastar eldklot som bränner kort.
+  - Den plågade själen (ɶ) störtar mot dig och exploderar. Högst fyra per bana.
+  - Köttbjässen (ɷ) rusar och slår i marken så att en chockvåg går ut (hoppa över den). Högst två per bana.
+  - Askvandraren (ɸ) går sönder i aska och reser sig igen en gång efter 3 s, om den inte sprängs eller bränns.
+- **Bossar:**
+  - **Badmästaren:** slår med skopan och kastar skållhett vatten som lämnar en het bassäng i 4 s. Han fyller arenan med ånga, kallar på badvakter och dyker ner i en bassäng för att komma upp i en annan.
+  - **Eldfursten:** slår med klon och låter eld regna ned (med varningsringar). En eldpelare följer efter dig. Han öppnar sprickor med eld i marken i 5 s och kallar på eldimpar och plågade själar.
+  - Båda kan också vara väktare.
+- **Kort:** 16 nya kort, åtta nya kortnycklar och två set: BADGÄSTENS VÄG och DEN FÖRDÖMDES VÄG. De nya nycklarna är `scaldResist`, `steamSight`, `coldPoolHeal`, `shieldBreak`, `streamResist`, `runeQuiet`, `tridentDmg` och `brimstoneDmg`. Kortbilderna ritas i `tools/card-art/make.py` (`v22`).
+- **Namnbyten:** golvet `floor_ashfield`, fontänen `prop_bathfountain` och ljudet `mold_spore_burst`. Fontänljudet är det gamla `fountain`.
+- **Test:** `tools/playtest/t109.mjs` (port 9809).
+
 ## Version 21: Järnfängelset och Fiskeläget
 
 - **Järnfängelset (`prison`):** inomhus på mellandjup, med fängelsesten (ɇ), cellgaller (Ɉ), halm och smutsig sten. Där finns cellrader, vaktrum, tortyrkammare och en galggård.

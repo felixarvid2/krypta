@@ -239,6 +239,10 @@
   #title #setup .sbtns .mi { flex: 1; max-width: 14em; margin-top: 0; }
   #title #setup #setupstart { color: #ffe9a8; border: 2px solid #7c2616; font-size: clamp(12px, min(1.8vw, 3.6vh), 18px); }
   #title #version { position: fixed; right: calc(8px + env(safe-area-inset-right, 0px)); bottom: 6px; font-size: 7px; color: var(--dim); opacity: .7; }
+  @media (max-height: 520px) { /* version 22: fler bossar – bossjaktens rutnät får plats utan rullning i liggande telefon */
+    #cardui .cu-choice .cu-choices.many { grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 3px; }
+    #cardui .cu-choice:not(.menulist) .cu-choices.many .cu-opt { padding: .35em .3em; }
+  }
   #title #status { font-size: 8px; max-width: 40em; }
   #title #status:empty { display: none; }
   @media (max-height: 520px) {
@@ -413,7 +417,7 @@
     <div id="best" class="wide"></div>
     <button class="mi back wide" type="button" data-back>TILLBAKA</button>
   </div>
-  <div id="version" class="label">V21</div>
+  <div id="version" class="label">V22</div>
   <div id="status">Laddar…</div>
   <div id="loadwrap"><div id="loadbar"></div></div>
   <div id="loadhelp" class="label"></div>

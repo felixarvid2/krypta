@@ -91,6 +91,7 @@ Kör från repo-roten: python3 retrofps/tools/card-art/make.py .          (alla)
                      python3 retrofps/tools/card-art/make.py . v19      (bara version 19)
                      python3 retrofps/tools/card-art/make.py . v20      (bara version 20)
                      python3 retrofps/tools/card-art/make.py . v21      (bara version 21)
+                     python3 retrofps/tools/card-art/make.py . v22      (bara version 22)
 """
 import math
 import os
@@ -4089,6 +4090,174 @@ def main_v21():
     return n
 
 
+# ---------- version 22: Badhuset och Skärselden (ritade motiv, inga betal-API:er) ----------
+V22_DRAWN = {  # kort-id: (ritfunktion, storlek, förskjutning y, (gloriatyp, färg))
+    'badtofflorna': ('slippers', 0.84, 0, ('ring', (230, 220, 200))),
+    'anglasogonen': ('goggles', 0.88, 0, ('rays', (220, 230, 240))),
+    'isbiten': ('icecube', 0.84, 0, ('stars', (150, 220, 255))),
+    'murbrackan': ('ram22', 0.9, 0, ('ring', (170, 130, 90))),
+    'askmanteln': ('ashcloak', 0.88, 0, ('rays', (120, 110, 105))),
+    'spetsslipen': ('grindstone', 0.86, 0, ('stars', (200, 200, 220))),
+    'svavelstickan': ('matchstick', 0.86, 0, ('ring', (255, 220, 80))),
+    'benkritan': ('bonechalk', 0.86, 0, ('rays', (200, 80, 255))),
+    'badhandduken': ('towel', 0.86, 0, ('ring', (170, 210, 240))),
+    'arenasanden': ('sandshield', 0.88, 0, ('stars', (230, 190, 120))),
+    'havsgaffeln': ('seafork', 0.9, 0, ('rays', (90, 170, 220))),
+    'eldtungan': ('firetongue', 0.88, 0, ('ring', (255, 90, 40))),
+    'termernas_nyckel': ('bathkey', 0.88, 0, ('stars', (232, 184, 64))),
+    'den_fordomdes_kedja': ('soulchain', 0.9, 0, ('rays', (180, 60, 50))),
+    'havsgudens_vrede': ('wave22', 0.9, 0, ('ring', (60, 120, 200))),
+    'eldfurstens_horn': ('horns', 0.92, 0, ('stars', (255, 120, 40))),
+}
+V22_PACTS = {'pakt_treudd': 'trident', 'pakt_svavelmorter': 'brimstone'}
+V22_UPGRADES = {  # kort-id: (vapen, ritfunktion, gloriafärg)
+    'langskaftet': ('trident', 'longshaft', (200, 200, 220)), 'spjutudden': ('trident', 'triplepierce', (255, 220, 150)),
+    'linan': ('trident', 'rope22', (190, 150, 100)), 'snabba_stoten': ('trident', 'speedlines', (150, 220, 255)),
+    'stora_klotet': ('brimstone', 'bigball', (255, 200, 80)), 'eviga_elden': ('brimstone', 'flames22', (255, 110, 40)),
+    'tre_klot': ('brimstone', 'threeballs', (255, 230, 120)), 'svavelskopan': ('brimstone', 'scoop22', (230, 200, 90)),
+}
+MARBLE22, SULF22, FLAME22, BONE22, SEA22 = (220, 215, 205, 255), (230, 210, 60, 255), (255, 120, 30, 255), (225, 215, 190, 255), (50, 110, 180, 255)
+
+
+def art22(kind):
+    im = Image.new('RGBA', (400, 400))
+    d = ImageDraw.Draw(im)
+    if kind == 'slippers':
+        for x in (70, 210):
+            d.ellipse((x, 100, x + 120, 340), fill=(240, 235, 225, 255), outline=INK, width=6); d.rectangle((x + 10, 150, x + 110, 190), fill=(90, 150, 200, 255))
+    elif kind == 'goggles':
+        for x in (80, 220): d.ellipse((x, 140, x + 110, 250), fill=(190, 220, 235, 220), outline=(90, 70, 50, 255), width=16)
+        d.line((190, 195, 220, 195), fill=(90, 70, 50, 255), width=14)
+        for i in range(3): d.ellipse((60 + i * 110, 60, 160 + i * 110, 120), fill=(240, 240, 245, 160))
+    elif kind == 'icecube':
+        poly(d, [(120, 120), (260, 90), (320, 160), (300, 310), (150, 330), (90, 260)], (180, 230, 255, 230)); d.line((130, 140, 250, 115), fill=(255, 255, 255, 255), width=10)
+    elif kind == 'ram22':
+        rrect(d, (40, 170, 300, 230), 14, WOOD); poly(d, [(290, 140), (370, 160), (380, 200), (370, 240), (290, 260)], IRON19)
+    elif kind == 'ashcloak':
+        poly(d, [(200, 50), (320, 140), (340, 370), (60, 370), (80, 140)], (90, 85, 85, 255))
+        for i in range(12): d.ellipse((90 + (i * 47) % 220, 160 + (i * 31) % 190, 98 + (i * 47) % 220, 168 + (i * 31) % 190), fill=(255, 130, 50, 255))
+    elif kind == 'grindstone':
+        d.ellipse((90, 90, 310, 310), fill=(150, 145, 135, 255), outline=INK, width=8); d.ellipse((180, 180, 220, 220), fill=WOOD); rrect(d, (60, 320, 340, 350), 8, WOOD)
+    elif kind == 'matchstick':
+        d.line((100, 340, 290, 110), fill=(220, 190, 130, 255), width=22); d.ellipse((260, 70, 320, 130), fill=SULF22, outline=INK, width=6); poly(d, [(290, 70), (330, 10), (320, 80)], FLAME22, 3)
+    elif kind == 'bonechalk':
+        d.ellipse((60, 60, 340, 340), outline=(200, 80, 255, 255), width=10); poly(d, [(200, 90), (300, 290), (100, 290)], (0, 0, 0, 0), 8)
+        rrect(d, (170, 170, 330, 210), 16, BONE22)
+    elif kind == 'towel':
+        poly(d, [(80, 100), (320, 100), (300, 340), (100, 340)], (170, 210, 240, 255))
+        for y in (150, 280): d.line((90, y, 310, y), fill=(255, 255, 255, 255), width=14)
+    elif kind == 'sandshield':
+        d.ellipse((90, 70, 310, 330), fill=(180, 60, 40, 255), outline=GOLD19, width=14); d.ellipse((170, 160, 230, 240), fill=GOLD19)
+        for i in range(10): d.ellipse((60 + i * 30, 340, 80 + i * 30, 360), fill=(230, 190, 120, 255))
+    elif kind == 'seafork':
+        d.line((200, 380, 200, 120), fill=WOOD, width=20)
+        for x in (130, 200, 270): d.line((x, 130, x, 40), fill=STEEL, width=16)
+        d.line((130, 130, 270, 130), fill=STEEL, width=16)
+        d.arc((60, 280, 340, 400), 180, 360, fill=SEA22, width=16)
+    elif kind == 'firetongue':
+        poly(d, [(200, 30), (290, 200), (250, 370), (150, 370), (110, 200)], FLAME22); poly(d, [(200, 140), (240, 260), (200, 340), (160, 260)], (255, 220, 90, 255), 3)
+    elif kind == 'bathkey':
+        d.ellipse((60, 60, 200, 200), outline=GOLD19, width=24); rrect(d, (180, 115, 360, 145), 8, GOLD19); rrect(d, (300, 140, 325, 200), 4, GOLD19); rrect(d, (250, 140, 270, 180), 4, GOLD19)
+    elif kind == 'soulchain':
+        for i in range(6): d.ellipse((60 + i * 45, 100 + i * 35, 130 + i * 45, 150 + i * 35), outline=(120, 110, 110, 255), width=12)
+        d.ellipse((150, 40, 250, 130), fill=(200, 210, 230, 200), outline=INK, width=5)
+    elif kind == 'wave22':
+        poly(d, [(40, 360), (40, 220), (120, 120), (250, 80), (340, 140), (280, 160), (230, 230), (360, 360)], SEA22); d.arc((120, 90, 330, 280), 200, 330, fill=(255, 255, 255, 255), width=12)
+    elif kind == 'horns':
+        poly(d, [(170, 260), (80, 180), (60, 40), (130, 160), (190, 220)], (60, 30, 25, 255)); poly(d, [(230, 260), (320, 180), (340, 40), (270, 160), (210, 220)], (60, 30, 25, 255))
+        d.ellipse((140, 220, 260, 340), fill=FLAME22, outline=INK, width=6)
+    elif kind == 'longshaft':
+        d.line((40, 360, 360, 40), fill=WOOD, width=22); d.line((300, 100, 370, 30), fill=STEEL, width=12)
+    elif kind == 'triplepierce':
+        for i in range(3): d.ellipse((60 + i * 100, 160, 140 + i * 100, 240), fill=(170, 60, 60, 255), outline=INK, width=6)
+        d.line((20, 200, 390, 200), fill=STEEL, width=12)
+    elif kind == 'rope22':
+        for i in range(5): d.arc((60 + i * 20, 60 + i * 20, 340 - i * 20, 340 - i * 20), 0, 300, fill=(190, 150, 100, 255), width=12)
+    elif kind == 'speedlines':
+        for i in range(6): d.line((40, 80 + i * 45, 260 + (i % 2) * 80, 80 + i * 45), fill=(150, 220, 255, 255), width=12)
+    elif kind == 'bigball':
+        d.ellipse((60, 60, 340, 340), fill=SULF22, outline=INK, width=8); d.ellipse((110, 100, 180, 170), fill=(255, 250, 180, 255))
+    elif kind == 'flames22':
+        for i, x in enumerate((90, 200, 310)): poly(d, [(x, 60 + i * 20), (x + 60, 300), (x, 360), (x - 60, 300)], FLAME22)
+    elif kind == 'threeballs':
+        for x, y in ((120, 260), (280, 260), (200, 120)): d.ellipse((x - 70, y - 70, x + 70, y + 70), fill=SULF22, outline=INK, width=6)
+    elif kind == 'scoop22':
+        d.line((40, 80, 230, 230), fill=WOOD, width=20); d.pieslice((190, 160, 370, 340), 0, 180, fill=IRON19, outline=INK, width=6); d.ellipse((240, 200, 320, 260), fill=SULF22)
+    return im
+
+
+def draw_trident():
+    """Treudden: ett långt skaft med tre spetsar."""
+    im = Image.new('RGBA', (620, 240))
+    d = ImageDraw.Draw(im)
+    rrect(d, (10, 105, 440, 135), 10, WOOD)
+    rrect(d, (430, 60, 460, 180), 8, STEEL)
+    for y in (70, 120, 170):
+        poly(d, [(450, y - 10), (580, y - 6), (610, y), (580, y + 6), (450, y + 10)], (210, 214, 226, 255), 4)
+    return im.crop(im.getbbox())
+
+
+def draw_brimstone():
+    """Svavelmortern: en kort, tjock pipa av järn med ett gult svavelklot i mynningen."""
+    im = Image.new('RGBA', (560, 320))
+    d = ImageDraw.Draw(im)
+    rrect(d, (10, 170, 220, 230), 14, WOOD)
+    rrect(d, (180, 110, 470, 250), 30, IRON19)
+    d.ellipse((430, 110, 540, 250), fill=(40, 30, 20, 255), outline=INK, width=6)
+    d.ellipse((450, 140, 520, 220), fill=SULF22, outline=INK, width=4)
+    return im.crop(im.getbbox())
+
+
+GUNS.update({'trident': draw_trident, 'brimstone': draw_brimstone})
+
+
+def drawn_card22(cid, kind, size, dy, halo):
+    big = purple_bg()
+    big.alpha_composite(halo19(*halo))
+    g = art22(kind)
+    g = shade(g.crop(g.getbbox()))
+    k = S * 4 * size / max(g.size)
+    g = g.resize((max(1, int(g.width * k)), max(1, int(g.height * k))), Image.LANCZOS)
+    pos = ((S * 4 - g.width) // 2, int((S * 4 - g.height) / 2 + dy * S * 4))
+    add_glow(big, g, pos, (0, 0, 0), 12)
+    big.alpha_composite(g, pos)
+    save(big, cid)
+
+
+def v22_upgrade(cid, w, kind, col):
+    big = purple_bg()
+    big.alpha_composite(halo19('ring', col))
+    g = art22(kind)
+    g = shade(g.crop(g.getbbox()))
+    k = S * 4 * 0.72 / max(g.size)
+    g = g.resize((max(1, int(g.width * k)), max(1, int(g.height * k))), Image.LANCZOS)
+    big.alpha_composite(g, ((S * 4 - g.width) // 2, (S * 4 - g.height) // 2 - 14))
+    b = gun(w, int(S * 4 * 0.42))
+    pos = (S * 4 - b.width - 10, S * 4 - b.height - 12)
+    add_glow(big, b, pos, (0, 0, 0), 10)
+    add_glow(big, b, pos, (255, 200, 90), 4)
+    big.alpha_composite(b, pos)
+    save(big, cid)
+
+
+def main_v22():
+    assert len(V22_DRAWN) == 16 and len(V22_UPGRADES) == 8
+    kinds = [k for k, _, _, _ in V22_DRAWN.values()] + [k for _, k, _ in V22_UPGRADES.values()]
+    assert len(kinds) == len(set(kinds)), 'varje motiv ritas bara en gång'
+    n = 0
+    for cid, (kind, size, dy, halo) in V22_DRAWN.items():
+        drawn_card22(cid, kind, size, dy, halo)
+        n += 1
+    for cid, w in V22_PACTS.items():
+        pact(cid, w)
+        n += 1
+    for cid, (w, kind, col) in V22_UPGRADES.items():
+        v22_upgrade(cid, w, kind, col)
+        n += 1
+    near_dupes(list(V22_DRAWN) + list(V22_PACTS) + list(V22_UPGRADES))
+    return n
+
+
 
 
 def main():
@@ -4135,6 +4304,9 @@ def main():
     if ONLY == 'v21':
         print(main_v21(), 'kortbilder ->', OUT)
         return
+    if ONLY == 'v22':
+        print(main_v22(), 'kortbilder ->', OUT)
+        return
     n = 0
     if not ONLY_V5:
         for cid in CARDS:
@@ -4163,6 +4335,7 @@ def main():
         n += main_v19()
         n += main_v20()
         n += main_v21()
+        n += main_v22()
     print(n, 'kortbilder ->', OUT)
 
 

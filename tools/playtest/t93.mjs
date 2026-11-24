@@ -29,7 +29,7 @@ ok(await ev(() => ['Ȭ', 'ȭ', 'Ȯ', 'ȯ', 'Ȱ', 'ȱ'].every((c, i) => __game.so
 ok(await ev(() => ['traps', 'scimitar', 'trapthrower'].every(t => __game.items().some(i => i.type === t))), 'fällådan och de två vapnen ligger ute');
 ok(await ev(() => !__game.solid(5.5, 3.5) && !__game.solid(12.5, 22.5) && !__game.solid(10.5, 24.5) && !__game.solid(30.5, 27.5)), 'slam, sprutrör, oas och hägring är golv');
 const idx = await ev(() => Object.fromEntries(['scimitar', 'trapthrower'].map(id => [id, __game.WEAPONS.findIndex(w => w.id === id)])));
-ok(idx.scimitar === 38 && idx.trapthrower === 39 && await ev(() => __game.WEAPONS.length) === 42, 'de två nya vapnen har index 38 och 39 ' + JSON.stringify(idx));
+ok(idx.scimitar === 38 && idx.trapthrower === 39 && await ev(() => __game.WEAPONS.length) === 44, 'de två nya vapnen har index 38 och 39 ' + JSON.stringify(idx));
 await ev(() => { for (const e of __game.ents()) { e.alert = false; e.sleep = true; e.d = { ...e.d, speed: 0, dmg: 0 }; } });
 // slussen: stängd = vägg, ratten öppnar och stänger
 ok(await ev(() => __game.v20().sluices.length === 1 && __game.solid(26.5, 15.5) && __game.mapRef()[15][26] === 'Ȭ'), 'slussen hittas i kartan (utan level.sluices) och är stängd');
