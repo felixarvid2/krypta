@@ -2296,7 +2296,8 @@ function drawWeapon() {
   const breathe = settings.bob === false ? 0 : Math.sin(tmr * 1.7) * 1.3 * (1 - Math.min(1, amp)); // vapnet andas i vila
   const insp = WA.off && WS.inspect > 0 ? Math.sin(Math.min(1, (1.6 - WS.inspect) / 1.6) * Math.PI) : 0;
   const ox = Math.round(Math.sin(P.bob) * 4 * amp * (settings.bob === false ? 0.3 : 1) - WS.swayX + dx - insp * 34 + wa.dx), oy = Math.round(P.runK * 12 + insp * 10 + wa.dy + P.jv * -2 + Math.abs(Math.cos(P.bob)) * 3 * amp * (settings.bob === false ? 0.3 : 1) - WS.swayY + dy + breathe + shakeAmt() * 4 * Math.sin(tmr * 41) + P.pitch * 0.6 + Math.sin(Math.min(1, WS.kick / 0.3) * Math.PI) * 14);
-  const oy2 = oy + WOY; // vapenbladen ritades för den gamla vyhöjden
+  const wdrop = Math.max(0, 208 - (f.y + f.h + WOY)); // vapen vars blad slutar ovanför skärmens underkant (närstrids- och kastvapnen) sänks så att de inte svävar
+  const oy2 = Math.max(oy + WOY + wdrop, 201 - (f.y + f.h)); // vapenbladen ritades för den gamla vyhöjden; underkanten lyfter aldrig från skärmkanten (gung, hopp, sikte)
   const img = WF[WEAPONS[P.weapon].id] ? (legendOf(WEAPONS[P.weapon].id) && wimg[WEAPONS[P.weapon].id + '_legend']) || wimg[WEAPONS[P.weapon].id] : wimg.pistol;
   const L = clamp(lightAt(P.x, P.y) * 1.05 + P.flash * 4, 0.28, 1.25);
   if (wcan.width !== f.w || wcan.height !== f.h) { wcan.width = f.w; wcan.height = f.h; }
