@@ -1287,6 +1287,53 @@ Version 7 lägger till 200 förbättringar:
 
 Kombinerade utmaningar multiplicerar själarna. Sparplatsen väljs på startskärmen, och `?fro=XXXX` i adressen fyller i ett delat frö.
 
+## Version 25.1: röster, himlar och fler effekter
+
+### Röster till fiendernas utrop
+- Truppens utrop hörs nu som korta, förvrängda radioröster på svenska eller engelska, efter språkinställningen. Det gäller till exempel "FLANKERA!", "GRANAT!" och "BEFÄLET ÄR DÖTT!".
+  - Soldater och riddare har djup röst.
+  - Spöken och fångar har hes röst.
+  - Kultister, ödlor och schakaler väser.
+- Rösten kommer från fienden i rummet. Inställningen RÖSTER under LJUD stänger av dem, och då hörs bara morrandet som förut.
+- Rösterna är genererade lokalt med espeak-ng och ffmpeg (`tools/sounds/make25_voice.sh`). espeak-ng är GPL-3.0, men ljud som programmet skapar får användas fritt.
+- Test: t116.
+
+### Egna himlar för fler biomer
+- Sex biomer har fått egna himlar:
+  - Öknen: het dis och sandstorm.
+  - Skärselden: blodröd himmel av rök och eld.
+  - Molnborgen: åskmoln med blixtsken.
+  - Vulkanen: askmoln med röd glöd underifrån.
+  - Djungeln: grön dimma.
+  - Fiskeläget: havsdimma.
+- Himlarna går runt 360° och syns också när du tittar uppåt.
+- Biomer med egen himmel har ingen måne, inga nattmoln och inga stjärnfall. Blixtar lyser fortfarande upp himlen.
+- Vulkanens gamla röda ton läggs inte längre ovanpå.
+- Himlarna är gjorda med flux-1-schnell på Cloudflare Workers AI och efterbehandlade lokalt till 512×96 med biomens färger (`tools/cfart/skies.py`, prompterna i `tools/cfart/README.md`).
+- Test: t118.
+
+### Fler Effekseer-effekter
+Sju nya förrenderade effekter från Effekseers CC0-exempel, i spelets pixelstil:
+- **Eld:** brinnande fiender, brinnande mark och eldmoln får lågor.
+- **Gift:** förgiftade fiender och giftmoln får gröna virvlar.
+- **Is:** frusna fiender splittras i is när de dör.
+- **Blixt:** blixtstaven, kedjeblixten och stormrunan slår ut i en blå urladdning, och åsknedslagen från stormfågeln, kardinalen och stormkallaren smäller.
+- **Bossar:** bossarnas chockvågor börjar med en smäll.
+- **Teleport:** när du själv teleporterar dig eller går genom en portal syns en lila portalring mitt i bilden, i stället för den vita puffen som fyllde skärmen.
+- **Helning:** när du helas glittrar det vid hälsan.
+
+Gemensamt för effekterna:
+- Högst 10 effekter syns samtidigt, och brand och gift ger alltid plats åt träffar och explosioner.
+- MINSKADE EFFEKTER ger de gamla effekterna. INGA BLIXTAR dämpar blixtar, smällar och portalen.
+- Alla tio effektstrippar väger tillsammans cirka 52 kB.
+- Källor och licenser står i `tools/effekseer/CREDITS.md`. Test: t117.
+
+### Rättningar
+- **Lobbade skott:** granater, kanonjärens kula, eldkrukan, slammet och svavelklotet går aldrig genom en vägg. De landar före första väggen eller stängda dörren, och den blinkande ringen visar var.
+- **Explosioner** skadar bara den som har fri sikt från smällen. Står du bakom en vägg är du skyddad. Krutfat sätter fortfarande igång varandra, och spruckna väggar rasar som förut.
+- **Sköldvakter:** dödsriddaren håller linjen framför skytten. Den levande rustningen är ingen sköldvakt längre, eftersom den saknar sköld framifrån.
+- **Artefakten:** de gamla paketen `pack1–6.json` (cirka 62 MB) är borttagna.
+
 ## Version 25: Befälet – fienderoller och Effekseer-effekter
 
 ### Fienderoller: sköldvakt, befälhavare och granatkastare

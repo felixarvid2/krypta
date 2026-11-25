@@ -46,3 +46,28 @@ Blocket `// ---------- Version 25: Effekseer-effekter ----------` i `js/game.js`
 - En partikel per händelse går genom den vanliga listan. Det finns högst 10 samtidigt, och bara mellan 1 och 20 rutor från kameran (en additiv sprite tätt intill skulle fylla skärmen). Spelarens egen teleport syns därför inte som pelare, och den gamla blixten finns kvar.
 - `lowfx` och det automatiska lågeffektläget stänger av alltihop. Med `noFlash` tonas explosionen in och ut och dämpas.
 - Testkroken är `__game.efx`: `state()`, `setOff()`, `boom()`, `magic()`, `tele()` och `puff()`. Testet är `tools/playtest/t115.mjs`.
+
+## Version 25.1: fler effekter
+
+Sju nya strippar från samma CC0-exempel (källor i `CREDITS.md`, inställningar i `effects.json`): `efx_fire`, `efx_shatter`,
+`efx_poison`, `efx_bolt`, `efx_slam`, `efx_portal` och `efx_heal`. Alla tio strippar är tillsammans cirka 51 kB.
+`render.mjs fire` och `process.py efx_fire.png` kör en i taget som förut. `warm` i en effekt spelar de första bildrutorna utan
+att fånga dem (eldfasen i `Simple_Ring_Shape2` kommer först efter 340 bildrutor).
+
+Blocket `// ---------- Version 25.1: fler Effekseer-effekter ----------` i `js/game.js` (direkt efter version 25-blocket) lägger
+till nycklarna i `EFX_FRAMES`, `EFX_NEAR` och `EFX.n`, så `efxLoad` laddar dem och `efxOk` gäller (högst 10 effektsprites,
+1–20 rutor från kameran, lowfx). Varje krok är en egen rad:
+
+- `efx2Status` (från `statusTick`): en brinnande fiende får lågan och en förgiftad fiende giftvirveln, ungefär en gång i sekunden.
+- `efx2Ground`: brinnande mark (`groundFires`), flaskornas eld- och giftmoln (`v17clouds`), sporer och sporkastarens moln.
+  Brand och gift ritas bara när högst 5 effektsprites lever (`EFX2.amb`), så de tränger inte ut träffar och explosioner.
+- `efx2Shatter` (från `shatter`): en frusen fiende som dör.
+- `efx2Zap` (från `zap`): blå strålar (blixtstaven, kedjeblixten, stormrunan, chocken, klotet), samma färgtest som `gfxEZap`,
+  högst en per 0,12 s. `efx2Strike` (åsknedslagen i `strikes`): stormfågeln, kardinalen, stormkallaren, åskande eliter och stormstaven.
+- `efx2Waves` (från `updateBossFx`): smällen där en bossvåg börjar (lavavågen, kolossen, rökelsekaret, leviatan).
+- Skärmeffekter i HUD:en (`efx2Hud`, inga partiklar): portalen mitt i bilden (en ruta på en tredjedel av bildhöjden) när spelaren
+  själv teleporteras (`spawnPuff` vid spelaren: teleporter, stjärnport, blink, tillbaka ur avgrunden) eller kommer genom en portal
+  (`enterPortal`). Den gamla puffen i kameran, som fyllde skärmen, tas då bort; med lowfx finns den kvar. Helningen ritas vid
+  hälsan när hälsan stiger med minst 3 inom 0,6 s (drycker, kallbad, livsstöld); stora hopp (ny bana) räknas inte.
+- noFlash tonar och dämpar blixten, chockvågen och portalen.
+- Testkroken är `__game.efx2`, testet `tools/playtest/t117.mjs` (`EFX_SHOTS=<katalog>` sparar före/efter-bilder).
