@@ -46,6 +46,7 @@ const store = {
 const DEVICE = (() => { try { return matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window ? 'mobil' : 'dator'; } catch (e) { return 'dator'; } })(); // inställningar sparas per enhetstyp
 const settings = Object.assign({ sens: 1, vol: 0.8, muted: false, diff: 1, fov: 74, gamma: 1, shake: 1, xstyle: 'kors', xcolor: '', fps: false, lowfx: false, bob: true,
   smartAI: true, // version 24: fiende-AI med attackpoletter, skydd, trupp och barks (AI24)
+  voices: true, // version 25.1: röster till fiendernas utrop (FIX251)
   vibrate: true, lefty: false, btnScale: 1, map: 1, mouseLook: DEVICE !== 'mobil', invertY: false }, store.get('settings.' + DEVICE, null) || store.get('settings', {}));
 if (params.has('diff')) settings.diff = clamp(+params.get('diff'), 0, 4);
 const saveSettings = () => { store.set('settings.' + DEVICE, settings); store.set('settings', settings); };
@@ -1064,6 +1065,7 @@ async function loadSounds() {
   actx = new (window.AudioContext || window.webkitAudioContext)();
   master = actx.createGain(); master.connect(actx.destination); applyVolume();
   if (window.Music) { Music.init(actx, master); applyMixer(); }
+  v251Load(); // version 25.1: rösterna för det valda språket (i bakgrunden)
   await Promise.all(SOUNDS.map(async n => {
     try { const buf = await (sndCache[n] || fetch(`${A}snd/${n}.ogg`).then(r => r.arrayBuffer())); if (buf) snd[n] = await actx.decodeAudioData(buf.slice(0)); } catch (e) { /* ljud är valfritt */ }
   }));
@@ -3586,6 +3588,7 @@ function updateGrenade(p, dt) { // studsar mot väggar och golv, piper och smäl
   if (p.z <= 0.05) { p.z = 0.05; if (p.vz < -1.2) { p.vz *= -0.42; p.vx *= 0.7; p.vy *= 0.7; play('grenade_bounce', 0.4, rnd(0.9, 1.2), { x: p.x, y: p.y }); } else { p.vz = 0; p.vx *= 0.9; p.vy *= 0.9; } }
   const ox = p.x - p.vx * dt, oy = p.y - p.vy * dt;
   if (solid(p.x, p.y)) { if (solid(p.x, oy)) p.vx = -p.vx * 0.5; if (solid(ox, p.y)) p.vy = -p.vy * 0.5; p.x = ox; p.y = oy; play('grenade_bounce', 0.4, 1.3, { x: p.x, y: p.y }); }
+  else if (solid(p.x, oy) && solid(ox, p.y)) { p.vx = -p.vx * 0.5; p.vy = -p.vy * 0.5; p.x = ox; p.y = oy; } // version 25.1: inte snett mellan två väggar som möts i ett hörn
   p.beepT -= dt; if (p.beepT <= 0) { p.beepT = p.life < 0.6 ? 0.12 : 0.35; play('grenade_beep', 0.35, p.life < 0.6 ? 1.3 : 1, { x: p.x, y: p.y }); }
   if (p.life <= 0) {
     p.dead = true; explode(p.x, p.y, p.dmg, p.radius || 2.6, settings.diff > 0, true);
@@ -3756,12 +3759,12 @@ function explode(x, y, dmg, r, hurtsPlayer, big) {
   const dp = Math.hypot(P.x - x, P.y - y); if (dp < 4.5) P.boom = Math.max(P.boom, 0.35 * (1 - dp / 4.5));
   if (dp < 12) P.shake = Math.max(P.shake, (big ? 2.4 : 1.2 + r * 0.2) * (1 - dp / 12)); // skakar efter avstånd
   for (let i = 0; i < 5; i++) particles.push({ x: x + rnd(-0.3, 0.3), y: y + rnd(-0.3, 0.3), z: rnd(0.2, 0.6), vx: rnd(-1, 1), vy: rnd(-1, 1), vz: rnd(0, 1), life: 0.4, maxLife: 0.4, frames: fx.fireball, img: fx.fireball[0], size: 0.45, add: true });
-  for (const e of ents) if (!e.dead && Math.hypot(e.x - x, e.y - y) < r) hurtEnemy(e, dmg, e.x, e.y, { noProc: true, boom: true });
+  for (const e of ents) if (!e.dead && Math.hypot(e.x - x, e.y - y) < r && boomSees(x, y, e.x, e.y)) hurtEnemy(e, dmg, e.x, e.y, { noProc: true, boom: true }); // version 25.1: inte genom väggar
   for (const pt of pots) if (!pt.broken && Math.hypot(pt.x - x, pt.y - y) < r) breakPot(pt);
   for (const pr of props) if (pr.def && !pr.broken && (pr.def.boom || pr.def.crate) && Math.hypot(pr.x - x, pr.y - y) < r + 0.4) hitProp(pr, x, y); // kedjereaktioner
   for (let cy = Math.max(0, (y - r - 1) | 0); cy <= Math.min(mh - 1, (y + r + 1) | 0); cy++) for (let cx = Math.max(0, (x - r - 1) | 0); cx <= Math.min(mw - 1, (x + r + 1) | 0); cx++)
     if (map[cy][cx] === '{' && Math.hypot(cx + 0.5 - x, cy + 0.5 - y) < r + 0.9) blowWall(cx, cy); // spruckna väggar rasar
-  if (hurtsPlayer && Math.hypot(P.x - x, P.y - y) < r) hurtPlayer(dmg, x, y, 'proj');
+  if (hurtsPlayer && Math.hypot(P.x - x, P.y - y) < r && boomSees(x, y, P.x, P.y)) hurtPlayer(dmg, x, y, 'proj');
   P.flash = Math.max(P.flash, 0.05);
 }
 function dropItem(type, x, y) { const a = rnd(0, TAU), it = { type, x, y, taken: false, drop: true, hop: 0.5, hvx: Math.cos(a) * rnd(0.6, 1.4), hvy: Math.sin(a) * rnd(0.6, 1.4) }; if (type === 'potion') it.pot = randomPotion(); if (type === 'rune') it.rune = RUNE_IDS[(Math.random() * RUNE_IDS.length) | 0]; items.push(it); return it; } // studsar ut
@@ -6891,7 +6894,7 @@ function ai24Drop(e) { e.a24role = null; e.a24roleT = 0; e.a24f = null; e.a24arr
 function ai24Release(e) { if (e.a24cov != null && AI24.cov) AI24.taken.delete(AI24.cov[e.a24cov + 1] * mw + AI24.cov[e.a24cov]); e.a24cov = null; e.a24cs = null; }
 function ai24Bark(e, text, prio) { // korta repliker som förklarar vad fienden gör – sparsamt, högst en per 3–4 s (viktiga: en per 1,5 s)
   if (!e || e.dead || !AI24_DEF[e.type] || !AI24_DEF[e.type].talk || (AI24.barkT > tmr && !(prio && tmr - (AI24.lastBark || -9) > 1.5))) return false;
-  AI24.barkT = tmr + rnd(3, 4); AI24.lastBark = tmr; numbers.push({ x: e.x, y: e.y, z: 1.05, v: text, color: '#ffe3a0', crit: false, t: 1.8 }); play(e.d.growl, 0.5, rnd(1.05, 1.25), { x: e.x, y: e.y });
+  AI24.barkT = tmr + rnd(3, 4); AI24.lastBark = tmr; numbers.push({ x: e.x, y: e.y, z: 1.05, v: text, color: '#ffe3a0', crit: false, t: 1.8 }); if (!v251Voice(e, text)) play(e.d.growl, 0.5, rnd(1.05, 1.25), { x: e.x, y: e.y }); // version 25.1: rösten
   const b = AI24.st.barks; b.push({ t: +tmr.toFixed(2), text, type: e.type }); if (b.length > 12) b.shift();
   return true;
 }
@@ -6959,7 +6962,7 @@ function ai24Press(L) { // spelaren står still bakom skydd: kasta något som tv
   let near = 0, see = 0; for (const e of L) { if (Math.hypot(e.x - P.x, e.y - P.y) > 12) continue; near++; if ((e.lostT || 0) < 0.8) see++; }
   if (!near || see * 2 > near) return; // de flesta ser spelaren: han står inte bakom skydd
   AI24.pressT = tmr + rnd(6, 8); AI24.st.press++;
-  const t = L.find(e => AI24_DEF[e.type] && AI24_DEF[e.type].nade && !ai24Exempt(e) && e.state !== 'pain' && e.lx !== undefined && Math.hypot(e.x - P.x, e.y - P.y) < 11 && Math.hypot(e.lx - P.x, e.ly - P.y) < 3);
+  const t = L.find(e => AI24_DEF[e.type] && AI24_DEF[e.type].nade && !ai24Exempt(e) && e.state !== 'pain' && e.lx !== undefined && Math.hypot(e.x - P.x, e.y - P.y) < 11 && Math.hypot(e.lx - P.x, e.ly - P.y) < 3 && lobLen(e, e.lx, e.ly) >= 2.5); // version 25.1: krukan landar före väggen – inte vid kastarens fötter
   if (t) { lobShot(t, t.lx, t.ly, { dmg: t.d.dmg * 0.7 * (1 + 0.1 * (run.depth - 1)), r: 1.3, T: 1.2, kind: 'flask', fx: 'fire' }); t.state = 'attack'; t.t = 0; t.didHit = true; play('whoosh', 0.6, 0.7, { x: t.x, y: t.y });
     AI24.st.flush++; if (!ai24Bark(t, 'UT MED DIG!')) spawnText(t.x, t.y, '!', '#ff9050'); return; }
   let n = 0, w = null; for (const e of L) if (n < 2 && ai24CanFlank(e) && e.a24role !== 'flank' && Math.hypot(e.x - P.x, e.y - P.y) < 14 && ai24StartFlank(e, L)) { n++; if (!w && AI24_DEF[e.type]) w = e; }
@@ -7108,7 +7111,7 @@ function ai24Api() { // window.__game.ai: tillstånd och statistik för t112
 // blinkande ring innan den smäller. Delar nedkylningen med AI24:s eldkruka (AI24.pressT, st.press/st.flush) och har en egen per trupp.
 // Av: settings.smartAI = false återställer allt (fart, flaggor, granater); R25.on/guard/cmd/nade stänger av en roll (__game.roles).
 const R25_DEF = { // guard: sköldvakt · cmd: kan bli befälhavare (talande humanoider) · nade: granatkastare
-  '@': { guard: 1, cmd: 1 }, 'Ð': { guard: 1, cmd: 1 }, '+': { guard: 1 },
+  '@': { guard: 1, cmd: 1 }, 'Ð': { guard: 1, cmd: 1 }, // version 25.1: den levande rustningen '+' är ingen sköldvakt (ingen sköld framifrån, sover tills man kommer nära)
   'Ä': { cmd: 1, nade: 1 }, 'Ő': { cmd: 1, nade: 1 }, 'ĳ': { cmd: 1, nade: 1 }, 'ʐ': { cmd: 1, nade: 1 }, 'Ǖ': { cmd: 1, nade: 1 }, 'ȡ': { cmd: 1, nade: 1 },
   'ʑ': { cmd: 1 }, 'ɫ': { cmd: 1 }, 'Ō': { cmd: 1 }, 'ɕ': { cmd: 1 }, 'Ɂ': { cmd: 1 }, 'Ȉ': { cmd: 1 }, 'ɖ': { cmd: 1 }, 'W': { cmd: 1 }, 'O': { cmd: 1 }, 'N': { cmd: 1 }, 'Ê': { cmd: 1 },
 };
@@ -7118,7 +7121,7 @@ function r25Ok(e) { return !e.dead && !e.dying && !ai24Exempt(e) && !AI24.clock;
 function r25CanCmd(e) { return !e.dead && !e.dying && !e.boss && !e.guardian && !e.minion && !e.arena && !e.dummy && !e.dormant && !e.feud && (e.leader || e.elite || e.champion || !!(R25_DEF[e.type] && R25_DEF[e.type].cmd)); }
 function r25Bark(e, text, prio) { // egna repliker (sköldbärare saknar AI24:s talk) med egen spärr, så att AI24:s barks inte svälts ut
   if (!e || e.dead || (R25.barkT > tmr && !prio)) return false;
-  R25.barkT = tmr + rnd(2.5, 3.5); numbers.push({ x: e.x, y: e.y, z: 1.05, v: text, color: '#ffe3a0', crit: false, t: 1.8 }); play(e.d.growl, 0.5, rnd(1.05, 1.25), { x: e.x, y: e.y });
+  R25.barkT = tmr + rnd(2.5, 3.5); numbers.push({ x: e.x, y: e.y, z: 1.05, v: text, color: '#ffe3a0', crit: false, t: 1.8 }); if (!v251Voice(e, text)) play(e.d.growl, 0.5, rnd(1.05, 1.25), { x: e.x, y: e.y }); // version 25.1: rösten
   const b = R25.st.barks; b.push({ t: +tmr.toFixed(2), text, type: e.type }); if (b.length > 12) b.shift();
   return true;
 }
@@ -7191,6 +7194,7 @@ function r25Guards(g) {
   for (const e of g) { if (e.dead) continue; if (!e.d.melee) (sh = sh || []).push(e); else if (R25_DEF[e.type] && R25_DEF[e.type].guard && r25Ok(e)) (gs = gs || []).push(e); }
   if (!gs) return;
   const taken = new Set(); for (const e of gs) if (e.r25g && !e.r25g.dead && sh && sh.includes(e.r25g)) taken.add(e.r25g); else if (e.r25g && !e.r25g.dead) e.r25g = null; // en död skytt: r25GuardTick låter vakten anfalla
+  for (const e of gs) if (e.r25g && e.d.ai === 'knight') e.bashT = Math.max(e.bashT || 0, tmr + 0.8); // version 25.1: dödsriddaren håller linjen i stället för att rusa iväg med sköldstöten (två gånger/s)
   if (!sh) return;
   for (const e of gs) {
     if (e.r25g || (e.r25badT || 0) > tmr) continue;
@@ -7238,9 +7242,11 @@ function r25Nade(g) {
   if (g.some(o => !o.dead && Math.hypot(o.x - tx0, o.y - ty0) < r + 0.6)) return; // kastar inte på de egna
   let t = null, bs = 1e9;
   for (const e of g) { if (!R25_DEF[e.type] || !R25_DEF[e.type].nade || !r25Ok(e) || e.state === 'pain' || e.state === 'attack' || e.fleeT > 0 || e.r25g) continue;
-    const d = Math.hypot(e.x - tx0, e.y - ty0); if (d < 2.5 || d > 10) continue; const s = Math.abs(d - 6); if (s < bs) { bs = s; t = e; } }
+    const d = Math.hypot(e.x - tx0, e.y - ty0); if (d < 2.5 || d > 10) continue; const s = Math.abs(d - 6) + lobMiss(e, tx0, ty0) * 4; if (s < bs) { bs = s; t = e; } } // version 25.1: helst en kastare med fri bana
   if (!t) return;
   let tx = tx0, ty = ty0; for (let i = 0; i < 6 && solid(tx, ty); i++) { tx += (t.x - tx) * 0.2; ty += (t.y - ty) * 0.2; }
+  [tx, ty] = lobClip(t.x, t.y, tx, ty); // version 25.1: granaten landar före första väggen på linjen (där ringen ritas och smällen kommer)
+  if (Math.hypot(tx - t.x, ty - t.y) < 2.5 || g.some(o => !o.dead && Math.hypot(o.x - tx, o.y - ty) < r + 0.6)) return; // för nära kastaren eller de egna
   const d = Math.hypot(tx - t.x, ty - t.y), fuse = [1.5, 1.25, 1.1, 1.0, 1.5][settings.diff] || 1.25;
   R25.live.push({ x0: t.x, y0: t.y, tx, ty, t: 0, T: clamp(0.55 + d * 0.07, 0.7, 1.3), fuse, ph: 0, bT: 0, r, dmg: 14 * (1 + 0.1 * (((run && run.depth) || 1) - 1)), name: t.d.name });
   t.state = 'attack'; t.t = 0; t.didHit = true; play('grenade_throw', 0.7, 0.9, { x: t.x, y: t.y });
@@ -7262,7 +7268,7 @@ function r25Boom(n) {
   const d = Math.hypot(P.x - n.tx, P.y - n.ty);
   explode(n.tx, n.ty, n.dmg * 0.5, n.r, false); play('bigboom', 0.6, 1.2, { x: n.tx, y: n.ty }); R25.st.booms++;
   const L = R25.st.boomLog || (R25.st.boomLog = []); L.push({ t: +tmr.toFixed(2), fuse: +(tmr - (n.landT ?? tmr)).toFixed(2), dP: +d.toFixed(2), at: [+n.tx.toFixed(2), +n.ty.toFixed(2)] }); if (L.length > 12) L.shift();
-  if (d < n.r && P.jz < 0.4) { run.cause = 'GRANATEN'; hurtPlayer(n.dmg, n.tx, n.ty, 'proj'); R25.st.nadeHits++; }
+  if (d < n.r && P.jz < 0.4 && boomSees(n.tx, n.ty, P.x, P.y)) { run.cause = 'GRANATEN'; hurtPlayer(n.dmg, n.tx, n.ty, 'proj'); R25.st.nadeHits++; }
 }
 // --- ritning: befälhavarens fana, granaten och den blinkande ringen ---
 function drawR25World(list) {
@@ -7288,6 +7294,62 @@ function r25Api() { // window.__game.roles: tillstånd och statistik för t114
     cmds: () => (r25Sync(), R25.cmds).filter(c => !c.dead), buffed: () => (r25Sync(), R25.buffed).filter(e => !e.dead), of: e => ({ cmd: !!e.r25cmd, mor: !!e.r25mor, ward: e.r25g || null, hes: (e.r25hesT || 0) > tmr, hid: e.r25hid || 0 }), // r25Sync: direkt efter en ny bana visas inte förra banans tillstånd
     off: () => r25Off(),
     t: () => tmr }; // speltiden: testerna väntar i speltid, inte väggtid (dt kapas vid låg bildfrekvens)
+}
+// ---------- Version 25.1: lobbar och smällar genom väggar, röster till utropen (FIX251) ----------
+// LOBBAR: kanonjärens kula och eldkrukan (lobShot), slammet (v20Lob), v22:s klot och R25-granaten landar före första väggen eller
+// stängda dörren på linjen (cast: bara väggar och dörrar, inte rekvisita, så att krutfat och lådor inte stoppar bågen). Lika inomhus
+// och utomhus: aldrig genom en vägg. R25 väljer helst en kastare med fri bana; varningsringen ritas där granaten faktiskt landar.
+// SMÄLLAR: explode, r25Boom, lobLand och v19Boom skadar spelaren och fiender bara med fri sikt från smällen (boomSees: en cast per
+// figur inom radien). Krukor, krutfat (kedjereaktioner) och spruckna väggar '{' sköts som förut.
+// RÖSTER: korta förvrängda röster (espeak-ng + ffmpeg, tools/sounds/make25_voice.sh) i tre röstlägen – djup (soldater, riddare,
+// vakter), hes (spöken, fångar, gruvarbetare, nomader) och väsande (kultister, ödlor, schakaler) – på svenska och engelska. Bara det
+// valda språkets 42 filer laddas (assets/snd/vo/, startas av loadSounds). Rösten ersätter morrandet i ai24Bark och r25Bark, spelas
+// 3D-positionerad från fienden och har en egen spärr (0,8 s) ovanpå barkspärrarna. Av: settings.voices = false (RÖSTER under LJUD).
+const FIX251 = { st: { clips: 0, blocked: 0, vplays: 0, vskip: 0, vloaded: 0, vlog: [] }, vlang: null, vT: -9, vload: null };
+function lobClip(x0, y0, tx, ty) { // [x, y]: målet, eller 0,3 rutor före första väggen/dörren på linjen från kastaren
+  const dx = tx - x0, dy = ty - y0, d = Math.hypot(dx, dy);
+  if (d < 0.05 || !map) return [tx, ty];
+  const r = cast(x0, y0, dx / d, dy / d, d + 0.5);
+  if (r.dist >= d) return [tx, ty];
+  const k = Math.max(0, r.dist - 0.3); FIX251.st.clips++;
+  return [x0 + dx / d * k, y0 + dy / d * k];
+}
+function lobMiss(src, tx, ty) { const c = lobClip(src.x, src.y, tx, ty); return Math.hypot(c[0] - tx, c[1] - ty); } // hur långt före målet bågen tar stopp
+function lobLen(src, tx, ty) { const c = lobClip(src.x, src.y, tx, ty); return Math.hypot(c[0] - src.x, c[1] - src.y); } // hur långt bågen faktiskt går
+function boomBlk(x, y) { const c = cellAt(x, y); return isWallChar(c) || (isDoorChar(c) && doorAt(x, y).open < 0.85); }
+function boomSees(x, y, tx, ty) { // fri sikt från smällen till (tx, ty); en smäll på en väggyta räknas från den fria punkt intill som ligger närmast målet
+  if (!map || Math.hypot(tx - x, ty - y) < 0.5) return true;
+  if (boomBlk(x, y)) { // projektiler som studsat tillbaka ett fast stycke kan sitta en bit in i väggen: växande radie tills en punkt är fri
+    const d = Math.hypot(tx - x, ty - y), ux = (tx - x) / d, uy = (ty - y) / d; let bx = x, by = y, best = -9;
+    for (const rr of [0.08, 0.2, 0.35, 0.5]) { for (let i = 0; i < 8; i++) { const a = i * TAU / 8, cx = x + Math.cos(a) * rr, cy = y + Math.sin(a) * rr; if (boomBlk(cx, cy)) continue; const s = Math.cos(a) * ux + Math.sin(a) * uy; if (s > best) { best = s; bx = cx; by = cy; } } if (best > -9) break; }
+    if (best === -9) { FIX251.st.blocked++; return false; }
+    x = bx; y = by;
+  }
+  const ok = hasLOS(x, y, tx, ty); if (!ok) FIX251.st.blocked++; return ok;
+}
+const V251_LINES = { 'FLANKERA!': 'flank', 'HAN LADDAR OM!': 'reload', 'VAR ÄR HAN?': 'where', 'TÄCK MIG!': 'coverme', 'I SKYDD!': 'takecover', 'UT MED DIG!': 'flush', 'MAN NERE!': 'mandown',
+  'DÄR ÄR HAN!': 'there', 'SKÖLDAR UPP!': 'shields', 'BAKOM MIG!': 'behind', 'FRAMÅT!': 'forward', 'HÅLL LINJEN!': 'hold', 'BEFÄLET ÄR DÖTT!': 'cmddown', 'GRANAT!': 'grenade' };
+const V251_KIND = { 'Ä': 'hiss', 'Ȉ': 'hiss', 'Ê': 'hiss', 'ʐ': 'rasp', 'Ǖ': 'rasp', 'ʑ': 'rasp', 'ɖ': 'rasp', 'ȡ': 'rasp', 'Ɂ': 'rasp' }; // övriga talare: djup
+const V251_KINDS = ['deep', 'rasp', 'hiss'];
+function v251Lang() { return window.I18N && I18N.lang && I18N.lang() === 'en' ? 'en' : 'sv'; }
+function v251Load() { // bara det valda språkets röster; läggs i snd som vo_<rad>_<röst>_<språk> så att play() sköter 3D-ljudet
+  const lang = v251Lang(); if (!actx || FIX251.vlang === lang) return FIX251.vload;
+  FIX251.vlang = lang; FIX251.st.vloaded = 0;
+  return (FIX251.vload = Promise.all(Object.values(V251_LINES).flatMap(id => V251_KINDS.map(async k => { const n = `${id}_${k}_${lang}`;
+    try { const r = await fetch(`${A}snd/vo/${n}.ogg`); if (!r.ok) return; const b = await actx.decodeAudioData(await r.arrayBuffer()); if (FIX251.vlang === lang) { snd['vo_' + n] = b; FIX251.st.vloaded++; } } catch (e) { /* rösten är valfri */ } }))));
+}
+function v251Voice(e, text) { // från ai24Bark/r25Bark: true = rösten spelades (i stället för morrandet)
+  if (settings.voices === false || !e || !V251_LINES[text]) return false;
+  if (tmr - FIX251.vT < 0.8 && tmr >= FIX251.vT) { FIX251.st.vskip++; return false; } // två röster i munnen på varandra: den andra morrar som förut
+  const n = `vo_${V251_LINES[text]}_${V251_KIND[e.type] || 'deep'}_${FIX251.vlang || v251Lang()}`;
+  const h = play(n, 0.75, rnd(0.96, 1.04), { x: e.x, y: e.y }); if (!h) return false;
+  FIX251.vT = tmr; FIX251.st.vplays++; const L = FIX251.st.vlog; L.push({ n, t: +tmr.toFixed(2), type: e.type }); if (L.length > 12) L.shift();
+  return true;
+}
+function fix251Api() { // window.__game.fix251: för t116
+  return { st: () => FIX251.st, lobClip, lobMiss, boomSees, lobShot, lobs: () => lobs, lang: () => FIX251.vlang, load: () => v251Load(), lines: V251_LINES, kind: V251_KIND,
+    voiced: () => Object.keys(snd).filter(k => k.startsWith('vo_')), voice: v251Voice, resetV: () => { FIX251.vT = -9; }, audio: () => { ensureAudio(); return !!actx; },
+    nade: hold => { if (P.grenades <= 0) P.grenades = 1; WS.throwT = hold || 0; grenadeThrow(); } };
 }
 // ---------- Specialfiender ----------
 function spawnPuff(x, y, n = 5) { // magisk rök när något dyker upp eller försvinner
@@ -8403,6 +8465,7 @@ function openSettings(onClose) {
     range('MILJÖLJUD', 'ambVol', 0, 1, 0.05, pct, applyMixer);
     check('UNDERTEXTER FÖR LJUD', 'subtitles');
     check('LJUDSIGNAL VID ANFALL BAKIFRÅN', 'backCue');
+    check('RÖSTER (FIENDERNAS UTROP)', 'voices'); // version 25.1
     sec('SPEL');
     check('BYT TILL NYTT VAPEN', 'autoSwitch');
     check('LADDA OM AUTOMATISKT', 'autoReload');
@@ -11547,6 +11610,7 @@ function v17Cloud(x, y, kind, r) { // en flaska går sönder: gift, frost eller 
 // lobbade skott: kanonkulor och flaskor i en båge, med en ring där de landar
 function lobShot(src, tx, ty, o) {
   for (let i = 0; i < 6 && solid(tx, ty); i++) { tx += (src.x - tx) * 0.2; ty += (src.y - ty) * 0.2; }
+  [tx, ty] = lobClip(src.x, src.y, tx, ty); // version 25.1: landar före första väggen på linjen
   lobs.push({ x0: src.x, y0: src.y, tx, ty, t: 0, T: o.T || 1.2, dmg: o.dmg, r: o.r || 1.2, kind: o.kind || 'cball', fx: o.fx, name: src.d ? src.d.name : '' });
 }
 function updateLobs(dt) {
@@ -11559,11 +11623,11 @@ function lobLand(l) {
     play('cannonball_land', 0.8, rnd(0.9, 1.1), { x: l.tx, y: l.ty }); explodeFx(l.tx, l.ty, 0.2); flashes.push({ x: l.tx, y: l.ty, t: 0.2, r: 3 });
     if (fx.parts.scorch) decals.push({ x: l.tx, y: l.ty, img: fx.parts.scorch[0], size: 0.08 });
     if (d < 12) P.shake = Math.max(P.shake, 1.4 * (1 - d / 12));
-    if (d < l.r && P.jz < 0.4) { run.cause = l.name || 'KANONKULAN'; hurtPlayer(l.dmg, l.tx, l.ty, 'proj'); }
+    if (d < l.r && P.jz < 0.4 && boomSees(l.tx, l.ty, P.x, P.y)) { run.cause = l.name || 'KANONKULAN'; hurtPlayer(l.dmg, l.tx, l.ty, 'proj'); }
     for (const pr of props) if (pr.def && !pr.broken && (pr.def.boom || pr.def.crate) && Math.hypot(pr.x - l.tx, pr.y - l.ty) < l.r) hitProp(pr, l.tx, l.ty);
   } else {
     const k = v17Cloud(l.tx, l.ty, l.fx, l.r * 1.2);
-    if (d < l.r * 0.7 && P.jz < 0.4) { run.cause = l.name || 'FLASKAN'; hurtPlayer(l.dmg, l.tx, l.ty, 'proj'); if (k === 'poison') P.poisonT = Math.max(P.poisonT || 0, 3); }
+    if (d < l.r * 0.7 && P.jz < 0.4 && boomSees(l.tx, l.ty, P.x, P.y)) { run.cause = l.name || 'FLASKAN'; hurtPlayer(l.dmg, l.tx, l.ty, 'proj'); if (k === 'poison') P.poisonT = Math.max(P.poisonT || 0, 3); }
   }
 }
 
@@ -12305,7 +12369,7 @@ function v19Blast(x, y, r) { // en explosion tänder gasen i radien (fördröjt:
 }
 function v19Boom(x, y, dmg, r, cause, big) { // explosion där spelarens skada skalas med avstånd och sprängskydd
   explode(x, y, dmg, r, false, big); const d = Math.hypot(P.x - x, P.y - y);
-  if (d < r) { run.cause = cause; hurtPlayer(dmg * (1 - 0.5 * d / r) * Math.max(0, 1 - mod('blastResist')), x, y, 'proj'); }
+  if (d < r && boomSees(x, y, P.x, P.y)) { run.cause = cause; hurtPlayer(dmg * (1 - 0.5 * d / r) * Math.max(0, 1 - mod('blastResist')), x, y, 'proj'); }
 }
 function v19HitProp(pr, hx, hy, dmg) {
   if (pr.ch === 'Ȝ') { if (!pr.broken) { pr.broken = true; map[pr.cy][pr.cx] = '.'; flowCell = -1; v19pend.push({ kind: 'dyn', x: pr.x, y: pr.y, t: 0.45 }); play('dynamite_fuse', 1.4, 1, { x: pr.x, y: pr.y }); firstHint('dynamite', 'DYNAMITLÅDORNA SMÄLLER AV SKOTT OCH ELD – HÅLL AVSTÅND.'); } return true; }
@@ -12687,7 +12751,7 @@ function v20HitProp(pr, hx, hy, dmg) {
     return false; }
   return undefined;
 }
-function v20Lob(src, tx, ty, dmg) { for (let i = 0; i < 6 && solid(tx, ty); i++) { tx += (src.x - tx) * 0.2; ty += (src.y - ty) * 0.2; } v20lobs.push({ x0: src.x, y0: src.y, tx, ty, t: 0, T: 1.0, dmg, name: src.d ? src.d.name : 'SLAMMET' }); }
+function v20Lob(src, tx, ty, dmg) { for (let i = 0; i < 6 && solid(tx, ty); i++) { tx += (src.x - tx) * 0.2; ty += (src.y - ty) * 0.2; } [tx, ty] = lobClip(src.x, src.y, tx, ty); v20lobs.push({ x0: src.x, y0: src.y, tx, ty, t: 0, T: 1.0, dmg, name: src.d ? src.d.name : 'SLAMMET' }); }
 function v20Storm() { return lvl && (lvl.biome === 'desert' || v20forceStorm > 0) && !lvl.hub; }
 function updateV20(dt) {
   v20clock += dt; const c = cellUnder(), cx = P.x | 0, cy = P.y | 0, ground = P.jz < 0.15;
@@ -13210,7 +13274,7 @@ function v22Boom(x, y, dmg) { // svavelklotet exploderar och lämnar eld
   const t = up('bs_burn') ? 6 : 3; groundFires.push({ x, y, t, acc: 0 }); for (const [a, b] of [[0.7, 0], [-0.7, 0], [0, 0.7], [0, -0.7]]) if (!solid(x + a, y + b)) groundFires.push({ x: x + a, y: y + b, t, acc: 0 });
   if (Math.hypot(P.x - x, P.y - y) < 1.2) { run.cause = 'SVAVLET'; hurtPlayer(dmg * 0.15, x, y, 'proj'); }
 }
-function v22Lob(src, tx, ty, o) { for (let i = 0; i < 6 && solid(tx, ty); i++) { tx += (src.x - tx) * 0.2; ty += (src.y - ty) * 0.2; } const L = Math.hypot(tx - src.x, ty - src.y); v22lobs.push(Object.assign({ x0: src.x, y0: src.y, tx, ty, t: 0, T: 0.35 + L * 0.07 }, o)); }
+function v22Lob(src, tx, ty, o) { for (let i = 0; i < 6 && solid(tx, ty); i++) { tx += (src.x - tx) * 0.2; ty += (src.y - ty) * 0.2; } [tx, ty] = lobClip(src.x, src.y, tx, ty); const L = Math.hypot(tx - src.x, ty - src.y); v22lobs.push(Object.assign({ x0: src.x, y0: src.y, tx, ty, t: 0, T: 0.35 + L * 0.07 }, o)); }
 function updateV22(dt) {
   v22clock += dt; const ground = P.jz < 0.15, c = cellUnder(), cx = P.x | 0, cy = P.y | 0, ci = cy * mw + cx;
   // heta bassänger: långsammare och skållande
@@ -14348,6 +14412,7 @@ function gfxWApi() { // window.__game.gfxW: tillstånd och mätning för t105
       let holes = 0, h = 2166136261; for (let i = 0; i < spx.length; i++) { const c = spx[i]; if (!(c >>> 24)) holes++; h = Math.imul(h ^ c, 16777619); }
       return { on: LK.on, holes, clamps: LK.clamps - c0, TW: LK.TW, TH: LK.TH, hash: h >>> 0, px: Array.from(spx) }; } };
   window.__game.efx = efxApi; // version 25: Effekseer-effekter (t115)
+  window.__game.fix251 = fix251Api(); // version 25.1: lobbar och smällar genom väggar, röster (t116)
   if (params.has('autostart')) begin('new');
 })();
 document.getElementById('start').addEventListener('click', () => startMode('new'));

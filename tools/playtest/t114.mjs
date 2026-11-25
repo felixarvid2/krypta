@@ -125,7 +125,7 @@ const ldd = await ev(() => new Promise(res => { const g = __game, c = g.roles.cm
 ok(ld.type === 'S' && ld.leader && ld.drawn > 0, 'version 6:s ledare blir befälhavare och får fanan ' + JSON.stringify(ld));
 ok(ldd.fleeing >= ldd.alive - 1 && ldd.cmds === 0 && ldd.buffed === 0, 'ledaren dör: de andra flyr (fleeT hålls kvar) och ingen ny befälhavare ' + JSON.stringify(ldd));
 
-// 3) GRANATKASTAREN: spelaren gömmer sig bakom en vägg; granaten går mot den senast kända platsen, ringen blinkar, den piper och smäller
+// 3) GRANATKASTAREN: spelaren gömmer sig bakom en vägg; granaten går mot den senast kända platsen men landar före väggen (version 25.1), ringen blinkar, den piper och smäller
 const wall = []; for (let y = 6; y <= 14; y++) wall.push([11, y]);
 await scene({ W: 30, H: 21, p: [8, 10], walls: wall, en: [['ĳ', 16, 8], ['Ä', 17, 12], ['ĳ', 17, 10]], still: ['ĳ', 'Ä'] });
 await gwait(0.5);
@@ -136,14 +136,14 @@ await until(() => __game.roles.st().nades > 0, 15);
 const th = await ev(t0 => ({ st: __game.roles.st(), after: __game.roles.t() - t0, live: __game.roles.live(), see: __game.ents().filter(e => !e.dead && e.lostT < 0.8).length }), t0);
 const L0 = th.st.log[0];
 ok(th.st.nades === 1 && L0 && L0.hid >= 2 && th.after >= 2 && th.see === 0, `granaten kastas när spelaren gömt sig i ~3 s, eller redan efter ~2,5 s när han står still och flera saknar skottlinje (efter ${th.after.toFixed(1)} s speltid, gömd ${L0 && L0.hid} s, ${th.see} ser honom)`);
-ok(L0 && Math.hypot(L0.to[0] - 8.5, L0.to[1] - 11.8) < 0.6 && Math.hypot(L0.to[0] - L0.p[0], L0.to[1] - L0.p[1]) > 1.6, 'den landar vid den senast kända platsen, inte där spelaren står ' + JSON.stringify(L0));
+ok(L0 && Math.hypot(L0.lk[0] - 8.5, L0.lk[1] - 11.8) < 0.01 && L0.to[0] >= 12 && L0.to[0] <= 12.35 && Math.hypot(L0.to[0] - L0.p[0], L0.to[1] - L0.p[1]) > 1.6, 'den kastas mot den senast kända platsen, inte där spelaren står, och landar före väggen på kastarens sida (version 25.1: aldrig genom väggen) ' + JSON.stringify(L0));
 // förvarningen: ring och granat ritas, piper 1–1,5 s på marken innan den smäller
 let ringSeen = 0, landed = null; const tr0 = await gt(); for (;;) { if ((await ev(() => __game.roles.st().booms)) || (await gt()) - tr0 > 6) break; await wait(60); const s = await ev(() => ({ r: __game.roles.st().ringDrawn || 0, l: __game.roles.live()[0] })); ringSeen = s.r; if (s.l && s.l.ph && !landed) landed = s.l; }
 await pg.locator('#screen').screenshot({ path: 'out/t114/granat.png' });
 const bm = await ev(() => __game.roles.st());
 const B0 = bm.boomLog && bm.boomLog[0];
 ok(ringSeen > 10 && landed && B0 && B0.fuse >= 0.95 && B0.fuse <= 1.55, `förvarning: blinkande ring (${ringSeen} bildrutor), granaten låg ${B0 && B0.fuse} s på marken och piper innan den smäller; flygtid ${L0 && L0.T} s`);
-ok(bm.booms === 1 && B0 && Math.hypot(B0.at[0] - 8.5, B0.at[1] - 11.8) < 0.6, 'smällen kommer vid den senast kända platsen ' + JSON.stringify(B0));
+ok(bm.booms === 1 && B0 && L0 && Math.hypot(B0.at[0] - L0.to[0], B0.at[1] - L0.to[1]) < 0.02, 'smällen kommer där granaten landade (där ringen blinkade) ' + JSON.stringify(B0));
 ok(bm.barks.some(b => b.text === 'GRANAT!' || b.text === 'UT MED DIG!'), 'barken GRANAT! eller UT MED DIG! ' + JSON.stringify(bm.barks.map(b => b.text)));
 const ai = await ev(() => __game.ai.st());
 ok(ai.press >= 1 && ai.flush >= 1, `granaten räknas som AI24:s press (delad nedkylning med eldkrukan): press ${ai.press}, flush ${ai.flush}`);

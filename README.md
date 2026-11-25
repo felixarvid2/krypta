@@ -1292,7 +1292,7 @@ Kombinerade utmaningar multiplicerar själarna. Sparplatsen väljs på startskä
 ### Fienderoller: sköldvakt, befälhavare och granatkastare
 Tre nya roller i version 24:s trupper. Undantagen är desamma som i version 24: bossar, väktare, minions och arenafiender får inga roller, och i KLOCKAN finns inga roller alls.
 - **Sköldvakt:**
-  - Sköldbäraren, dödsriddaren och den levande rustningen ställer sig en dryg ruta framför truppens skytt, på linjen mot dig, med skölden vänd mot dig. Truppens egna skott går igenom vakten.
+  - Sköldbäraren och dödsriddaren ställer sig en dryg ruta framför truppens skytt, på linjen mot dig, med skölden vänd mot dig. Truppens egna skott går igenom vakten.
   - Går du nära bryter den formationen och anfaller. Dör skytten anfaller den direkt. Den ropar "SKÖLDAR UPP!".
 - **Befälhavare:**
   - En per trupp med minst tre fiender bär en krigsfana över huvudet. Helst blir det ledaren, en elit eller en champion, annars den talande fienden med mest hp.
