@@ -1,0 +1,40 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Effekseer-rendering (Krypta, offline)</title>
+<style>html,body{margin:0;background:#000}</style></head>
+<body>
+<canvas id="c" width="256" height="256"></canvas>
+<!-- EffekseerForWebGL (MIT), hämtas av fetch.sh till cache/rt/ -->
+<script src="/rt/effekseer.js"></script>
+<script>
+// Spelar en effekt med fast tidssteg och fångar varje bildruta mot svart bakgrund (additiv blandning i spelet).
+const cv = document.getElementById('c');
+const gl = cv.getContext('webgl', { alpha: false, antialias: false, preserveDrawingBuffer: true, premultipliedAlpha: false });
+let ctx = null;
+window.efkReady = new Promise((res, rej) => effekseer.initRuntime('/rt/effekseer.wasm', () => {
+  ctx = effekseer.createContext(); ctx.init(gl); ctx.setRestorationOfStatesFlag(false); res(true);
+}, e => rej(String(e))));
+// o: { layers:[{ src, scale, delay, pos:[x,y,z], speed }], size, cam:[x,y,z], target:[x,y,z], fov, frames, step, seed, warm }
+// Flera lager spelas samtidigt (med fördröjning i bildrutor) och blir en sammansatt effekt.
+window.renderEffect = async (o) => {
+  await window.efkReady;
+  cv.width = cv.height = o.size || 256; gl.viewport(0, 0, cv.width, cv.height);
+  const load = (p, sc) => new Promise((res, rej) => { const e = ctx.loadEffect(p, sc || 1, () => res(e), (m, u) => rej(m + ' ' + u)); });
+  const L = []; for (const l of o.layers) L.push({ ...l, eff: await load(l.src, l.scale), h: null });
+  ctx.setProjectionPerspective(o.fov || 30, 1, 0.5, 500);
+  const c = o.cam || [0, 6, 24], t = o.target || [0, 2, 0];
+  ctx.setCameraLookAt(c[0], c[1], c[2], t[0], t[1], t[2], 0, 1, 0);
+  const out = []; let f = 0;
+  const start = () => { for (const l of L) if (!l.h && f >= (l.delay || 0)) { const p = l.pos || [0, 0, 0]; l.h = ctx.play(l.eff, p[0], p[1], p[2]); l.h.setRandomSeed((o.seed ?? 7) + L.indexOf(l)); if (l.speed) l.h.setSpeed(l.speed); } };
+  for (let i = 0; i < (o.warm || 0); i++) { start(); ctx.update(1); f++; }
+  while (out.length < (o.frames || 120)) {
+    start(); ctx.update(o.step || 1); f += o.step || 1;
+    gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    ctx.draw(); gl.flush();
+    out.push(cv.toDataURL('image/png'));
+    if (L.every(l => l.h && !l.h.exists)) break; // alla lager är slut
+  }
+  ctx.stopAll(); for (const l of L) ctx.releaseEffect(l.eff);
+  return out;
+};
+</script>
+</body></html>

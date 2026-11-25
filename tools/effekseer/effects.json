@@ -1,0 +1,141 @@
+{
+ "effects": [
+  {
+   "name": "boom",
+   "size": 256,
+   "frames": 90,
+   "cam": [
+    0,
+    4,
+    24
+   ],
+   "target": [
+    0,
+    1.5,
+    0
+   ],
+   "layers": [
+    {
+     "src": "samples/00_Basic/Simple_SpawnMethod1.efkefc",
+     "scale": 0.6,
+     "pos": [
+      0,
+      1.5,
+      0
+     ]
+    },
+    {
+     "src": "samples/02_Tktk03/ToonHit.efkefc",
+     "scale": 1.3,
+     "pos": [
+      0,
+      1.5,
+      0
+     ]
+    },
+    {
+     "src": "samples/00_Basic/Simple_SpawnMethod1.efkefc",
+     "scale": 0.45,
+     "pos": [
+      0,
+      1.7,
+      0
+     ],
+     "delay": 6
+    }
+   ]
+  },
+  {
+   "name": "magic",
+   "size": 256,
+   "frames": 90,
+   "cam": [
+    0,
+    4,
+    24
+   ],
+   "target": [
+    0,
+    1.5,
+    0
+   ],
+   "layers": [
+    {
+     "src": "samples/02_Tktk03/ToonHit.efkefc",
+     "pos": [
+      0,
+      1.5,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "name": "tele",
+   "size": 256,
+   "frames": 320,
+   "cam": [
+    0,
+    4,
+    24
+   ],
+   "target": [
+    0,
+    3,
+    0
+   ],
+   "layers": [
+    {
+     "src": "samples/02_Tktk03/Light.efkefc"
+    }
+   ]
+  }
+ ],
+ "strips": [
+  {
+   "file": "efx_boom.png",
+   "src": "boom",
+   "n": 12,
+   "w": 48,
+   "h": 48,
+   "mode": "color",
+   "ease": 1.3,
+   "colors": 24,
+   "gain": 1.15,
+   "range": [
+    8,
+    44
+   ],
+   "floor": 36
+  },
+  {
+   "file": "efx_magic.png",
+   "src": "magic",
+   "n": 10,
+   "w": 32,
+   "h": 32,
+   "mode": "white",
+   "ease": 1.2,
+   "levels": 6,
+   "range": [
+    11,
+    40
+   ]
+  },
+  {
+   "file": "efx_tele.png",
+   "src": "tele",
+   "n": 12,
+   "w": 32,
+   "h": 48,
+   "mode": "white",
+   "anchor": "bottom",
+   "levels": 6,
+   "gain": 1.2,
+   "range": [
+    74,
+    200
+   ]
+  }
+ ]
+}
