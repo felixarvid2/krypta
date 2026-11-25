@@ -1328,6 +1328,13 @@ Gemensamt för effekterna:
 - Alla tio effektstrippar väger tillsammans cirka 52 kB.
 - Källor och licenser står i `tools/effekseer/CREDITS.md`. Test: t117.
 
+### Eldkastarens ljus
+- Eldkastarens stråle lyser upp golv och väggar hela vägen fram. Där strålen slår i en vägg glöder det mest, och ljuset fladdrar.
+- Fiender som träffas börjar brinna, och brinnande fiender och mark som brinner lyser upp omgivningen med ett fladdrande orange sken.
+- Ljuset slocknar när du slutar spruta.
+- Rättning: värmen från strålen stannade kvar efter första skottet. Den släpper nu när du slutar spruta.
+- Test: t119.
+
 ### Rättningar
 - **Lobbade skott:** granater, kanonjärens kula, eldkrukan, slammet och svavelklotet går aldrig genom en vägg. De landar före första väggen eller stängda dörren, och den blinkande ringen visar var.
 - **Explosioner** skadar bara den som har fri sikt från smällen. Står du bakom en vägg är du skyddad. Krutfat sätter fortfarande igång varandra, och spruckna väggar rasar som förut.

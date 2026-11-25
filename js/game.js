@@ -1644,6 +1644,7 @@ function updateLight() {
   for (const c of chests) if (!c.open) flashLight(c.x, c.y, 0.18, 2);
   if (lvl.exit) flashLight(lvl.exit.x + 0.5, lvl.exit.y + 0.5, 0.35 + 0.1 * Math.sin(tmr * 3), 3); // utgången lyser
   for (const e of ents) if (e.burn > 0 && !e.dead && !e.dormant) flashLight(e.x, e.y, 0.3, 2, [255, 140, 50]); // brinnande fiender lyser
+  flameLight(flashLight); // version 25.1: eldkastarens stråle, brinnande mark och brinnande fiender lyser upp omgivningen
   lampLight(flashLight); gfxWLight(flashLight); v21Light(flashLight); v22Light(flashLight); v23Light(flashLight); // ficklampan; blixten lyser upp marken (VÄRLD)
   if (lvl.beams) for (const b of lvl.beams) flashLight(b.x + 0.5, b.y + 0.5, 0.5, 3, [255, 230, 170]); // ljusstrålar
   for (const p of portals) flashLight(p.x, p.y, 0.7, 4, p.kind === 'gold' ? [255, 220, 90] : (p.biome && portals.length > 1 && BIOME_TINT[p.biome]) || [190, 130, 255]);
@@ -3635,6 +3636,7 @@ function flameTick(wp, base) { // eldkastaren: en kägla av eld som tänder allt
     if (!e.boss && !e.elite && Math.random() < 0.04) e.fleeT = 1.2; // eld skrämmer
   }
   const ex = P.x + Math.cos(P.a) * Math.min(range, wd), ey = P.y + Math.sin(P.a) * Math.min(range, wd);
+  P.flameAt = tmr; P.flameEx = ex; P.flameEy = ey; // version 25.1: var strålen slutar (flameLight)
   burnWebs(ex, ey, 1); for (const pr of props) if (pr.def && pr.def.boom && !pr.broken && Math.hypot(pr.x - ex, pr.y - ey) < 1.2) hitProp(pr, ex, ey);
   if (up('fl_napalm') && Math.random() < 0.15) groundFires.push({ x: ex, y: ey, t: 3, acc: 0 });
   lvlStat.shots++;
@@ -3643,6 +3645,20 @@ function flameWall() { // eldväggen (uppgradering): högerklick
   const wp = WEAPONS[P.weapon]; if ((P.flameWallT || 0) > tmr || P.mags[P.weapon] < 10) return;
   P.flameWallT = tmr + 3; P.mags[P.weapon] -= 10; play('fireburst', 0.8, 0.8);
   for (let i = -2; i <= 2; i++) { const x = P.x + Math.cos(P.a) * 2.5 + Math.cos(P.a + Math.PI / 2) * i * 0.6, y = P.y + Math.sin(P.a) * 2.5 + Math.sin(P.a + Math.PI / 2) * i * 0.6; if (!solid(x, y)) groundFires.push({ x, y, t: 5, acc: 0 }); }
+}
+// ---------- Version 25.1: eldkastarens ljus ----------
+function flameLight(fl) { // från updateLight: strålen lyser upp golv och väggar hela vägen fram, marken som brinner och brinnande fiender fladdrar
+  const on = P.flameAt !== undefined && tmr - P.flameAt < 0.12 && tmr >= P.flameAt;
+  if (!on && P.flameT > 0 && P.flameAt !== undefined) P.flameT = 0; // värmen (frosten) släpper när du slutar spruta
+  const k = settings.lowfx ? 0.6 : 1;
+  if (on) {
+    const dx = P.flameEx - P.x, dy = P.flameEy - P.y, f = 0.85 + 0.15 * Math.sin(tmr * 31) * Math.sin(tmr * 13.7);
+    for (const t of [0.35, 0.7, 1]) fl(P.x + dx * t, P.y + dy * t, (0.35 + 0.3 * t) * f * k, 3, [255, 140, 45]); // där strålen slår i glöder det mest
+  }
+  let n = 0;
+  for (const g of groundFires) { if (++n > 12) break; fl(g.x, g.y, (0.35 + 0.1 * Math.sin(tmr * 17 + g.x * 3)) * Math.min(1, g.t) * k, 2, [255, 130, 40]); }
+  n = 0;
+  for (const e of ents) { if (!(e.burn > 0) || e.dead || e.dormant) continue; if (++n > 16) break; fl(e.x, e.y, (0.2 + 0.12 * Math.sin(tmr * 21 + e.x * 7)) * k, 3, [255, 120, 40]); }
 }
 function launcherShot(wp, base) { // granatkastaren: studsande granater, siktad = smäller vid första träff
   const n = up('gl_drum') ? Math.min(3, P.mags[P.weapon] + 1) : 1;
@@ -14510,6 +14526,7 @@ function gfxWApi() { // window.__game.gfxW: tillstånd och mätning för t105
   window.__game.efx = efxApi; // version 25: Effekseer-effekter (t115)
   window.__game.fix251 = fix251Api(); // version 25.1: lobbar och smällar genom väggar, röster (t116)
   window.__game.efx2 = efx2Api; // version 25.1: fler Effekseer-effekter (t117)
+  window.__game.flame = { groundFires: () => groundFires, light: (x, y) => lightAt(x, y) }; // version 25.1: eldkastarens ljus (t119)
   if (params.has('autostart')) begin('new');
 })();
 document.getElementById('start').addEventListener('click', () => startMode('new'));
