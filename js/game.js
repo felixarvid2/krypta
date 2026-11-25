@@ -978,6 +978,7 @@ async function loadAll(setStatus) {
   fx.portal = strip(await load(A + 'gfx/portal.png'), 8);
   // utomhus: natthimmel, träd och gravstenar
   spr.sky = pixels(await load(A + 'gfx/sky_night.png'));
+  for (const b of ['battlefield']) { try { spr['sky_' + b] = pixels(await load(`${A}gfx/sky_${b}.png`)); } catch (e) { /* valfri: annars natthimlen */ } } // egna himlar per biom i gfx/sky_<biom>.png (512x96, 360° vågrätt)
   spr.cardback = pixels(await load(A + 'cards/back.png'), 24, 24);
   for (const [k, f] of [['grenade', 'item_grenade'], ['key', 'item_key'], ['scroll', 'item_map'], ['ammo_small', 'item_ammo_small'], ['ammo_big', 'item_ammo_big'], ['moon', 'moon'], ['clouds', 'clouds']]) {
     try { spr[k] = pixels(await load(`${A}gfx/${f}.png`)); } catch (e) { /* valfri */ }
@@ -1869,10 +1870,11 @@ function renderWorld(W, VH, px) { // måtten och bufferten som parametrar (snabb
   const camZ = P.camZ + Math.sin(P.bob * 2) * 0.012 * P.bobAmp - (P.camSink || 0); P.camSink = Math.max(0, (P.camSink || 0) - 0.02); // kvicksand och simning sänker kameran
   const hor = HORIZON + Math.round(sh * 6 * Math.sin(tmr * 53 + 1) + (LK.on ? 0 : P.pitch)); // med upp/ned-blicken ingår rekylen i vinkeln
   view = { dirX, dirY, plX: qX, plY: qY, hor, camZ, a, pk };
-  const ce = tex[lvl.ceil] || tex.floor_stone, sky = spr.sky, outdoor = !!lvl.sky;
+  const ce = tex[lvl.ceil] || tex.floor_stone, sky = spr['sky_' + lvl.biome] || spr.sky, outdoor = !!lvl.sky;
+  skyOwn = sky !== spr.sky; // egen biomhimmel: ingen måne, inga nattmoln och inga stjärnfall ovanpå
   if (skyZenOf !== sky) skyPrep(sky);
   skyFx = outdoor && !settings.lowfx;
-  const sdat = nd !== null && skyFx && spr.moon ? skyClean : sky.data; // upp/ned-blicken: panoramats målade måne syns annars som en andra måne bredvid spr.moon
+  const sdat = nd !== null && skyFx && spr.moon && !skyOwn ? skyClean : sky.data; // upp/ned-blicken: panoramats målade måne syns annars som en andra måne bredvid spr.moon
   for (let x = 0; x < W; x++) { const camX = 2 * x / W - 1; colAng[x] = Math.atan2(dirY + qY * camX, dirX + qX * camX); }
   if (skyFx && spr.moon) for (let x = 0; x < W; x++) { const da = colAng[x] - MOON_A; moonDa[x] = Math.atan2(Math.sin(da), Math.cos(da)); }
   // golv och tak (eller natthimmel där rutan är öppen)
@@ -2090,7 +2092,7 @@ function renderPost() { // färgton, gråning, lutning och utskrift – alltid i
   } else ctx.putImageData(frame, 0, 0);
   if (photo) { ctx.fillStyle = '#000'; ctx.fillRect(0, VH, W, HUD_H); }
 }
-let skyFx = false, bossIntro = 0;
+let skyFx = false, skyOwn = false, bossIntro = 0;
 const MOON_A = 0.9;
 const SKY_TOPR = 24, skyZen = [0, 0, 0]; let skyZenOf = null, skyClean = null; // ovanför panoramat: rader per himmelshöjd (130 px) och zenitfärgen (medel av de 14 översta raderna)
 function skyPrep(sky) { // zenitfärgen och en kopia av panoramat utan den målade månen (raderna fylls i från sidorna)
@@ -2104,12 +2106,12 @@ function skyPrep(sky) { // zenitfärgen och en kopia av panoramat utan den måla
 const moonDa = new Float64Array(LK_W); // vinkeln från månen per kolumn (räknas en gång per bildruta i renderWorld)
 function skyPixel(c, x, y, hor) { // månen, molnen och stjärnfall på natthimlen
   const a = colAng[x], top = hor - y;
-  if (spr.moon) { const da = moonDa[x]; const mx = (da / 0.16 + 0.5) * spr.moon.w, my = spr.moon.h - (top - 34) / 26 * spr.moon.h;
+  if (spr.moon && !skyOwn) { const da = moonDa[x]; const mx = (da / 0.16 + 0.5) * spr.moon.w, my = spr.moon.h - (top - 34) / 26 * spr.moon.h;
     if (mx >= 0 && mx < spr.moon.w && my >= 0 && my < spr.moon.h) { const m = spr.moon.data[(my | 0) * spr.moon.w + (mx | 0)]; if (m >>> 24) c = floorEvent === 'bloodmoon' ? (m & 0xff00ffff) | 0x60 << 8 : m; } }
-  if (spr.clouds && top > 6 && top < 30) { const cl = spr.clouds, u = ((((a / TAU) + 1) * cl.w * 2 + tmr * 3) | 0) % cl.w, v = ((top - 6) / 24 * cl.h) | 0; const m = cl.data[(cl.h - 1 - v) * cl.w + u]; if (m >>> 24) c = m; }
+  if (spr.clouds && !skyOwn && top > 6 && top < 30) { const cl = spr.clouds, u = ((((a / TAU) + 1) * cl.w * 2 + tmr * 3) | 0) % cl.w, v = ((top - 6) / 24 * cl.h) | 0; const m = cl.data[(cl.h - 1 - v) * cl.w + u]; if (m >>> 24) c = m; }
   if (lvl && lvl.biome === 'volcano') c = (c & 0xff000000) | (Math.min(255, ((c >> 16) & 255) * 0.5) << 16) | (Math.min(255, ((c >> 8) & 255) * 0.6 + 8) << 8) | Math.min(255, (c & 255) * 1.3 + 40 + (top > 20 ? 0 : (20 - top) * 2)); // röd himmel av glöd och rök
   if (lightning > 0.05 && !settings.noFlash) { const k = lightning * 120; c = 0xff000000 | (Math.min(255, ((c >> 16) & 255) + k * 1.15) << 16) | (Math.min(255, ((c >> 8) & 255) + k) << 8) | Math.min(255, (c & 255) + k * 0.95); } // VÄRLD: blixten lyser upp himlen
-  if (star) { let da = a - star.a; da = Math.atan2(Math.sin(da), Math.cos(da)); const sx = star.t * 0.5, sy = star.y + star.t * 14; if (Math.abs(da - sx) < 0.05 && Math.abs(top - (40 - sy) + da * 60) < 1.2 && da < sx) c = 0xffffffff; }
+  if (star && !skyOwn) { let da = a - star.a; da = Math.atan2(Math.sin(da), Math.cos(da)); const sx = star.t * 0.5, sy = star.y + star.t * 14; if (Math.abs(da - sx) < 0.05 && Math.abs(top - (40 - sy) + da * 60) < 1.2 && da < sx) c = 0xffffffff; }
   return c;
 }
 const rollCan = document.createElement('canvas'); rollCan.width = W; rollCan.height = VH; const rollCtx = rollCan.getContext('2d');

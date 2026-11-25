@@ -1342,6 +1342,7 @@ Version 24 bygger om hur fienderna slåss tillsammans och hur banorna hänger ih
   - Katapultmål (ʌ): var sjunde sekund (i olika takt för varje ruta) landar en sten. En skugga och ett visslande kommer 1 s före. Stenen gör 30 skada inom en ruta och lämnar en krater (bara ett märke). En bana har högst åtta mål.
   - Spjutpålarna gör 4 skada när du går in i dem.
   - Slagfältets lergolv (`floor_battlemud`) saktar inte, till skillnad från den gamla leran.
+  - Himlen (`gfx/sky_battlefield.png`), lergolvet och skyttegravsgolvet är AI-texturer från Cloudflare Workers AI, efterbehandlade till spelets palett (se `tools/cfart/`). Varje biom kan ha en egen himmel i `gfx/sky_<biom>.png`.
 - **Vapen:**
   - **Slaktarkroken (ʔ):** kastar en krok på kedja som når 6 rutor. Små fiender dras in till dig. Stora fiender, väktare och bossar drar i stället in dig till dem. Sedan slår kroken (45 skada). Ingen ammo, 1,2 s nedkylning.
   - **Bombarden (ʕ, ammo kanonkulor från kulpåsar ʖ):** en handkanon med en tung kanonkula (80 skada). Kulan går igenom fiender, tappar 25 % per fiende och studsar en gång i väggar. Högerklick skjuter druvhagel: 8 kulor på kort håll.

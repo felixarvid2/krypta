@@ -7,6 +7,9 @@ Järnfängelsets väggar, cellgaller och golv (variant A) är gjorda med `@cf/bl
   - `wall_cellbars.png` 64×128
   - `floor_prison.png` 64×64 (används också som tak)
 - `tools/props18/make.py` hoppar över de här tre namnen (`CFART`), så att en ny körning inte skriver över dem. Halmen (`floor_straw`) är fortfarande den handgjorda.
+- `battlefield_a/`: det eviga slagfältet. Samma filer ligger i `assets/`.
+  - `sky_battlefield.png` 512×96 (`assets/gfx/`): en egen himmel för biomen. Spelet läser `gfx/sky_<biom>.png` om den finns och ritar då ingen måne, inga nattmoln och inga stjärnfall ovanpå.
+  - `floor_battlemud.png` och `floor_trench.png` 64×64 (`assets/wall/`). `tools/props20/make.py` hoppar över dem (`CFART`).
 - `cf.py`: anropar Cloudflare. Kräver `CF_ACCOUNT_ID` i miljön. Nyckeln läggs in av nätverksproxyn eller skickas som `Authorization: Bearer`.
 - `process.py`: efterbehandlingen. Rådata från Cloudflare finns inte i repot.
   1. Klipper ut en hel period av mönstret (autokorrelation).
@@ -16,6 +19,8 @@ Järnfängelsets väggar, cellgaller och golv (variant A) är gjorda med `@cf/bl
   5. Kvantiserar mot färgerna i biomens befintliga texturer, med 4×4 Bayer-dither och högst 40 färger.
 
 ## Prompter
+
+Prompterna för slagfältets himmel, lera och skyttegrav finns i sessionens anteckningar och inte här. Himlen gjordes av två bilder som skarvades till ett 360°-panorama.
 
 Alla bilder är 1024×1024.
 
