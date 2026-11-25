@@ -3014,7 +3014,10 @@
 "assets/gfx/prop_rack.png",
 "assets/gfx/prop_stakes.png",
 "assets/gfx/prop_warbanner.png",
-"assets/gfx/sky_battlefield.png"
+"assets/gfx/sky_battlefield.png",
+"assets/gfx/efx_boom.png",
+"assets/gfx/efx_magic.png",
+"assets/gfx/efx_tele.png"
 ]
 },
 "p-cards-2": {
