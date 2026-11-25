@@ -978,7 +978,7 @@ async function loadAll(setStatus) {
   fx.portal = strip(await load(A + 'gfx/portal.png'), 8);
   // utomhus: natthimmel, träd och gravstenar
   spr.sky = pixels(await load(A + 'gfx/sky_night.png'));
-  for (const b of ['battlefield']) { try { spr['sky_' + b] = pixels(await load(`${A}gfx/sky_${b}.png`)); } catch (e) { /* valfri: annars natthimlen */ } } // egna himlar per biom i gfx/sky_<biom>.png (512x96, 360° vågrätt)
+  for (const b of ['battlefield', 'desert', 'purgatory', 'sky', 'volcano', 'jungle', 'harbor']) { try { spr['sky_' + b] = pixels(await load(`${A}gfx/sky_${b}.png`)); } catch (e) { /* valfri: annars natthimlen */ } } // egna himlar per biom i gfx/sky_<biom>.png (512x96, 360° vågrätt)
   spr.cardback = pixels(await load(A + 'cards/back.png'), 24, 24);
   for (const [k, f] of [['grenade', 'item_grenade'], ['key', 'item_key'], ['scroll', 'item_map'], ['ammo_small', 'item_ammo_small'], ['ammo_big', 'item_ammo_big'], ['moon', 'moon'], ['clouds', 'clouds']]) {
     try { spr[k] = pixels(await load(`${A}gfx/${f}.png`)); } catch (e) { /* valfri */ }
@@ -2112,11 +2112,20 @@ function skyPixel(c, x, y, hor) { // månen, molnen och stjärnfall på natthiml
   if (spr.moon && !skyOwn) { const da = moonDa[x]; const mx = (da / 0.16 + 0.5) * spr.moon.w, my = spr.moon.h - (top - 34) / 26 * spr.moon.h;
     if (mx >= 0 && mx < spr.moon.w && my >= 0 && my < spr.moon.h) { const m = spr.moon.data[(my | 0) * spr.moon.w + (mx | 0)]; if (m >>> 24) c = floorEvent === 'bloodmoon' ? (m & 0xff00ffff) | 0x60 << 8 : m; } }
   if (spr.clouds && !skyOwn && top > 6 && top < 30) { const cl = spr.clouds, u = ((((a / TAU) + 1) * cl.w * 2 + tmr * 3) | 0) % cl.w, v = ((top - 6) / 24 * cl.h) | 0; const m = cl.data[(cl.h - 1 - v) * cl.w + u]; if (m >>> 24) c = m; }
-  if (lvl && lvl.biome === 'volcano') c = (c & 0xff000000) | (Math.min(255, ((c >> 16) & 255) * 0.5) << 16) | (Math.min(255, ((c >> 8) & 255) * 0.6 + 8) << 8) | Math.min(255, (c & 255) * 1.3 + 40 + (top > 20 ? 0 : (20 - top) * 2)); // röd himmel av glöd och rök
+  if (lvl && lvl.biome === 'volcano' && !skyOwn) c = (c & 0xff000000) | (Math.min(255, ((c >> 16) & 255) * 0.5) << 16) | (Math.min(255, ((c >> 8) & 255) * 0.6 + 8) << 8) | Math.min(255, (c & 255) * 1.3 + 40 + (top > 20 ? 0 : (20 - top) * 2)); // röd himmel av glöd och rök
   if (lightning > 0.05 && !settings.noFlash) { const k = lightning * 120; c = 0xff000000 | (Math.min(255, ((c >> 16) & 255) + k * 1.15) << 16) | (Math.min(255, ((c >> 8) & 255) + k) << 8) | Math.min(255, (c & 255) + k * 0.95); } // VÄRLD: blixten lyser upp himlen
   if (star && !skyOwn) { let da = a - star.a; da = Math.atan2(Math.sin(da), Math.cos(da)); const sx = star.t * 0.5, sy = star.y + star.t * 14; if (Math.abs(da - sx) < 0.05 && Math.abs(top - (40 - sy) + da * 60) < 1.2 && da < sx) c = 0xffffffff; }
   return c;
 }
+// ---------- Version 25.1: egna himlar per biom ----------
+// gfx/sky_<biom>.png (512x96, 360° vågrätt) laddas i loadAll; renderWorld väljer spr['sky_' + biom] före natthimlen (skyOwn).
+// skyApi är krokarna för t118: vilka biomer som har en egen himmel och vilken himmel som ritades senast (skyPrep sätter skyZenOf).
+const skyApi = {
+  own: () => Object.keys(spr).filter(k => k.startsWith('sky_') && spr[k] && spr[k].data).map(k => k.slice(4)),
+  used: () => !skyZenOf ? null : skyZenOf === spr.sky ? 'night' : (Object.keys(spr).find(k => k.startsWith('sky_') && spr[k] === skyZenOf) || '?').slice(4),
+  isOwn: () => skyOwn,
+  colors: b => { const s = b === 'night' ? spr.sky : spr['sky_' + b]; return s ? [...new Set(s.data)] : []; },
+};
 const rollCan = document.createElement('canvas'); rollCan.width = W; rollCan.height = VH; const rollCtx = rollCan.getContext('2d');
 function desaturate(k) {
   const px = spx; for (let i = 0; i < px.length; i++) { const c = px[i], r = c & 255, g = (c >> 8) & 255, b = (c >> 16) & 255, l = (r * 0.3 + g * 0.59 + b * 0.11);
@@ -14329,6 +14338,7 @@ function gfxWApi() { // window.__game.gfxW: tillstånd och mätning för t105
     spawnEnemy: (type, x, y) => { const e = makeEnemy(type, x, y); ents.push(e); totalEnemies++; return e; }, portals: () => portals, particles: () => particles, hazards: () => hazards,
     pet: () => pet, allies: () => allies, beginMaze, beginBossHunt, beginEnemyPractice, beginAbyss, beginHub, openEditor, styleRef: () => style, arenasRef: () => arenas, arenaCurRef: () => arenaCur, execute, canExec, kickParry, edEncode, edDecode, playCustom, giveLegend, LEGENDS, beginCampaign, pclouds: () => pclouds, tports: () => tports, beginFinale, lightningAt, bubbles: () => timeBubbles, sawsRef: () => saws, voidAt, solid, hasLOS, freeSpot, mapRef: () => map, enterPortal, killAllCheat: () => { for (const e of ents) if (!e.dead && !e.boss) hurtEnemy(e, 99999, e.x, e.y, { noProc: true }); if (boss && !boss.dead) hurtEnemy(boss, 99999, boss.x, boss.y, { noProc: true }); }, talentPick, gainXp, TALENTS, talent, deepAt, tideHigh, pauseMenu, settings, refreshTitle, checkAch, showStats, levelTime: () => levelTime, showTitles, cmode, shareSeed, soundCue, cues: () => cues, deathMap: () => deathMap, findPage, showChronicle, toggleLamp, throwStone, openGambler, openBanker, openWanderer, visibility, addPropAt, openCampfire, openQuestBoard, giveRune, useAbility, quests: () => quests, drinkPotion, swapPotion, givePotion, givePet, spawnAlly, spawnPortal, dropItem, openAlchemist, openPriest, openPetCage, biomeFor, useProp, v19: () => ({ carts: v19carts, loose: v19loose, ports: v19ports, slits: v19slits, mets: v19mets, wells: v19wells, rays: v19rays, beams: v19beams, pend: v19pend, ore: v19ore, setup: setupV19, meteor: v19Meteor, grav: v19Grav, clock: v19clock }), v18: () => ({ trapdoors: v18doors, spotOn: P.spotT > 0, darts: v18darts, beams: v18beams, clock: v18clock }), hitProp, burnThorns, v17: () => ({ lobs, clouds: v17clouds, puddles: v17puddles, tiles: v17tiles, wave: v17wave }) };
   window.__game.hudRects = () => { const L = hudLay(); return { hp: L.hp, ammo: L.ammo, map: L.map }; }; window.__game.settings = window.__game.settings || settings; window.__game.say = say; window.__game.msgs = () => msgs; // HUD-hörnen i spelkoordinater (320×200) – pekkontrollerna trycker på dem
+  window.__game.sky = skyApi; // version 25.1: egna himlar per biom (t118)
   window.__game.gfxE = gfxEApi(); // FIENDER: räknare och av/på för t104
   window.__game.ai = ai24Api(); // version 24: fiende-AI – poletter, roller, skyddspunkter och barks (t112)
   window.__game.roles = r25Api(); // version 25: fienderoller – sköldvakt, befälhavare och granatkastare (t114)
