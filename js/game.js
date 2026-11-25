@@ -6685,6 +6685,7 @@ function updateEnemy(e, dt) {
   // tappar sikten: letar där spelaren senast syntes, ger upp efter en stund
   if (los) { e.lostT = 0; e.lx = P.x; e.ly = P.y; } else e.lostT = (e.lostT || 0) + dt;
   if (e.lostT > 7 && dist > 9 && !e.minion && !e.elite) { e.alert = false; e.lostT = 0; e.searchT = 1.5; e.state = 'idle'; return; }
+  if (e.r25mor && e.fleeT > 0 && e.fleeT < 5) e.fleeT = 0; // version 25: under befäl flyr ingen (ficktjuven med guldet, 99 s, får fly)
   if (e.fleeT > 0) { e.fleeT -= dt; const sp = e.d.speed * diff().speed * dt * 1.3, a = Math.atan2(e.y - P.y, e.x - P.x) + Math.sin(e.t * 3) * 0.4; const ox = e.x, oy = e.y; tryMove(e, Math.cos(a) * sp, Math.sin(a) * sp, 0.28); e.mvx = e.x - ox; e.mvy = e.y - oy; e.state = 'move'; return; }
   if (!e.fledOnce && !e.elite && !e.minion && e.hp < e.maxHp * 0.25 && e.d.melee && e.cowardly) { e.fledOnce = true; e.fleeT = 2.5; spawnText(e.x, e.y, 'FLYR', '#c9a87a'); } // vissa flyr när de är svårt skadade
   if (e.dodgy && los && (e.dodgeT || 0) < tmr && dist > 2.5 && aimedAt(e)) { e.dodgeT = tmr + rnd(1.8, 3); const side = Math.random() < 0.5 ? 1 : -1, a = Math.atan2(dy, dx) + side * Math.PI / 2; for (let i = 0; i < 6; i++) tryMove(e, Math.cos(a) * 0.12, Math.sin(a) * 0.12, 0.28); } // viker undan när du siktar
@@ -7120,15 +7121,18 @@ function r25Off() { // smartAI av, KLOCKAN eller en roll avstängd: allt tillbak
   for (const e of R25.buffed) r25Mor(e, false); R25.buffed.length = 0; R25.cmds.length = 0; R25.live.length = 0; R25.active = false;
   for (const e of ents) { e.r25cmd = false; e.r25g = null; e.r25hesT = 0; }
 }
-function r25Frame(dt) { // varje bildruta (även med smartAI av, så att allt städas): granaterna
+function r25Sync() { // ny bana: nollställ (anropas både före och efter truppkoordinatorn – ai24Frame kan köra en trupptick på den nya banan före r25Frame)
   if (R25.map !== map) { R25.map = map; R25.buffed.length = 0; R25.cmds.length = 0; R25.live.length = 0; R25.nadeT = 0; R25.st = r25Stats(); }
+}
+function r25Frame(dt) { // varje bildruta (även med smartAI av, så att allt städas): granaterna
+  r25Sync();
   if (settings.smartAI === false || !R25.on || R25.err || AI24.err || AI24.clock) { if (R25.active) r25Off(); return; }
   R25.active = true;
   if (!R25.live.length) return;
   try { r25NadeTick(dt); } catch (err) { R25.err = String((err && err.stack) || err).slice(0, 500); r25Off(); }
 }
 function r25Squads(sq) { // från ai24Squads (två gånger/s): befälhavare, sköldvakter och granater per trupp
-  if (!R25.active || R25.err) return;
+  r25Sync(); if (!R25.active || R25.err) return;
   try {
     const want = new Set(); R25.cmds.length = 0;
     if (!R25.cmd || !R25.guard) for (const e of ents) { if (!R25.cmd) e.r25cmd = false; if (!R25.guard) e.r25g = null; }
@@ -7203,7 +7207,7 @@ function r25GuardTick(e, dt, dist) { // ställ dig mellan spelaren och skytten; 
   if (d > 0.15) ai24Walk(e, gx, gy, dt, d > 1.5 ? 1.1 : 0.8); else ai24Hold(e);
   e.cd -= dt; return true;
 }
-function r25Pass(v) { return !!(v.r25g && R25.active && !((v.r25brkT || 0) > tmr)) && ++R25.st.guardPass > 0; } // infightHit: truppens skott går igenom vakten
+function r25Pass(v) { return !!(v.r25g && R25.active) && ++R25.st.guardPass > 0; } // infightHit: truppens skott går igenom vakten, även när den bryter formationen (annars vänder den sig mot sin egen skytt)
 // --- per fiende (från ai24Tick efter vakthunden) ---
 function r25Tick(e, dt, dist) {
   if (!R25.active || R25.err) return false;
@@ -7271,9 +7275,10 @@ function drawR25Sprite(s) {
   return false;
 }
 function r25Api() { // window.__game.roles: tillstånd och statistik för t114
-  return { on: () => R25.active && !R25.err, err: () => R25.err, st: () => R25.st, def: R25_DEF, flags: R25, live: () => R25.live.map(n => ({ ph: n.ph, t: n.t, T: n.T, fuse: n.fuse, tx: n.tx, ty: n.ty, r: n.r })),
-    cmds: () => R25.cmds.filter(c => !c.dead), buffed: () => R25.buffed.filter(e => !e.dead), of: e => ({ cmd: !!e.r25cmd, mor: !!e.r25mor, ward: e.r25g || null, hes: (e.r25hesT || 0) > tmr, hid: e.r25hid || 0 }),
-    off: () => r25Off() };
+  return { on: () => R25.active && !R25.err, err: () => R25.err, st: () => (r25Sync(), R25.st), def: R25_DEF, flags: R25, live: () => (r25Sync(), R25.live).map(n => ({ ph: n.ph, t: n.t, T: n.T, fuse: n.fuse, tx: n.tx, ty: n.ty, r: n.r })),
+    cmds: () => (r25Sync(), R25.cmds).filter(c => !c.dead), buffed: () => (r25Sync(), R25.buffed).filter(e => !e.dead), of: e => ({ cmd: !!e.r25cmd, mor: !!e.r25mor, ward: e.r25g || null, hes: (e.r25hesT || 0) > tmr, hid: e.r25hid || 0 }), // r25Sync: direkt efter en ny bana visas inte förra banans tillstånd
+    off: () => r25Off(),
+    t: () => tmr }; // speltiden: testerna väntar i speltid, inte väggtid (dt kapas vid låg bildfrekvens)
 }
 // ---------- Specialfiender ----------
 function spawnPuff(x, y, n = 5) { // magisk rök när något dyker upp eller försvinner
