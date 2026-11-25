@@ -1287,6 +1287,39 @@ Version 7 lägger till 200 förbättringar:
 
 Kombinerade utmaningar multiplicerar själarna. Sparplatsen väljs på startskärmen, och `?fro=XXXX` i adressen fyller i ett delat frö.
 
+## Version 25: Befälet – fienderoller och Effekseer-effekter
+
+### Fienderoller: sköldvakt, befälhavare och granatkastare
+Tre nya roller i version 24:s trupper. Undantagen är desamma som i version 24: bossar, väktare, minions och arenafiender får inga roller, och i KLOCKAN finns inga roller alls.
+- **Sköldvakt:**
+  - Sköldbäraren, dödsriddaren och den levande rustningen ställer sig en dryg ruta framför truppens skytt, på linjen mot dig, med skölden vänd mot dig. Truppens egna skott går igenom vakten.
+  - Går du nära bryter den formationen och anfaller. Dör skytten anfaller den direkt. Den ropar "SKÖLDAR UPP!".
+- **Befälhavare:**
+  - En per trupp med minst tre fiender bär en krigsfana över huvudet. Helst blir det ledaren, en elit eller en champion, annars den talande fienden med mest hp.
+  - Truppen inom 6 rutor går 15 % fortare, laddar om 15 % snabbare, backar mindre och flyr inte ("FRAMÅT!", "HÅLL LINJEN!").
+  - Dör befälhavaren tvekar truppen en sekund, den svagaste flyr och ingen tar befälet på en stund ("BEFÄLET ÄR DÖTT!"). Döda officeren först.
+- **Granatkastare:**
+  - Gömmer du dig för truppen i mer än tre sekunder kastar en kultist, armborstskytt, urverkssoldat, spöksoldat, spökpirat eller gruvarbetare en granat i båge dit de senast såg dig.
+  - Granaten piper allt tätare i 1–1,5 s inom en blinkande röd ring innan den smäller, så spring ut ur ringen. Med INGA BLIXTAR växer ringen i stället för att blinka.
+  - Varje trupp kastar högst en granat på 9–12 s, och granaterna delar nedkylning med eldkrukan från version 24.
+- **Allmänt:**
+  - Allt följer SMART FIENDE-AI, och när den stängs av återställs fart, nedkylning och roller.
+  - Rollerna kostar cirka 1–5 % av fiendeloopen, mätt med 36 fiender och fyrfaldigt strypt processor.
+  - Testkroken heter `__game.roles` och testet t114.
+
+### Effekter från Effekseer (förrenderade)
+Explosioner, magiträffar, magisk laddning och teleporter har nya effekter. De är gjorda i partikelverktyget [Effekseer](https://effekseer.github.io/), som är MIT-licensierat, renderade offline bildruta för bildruta och bearbetade till spelets pixelstil. Spelet innehåller ingen Effekseer-runtime, och de tre nya stripparna är tillsammans cirka 22 kB.
+- **Explosioner** från granater, krutfat och bomber får ett eldklot med chockvåg.
+- **Magiska skott**, både dina och fiendernas, slocknar i en stjärnburst i skottets färg.
+- **Laddning:** kultister, nekromanter och shamaner samlar ljus i handen innan de skjuter.
+- **Teleporter, portaler och fiender som dyker upp** får en ljuspelare som stiger från en ring på golvet.
+- Med MINSKADE EFFEKTER, eller när spelet slår på det automatiskt, visas de gamla effekterna. Med INGA BLIXTAR tonas explosionen in och dämpas.
+- **Källor:** effekterna bygger på Effekseers exempeleffekter av Effekseer Project och tktk, som är CC0.
+- **Pipeline och test:** pipelinen finns i `tools/effekseer/`, och den använder EffekseerForWebGL i headless Chromium. Källor och licenser står i `CREDITS.md`, och testet är t115.
+
+### Också sedan version 24
+- **Slagfältet:** egen grå stridshimmel och nya golv för leran och skyttegravarna. Varje biom kan nu ha en egen himmel i `gfx/sky_<biom>.png`.
+
 ## Version 24: Jakten – bandesign, spelloop och fiende-AI
 
 Version 24 bygger om hur fienderna slåss tillsammans och hur banorna hänger ihop. Förebilderna är F.E.A.R. för fiende-AI:n, DOOM (2016) och DOOM Eternal för stridens takt, och DUSK, Ion Fury och Prodeus (de klassiska Doom- och Quake-banorna) för bandesignen.
