@@ -309,6 +309,13 @@ for (let k = 0; k < n; k++) {
     console.log('glidande väggar: ' + lv.shifts.length + ' rutor (' + Object.keys(ph).sort((a, b) => a - b).map(k => `fas ${k} s: ${ph[k].join(' ')}`).join('; ') + ')');
   }
   if (lv.winds && lv.winds.length) console.log('vind: ' + lv.winds.length + ' rutor (' + lv.winds.map(w => `${w.x},${w.y}${w.dx > 0 ? '>' : w.dx < 0 ? '<' : w.dy > 0 ? 'v' : '^'}`).join(' ') + ')');
+  // version 24: bandesignen (genvägar, bakhåll, landmärken, brödsmulor, ledtrådar, skydd, takt)
+  if (lv.shortcuts && lv.shortcuts.length) console.log('genvägar: ' + lv.shortcuts.map(s => `${s.x},${s.y}${s.oneway ? ' enkelriktad (öppnas från ' + s.sx + ',' + s.sy + ')' : ''} sparar ${s.gap}`).join('; '));
+  if (lv.ambushes && lv.ambushes.length) console.log('bakhåll: ' + lv.ambushes.map(a => `${a.trigger.kind} ${a.trigger.x},${a.trigger.y}: nisch ${a.cells.map(c => c.x + ',' + c.y).join(' ')} med ${a.enemies.map(e => e.ch).join('')}`).join('; '));
+  if (lv.landmarks && lv.landmarks.length) console.log('landmärken: ' + lv.landmarks.map(l => `${l.kind} ${l.x},${l.y} (ljus ${l.light})`).join('; '));
+  if (lv.breadcrumbs && lv.breadcrumbs.length) console.log('brödsmulor: ' + lv.breadcrumbs.map(b => b.ch + ' ' + b.x + ',' + b.y).join('  '));
+  if (lv.secretHints && lv.secretHints.length) console.log('ledtrådar: ' + lv.secretHints.map(h => `${h.x},${h.y}`).join('  ') + (lv.cover && lv.cover.length ? '; skydd: ' + lv.cover.map(c => c.x + ',' + c.y).join(' ') : ''));
+  if (lv.pacing && lv.pacing.length) console.log('takt: ' + lv.pacing.map(p => `rum ${p.room} ${p.beat}`).join(', '));
   const errs = Gen.validate(lv);
   if (errs.length) console.log('VALIDERINGSFEL:\n  ' + errs.slice(0, 10).join('\n  '));
   const bossF = lv.floors.findIndex(f => f.startsWith('floor_boss_'));

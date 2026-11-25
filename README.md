@@ -1287,6 +1287,50 @@ Version 7 lägger till 200 förbättringar:
 
 Kombinerade utmaningar multiplicerar själarna. Sparplatsen väljs på startskärmen, och `?fro=XXXX` i adressen fyller i ett delat frö.
 
+## Version 24: Jakten – bandesign, spelloop och fiende-AI
+
+Version 24 bygger om hur fienderna slåss tillsammans och hur banorna hänger ihop. Förebilderna är F.E.A.R. för fiende-AI:n, DOOM (2016) och DOOM Eternal för stridens takt, och DUSK, Ion Fury och Prodeus (de klassiska Doom- och Quake-banorna) för bandesignen.
+
+### Förebilderna och vad vi tog
+
+| Förebild | Hur den fungerar | I Krypta |
+|---|---|---|
+| **F.E.A.R.** (Jeff Orkin, ["Three States and a Plan"](https://pages.cs.wisc.edu/~dyer/cs540/handouts/gdc2006_orkin_jeff_fear.pdf), GDC 2006) | Varje soldat har bara tre tillstånd (gå, animera, använd objekt). En GOAP-planerare söker med A* fram en kedja handlingar mot ett mål. Sensorer fyller ett arbetsminne, och fienden vet bara vad den har uppfattat. En truppkoordinator delar ut roller (ta skydd, avancera, nedhållande eld, flankera, sök). Barks gör beteendet läsbart. | Sensorer och arbetsminne, skyddspunkter, truppkoordinator med fyra roller och barks. I stället för A* används en målväljare, eftersom kedjorna är högst tre steg långa (gå till skydd, kliv ut, skjut). Det ger samma beteende för en bråkdel av CPU:n. |
+| **DOOM** ([Embracing Push Forward Combat](https://gdcvault.com/play/1024940/Embracing-Push-Forward-Combat-in), GDC 2017) | Attackpoletter: bara några fiender får anfalla åt gången, och resten rör sig och positionerar sig. Anfallen förvarnas. Spelaren ska trycka framåt, inte gömma sig. | Attackpoletter i två pooler (närstrid och skott), en glöd som förvarning och press mot den som campar. Laddar du om rusar närstridarna fram. |
+| **DUSK, Ion Fury, Prodeus** ([Game Informer](https://gameinformer.com/2023/10/13/inside-the-rise-of-boomer-shooters)) | Sammanflätade banor med genvägar som öppnas från andra sidan, nycklar som utlöser bakhåll, landmärken, hemligheter med ledtrådar och föremål som brödsmulor. | Genvägar (en del enkelriktade), bakhåll vid nyckeln och kistan, landmärken, brödsmulor, skydd i stridsrum, lugna rum efter svåra strider och ledtrådar vid hemliga väggar. |
+
+### Fiende-AI
+- **Attackpoletter:** högst N närstridare och N skyttar anfaller samtidigt (N = 2 + djupet/2: −1 på lätt och berättelse, +1 på svår, +2 på mardröm).
+  - De andra håller avståndet strax utanför räckhåll, går i sidled och hotar.
+  - Den som väntat längst går först. Den som just anfallit backar om andra väntar.
+  - Skyttarna glöder kort innan de skjuter.
+- **Vakthunden:** ingen fiende står inom räckhåll mer än cirka 4 s utan att få anfalla, så arenavågor, KLOCKAN och partider fungerar som förut.
+- **Sensorer och arbetsminne:** var spelaren senast syntes, om du står still och om du laddar om. Siktkontrollerna har en budget per bildruta.
+- **Skydd:** skyttar (eldskelett, kultister, armborstskyttar, spökbågskyttar) väljer en skyddspunkt som är skymd från dig men har skottlinje från sidosteget. De kliver ut, skjuter och kliver tillbaka. Skyddet används först efter första skottet, så första anfallet kommer lika snabbt som förut.
+- **Truppen**, två gånger i sekunden för alerterade fiender inom 8 rutor från varandra:
+  - UNDERTRYCK: skyttarna som ser dig skjuter först.
+  - AVANCERA: de andra skyttarna flyttar fram mellan skydd.
+  - FLANK: en närstridare går runt och kommer från sidan.
+  - SÖK: när du försvinner sprider de ut sig där de senast såg dig. De fuskar inte.
+- **Press:** står du still bakom skydd i mer än 4 s kommer en eldkruka eller två flankerare.
+- **Barks:** talande fiender säger vad de gör: "FLANKERA!", "HAN LADDAR OM!", "VAR ÄR HAN?", "TÄCK MIG!", "I SKYDD!", "DÄR ÄR HAN!", "MAN NERE!".
+- **Undantag:** bossar och väktare påverkas inte. Arenafiender, eliter, minions och fiender med egna specialbeteenden behåller sitt beteende men följer poletterna. I KLOCKAN är rollerna avstängda.
+- Allt stängs av med INSTÄLLNINGAR → SPEL → SMART FIENDE-AI. Testkroken heter `__game.ai` och testet t112.
+
+### Bandesign
+- **Genvägar:** banorna slingrar tillbaka. Där två delar ligger nära på kartan men långt isär längs vägen öppnar generatorn en dörr i väggen.
+- **Enkelriktade genvägar:** ungefär hälften är låsta från den sida du når först ("ÖPPNAS FRÅN ANDRA SIDAN", rött märke) och öppnas från andra sidan (gult märke, "GENVÄG ÖPPNAD"). Fiender går inte igenom dem medan de är stängda, och de syns röda på kartan.
+- **Bakhåll:** när du tar nyckeln, eller öppnar kistan i ett skattrum, glider en dold nisch i väggen upp och fiender kliver ut ("BAKHÅLL!"). De skapas först då, så andelen dödade fiender och KLOCKAN stämmer.
+- **Landmärke:** en staty med fyra ljus i en central sal och en svag ljuspelare som syns på håll.
+- **Brödsmulor:** ammo och hälsa i gångarna leder mot nyckeln eller utgången.
+- **Takt:** lådor som skydd i stora stridsrum, och en hälsa i första lugna rummet efter ett elitrum eller en arena.
+- **Hemliga väggar:** de ger sig till känna med ett svagt ljus och damm som silar ut.
+- Allt ligger i ett eget pass ovanpå den gamla banan (`content24`, med eget slumpflöde). Samma frö ger samma grundlayout, `opts.v24off` ger exakt version 23, och arenor, hemliga våningar och labyrinter rörs inte. Testa med `node tools/gen-preview.js frost t113-99 2` och testet t113.
+
+### Inte gjort
+- Utsiktsfönster mot rum man når senare: strålkastningen stannar vid första väggen, och att ändra det skulle kräva ändringar i den heta renderloopen.
+- Inga nya nycklar eller lås: bakhållen använder de nycklar och kistor som redan finns.
+
 ## Version 23: Slakteriet och Slagfältet
 
 - **Slakteriet (`abattoir`):** inomhus på djup 2–5. Kaklade slakthallar med slaktkakel (ɼ) och kylrumsväggar (ɽ), kylrum med köttkrokar (ʁ, i taket, gungar och knarrar), slaktbänkar (ʂ) och bandsågar (ʃ). Testa med `?biome=abattoir`.

@@ -228,6 +228,14 @@ try {
     : require('child_process').execFileSync('git', ['show', GEN_V22_REF + ':js/gen.js'], { cwd: path.join(__dirname, '..'), encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 1 << 26 });
   (0, eval)(src); OldGen22 = global.Gen; global.Gen = undefined;
 } catch (e) { oldGen22Err = String(e.message || e).split('\n')[0]; }
+// version 23 av generatorn (för frö-stabiliteten i version 24): GEN_OLD23=sökväg, annars ur git (gen.js när version 24 påbörjades, GEN_V23_REF)
+const GEN_V23_REF = process.env.GEN_V23_REF || '941572648c086b7a5bd4077ed52544709db42184';
+let OldGen23 = null, oldGen23Err = '', oldGen23Src = process.env.GEN_OLD23 ? path.basename(process.env.GEN_OLD23) : GEN_V23_REF.slice(0, 7);
+try {
+  const src = process.env.GEN_OLD23 ? fs.readFileSync(process.env.GEN_OLD23, 'utf8')
+    : require('child_process').execFileSync('git', ['show', GEN_V23_REF + ':js/gen.js'], { cwd: path.join(__dirname, '..'), encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 1 << 26 });
+  (0, eval)(src); OldGen23 = global.Gen; global.Gen = undefined;
+} catch (e) { oldGen23Err = String(e.message || e).split('\n')[0]; }
 (0, eval)(fs.readFileSync(path.join(__dirname, '..', 'js', 'gen.js'), 'utf8'));
 
 // version 14: de äldre frö-stabilitetsproven jämför med version 14-sakerna avstängda (opts.v14off: exakt version 13, se provet för version 14)
@@ -502,7 +510,8 @@ function checkLevel(lv, seed, depth, opts, biome) {
   if (OUTDOOR[biome]) { if (!lv.sky) fail(tag + ' sky saknas utomhus'); else if (skyN / walk < SKY_MIN[biome]) fail(tag + ` för lite himmel ${(skyN / walk).toFixed(2)}`); }
   else if (lv.sky !== null) fail(tag + ' sky ska vara null inomhus');
   // utgången långt bort: väglängd P->x i förhållande till kartans storlek
-  const dPX = pathPX(m), rel = dPX / Math.max(W, H);
+  // (version 24: de enkelriktade genvägsdörrarna är stängda från den sida man kommer, de räknas som vägg)
+  const dPX = pathPX(lv.shortcuts && lv.shortcuts.some(s => s.oneway) ? m.map((r, y) => r.split('').map((c, x) => (lv.shortcuts.some(s => s.oneway && s.x === x && s.y === y) ? '1' : c)).join('')) : m), rel = dPX / Math.max(W, H);
   if (dPX < 0) fail(tag + ' ingen väg P->x');
   else if (rel < (DUNGEONLIKE.includes(biome) ? 0.5 : 0.8)) fail(tag + ` utgången för nära: ${dPX} steg (${rel.toFixed(2)} av kartbredden)`);
   // träd och gravstenar får aldrig stänga av något: ta bort dem och jämför nåbar yta (validate har redan kollat nåbarheten med dem)
@@ -4614,11 +4623,11 @@ function freeLineT(r, x, y) { let best = 0; const at = (xx, yy) => (r[yy] && r[y
       const opts = { biome, shop: i % 3 === 0, weapon: OW[i % OW.length], guardian: i % 4 === 3 ? undefined : OG[i % OG.length] };
       const old = OldGen22.floor(seed, depth, opts);
       cmp(old, Gen.floor(seed, depth, Object.assign({ v23off: true }, opts)), false, `[stabil23 off ${biome} seed=${seed} d=${depth}]`);
-      cmp(old, Gen.floor(seed, depth, opts), true, `[stabil23 ${biome} seed=${seed} d=${depth}]`);
+      cmp(old, Gen.floor(seed, depth, Object.assign({ v24off: true }, opts)), true, `[stabil23 ${biome} seed=${seed} d=${depth}]`); // (version 24 av, se provet för version 24)
     }
     for (let i = 0; i < 300; i++) { // utan opts.biome (spelets anropsform med seed RNG.hash): bara banor som slår slakteriet eller slagfältet ändras
       const pos = 1 + (i % 5), cyc = Math.floor(i / 5) % 3, depth = Math.min(5, pos + cyc), seed = i % 2 ? 'stabilmix23-' + i : RNG.hash('krypta23s-' + i + ':' + (pos + 6 * cyc));
-      const opts = { shop: pos === 2 || pos === 4, weapon: OW[i % OW.length] }, lv = Gen.floor(seed, depth, opts), old = OldGen22.floor(seed, depth, opts);
+      const opts = { shop: pos === 2 || pos === 4, weapon: OW[i % OW.length] }, lv = Gen.floor(seed, depth, Object.assign({ v24off: true }, opts)), old = OldGen22.floor(seed, depth, opts);
       cmp(old, Gen.floor(seed, depth, Object.assign({ v23off: true }, opts)), false, `[stabil23 mix off seed=${seed} d=${depth}]`);
       if (NEW23.includes(lv.biome)) { newB++; continue; }
       cmp(old, lv, true, `[stabil23 mix seed=${seed} d=${depth}]`);
@@ -4633,6 +4642,128 @@ function freeLineT(r, x, y) { let best = 0; const at = (xx, yy) => (r[yy] && r[y
     if (!changed) fail('frö-stabilitet (version 23): inga version 23-saker i jämförelsen');
     stats.stable23 = `${total} jämförelser mot version 22 (${oldGen22Src}): med opts.v23off identiska; annars ${changed} banor med kulpåsar (${cells} ändrade rutor); ` +
       `${newB} av 300 utan opts.biome blev slakteriet/slagfältet; arenor, hemliga våningar och labyrinter oförändrade`;
+  }
+}
+
+// ---- version 24: bandesign (genvägar och enkelriktade dörrar, bakhåll, landmärken, brödsmulor, ledtrådar till hemligheter, skydd och takt).
+// Frö-stabilitet mot version 23 (git-objektet GEN_V23_REF = 9415726, eller filen i GEN_OLD23): med opts.v24off (och med en äldre vNNoff) identiska
+// banor; annars samma bana där kartan bara ändrats på rutor som version 24-fälten pekar ut. Validering på många frön i alla biomer, enkelriktade
+// dörrar öppnas från den bortre sidan och stänger aldrig in, bakhållens nischer, determinism, frekvenser och negativa validate-tester ----
+{
+  const V24F = ['shortcuts', 'ambushes', 'landmarks', 'breadcrumbs', 'secretHints', 'cover', 'pacing'];
+  const strip24 = o => { const c = Object.assign({}, o); delete c.features; for (const k of V24F) delete c[k]; return JSON.stringify(c); };
+  const allowed24 = lv => { // rutor som version 24 får ändra, och vad de får bli
+    const m = new Map(), add = (x, y, c) => { const k = y * 4096 + x; m.set(k, (m.get(k) || '') + c); };
+    for (const s of lv.shortcuts) { add(s.x, s.y, 'D'); for (const c of s.carved) add(c.x, c.y, '.'); }
+    for (const l of lv.landmarks) { add(l.x, l.y, 'u'); const R = l.r; for (const [a, b] of [[-R, -R], [R, -R], [-R, R], [R, R]]) add(l.x + a, l.y + b, l.light); }
+    for (const c of lv.cover) add(c.x, c.y, 'T');
+    for (const p of lv.pacing) if (p.beat === 'reward') add(p.x, p.y, 'h');
+    return m;
+  };
+  const S24 = { n: 0, sc: 0, ow: 0, amb: 0, ambE: 0, lm: 0, bc: 0, sh: 0, cov: 0, rew: 0, withSc: 0 };
+  const check24 = (lv, tag) => { // en bana med version 24: fälten finns, validate godtar, enkelriktade dörrar öppnas från den bortre sidan
+    for (const k of V24F) if (!Array.isArray(lv[k])) { fail(tag + ' level.' + k + ' saknas'); return; }
+    const e = Gen.validate(lv); if (e.length) { fail(tag + ' validate: ' + e[0]); return; }
+    const m = lv.map, P = findCh(m, 'P'), W = m[0].length;
+    const ow = new Set(lv.shortcuts.filter(s => s.oneway).map(s => s.y * W + s.x));
+    const blk = c => isBlock(c) || c === '*';
+    const H = m.length, d = new Int32Array(W * H).fill(-1), q = [P[1] * W + P[0]]; d[q[0]] = 0;
+    for (let h = 0; h < q.length; h++) { const c = q[h], x = c % W, y = (c / W) | 0; for (const [dx, dy] of N4) { const n = (y + dy) * W + x + dx; if (x + dx < 0 || y + dy < 0 || x + dx >= W || y + dy >= H || d[n] >= 0 || blk(m[y + dy][x + dx]) || ow.has(n)) continue; d[n] = d[c] + 1; q.push(n); } }
+    for (const s of lv.shortcuts) {
+      const ds = d[s.sy * W + s.sx], dn = d[s.ny * W + s.nx];
+      if (ds < 0 || dn < 0) fail(`${tag} genvägen vid ${s.x},${s.y} nås inte från båda sidor`);
+      else if (s.oneway && ds < dn) fail(`${tag} den enkelriktade dörren vid ${s.x},${s.y} öppnas från den sida man når först (${ds} <= ${dn})`);
+    }
+    for (const a of lv.ambushes) { if (a.enemies.length < 2 || a.enemies.length > 4) fail(tag + ' bakhållet har ' + a.enemies.length + ' fiender'); if (d[a.trigger.y * W + a.trigger.x] < 0) fail(tag + ' bakhållets utlösare nås inte'); }
+    S24.n++; S24.sc += lv.shortcuts.length; S24.ow += ow.size; S24.amb += lv.ambushes.length; S24.ambE += lv.ambushes.reduce((n, a) => n + a.enemies.length, 0); S24.lm += lv.landmarks.length;
+    S24.bc += lv.breadcrumbs.length; S24.sh += lv.secretHints.length; S24.cov += lv.cover.length; S24.rew += lv.pacing.filter(p => p.beat === 'reward').length; if (lv.shortcuts.length) S24.withSc++;
+  };
+  if (!OldGen23) fail('frö-stabilitet: kunde inte läsa gen.js från version 23 (' + oldGen23Err + '); sätt GEN_OLD23=sökväg till den gamla filen');
+  else {
+    const OB = OldGen23.BIOMES.map(b => b.id), OG = Object.keys(OldGen23.GUARDIANS), OW = [null].concat(Object.values(OldGen23.WEAPONS));
+    let total = 0, changed = 0, cells = 0;
+    const cmp24 = (old, lv, tag) => {
+      total++;
+      if (strip24(old) !== strip24(Object.assign({}, lv, { map: old.map }))) { fail(tag + ' frö-stabilitet: andra fält än kartan och version 24-fälten skiljer sig från version 23'); return; }
+      const ok = allowed24(lv); let k = 0;
+      for (let y = 0; y < old.map.length; y++) for (let x = 0; x < old.map[0].length; x++) {
+        const o = old.map[y][x], c = lv.map[y][x]; if (o === c) continue; k++;
+        if (!(ok.get(y * 4096 + x) || '').includes(c)) { fail(`${tag} frö-stabilitet: "${o}" blev "${c}" vid ${x},${y} utan version 24-fält`); return; }
+      }
+      cells += k; if (k) changed++;
+    };
+    for (let i = 0; i < 300; i++) { // alla gamla biomer, väktare och vapen
+      const biome = OB[i % OB.length], depth = 1 + (i % 5), seed = i % 2 ? 'stabil24-' + i : 7919 + i * 4099;
+      const opts = { biome, shop: i % 3 === 0, weapon: OW[i % OW.length], guardian: i % 4 === 3 ? undefined : OG[i % OG.length] };
+      const old = OldGen23.floor(seed, depth, opts), tag = `[stabil24 ${biome} seed=${seed} d=${depth}]`;
+      if (JSON.stringify(old) !== JSON.stringify(Gen.floor(seed, depth, Object.assign({ v24off: true }, opts)))) fail(tag + ' frö-stabilitet: skiljer sig från version 23 med opts.v24off');
+      if (i % 3 === 0 && JSON.stringify(OldGen23.floor(seed, depth, Object.assign({ v23off: true }, opts))) !== JSON.stringify(Gen.floor(seed, depth, Object.assign({ v23off: true }, opts)))) fail(tag + ' frö-stabilitet: opts.v23off stänger inte av version 24');
+      const lv = Gen.floor(seed, depth, opts);
+      cmp24(old, lv, tag); check24(lv, tag);
+    }
+    for (let i = 0; i < 300; i++) { // utan opts.biome (spelets anropsform med seed RNG.hash)
+      const pos = 1 + (i % 5), cyc = Math.floor(i / 5) % 3, depth = Math.min(5, pos + cyc), seed = i % 2 ? 'stabilmix24-' + i : RNG.hash('krypta24s-' + i + ':' + (pos + 6 * cyc));
+      const opts = { shop: pos === 2 || pos === 4, weapon: OW[i % OW.length] }, old = OldGen23.floor(seed, depth, opts), tag = `[stabil24 mix seed=${seed} d=${depth}]`;
+      if (JSON.stringify(old) !== JSON.stringify(Gen.floor(seed, depth, Object.assign({ v24off: true }, opts)))) fail(tag + ' frö-stabilitet: skiljer sig från version 23 med opts.v24off');
+      const lv = Gen.floor(seed, depth, opts);
+      cmp24(old, lv, tag); check24(lv, tag);
+      if (i % 10 === 0 && JSON.stringify(Gen.floor(seed, depth, opts)) !== JSON.stringify(lv)) fail(tag + ' inte deterministisk');
+    }
+    const strip2 = o => { const c = Object.assign({}, o); delete c.features; return JSON.stringify(c); };
+    for (const arena of OldGen23.ARENAS.slice(0, 12)) if (strip2(OldGen23.boss('st24-' + arena, { arena })) !== strip2(Gen.boss('st24-' + arena, { arena }))) fail('frö-stabilitet: arenan ' + arena + ' ändrades');
+    for (const id of OB.slice(0, 12)) {
+      if (strip2(OldGen23.secret('st24s-' + id, { biome: id, depth: 2 })) !== strip2(Gen.secret('st24s-' + id, { biome: id, depth: 2 }))) fail('frö-stabilitet: hemliga våningen ' + id + ' ändrades');
+      if (strip2(OldGen23.maze('st24m-' + id, { biome: id, depth: 3 })) !== strip2(Gen.maze('st24m-' + id, { biome: id, depth: 3 }))) fail('frö-stabilitet: labyrinten ' + id + ' ändrades');
+    }
+    if (!changed) fail('frö-stabilitet (version 24): inga version 24-saker i jämförelsen');
+    stats.stable24 = `${total} jämförelser mot version 23 (${oldGen23Src}): med opts.v24off (och v23off) identiska; annars ${changed} banor med version 24-saker (${cells} ändrade rutor); arenor, hemliga våningar och labyrinter oförändrade`;
+  }
+  // alla biomer på alla tillåtna djup
+  for (const b of Gen.BIOMES) for (let i = 0; i < 24; i++) {
+    const depth = Math.max(b.depth[0], Math.min(b.depth[1], 1 + (i % 5))), seed = 'v24-' + b.id + '-' + i;
+    check24(Gen.floor(seed, depth, { biome: b.id, shop: i % 4 === 1 }), `[v24 ${b.id} seed=${seed} d=${depth}]`);
+  }
+  const per = k => (S24[k] / S24.n).toFixed(2);
+  if (S24.sc / S24.n < 0.15 || !S24.ow || S24.amb / S24.n < 0.1 || !S24.lm || S24.bc / S24.n < 0.5 || !S24.sh) fail('version 24: för få saker ' + JSON.stringify(S24));
+  stats.v24 = `${S24.n} banor: genvägar ${per('sc')} per bana (på ${(100 * S24.withSc / S24.n).toFixed(0)} %, enkelriktade ${per('ow')}), bakhåll ${per('amb')} (${(S24.ambE / Math.max(1, S24.amb)).toFixed(1)} fiender), ` +
+    `landmärken ${per('lm')}, brödsmulor ${per('bc')}, ledtrådar ${per('sh')}, skyddslådor ${per('cov')}, belöningar ${per('rew')}; underkända steg ${(Gen.floor.stats.v24 || {}).rejected || 0}`;
+  // negativa validate-tester
+  {
+    const msg24 = (lv, f, re) => { const l = JSON.parse(JSON.stringify(lv)); f(l); return Gen.validate(l).some(e => re.test(e)); };
+    const put = (l, x, y, ch) => { l.map[y] = l.map[y].slice(0, x) + ch + l.map[y].slice(x + 1); };
+    let sc = null, am = null, lm = null, bc = null, sh = null, cv = null;
+    for (let i = 0; i < 400 && !(sc && am && lm && bc && sh && cv); i++) {
+      const b = Gen.BIOMES[i % Gen.BIOMES.length], lv = Gen.floor('neg24-' + i, Math.max(b.depth[0], Math.min(b.depth[1], 1 + (i % 5))), { biome: b.id });
+      if (!sc && lv.shortcuts.some(s => s.oneway)) sc = lv; if (!am && lv.ambushes.length) am = lv; if (!lm && lv.landmarks.length) lm = lv;
+      if (!bc && lv.breadcrumbs.length) bc = lv; if (!sh && lv.secretHints.length) sh = lv; if (!cv && (lv.cover.length || lv.pacing.length)) cv = lv;
+    }
+    if (!sc || !am || !lm || !bc || !sh || !cv) fail('validate-test (version 24): hittade inte alla sorters saker ' + [!!sc, !!am, !!lm, !!bc, !!sh, !!cv]);
+    else {
+      const s0 = sc.shortcuts.find(s => s.oneway);
+      if (!msg24(sc, l => put(l, s0.x, s0.y, '.'), /pekar inte på en dörr/)) fail('validate: genväg utan dörr ej upptäckt');
+      if (!msg24(sc, l => { l.shortcuts[sc.shortcuts.indexOf(s0)].sx = s0.x + 5; }, /gångbara rutor/)) fail('validate: genväg med fel öppningssida ej upptäckt');
+      // en vanlig dörr som är enda vägen görs enkelriktad: något nås inte längre
+      const W = sc.map[0].length, H = sc.map.length, P = findCh(sc.map, 'P'), reach = m => floodD(m, P[0], P[1], c => !isBlock(c)).reduce((n, v) => n + (v >= 0 ? 1 : 0), 0), base = reach(sc.map);
+      let only = null;
+      for (let y = 1; y < H - 1 && !only; y++) for (let x = 1; x < W - 1 && !only; x++) {
+        if (sc.map[y][x] !== 'D' || sc.shortcuts.some(s => s.x === x && s.y === y)) continue;
+        const m2 = sc.map.slice(); m2[y] = m2[y].slice(0, x) + '1' + m2[y].slice(x + 1);
+        if (reach(m2) < base - 1) for (const [dx, dy] of N4) if (!isBlock(sc.map[y + dy][x + dx])) { only = { x, y, sx: x + dx, sy: y + dy, nx: x - dx, ny: y - dy, oneway: true, gap: 9 }; break; }
+      }
+      if (!only) fail('validate-test (version 24): ingen dörr som är enda vägen');
+      else if (!msg24(sc, l => l.shortcuts.push(only), /enkelriktade dörrarna stängda|öppningssida nås inte/)) fail('validate: enkelriktad dörr som stänger in ej upptäckt');
+      const a0 = am.ambushes[0];
+      if (!msg24(am, l => { l.ambushes[0].enemies[0].ch = 'E'; }, /ogiltig fiende/)) fail('validate: elit i ett bakhåll ej upptäckt');
+      if (!msg24(am, l => { l.ambushes[0].cells.push({ x: a0.from.x, y: a0.from.y }); }, /väggrutor/)) fail('validate: bakhållsnisch på golv ej upptäckt');
+      if (!msg24(am, l => { const c = l.ambushes[0].cells[l.ambushes[0].cells.length - 1]; put(l, c.x + (c.x > 1 ? -1 : 1), c.y, '.'); put(l, c.x, c.y + 1, '.'); put(l, c.x, c.y - 1, '.'); put(l, c.x + (c.x > 1 ? 1 : -1), c.y, '.'); }, /inte sluten|onåbar|nås/)) fail('validate: öppen bakhållsnisch ej upptäckt');
+      if (!msg24(am, l => { put(l, a0.trigger.x, a0.trigger.y, '.'); }, /ingen nyckel|ingen kista|låst dörr utan nyckel/)) fail('validate: bakhåll utan nyckel/kista ej upptäckt');
+      if (!msg24(lm, l => { put(l, lm.landmarks[0].x, lm.landmarks[0].y, '.'); }, /landmärket/)) fail('validate: landmärke utan staty ej upptäckt');
+      if (!msg24(bc, l => { put(l, bc.breadcrumbs[0].x, bc.breadcrumbs[0].y, '$'); }, /brödsmulan/)) fail('validate: brödsmula på en upptagen ruta ej upptäckt');
+      if (!msg24(sh, l => { put(l, sh.secretHints[0].x, sh.secretHints[0].y, sh.map[0][0]); }, /ledtråden/)) fail('validate: ledtråd utan hemlig vägg ej upptäckt');
+      if (!msg24(cv, l => { l.pacing.push({ room: 999, beat: 'reward' }); }, /ogiltig takt/)) fail('validate: ogiltig takt ej upptäckt');
+      if (!msg24(Gen.boss('neg24b', { arena: 'hall' }), l => { l.shortcuts = [{ x: 1, y: 1, oneway: false, sx: 2, sy: 1 }]; }, /arena\/labyrint|pekar inte/)) fail('validate: genväg i en arena ej upptäckt');
+      if (!msg24(sc, l => { l.ambushes = {}; }, /ogiltigt/)) fail('validate: level.ambushes som inte är en lista ej upptäckt');
+    }
   }
 }
 
@@ -5453,6 +5584,8 @@ console.log('Version 22:\n  ' + (stats.v22 || []).join('\n  '));
 console.log('Frö-stabilitet (version 22): ' + (stats.stable22 || 'EJ KONTROLLERAD'));
 console.log('Version 23:\n  ' + (stats.v23 || []).join('\n  '));
 console.log('Frö-stabilitet (version 23): ' + (stats.stable23 || 'EJ KONTROLLERAD'));
+console.log('Version 24 (bandesign): ' + (stats.v24 || 'EJ KONTROLLERAD'));
+console.log('Frö-stabilitet (version 24): ' + (stats.stable24 || 'EJ KONTROLLERAD'));
 console.log('\nFiender per rum (alla rum utom start: antal fiender -> antal rum):');
 for (const id of BIOME_IDS) { const h = B[id].hist; console.log(`  ${id.padEnd(10)} ` + Object.keys(h).sort((a, b) => a - b).map(k => k + ':' + h[k]).join(' ') + `   fiender/budget ${(B[id].enRel / B[id].n).toFixed(2)}  mimics ${B[id].mimic}  P->Z ${(B[id].gdist / B[id].n).toFixed(2)} (min ${B[id].gmin.toFixed(2)}) av längsta vägen`); }
 console.log('Rekvisita per bana:');
