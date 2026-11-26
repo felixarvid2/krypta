@@ -1287,6 +1287,75 @@ Version 7 lägger till 200 förbättringar:
 
 Kombinerade utmaningar multiplicerar själarna. Sparplatsen väljs på startskärmen, och `?fro=XXXX` i adressen fyller i ett delat frö.
 
+## Version 26: Samspel – efter moderna boomer shooters
+
+Inför version 26 gick vi igenom ett femtontal moderna boomer shooters och jämförde dem med det Krypta redan har:
+- ULTRAKILL, DUSK, Prodeus och Cultic
+- Ion Fury, Amid Evil och Turbo Overkill
+- Warhammer 40K: Boltgun, Dread Templar och Nightmare Reaper
+- HROT, Selaco, Wrath och Forgive Me Father
+
+Det mesta som de spelen gör bra fanns redan, till exempel stilmätare, avrättningar, musik i lager för striden, tillgänglighet och nycklar och valv. Det som saknades var tre saker:
+- att skott, sparkar och sprängämnen spelar ihop
+- närstrid som går att läsa
+- rörelse som hör ihop med striden
+
+<!-- V26A -->
+
+### Närstrid som går att läsa (ULTRAKILL, Cultic)
+- **Markeringen:** närstridsfiendernas slag syns komma. Strax före träffen blinkar fienden **gult och får en gul romb** ovanför sig.
+- **Parering:** sparka i rätt ögonblick så parerar du (V, sparkknappen på handkontrollen eller handen på pekskärmen).
+  - Slaget uteblir, fienden vacklar och nästa spark avrättar.
+  - Du får +10 överhälsa och +PARERING.
+  - Eliter och champions bedövas bara en kort stund.
+- **Blått med ett kryss** går inte att parera. Det gäller explosiva eliter, orkkrigarens stormning och det tända bombskelettet.
+- Ett kort "ting" hörs när ett slag går att parera.
+- Med FÄRGBLIND eller INGA BLIXTAR blinkar inget: ljuset lyser fast och formen blir större. Markeringen kan stängas av med PARERINGSMARKERING.
+- **Bossar och väktare:** deras hugg, klor, bett och piskor blinkar också gult.
+  - En parering tar bort slaget och bedövar bossen en kort stund, men en boss vacklar aldrig och kan inte avrättas.
+  - Efter en parering dröjer det 4 s innan nästa går.
+  - Markslag med chockvågor, rusningar, dyk och början av specialanfallen är blå och måste undvikas.
+
+### Flygspark (Boltgun, Dread Templar)
+- Sparkar du mot en vacklande fiende under hårkorset, upp till 4,5 rutor bort, kastar du dig fram och avrättar den. Det fungerar även i luften.
+- Flygsparken kostar uthållighet och har 1,2 s nedkylning.
+- Den går inte genom väggar och dörrar, och inte ut över tomrum eller lava.
+
+### Tillbaka till avsändaren (HROT, Cultic)
+- En fiendegranat som landat framför dig, eller en kanonkula eller eldkruka som håller på att landa, kan sparkas tillbaka.
+- Den flyger till kastaren och smäller där (+RETUR).
+
+### Jonglering (ULTRAKILL)
+- Explosioner nära en fiende, och hagelgeväret eller dubbelbössan på nära håll, kastar lätta fiender upp i luften.
+- I luften kan de inte anfalla. De tar 25 % mer skada, och varje träff håller dem kvar en stund till.
+- Dödar du en fiende innan den landat får du +JONGLERING.
+- Landningen gör lite skada, och den som landar i tomrummet faller.
+- Tunga fiender, flygare, bossar och väktare står kvar.
+
+### Huvudet lossnar (Selaco)
+- Ett dödande huvudskott på en fiende av kött eller ben skjuter iväg huvudet. Det skärs ut ur fiendens egen bild, så inga nya bilder behövs.
+- Kroppen står huvudlös ett ögonblick med en kort blodfontän och segnar sedan ned i golvet. Benfiender dammar i stället för att blöda.
+- Fiender som inte står upprätt, som fåglar, hundar och krabbor, dör som förut. Skelett som inte går att skära ut tappar dödskallen.
+- Allt är kortlivat: ett huvud, högst sex droppar och en liten fläck som försvinner efter 8 s.
+- MINSKADE EFFEKTER och HUVUDEN LOSSNAR (under BILD) stänger av det.
+
+### Musiken följer stilen (ULTRAKILL)
+- Stilrangen höjer musikens intensitet ovanpå striden: lite på rang A, nästan fullt från rang S.
+- En ny rang från A till SSS ger en kort syntad stinger och en ram som växer ut från rangbokstaven.
+- STILMÄTARE av eller MUSIKEN FÖLJER STILEN av (under LJUD) stänger av det.
+
+### Hån (Boltgun)
+- Y väcker fienderna inom 10 rutor, och de närmaste anfaller direkt. Tangenten går att byta.
+- Dödar du någon inom 4 s får du +HÅNAD och mer stil. Nedkylningen är 8 s.
+- På handkontrollen väljer du knapp under HANDKONTROLLEN. På pekskärmen finns klockknappen med ALLA KNAPPAR.
+
+### Balansmätning
+- **Upplägg:** spelbottar körde version 23 och version 26 tre gånger var i fem biomer, cirka 190 våningar per version.
+- **Resultat:** dödsfall per våning (0,38 mot 0,39), dödanden per minut och tid per våning ligger inom bruset. Attackpoletterna, befälhavarna och eldkrukan har alltså inte gjort spelet tydligt svårare eller lättare för bottarna.
+- **Inte mätt:** bottarna campar aldrig, så version 25:s granat utlöstes aldrig och är inte mätt.
+
+**Tester:** t125–t133.
+
 ## Version 25.1: röster, himlar och fler effekter
 
 ### Röster till fiendernas utrop
