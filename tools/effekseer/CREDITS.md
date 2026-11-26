@@ -33,14 +33,24 @@ verktygets `Sample/` och lägger just den filen bredvid som `readme.txt`, så CC
 | `assets/gfx/efx_heal.png` (helning, 12 × 32×48, vit, färgas grön i spelet) – version 25.1 | `samples/00_Basic/Laser01.efkefc` | Effekseer Project (`00_Basic`) | CC0 |
 | `assets/gfx/efx_portal.png` (portal, 12 × 48×48, vit, färgas lila i spelet) – version 25.1 | `samples/00_Basic/Simple_Distortion.efkefc` | Effekseer Project (`00_Basic`) | CC0 |
 | `assets/gfx/efx_slam.png` (bossens chockvåg, 12 × 48×48, färg) – version 25.1 | sammansatt av `samples/00_Basic/Simple_Sprite_Fixed.efkefc` (skala 0,7, fart 2,5) och `samples/00_Basic/Simple_SpawnMethod1.efkefc` (skala 0,45) | Effekseer Project (`00_Basic`) | CC0 |
+| `assets/gfx/efx_ring.png` (chockvåg på marken, 6 × 48×12, vit, färgas som damm i spelet) – version 27 | `samples/00_Basic/Simple_Ring_Shape1.efkefc`, bildruta 8–40, sedd snett från sidan (kameran 2,2 över marken) | Effekseer Project (`00_Basic`) | CC0 |
+| `assets/gfx/efx_burst.png` (bossens fasbyte och död, 12 × 64×64, färg) – version 27 | sammansatt av `samples/02_Tktk03/ToonHit.efkefc` (skala 1,4), `samples/00_Basic/Simple_SpawnMethod1.efkefc` (skala 0,6, 3 bildrutor senare) och `samples/00_Basic/Simple_Ring_Shape1.efkefc` (skala 1,1, på marken) | Effekseer Project (`00_Basic`); bidragsgivaren tktk (`02_Tktk03`) | CC0 |
 
-Explosionen och chockvågen är alltså egna kompositioner av CC0-lager (se `effects.json`), inte färdiga Effekseer-effekter.
+Explosionen, chockvågen och bossens smäll (`efx_burst`, version 27) är alltså egna kompositioner av CC0-lager (se `effects.json`), inte färdiga Effekseer-effekter.
 Stripparna är efterbehandlade (utsnitt, nedskalning, Bayer-dither, palett från spelets `fire.png`/`fireball.png`
 respektive en grå trappa), se `process.py`.
+
+## Version 27: effekter i kod (inga filer)
+
+Mynningsflammorna per vapentyp (hagel, gevär, kpist, magi och tunga vapen), stjärnan och pricken för gnistor och glitter, och
+skärmeffekterna vid bossens fasbyte och död (ring, färgpuls i kanterna och den vita blixten) ritas i `js/game.js` (blocket
+`// ---------- Version 27: FX ...`) när spelet körs. De är eget arbete för Krypta och bygger inte på någon annans bilder.
+Partiklarna i övrigt (rök, glöd, skräp, droppar och snö) använder spelets befintliga bilder i `assets/gfx/part_*.png`.
 
 ## Inte använda
 
 - `tests/Resources/` i EffekseerForWebGL (`Blow1`, `Cure1`, `Arrow1` m.fl.): ingen egen licenstext för effekterna, så de används inte.
+- `samples/00_Basic/Simple_Turbulence_Fireworks.efkefc` (provad för gnistor i version 27): för tunna spår för spelets upplösning, så gnistorna görs i kod.
 - `samples/00_Basic/Simple_Sprite_Directional.efkefc`: hänger sig i renderingen (headless Chromium med SwiftShader), så den används inte.
 - `samples/00_Version16/*_HDR.efkefc` och `samples/03_Hanmado01/`: kräver HDR enligt sina `readme.txt`, så de används inte.
 - `Release/Sample/` i Effekseer (t.ex. `01_NextSoft01/MagicMeteo`): bara `.efkproj` (editorns projektformat), som runtimen inte kan läsa.

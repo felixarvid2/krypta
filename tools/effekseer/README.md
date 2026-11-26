@@ -71,3 +71,41 @@ till nycklarna i `EFX_FRAMES`, `EFX_NEAR` och `EFX.n`, så `efxLoad` laddar dem 
   hälsan när hälsan stiger med minst 3 inom 0,6 s (drycker, kallbad, livsstöld); stora hopp (ny bana) räknas inte.
 - noFlash tonar och dämpar blixten, chockvågen och portalen.
 - Testkroken är `__game.efx2`, testet `tools/playtest/t117.mjs` (`EFX_SHOTS=<katalog>` sparar före/efter-bilder).
+
+## Version 27: chockvågen på marken och bossens smäll
+
+Två nya strippar (källor i `CREDITS.md`, inställningar i `effects.json`), tillsammans cirka 19 kB:
+
+- `efx_ring` (6 × 48×12, vit): `Simple_Ring_Shape1` sedd snett från sidan. Spelet låter ringen växa (`size` per bildruta) och färgar
+  den som damm, så den blir en chockvåg längs golvet vid explosioner. Den ritas inte additivt, så den syns mot det upplysta golvet.
+- `efx_burst` (12 × 64×64, färg): `ToonHit`, `Simple_SpawnMethod1` och ringen på marken. Den ritas när en boss byter fas, några gånger
+  under dödsanimationen och stort när bossen dör (tillsammans med `efx_tele` i guld som en ljuspelare).
+
+`render.mjs ring burst` och `process.py efx_ring.png efx_burst.png` gör om dem. `Simple_Turbulence_Fireworks` provades för gnistor,
+men spåren blev för tunna efter nedskalningen, så gnistor, glitter och mynningsflammor ritas i kod i stället.
+
+Blocket `// ---------- Version 27: FX ...` i `js/game.js` (före HUD-blocket) lägger till `ring` och `burst` i `EFX_FRAMES`, så `efxLoad` laddar
+dem och `efxOk` gäller (högst 10 effektsprites, avståndsgränser, lowfx). Krokarna, var och en på en egen rad:
+
+- `drawWeapon`: `fx27Muzzle` ritar mynningsflamman för vapnets typ (hagel, gevär, kpist, magi i vapnets färg, tunga vapen). Bilderna
+  (tre per typ, 32×32) ritas i kod första gången de behövs. Den gamla `MuzzleFlash.png` ritas då genomskinlig i samma bildruta.
+- `wpImpact`: `fx27Impact` förstärker nedslagen efter material, högst 3 per bildruta: gnista, heta gnistor som studsar och svalnar och
+  en het fläck i metall; dammoln och ett stenskott i sten; snurrande flisor och sågdamm i trä; glitter i is och glas; stänk eller lava
+  när ett lågt skott slår ned vid en vätska.
+- `explode`: `fx27Boom` lägger till chockvågen på marken, en dammvåg, skräp som studsar (tre av bitarna ryker), glöd som falnar på
+  golvet (gul → orange → röd → mörk) och rök som dröjer kvar i 4–6 s. I vatten blir det en kaskad och i lava ett lavastänk.
+  Högst två rika smällar per 0,12 s (kedjor av krutfat). Delarna kommer en bildruta efter smällen, så att kärnan i alla smällar i
+  samma bildruta (VAPEN och version 25) får sina platser först. Nära kameran blir ringen mindre (under 1,6 rutor ingen), dammvågen
+  stannar före kameran och röken som dröjer kvar hoppas över under 2 rutor.
+- `updateWeather`: `fx27Tick` sköter glöden som falnar, ringen som växer, skräpets rök och miljön: snö under fötterna (snö och frost),
+  damm när man går i damm (springandet sköter VÄRLD), lava som fräser, gnistor från sågklingor, glöd från brinnande mark och glimmer
+  från kistor och magiska föremål, och fiender som vadar i vatten stänker. Den läser också av bossarnas fas och död (fält `fx27*` på bossen, ingen krok i FIENDER).
+- HUD:en: `fx27DrawHud` ritar chockvågen från bossen som en ring över skärmen, en färgpuls i kanterna (mitten och hårkorset lämnas fria)
+  och en vit blixt när bossen dör.
+- Allt nytt fyller partikellistan bara till 120 (`FX27_SOFT`); bossarnas smällar och effektsprites får gå till VAPENs hårda tak 215.
+  Bossens smäll och ljuspelare krymper nära kameran (som version 25.1: avståndet minst 1,4 × storleken) eller hoppas över.
+- Mynningsljuset i världen (`MUZZLE_COL`) får vapnets färg för hagel, de tunga vapnen och magin; med version 27 av är färgen som förut.
+- `lowfx` (även den automatiska) stänger av allt nytt. `noFlash` dämpar mynningsflamman (svagare, ingen vridning), smällarna och
+  skärmeffekterna och tar bort den vita blixten. `reduceMotion` tar bort ringen över skärmen.
+- Testkroken är `__game.fx27` (`state()`, `setOff()`, `set({ muzzle, impact, boom, env, boss })`, `fixed()`, `muzzle(id)`, `boom()`, `impact()`,
+  `step()`, `env()`, `phase()`, `final()`), testerna `tools/playtest/t140.mjs` (`FX27_SHOTS=<katalog>` sparar före/efter-bilder och flammorna) och `t141.mjs` (riktiga vapen, granatkastaren och en vanlig våning).
