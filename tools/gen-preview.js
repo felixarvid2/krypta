@@ -91,6 +91,9 @@ const depth = +(pos[2] || 1);
 const n = +(flag('n') || 1);
 // version 27: --plan=ring|cross|gauntlet|court tvingar fram en planritning, --scene=throne (eller prefab:feast) en scen, --v27off stänger av version 27
 const V27OPT = flag('v27off') ? { v27off: true } : (flag('plan') || flag('scene')) ? { v27: Object.assign(flag('plan') ? { plan: flag('plan') } : {}, flag('scene') ? { scenes: String(flag('scene')).split(',') } : {}) } : {};
+// version 28: --scene28=floodhall,tower,balcony tvingar fram scener, --blood en blodvåning, --windows=2 fönster, --v28off stänger av version 28
+//   (fönstren ǂ syns som ǂ, de djupa bassängerna i den översvämmade salen som Đ)
+const V28OPT = flag('v28off') ? { v28off: true } : (flag('scene28') || flag('blood') || flag('windows')) ? { v28: Object.assign(flag('scene28') ? { scenes: String(flag('scene28')).split(',') } : {}, flag('blood') ? { blood: true } : {}, flag('windows') ? { windows: +flag('windows') } : {}) } : {};
 const LEGEND = [
   'väggar: 1-5 sten  6 skogsbryn  7 kyrkogårdsmur  8 grottberg  9 timmer  # demon  % best  ~ mardröm  & ogre  = vålnad',
   'D dörr  G grind  * hemlig vägg  P start  x utgång  B boss  Z vaktare  Q mimic  E elit  S K V I L N O R W fiender',
@@ -259,7 +262,7 @@ const arrow = b => (b.dx > 0 ? '>' : b.dx < 0 ? '<' : b.dy > 0 ? 'v' : '^');
 const makeLevel = (seed, d, shop) => (flag('secret') ? Gen.secret(seed, { biome: biome === 'random' ? undefined : biome, depth: d })
   : flag('maze') ? Gen.maze(seed, { biome: biome === 'random' ? undefined : biome, depth: d })
   : biome.startsWith('boss') ? Gen.boss(seed, { arena: biome.split(':')[1], boss: flag('boss') })
-    : Gen.floor(seed, d, Object.assign({ biome: biome === 'random' ? undefined : biome, shop, weapon: flag('weapon'), guardian: flag('guardian') }, V27OPT)));
+    : Gen.floor(seed, d, Object.assign({ biome: biome === 'random' ? undefined : biome, shop, weapon: flag('weapon'), guardian: flag('guardian') }, V27OPT, V28OPT)));
 if (flag('stats')) {
   // statistik över n banor (djupet roterar 1-5 om inget djup anges)
   const F = {}, FN = {}, EN = {}, T = {}; let ms = 0;
@@ -318,6 +321,9 @@ for (let k = 0; k < n; k++) {
   if (lv.breadcrumbs && lv.breadcrumbs.length) console.log('brödsmulor: ' + lv.breadcrumbs.map(b => b.ch + ' ' + b.x + ',' + b.y).join('  '));
   if (lv.secretHints && lv.secretHints.length) console.log('ledtrådar: ' + lv.secretHints.map(h => `${h.x},${h.y}`).join('  ') + (lv.cover && lv.cover.length ? '; skydd: ' + lv.cover.map(c => c.x + ',' + c.y).join(' ') : ''));
   if (lv.plan27) console.log('planritning (version 27): ' + lv.plan27 + ' – ' + lv.planName27 + (lv.hub27 >= 0 ? ' (mittgården är rum ' + lv.hub27 + ')' : ''));
+  if (lv.scenes28 && lv.scenes28.length) console.log('scener (version 28): ' + lv.scenes28.map(s => `${s.kind} i rum ${s.room} (${s.x},${s.y} ${s.w}x${s.h})`).join('; ') + (lv.deep28 && lv.deep28.length ? ` – ${lv.deep28.length} rutor djup bassäng (Đ)` : ''));
+  if (lv.windows28 && lv.windows28.length) console.log('fönster ǂ (version 28): ' + lv.windows28.map(w => `${w.cells.length} ruta/rutor mot rum ${w.room} (${lv.rooms[w.room].type}) från ${w.from.x},${w.from.y}`).join('; '));
+  if (lv.blood28) console.log('BLODVÅNINGEN (version 28): spelet ger fler fiender, extra kistor, blod på väggarna och röd färgton');
   if (lv.scenes27 && lv.scenes27.length) console.log('scener (version 27): ' + lv.scenes27.map(s => `${s.kind} i rum ${s.room} (${s.x},${s.y} ${s.w}x${s.h})`).join('; '));
   if (lv.pacing && lv.pacing.length) console.log('takt: ' + lv.pacing.map(p => `rum ${p.room} ${p.beat}`).join(', '));
   const errs = Gen.validate(lv);
@@ -338,12 +344,14 @@ for (let k = 0; k < n; k++) {
     for (const b of lv.beams || []) mark[b.y * W + b.x] = '~';
     for (const b of lv.boulders || []) { const ux = Math.sign(b.sx - b.tx), uy = Math.sign(b.sy - b.ty); for (let k = 1, x = b.tx + ux, y = b.ty + uy; k <= Math.abs(b.sx - b.tx) + Math.abs(b.sy - b.ty); k++, x += ux, y += uy) mark[y * W + x] = '='; }
   }
+  const deep28 = new Set((lv.deep28 || []).map(c => c.y * W + c.x));
   for (let y = 0; y < H; y++) {
     let s = '';
     for (let x = 0; x < W; x++) {
       const c = lv.map[y][x];
       if (show) { s += (c >= '0' && c <= '9') || '#%~&=Ø¦Ò¤ÈÌÙĄĆĈĊČĎĹĺĻļĽľŝŞşŠšŢũŪūŵŶŷƊƋƌƓƔƕƟƠơƢƣƤǒǓǔǠǡǢǮǯǰǿȀȁȐȑȒȓȔȕ'.includes(c) ? '#' : (show[y] ? show[y][x] : '?'); continue; }
       if (mark[y * W + x] && (c === '.' || mark[y * W + x] === '~' || mark[y * W + x] === '+' || mark[y * W + x] === '!' || c === 'ń' || c === 'ť' || c === 'Ÿ' || c === 'ƣ' || c === 'ɰ')) { s += mark[y * W + x]; continue; }
+      if (c === '-' && deep28.has(y * W + x)) { s += 'Đ'; continue; } // (version 28: djup bassäng)
       if (c !== '.') { s += c; continue; }
       const fi = lv.floorMask ? +lv.floorMask[y][x] : 0;
       s += fi === bossF ? '`' : '.';

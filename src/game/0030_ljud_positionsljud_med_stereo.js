@@ -295,6 +295,7 @@ function startLevel(level) {
   wallMarks.clear();
   lvl = level;
   map = lvl.map.map(r => r.split('')); mh = map.length; mw = map[0].length;
+  v28PreMap(); // version 28: de djupa bassängerna i den översvämmade salen blir djupt vatten
   icicles.length = 0; groundFires.length = 0; spores.length = 0; challenge = null; iceSteps = {}; P.cold = 0; waves = []; clones = []; mirrors = []; darkT = 0; doors = {}; ents = []; items = []; pots = []; torches = []; chests = []; merchants = []; particles = []; projectiles = []; numbers.length = 0; fuses.length = 0; portals = []; hazards = []; decals.length = 0;
   lvlStat.shots = lvlStat.hits = lvlStat.taken = 0; lvlStat.healed = 0;
   if (run) run.floorStealth = 0;
@@ -363,6 +364,7 @@ function startLevel(level) {
   else say(lvl.name, 3);
   v27Start(); // version 27: planritningens namn
   v28Start(); // version 28 (REND): takfläckar nollställs, fönstrens ramar och genomsiktliga rutor
+  v28gStart(); // version 28 (GEN): scenernas namn, fönstren, blodvåningen och utmaningsvåningen
   if (boss) { bossIntro = 2.2; boss.cd = Math.max(boss.cd, 3); }
   if (boss) { bossBanner = 3.5; slowmo = 1.2; play('stinger', 0.8); if (window.Music) Music.sting('boss'); setTimeout(() => play('bossroar', 0.9, 0.8), 600); }
   startAmbient(); buildGrade(); fogK = biomeFx().fogK * fogMul; lightning = 0; lightningT = rnd(4, 10);

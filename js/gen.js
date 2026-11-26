@@ -900,7 +900,8 @@
     + '\u022c\u022d\u022e\u022f\u0230\u0231' // version 20: timrad stoll Ȑ, malmåder ȑ, förmannens Ȓ, mässingspanel ȓ, stjärnkarta Ȕ, stjärnskådarens ȕ
     + '\u0247\u0248\u0249\u024a\u024b\u024c' // version 21: fängelsesten ɇ, cellgaller Ɉ, bödelns ɉ, bodvägg Ɋ, kajsten ɋ, tidvattenprästens Ɍ
     + 'ɠɡɢɭɮɯ' // version 22: mosaikmarmor ɠ, pelargång ɡ, badmästarens ɢ, köttmur ɭ, benmur ɮ, eldfurstens ɯ
-    + 'ɼɽɾʈʉʊ'; // version 23: slaktkakel ɼ, kylrum ɽ, slaktmästarens ɾ, palissad ʈ, jordvall ʉ, krigsherrens ʊ
+    + 'ɼɽɾʈʉʊ' // version 23: slaktkakel ɼ, kylrum ɽ, slaktmästarens ɾ, palissad ʈ, jordvall ʉ, krigsherrens ʊ
+    + 'ǂ'; // version 28: fönster/galler (en vägg man ser igenom)
   const PSTONE21 = '\u0247', CELLS21 = '\u0248', EXECWALL21 = '\u0249', SHACK21 = '\u024a', QUAY21 = '\u024b', TIDEWALL21 = '\u024c'; // version 21
   const MOSAIC22 = 'ɠ', COLUMN22 = 'ɡ', BATHWALL22 = 'ɢ', FLESH22 = 'ɭ', BONE22 = 'ɮ', PYREWALL22 = 'ɯ'; // version 22
   const TILE23 = 'ɼ', COLD23 = 'ɽ', BUTCHWALL23 = 'ɾ', PALI23 = 'ʈ', EARTH23 = 'ʉ', WARWALL23 = 'ʊ'; // version 23
@@ -9982,6 +9983,250 @@
     L.features = features(L.map, L.beams, L.arenas, L.rooms);
   }
 
+  // ---------- Version 28: översvämmad sal, vakttorn och balkonger bakom galler, fönster mot rum man når senare, blodvåning ----------
+  // Ett pass ovanpå version 27 (Gen.floor = floor28) med eget slumpflöde RNG(seed).fork('v28'). opts.v28off (och alla äldre vNNoff) stänger av det
+  // helt: då är banan exakt som i version 27 (inga nya fält). opts.v28 = { scenes: [id, ...], noScenes, noWindows, blood: bool } tvingar fram
+  // scener/blodvåning (tester, förhandsvisning).
+  //  ǂ FÖNSTER (galler/fönster med ram): en vägg (WALLS) man inte kan gå eller skjuta igenom men ser igenom (spelet ritar den).
+  //  level.scenes28 = [{ kind, room, x, y, w, h }]: floodhall (grunt vatten - över salen med torra öar; level.deep28 = [{ x, y }] är djupa
+  //    bassänger som spelet gör till djupt vatten Đ när banan startar; på kartan står -), tower (ett inhägnat torn mitt i salen med fönster ǂ och
+  //    en smal ingång; 1 skytt K inne), balcony (en avsats längs en vägg bakom galler ǂ som nås från ena änden; 1-2 skyttar K). Skyttarna är
+  //    rummets egna fiender som flyttas dit (antalet fiender ändras inte).
+  //  level.windows28 = [{ room, cells: [{ x, y }], from: { x, y } }]: 1-3 rutor ǂ i en tunn vägg mellan en tidig gång och ett rum längre fram
+  //    (utgången, skattkammaren, valvet eller nyckelns rum): spelaren ser målet långt innan hen når det.
+  //  level.blood28 = true: BLODVÅNINGEN (cirka 1 av 12 våningar från djup 3): spelet ger fler fiender, mer belöning och en egen stämning.
+  const V28_OFFS = V27_OFFS.concat(['v28off']);
+  const V28_SCENES = ['floodhall', 'tower', 'balcony'];
+  const V28_SCENE_ROOMS = ['normal', 'elite', 'exit'];
+  const V28_FLOOD_BIOMES = ['dungeon', 'sewer', 'harbor', 'bathhouse', 'jungle', 'prison', 'mine', 'cathedral', 'abattoir', 'battlefield', 'caves', 'forest', 'graveyard'];
+  const V28_BLOOD_P = 1 / 12, V28_WIN_CAP = 40;
+  const V28_WIN_ROOMS = ['exit', 'treasure', 'vault', 'elite'];
+  const WINDOW28 = 'ǂ';
+  function floor28(seed, depth, opts) {
+    opts = opts || {};
+    if (V28_OFFS.some(k => opts[k])) return floor27(seed, depth, opts);
+    const L = floor27(seed, depth, opts);
+    const R = RNG(seed).fork('v28'), F = opts.v28 || {}, st = floor28.stats.v28 = floor28.stats.v28 || { n: 0, rejected: 0, last: '', windows: 0, blood: 0 };
+    const d = Math.max(1, Math.min(5, Math.round(depth || 1)));
+    L.scenes28 = []; L.windows28 = []; L.deep28 = [];
+    const br = R.fork('blod').next();
+    L.blood28 = F.blood !== undefined ? !!F.blood : d >= 3 && br < V28_BLOOD_P;
+    if (L.blood28) st.blood++;
+    content28(L, R.fork('scene'), R.fork('window'), F, st);
+    return L;
+  }
+  floor28.stats = floor.stats;
+  function content28(L, rng, wrng, F, st) {
+    const H = L.map.length, W = L.map[0].length, N = W * H, g = L.map.map(r => r.split(''));
+    const rooms = L.rooms || [], rm = Array.isArray(L.roomMask) && L.roomMask.length === H ? L.roomMask : null;
+    if (!rm || L.arena || L.maze || L.secret) return;
+    const inb = (x, y) => x >= 0 && y >= 0 && x < W && y < H;
+    const roomOf = (x, y) => (rm[y][x] !== '-' ? rm[y].charCodeAt(x) - 48 : -1);
+    const wc = {}; for (const row of g) for (const c of row) if (isWall(c)) wc[c] = (wc[c] || 0) + 1;
+    const wall = Object.keys(wc).sort((a, b) => wc[b] - wc[a] || (a < b ? -1 : 1))[0];
+    const wallOK = wall && wall !== SHIFT16 && !['mirror', 'sky'].includes(L.biome);
+    // spärrade rutor (som version 27) och rummen som redan har en scen från version 27
+    const ban = new Uint8Array(N);
+    const banR = (x, y, r) => { for (let yy = y - r; yy <= y + r; yy++) for (let xx = x - r; xx <= x + r; xx++) if (inb(xx, yy)) ban[yy * W + xx] = 1; };
+    const pt = (o, r) => { if (o && Number.isInteger(o.x) && Number.isInteger(o.y)) banR(o.x, o.y, r); };
+    for (const s of L.shortcuts || []) { pt(s, 1); banR(s.sx, s.sy, 1); banR(s.nx, s.ny, 1); (s.carved || []).forEach(c => pt(c, 1)); }
+    for (const a of L.ambushes || []) { pt(a.trigger, 1); pt(a.from, 1); (a.cells || []).forEach(c => pt(c, 1)); }
+    for (const l of L.landmarks || []) banR(l.x, l.y, (l.r || 1) + 1);
+    for (const k of ['breadcrumbs', 'cover', 'pacing']) for (const o of L[k] || []) pt(o, 1);
+    for (const s of L.secretHints || []) { pt(s, 1); banR(s.fx, s.fy, 1); }
+    const pts = o => { if (!o || typeof o !== 'object') return; for (const [kx, ky] of [['x', 'y'], ['tx', 'ty'], ['sx', 'sy']]) if (Number.isInteger(o[kx]) && Number.isInteger(o[ky])) banR(o[kx], o[ky], 2); for (const k of ['a', 'b']) if (o[k] && typeof o[k] === 'object') pts(o[k]); if (Array.isArray(o.cells)) o.cells.forEach(pts); if (Array.isArray(o)) o.forEach(pts); };
+    for (const k of ['boulders', 'beams', 'saws', 'winds', 'teleports', 'belts', 'shifts', 'carts', 'starports', 'sluices', 'streams']) if (Array.isArray(L[k])) L[k].forEach(pts);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const c = g[y][x];
+      if ('PxZ}'.includes(c) || c === '|' || c === ']' || c === '{' || c === '*' || c === '±') banR(x, y, 2);
+      else if (isDoorCh(c) || isInter(c) || c === 'M' || c === 'Q' || HAZARD.includes(c)) banR(x, y, 1);
+      if (c === '<' || c === 'ʒ' || c === 'ǎ') for (let k = 0; k < 4; k++) for (let j = 1; j <= 8; j++) if (inb(x + DX[k] * j, y + DY[k] * j)) ban[(y + DY[k] * j) * W + x + DX[k] * j] = 1;
+    }
+    for (const a of L.arenas || []) for (let y = a.y0 - 1; y <= a.y1 + 1; y++) for (let x = a.x0 - 1; x <= a.x1 + 1; x++) if (inb(x, y)) ban[y * W + x] = 1;
+    const used = new Set(); // (rum med en scen från version 27 får en till om den inte rör den: rutan runt version 27-scenen är spärrad)
+    for (const s of L.scenes27 || []) for (let y = s.y - 1; y <= s.y + s.h; y++) for (let x = s.x - 1; x <= s.x + s.w; x++) if (inb(x, y)) ban[y * W + x] = 1;
+    let P = null; for (let y = 0; y < H && !P; y++) for (let x = 0; x < W; x++) if (g[y][x] === 'P') { P = [x, y]; break; }
+    if (!P) return;
+    // nåbarhet som i version 27; de djupa bassängerna räknas som hinder i det säkra flödet (de är aldrig enda vägen)
+    const ow = new Set((L.shortcuts || []).filter(o => o.oneway).map(o => o.y * W + o.x));
+    const deep = new Set();
+    const reach = safe => { const seen = new Uint8Array(N), q = [P[1] * W + P[0]]; seen[q[0]] = 1;
+      for (let h = 0; h < q.length; h++) { const c = q[h], x = c % W, y = (c / W) | 0; for (let k = 0; k < 4; k++) { const nx = x + DX[k], ny = y + DY[k], n = ny * W + nx; if (!inb(nx, ny) || seen[n] === 1) continue; if ((safe ? genBlk(g[ny][nx]) || deep.has(n) : isBlock(g[ny][nx])) || ow.has(n)) { seen[n] = 2; continue; } seen[n] = 1; q.push(n); } }
+      return seen; };
+    let base = reach(false), baseS = reach(true);
+    const step = (kind, room, box, fn) => {
+      const undo = [], dundo = [], set = (x, y, c) => { undo.push([x, y, g[y][x]]); g[y][x] = c; }, mkDeep = (x, y) => { const n = y * W + x; if (!deep.has(n)) { deep.add(n); dundo.push(n); } };
+      const rollback = () => { for (let k = undo.length - 1; k >= 0; k--) { const [x, y, c] = undo[k]; g[y][x] = c; } for (const n of dundo) deep.delete(n); };
+      if (!fn(set, mkDeep) || !undo.length) { rollback(); return false; }
+      const now = reach(false), nowS = reach(true); let bad = false;
+      const chg = new Set(undo.map(([x, y]) => y * W + x).concat(dundo));
+      for (const i of chg) { const c = g[(i / W) | 0][i % W]; if ((!isBlock(c) && now[i] !== 1) || (!genBlk(c) && !deep.has(i) && nowS[i] !== 1) || (!isWall(c) && !now[i])) bad = true; }
+      for (let i = 0; i < N && !bad; i++) { if (chg.has(i) || isWall(g[(i / W) | 0][i % W])) continue; if ((base[i] && !now[i]) || (baseS[i] && !nowS[i]) || (base[i] === 1 && now[i] !== 1) || (baseS[i] === 1 && nowS[i] !== 1)) bad = true; }
+      if (!bad) { // (och validate godkänner banan: scenerna är få, valideringen kostar ~2 ms)
+        L.scenes28.push(Object.assign({ kind, room }, box)); L.map = g.map(r => r.join('')); L.deep28 = [...deep].map(n => ({ x: n % W, y: (n / W) | 0 }));
+        const e = validate(L); if (e.length) { bad = true; st.why = e[0]; L.scenes28.pop(); }
+      }
+      if (bad) { st.rejected++; st.last = kind; rollback(); L.map = g.map(r => r.join('')); return false; }
+      base = now; baseS = nowS;
+      used.add(room); return true;
+    };
+    const free = (x, y) => inb(x, y) && g[y][x] === '.' && !ban[y * W + x];
+    const inRoom = (i, x, y) => inb(x, y) && roomOf(x, y) === i;
+    const clear = (x, y) => inb(x, y) && !isBlock(g[y][x]);
+    // rummets fiender (de gamla vanliga först; de gamla närstridarna blir eldskelett K, biomens egna fiender behåller sitt tecken) och skatter
+    const OLDFOE = 'SKVILNORWUX', MELEE = 'SVILRWUX', LOOT28 = '$ha';
+    const roomFoes = (i, r) => { const out = []; for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) if (inRoom(i, x, y) && !ban[y * W + x] && ENEMY_CHARS.includes(g[y][x]) && g[y][x] !== 'E') out.push([x, y]);
+      return out.sort((a, b) => (OLDFOE.includes(g[b[1]][b[0]]) ? 1 : 0) - (OLDFOE.includes(g[a[1]][a[0]]) ? 1 : 0)); };
+    const roomLoot = (i, r) => { const out = []; for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) if (inRoom(i, x, y) && !ban[y * W + x] && LOOT28.includes(g[y][x])) out.push([x, y]); return out; };
+    const shooter = c => (MELEE.includes(c) ? 'K' : c);
+    const SC = {
+      floodhall: (i, set, mkDeep, box) => { // översvämmad sal: grunt vatten över golvet, 2-4 torra öar och 1-2 djupa bassänger
+        const r = rooms[i]; if (!V28_FLOOD_BIOMES.includes(L.biome) || r.w < 6 || r.h < 6 || r.w * r.h < 40) return false;
+        Object.assign(box, { x: r.x, y: r.y, w: r.w, h: r.h });
+        const isl = []; for (let k = 0, n = rng.int(2, 4); k < n; k++) isl.push([r.x + rng.int(1, r.w - 2), r.y + rng.int(1, r.h - 2)]);
+        let n = 0; const wet = [];
+        for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) {
+          if (!free(x, y) || !inRoom(i, x, y) || isl.some(([a, b]) => cheb(x, y, a, b) <= 1)) continue;
+          if ([0, 1, 2, 3].some(d => { const c = inb(x + DX[d], y + DY[d]) ? g[y + DY[d]][x + DX[d]] : '1'; return isDoorCh(c) || c === 'P' || c === 'x'; })) continue;
+          set(x, y, '-'); n++; wet.push([x, y]);
+        }
+        if (n < 14) return false;
+        // djupa bassänger: 2x2 eller 3x2 rutor mitt i vattnet (alla grannar vatten eller vägg)
+        const isW = (x, y) => inb(x, y) && g[y][x] === '-';
+        for (let k = 0, want = rng.int(1, 2), tries = 0; k < want && tries < 30; tries++) {
+          const [x, y] = rng.pick(wet), pw = rng.int(2, 3), ph = 2;
+          let ok = true; for (let yy = y - 1; yy <= y + ph && ok; yy++) for (let xx = x - 1; xx <= x + pw && ok; xx++) { if (!inb(xx, yy)) { ok = false; break; } const inside = xx >= x && xx < x + pw && yy >= y && yy < y + ph; if (inside ? !isW(xx, yy) || deep.has(yy * W + xx) : !(isW(xx, yy) || isWall(g[yy][xx]))) ok = false; }
+          if (!ok) continue;
+          for (let yy = y; yy < y + ph; yy++) for (let xx = x; xx < x + pw; xx++) mkDeep(xx, yy);
+          k++;
+        }
+        return true;
+      },
+      balcony: (i, set, mkDeep, box) => { // balkong: en avsats (5-9 rutor) längs en vägg bakom galler ǂ, ingång i ena änden; rummets fiender blir skyttar där
+        const r = rooms[i]; if (!wallOK || Math.max(r.w, r.h) < 5 || Math.min(r.w, r.h) < 4) return false;
+        const cellOf = (sd, a, depth) => sd === 0 ? [r.x + r.w - 1 - depth, r.y + a] : sd === 2 ? [r.x + depth, r.y + a] : sd === 1 ? [r.x + a, r.y + r.h - 1 - depth] : [r.x + a, r.y + depth];
+        const wallAt = (sd, a) => { const [x, y] = cellOf(sd, a, -1); return inb(x, y) && (isWall(g[y][x]) || g[y][x] === 'D'); }; // (väggen bakom: vägg eller en vanlig dörr = en sidogång in på balkongen)
+        const fits = (sd, len, a0, L, gapEnd) => {
+          for (let a = a0 - 1; a <= a0 + L; a++) {
+            if (a < 0 || a >= len) continue;
+            if (!wallAt(sd, a)) return false;
+            const [bx, by] = cellOf(sd, a, 0), [gx, gy] = cellOf(sd, a, 1);
+            if (!inRoom(i, bx, by) || !inRoom(i, gx, gy)) return false;
+            if (a === a0 - 1 || a === a0 + L) { if (g[by][bx] !== '.' || g[gy][gx] !== '.') return false; continue; } // (gaveln blir vägg)
+            if (isBlock(g[by][bx]) || isDoorCh(g[by][bx])) return false;
+            if (a !== (gapEnd ? a0 + L - 1 : a0) && g[gy][gx] !== '.') return false;
+          }
+          const [ex, ey] = cellOf(sd, gapEnd ? a0 + L - 1 : a0, 2); return inRoom(i, ex, ey) && clear(ex, ey); }; // (framför ingången är det fritt)
+        const opts = [];
+        for (const sd of [0, 1, 2, 3]) { const len = sd % 2 ? r.w : r.h; if ((sd % 2 ? r.h : r.w) < 4) continue;
+          for (let L = Math.min(9, len); L >= 5; L--) for (let a0 = 0; a0 + L <= len; a0++) for (const ge of [false, true]) if (fits(sd, len, a0, L, ge)) opts.push([sd, len, a0, L, ge]); }
+        if (!opts.length) return false;
+        const best = opts.filter(o => o[3] === opts.reduce((m, o2) => Math.max(m, o2[3]), 0));
+        const [sd, len, a0, L, gapEnd] = rng.pick(best), cell = (a, depth) => cellOf(sd, a, depth), gapA = gapEnd ? a0 + L - 1 : a0;
+        for (const a of [a0 - 1, a0 + L]) if (a >= 0 && a < len) { const [bx, by] = cell(a, 0), [gx, gy] = cell(a, 1); set(bx, by, wall); set(gx, gy, wall); }
+        for (let a = a0; a < a0 + L; a++) if (a !== gapA) { const [gx, gy] = cell(a, 1); set(gx, gy, WINDOW28); }
+        const spots = []; for (let a = a0; a < a0 + L; a++) { const [bx, by] = cell(a, 0); if (g[by][bx] === '.' && !ban[by * W + bx] && Math.abs(a - gapA) >= 2) spots.push([bx, by]); }
+        const foes = roomFoes(i, r).filter(([fx, fy]) => !spots.some(([a, b]) => a === fx && b === fy));
+        let moved = 0;
+        const fsp = spots.filter(([x, y]) => Math.hypot(x - P[0], y - P[1]) >= 7.5); // (fiender minst 7 rutor från P)
+        for (const k of [0.3, 0.7]) { if (!foes.length || !fsp.length) break; const sp = fsp[Math.min(fsp.length - 1, Math.floor(k * fsp.length))]; if (g[sp[1]][sp[0]] !== '.') continue; const [fx, fy] = foes.shift(); const c = g[fy][fx]; set(fx, fy, '.'); set(sp[0], sp[1], shooter(c)); moved++; }
+        if (!moved) { const lt = roomLoot(i, r).filter(([lx, ly]) => !spots.some(([a, b]) => a === lx && b === ly)); const sp = spots[spots.length >> 1]; if (!lt.length || !sp || g[sp[1]][sp[0]] !== '.') return false; const [lx, ly] = lt[0], c = g[ly][lx]; set(lx, ly, '.'); set(sp[0], sp[1], c); } // (utan fiender: rummets skatt på balkongen)
+        const c0 = cell(Math.max(0, a0 - 1), 0), c1 = cell(Math.min(len - 1, a0 + L), 1);
+        Object.assign(box, { x: Math.min(c0[0], c1[0]), y: Math.min(c0[1], c1[1]), w: Math.abs(c0[0] - c1[0]) + 1, h: Math.abs(c0[1] - c1[1]) + 1 });
+        return true;
+      },
+      tower: (i, set, mkDeep, box) => { // vakttorn: 4x4 (eller 3x3) rutor i salen, väggar i hörnen, fönster ǂ på tre sidor och en smal ingång på den fjärde; en skytt inne
+        const r = rooms[i]; if (!wallOK || r.w < 6 || r.h < 6) return false;
+        let S = 0, tx = 0, ty = 0;
+        for (const s0 of [4, 3]) {
+          const E = s0 - 1, fits = (tx, ty) => { for (let y = ty - 1; y <= ty + s0; y++) for (let x = tx - 1; x <= tx + s0; x++) { const edge = x < tx || x > tx + E || y < ty || y > ty + E, ring = !edge && (x === tx || x === tx + E || y === ty || y === ty + E); if (!inRoom(i, x, y) || !clear(x, y) || (ring && g[y][x] !== '.') || (!edge && HAZARD.includes(g[y][x]))) return false; } return true; }; // (ringen på tomt golv; inne i tornet får saker ligga kvar)
+          const spots = []; for (let y = r.y + 1; y + s0 <= r.y + r.h - 1; y++) for (let x = r.x + 1; x + s0 <= r.x + r.w - 1; x++) if (fits(x, y)) spots.push([x, y, Math.hypot(x + s0 / 2 - r.x - r.w / 2, y + s0 / 2 - r.y - r.h / 2)]);
+          if (!spots.length) continue;
+          spots.sort((a, b) => a[2] - b[2]); [tx, ty] = rng.pick(spots.slice(0, 3)); S = s0; break; // (så nära mitten som möjligt)
+        }
+        if (!S) return false;
+        const E = S - 1, door = rng.int(0, 3), dpos = rng.int(1, E - 1);
+        for (let y = ty; y <= ty + E; y++) for (let x = tx; x <= tx + E; x++) {
+          const ring = x === tx || x === tx + E || y === ty || y === ty + E; if (!ring) continue;
+          const corner = (x === tx || x === tx + E) && (y === ty || y === ty + E);
+          const sd = x === tx + E ? 0 : y === ty + E ? 1 : x === tx ? 2 : 3, a = sd % 2 ? x - tx : y - ty;
+          if (!corner && sd === door && a === dpos) continue; // ingången
+          set(x, y, corner || (sd === door) ? wall : WINDOW28);
+        }
+        const out = ([fx, fy]) => fx < tx || fx > tx + E || fy < ty || fy > ty + E;
+        const foes = roomFoes(i, r).filter(out);
+        const ins = []; for (let y = ty + 1; y < ty + E; y++) for (let x = tx + 1; x < tx + E; x++) if (g[y][x] === '.') ins.push([x, y]);
+        const mv = foes.length ? foes[0] : roomLoot(i, r).filter(out)[0]; // (en skytt, annars rummets skatt)
+        const insF = foes.length ? ins.filter(([x, y]) => Math.hypot(x - P[0], y - P[1]) >= 7.5) : ins; // (fiender minst 7 rutor från P)
+        if (mv && insF.length) { const c = g[mv[1]][mv[0]], [ix, iy] = rng.pick(insF); set(mv[0], mv[1], '.'); set(ix, iy, ENEMY_CHARS.includes(c) ? shooter(c) : c); }
+        Object.assign(box, { x: tx, y: ty, w: S, h: S });
+        return true;
+      },
+    };
+    const elig = rooms.map((r, i) => i).filter(i => {
+      const r = rooms[i];
+      return V28_SCENE_ROOMS.includes(r.type) && !used.has(i) && !SET14[r.arch] && !SET17[r.arch] && !['nest', 'flooded', 'frozen', 'frozenlake', 'lava', 'gas', 'mudflat'].includes(r.arch) && r.w >= 5 && r.h >= 5;
+    });
+    const order = rng.shuffle(elig.slice());
+    const want = F.scenes ? F.scenes.slice() : [];
+    if (!F.scenes && !F.noScenes) { // 0-3 försök per bana (de flesta salar är för små eller fulla: scenerna blir betydligt ovanligare än så)
+      if (rng.chance(0.5)) want.push('floodhall');
+      if (rng.chance(0.7)) want.push('balcony');
+      if (rng.chance(0.6)) want.push('tower');
+    }
+    for (const kind of want) for (const i of order) {
+      if (used.has(i)) continue;
+      const box = {};
+      if (step(kind, i, box, (set, mkDeep) => SC[kind] ? SC[kind](i, set, mkDeep, box) : false)) break;
+    }
+    L.deep28 = [...deep].map(n => ({ x: n % W, y: (n / W) | 0 }));
+    // fönster mot rum man når senare (bara väggar byts: nåbarheten ändras inte)
+    if (!F.noWindows && wallOK) windows28(L, g, wrng, ban, roomOf, inb, P, wall, st, F);
+    L.map = g.map(r => r.join(''));
+    st.n++;
+    L.features = features(L.map, L.beams, L.arenas, L.rooms);
+  }
+  function windows28(L, g, rng, ban, roomOf, inb, P, wall, st, F) {
+    const H = g.length, W = g[0].length, rooms = L.rooms;
+    const dist = new Int32Array(W * H).fill(-1), q = [P[1] * W + P[0]]; dist[q[0]] = 0;
+    for (let h = 0; h < q.length; h++) { const c = q[h], x = c % W, y = (c / W) | 0; for (let k = 0; k < 4; k++) { const nx = x + DX[k], ny = y + DY[k], n = ny * W + nx; if (!inb(nx, ny) || dist[n] >= 0) continue; const ch = g[ny][nx]; if (isBlock(ch) && !isDoorCh(ch)) continue; dist[n] = dist[c] + 1; q.push(n); } }
+    let keyRoom = -1; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (g[y][x] === '}') keyRoom = roomOf(x, y);
+    const target = k => k >= 0 && rooms[k] && (V28_WIN_ROOMS.includes(rooms[k].type) || k === keyRoom);
+    const guard = new Set(rooms.map((r, i) => r.type === 'guardian' ? i : -1).filter(i => i >= 0));
+    const walk = (x, y) => inb(x, y) && !isBlock(g[y][x]);
+    const okCell = (x, y) => { // en vägg mellan två gångbara rutor (A tidig, B i målrummet), aldrig vid dörrar eller vaktarens sal
+      if (x <= 0 || y <= 0 || x >= W - 1 || y >= H - 1 || g[y][x] !== wall || ban[y * W + x]) return null;
+      for (let k = 0; k < 8; k++) { const a = x + RX[k], b = y + RY[k]; if (!inb(a, b)) continue; const c = g[b][a]; if (isDoorCh(c) || c === WINDOW28 || guard.has(roomOf(a, b))) return null; }
+      for (const [dx, dy] of [[1, 0], [0, 1]]) for (const s of [1, -1]) {
+        const ax = x - dx * s, ay = y - dy * s, bx = x + dx * s, by = y + dy * s;
+        if (!walk(ax, ay) || !walk(bx, by)) continue;
+        const ka = roomOf(ax, ay), kb = roomOf(bx, by), da = dist[ay * W + ax], db = dist[by * W + bx];
+        if (!target(kb) || ka === kb || da < 0 || db < 0 || db - da < 12) continue;
+        return { dx, dy, s, kb, gain: db - da, from: { x: ax, y: ay } };
+      }
+      return null;
+    };
+    const cand = [];
+    for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) { const o = okCell(x, y); if (o) cand.push(Object.assign({ x, y }, o)); }
+    if (!cand.length) return;
+    cand.sort((a, b) => b.gain - a.gain || a.y - b.y || a.x - b.x);
+    const nWant = F.windows !== undefined ? F.windows : rng.chance(0.7) ? (rng.chance(0.35) ? 2 : 1) : 0;
+    const doneRooms = new Set(); let total = 0;
+    for (const c of cand) {
+      if (L.windows28.length >= nWant || doneRooms.has(c.kb)) continue;
+      if (g[c.y][c.x] !== wall) continue;
+      const cells = [{ x: c.x, y: c.y }];
+      for (const s of [1, -1]) for (let j = 1; j <= 1; j++) { // längs väggen (vinkelrätt mot A-B), högst 3 rutor
+        const x = c.x + c.dy * s * j, y = c.y + c.dx * s * j, o = okCell(x, y);
+        if (o && o.kb === c.kb) cells.push({ x, y });
+      }
+      if (total + cells.length > V28_WIN_CAP) break;
+      for (const p of cells) g[p.y][p.x] = WINDOW28;
+      total += cells.length; doneRooms.add(c.kb); st.windows++;
+      L.windows28.push({ room: c.kb, cells, from: c.from });
+    }
+  }
+
   // ---------- Validering ----------
   const ENEMY_CHARS = 'SKVILNORWE' + Object.keys(NEW_ENEMIES).join('');
   const VALID = new Set((WALLS + 'DG*xPBhaA$CMfotn.QZ' + ENEMY_CHARS + PROP_CHARS + WEAPON_CHARS + GATES + HAZARD + NPCS + NPCS7 + NPCS8 + ",'}¥ªðþ¼½Ģ" + 'Ŋŋ' + 'Ũ' + 'Ƃ' + 'ƞƳ' + 'ǫǭ' + 'Ǿȏ' + '\u022b' + '\u0246' + '\u025f' + 'ɻ' + 'ʖ').split(''));
@@ -10747,6 +10992,7 @@
     }
     validate24(level, map, W, H, at, nP === 1 ? [px, py] : null, errs);
     validate27(level, W, H, errs); // version 27
+    validate28(level, W, H, errs); // version 28
     return errs;
   }
   // version 24: bandesignens fält (genvägar, bakhåll, landmärken, brödsmulor, ledtrådar, skydd, takt) stämmer med kartan
@@ -10812,6 +11058,52 @@
     if (level.scenes27.length > 6) errs.push('för många scener: ' + level.scenes27.length);
   }
 
+  // version 28: scenerna, fönstren, de djupa bassängerna och blodvåningen stämmer med banan
+  function validate28(level, W, H, errs) {
+    const map = level.map, at = (x, y) => (x < 0 || y < 0 || x >= W || y >= H) ? '1' : map[y][x];
+    let nWin = 0; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (map[y][x] === WINDOW28) nWin++;
+    const special = level.arena || level.maze || level.secret;
+    if (level.blood28 !== undefined && typeof level.blood28 !== 'boolean') errs.push('level.blood28 ogiltigt (ska vara true/false)');
+    if (special && (level.blood28 || nWin || (level.scenes28 && level.scenes28.length) || (level.deep28 && level.deep28.length))) errs.push('version 28-saker i en arena/labyrint/hemlig våning');
+    if (level.scenes28 === undefined) { if (nWin && !special) errs.push('fönster ǂ utan version 28'); return; }
+    for (const k of ['scenes28', 'windows28', 'deep28']) if (!Array.isArray(level[k])) { errs.push('level.' + k + ' ogiltigt (ska vara en lista)'); return; }
+    if (nWin > V28_WIN_CAP) errs.push('för många fönster ǂ: ' + nWin);
+    const nR = (level.rooms || []).length, seen = new Set(), own = new Set(), flood = [];
+    const inBox = (s, x, y) => x >= s.x && y >= s.y && x < s.x + s.w && y < s.y + s.h;
+    for (const s of level.scenes28) {
+      if (!s || !V28_SCENES.includes(s.kind) || !Number.isInteger(s.room) || s.room < 0 || s.room >= nR) { errs.push('ogiltig scen (version 28) ' + JSON.stringify(s)); continue; }
+      if (seen.has(s.room)) errs.push('två scener i rum ' + s.room); seen.add(s.room);
+      if (!V28_SCENE_ROOMS.includes(level.rooms[s.room].type)) errs.push('scen i ett ' + level.rooms[s.room].type + '-rum: ' + s.kind);
+      if (!(Number.isInteger(s.x) && Number.isInteger(s.y) && s.w > 0 && s.h > 0 && s.x >= 0 && s.y >= 0 && s.x + s.w <= W && s.y + s.h <= H)) { errs.push('scenens ruta utanför kartan: ' + JSON.stringify(s)); continue; }
+      if (s.kind === 'floodhall') flood.push(s);
+      if (s.kind !== 'floodhall') for (let y = s.y; y < s.y + s.h; y++) for (let x = s.x; x < s.x + s.w; x++) if (map[y][x] === WINDOW28) own.add(y * W + x);
+    }
+    if (level.scenes28.length > 3) errs.push('för många scener (version 28): ' + level.scenes28.length);
+    for (const w of level.windows28) {
+      if (!w || !Number.isInteger(w.room) || w.room < 0 || w.room >= nR || !Array.isArray(w.cells) || !w.cells.length || w.cells.length > 3) { errs.push('ogiltigt fönster ' + JSON.stringify(w)); continue; }
+      for (const c of w.cells) { if (!c || at(c.x, c.y) !== WINDOW28) errs.push('fönstret pekar inte på ǂ: ' + JSON.stringify(c)); else own.add(c.y * W + c.x); }
+    }
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (map[y][x] === WINDOW28) {
+      if (!own.has(y * W + x)) errs.push('fönster ǂ utan scen eller level.windows28 vid ' + x + ',' + y);
+      if (x === 0 || y === 0 || x === W - 1 || y === H - 1) errs.push('fönster ǂ i kanten vid ' + x + ',' + y);
+      if ([0, 1, 2, 3].some(d => isDoorCh(at(x + DX[d], y + DY[d])))) errs.push('fönster ǂ intill en dörr vid ' + x + ',' + y);
+    }
+    // djupa bassänger: grunt vatten - i en översvämmad sal; allt som nås nås också utan dem
+    if (level.deep28.length) {
+      const dset = new Set();
+      for (const c of level.deep28) { if (!c || at(c.x, c.y) !== '-' || !flood.some(s => inBox(s, c.x, c.y))) errs.push('djup bassäng utanför den översvämmade salen: ' + JSON.stringify(c)); else dset.add(c.y * W + c.x); }
+      let P = null; for (let y = 0; y < H && !P; y++) for (let x = 0; x < W; x++) if (map[y][x] === 'P') { P = [x, y]; break; }
+      if (P) {
+        const fl = shut => { const s = new Uint8Array(W * H), st = [P[1] * W + P[0]]; s[st[0]] = 1;
+          while (st.length) { const c = st.pop(), x = c % W, y = (c / W) | 0; for (let k = 0; k < 4; k++) { const nx = x + DX[k], ny = y + DY[k], n = ny * W + nx; if (nx < 0 || ny < 0 || nx >= W || ny >= H || s[n] || isBlock(map[ny][nx]) || (shut && dset.has(n))) continue; s[n] = 1; st.push(n); } }
+          return s; };
+        const a = fl(false), b = fl(true);
+        for (let i = 0; i < W * H; i++) if (a[i] && !b[i] && !dset.has(i)) { errs.push('de djupa bassängerna är enda vägen till ' + (i % W) + ',' + ((i / W) | 0)); break; }
+      }
+    }
+  }
+
   window.Gen = { floor, boss, secret, maze, validate, THEMES, BOSS_THEMES, BIOMES, GUARDIANS, ARCHES: Object.keys(ARCH).concat(SET14_ID, SET17_ID), WEAPONS, ARENAS: ['hall'].concat(Object.keys(ARENAS)) };
   window.Gen.floor = floor27; // version 27: fler banor (planritningar och scener ovanpå version 24)
+  window.Gen.floor = floor28; // version 28: översvämmad sal, vakttorn, balkonger, fönster och blodvåning (ovanpå version 27)
 })();

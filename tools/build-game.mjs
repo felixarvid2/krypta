@@ -1,7 +1,8 @@
 // Bygger js/game.js av delarna i src/game/ (sorterade efter namn, sammanfogade byte för byte i den ordningen).
 //   node tools/build-game.mjs           skriver js/game.js
 //   node tools/build-game.mjs --check   skriver inget; avslutar med 1 om js/game.js inte är exakt delarnas summa
-//   node tools/build-game.mjs --syntax  kontrollerar varje del för sig (inslagen i en funktion, som i spelet)
+//   node tools/build-game.mjs --syntax  kontrollerar varje del för sig (inslagen i en funktion, som i spelet) och att inget namn på
+//                                       toppnivå finns i två delar (en senare funktion skulle tyst ersätta den förra)
 //
 // Hela spelet ligger i en enda funktion som anropas direkt: (() => { ... })(); Den första delen öppnar den och den sista stänger den.
 // Därför fungerar funktioner och let/const precis som förut, oavsett vilken del de står i, och js/game.js är en vanlig fil för
@@ -24,7 +25,10 @@ if (mode === '--check') {
     const p = path.join(tmp, f); fs.writeFileSync(p, s);
     try { execFileSync(process.execPath, ['--check', p], { stdio: 'pipe' }); } catch (e) { bad++; console.error('SYNTAXFEL i ' + f + ':\n' + String(e.stderr || e).split('\n').slice(0, 6).join('\n')); } });
   fs.rmSync(tmp, { recursive: true, force: true });
-  if (bad) process.exit(1); console.log(`alla ${parts.length} delar är hela satser`);
+  // samma namn på toppnivå i två delar: en senare function-deklaration ersätter tyst en tidigare (allt ligger i samma funktion)
+  const seen = new Map(); for (const f of parts) for (const m of fs.readFileSync(path.join(DIR, f), 'utf8').matchAll(/^(?:async )?(?:function\*? |const |let |var |class )([A-Za-z_$][\w$]*)/gm)) {
+    const n = m[1]; if (seen.has(n) && seen.get(n) !== f) { bad++; console.error(`SAMMA NAMN på toppnivå: ${n} i ${seen.get(n)} och ${f}`); } else seen.set(n, f); }
+  if (bad) process.exit(1); console.log(`alla ${parts.length} delar är hela satser, inga dubbla namn på toppnivå`);
 } else {
   const s = join(); fs.writeFileSync(OUT, s); console.log(`js/game.js byggd av ${parts.length} delar (${s.length} tecken)`);
 }
