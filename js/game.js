@@ -1728,12 +1728,12 @@ function updateWakeLock() { // skärmen släcks inte under spel på mobilen
 // när den närmar sig gränsen för det automatiska lågeffektläget; AUTO går aldrig under 1, så en telefon får samma tak som förut.
 // Under automatiserade tester (navigator.webdriver) är AUTO = NORMAL, så att testernas tak inte beror på datorns fart (PB.test slår på det).
 // När listan är full tas dekor (rök, damm, glöd: drift/fade utan additiv blandning) bort först, sedan de äldsta.
-const PB = { k: 1, base: { wb: 150, wh: 215, soft: 120, frame: 200, boom: 150 }, ema: 1 / 60, upT: 0, trims: 0, decor: 0, test: false };
+const PB = { k: 1, max: 8, base: { wb: 150, wh: 215, soft: 120, frame: 200, boom: 150 }, ema: 1 / 60, upT: 0, trims: 0, decor: 0, test: false };
 function pcap(n) { return (n * PB.k) | 0; }
-function pbApply(k) { PB.k = Math.max(0.6, Math.min(2, k)); WP_BUDGET = pcap(PB.base.wb); WP_HARD = pcap(PB.base.wh); FX27_SOFT = pcap(PB.base.soft); FX27_ROOM.frame = pcap(PB.base.frame); FX27_ROOM.boom = pcap(PB.base.boom); }
+function pbApply(k) { PB.k = Math.max(0.6, Math.min(PB.max, k)); WP_BUDGET = pcap(PB.base.wb); WP_HARD = pcap(PB.base.wh); FX27_SOFT = pcap(PB.base.soft); FX27_ROOM.frame = pcap(PB.base.frame); FX27_ROOM.boom = pcap(PB.base.boom); }
 function pbTick(realDt) {
   const m = settings.particles || 'auto';
-  if (m !== 'auto' || (navigator.webdriver && !PB.test)) { const k = m === 'low' ? 0.6 : m === 'high' ? 2 : 1; if (k !== PB.k) pbApply(k); return; }
+  if (m !== 'auto' || (navigator.webdriver && !PB.test)) { const k = typeof m === 'number' ? m : m === 'low' ? 0.6 : m === 'high' ? 2 : 1; if (k !== PB.k) pbApply(k); return; } // ett tal: fast faktor (mätningar)
   if (state !== 'play' || !(realDt > 0) || realDt > 0.25) return;
   PB.ema += (realDt - PB.ema) * 0.05;
   if (PB.ema > 1 / 34) { PB.upT = 0; if (PB.k > 1) pbApply(Math.max(1, PB.k - realDt * 0.6)); } // nära gränsen (1/28 s): ned snabbt
