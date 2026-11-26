@@ -1338,6 +1338,11 @@ Kombinerade utmaningar multiplicerar själarna. Sparplatsen väljs på startskä
 - **Bossar** får en smäll och en chockvåg när de byter fas. När de dör kommer smällar, en ljuspelare i guld och guldgnistor.
 - **Prestanda.** Blod och effekter delar en gemensam partikelbudget, så explosionerna alltid får plats. Det automatiska lågeffektläget stänger av allt nytt. Med processorn strypt sex gånger, ungefär en mellantelefon, går en stor strid i cirka 30 bilder per sekund med eller utan version 27.
 - **Källor och tester:** två nya Effekseer-strippar (CC0, cirka 19 kB). Tester: t140–t144b.
+- **Partikelbudget: inställningen PARTIKLAR** under BILD har lägena AUTO, LÅG, NORMAL och HÖG. Alla partikeltak multipliceras med samma faktor: 0,6 på LÅG, 1 på NORMAL (taken före version 27) och 2 på HÖG, alltså upp till 520 i stället för 260 partiklar.
+  - **AUTO** är standard. Spelet mäter bildtiden löpande: med god marginal höjs budgeten långsamt mot 2, och nära gränsen för det automatiska lågeffektläget sänks den snabbt igen. AUTO går aldrig under dagens nivå, så en telefon får samma tak som förut.
+  - **När listan är full** tas rök, damm och glöd bort först. Explosionskärnor, blod och nedslag ligger kvar. En ny explosion får ta platsen från den äldsta Effekseer-lågan eller giftvirveln.
+  - **Kostnad:** med processorn strypt fyra gånger kostar 520 partiklar i en strid ungefär 1 ms mer per bildruta än inga alls.
+  - **Test:** t147.
 
 ### Fler banor: planritningar, scener och handgjorda rumsmallar
 - **Planritningar.** Från våning 2 byggs ungefär var femte vanlig våning efter en planritning. Planritningens namn visas när våningen börjar. Det finns fyra:

@@ -1722,6 +1722,30 @@ function updateWakeLock() { // skärmen släcks inte under spel på mobilen
   if (want && !wakeLock && navigator.wakeLock) { wakeLock = 'pending'; navigator.wakeLock.request('screen').then(l => { wakeLock = l; l.addEventListener('release', () => { wakeLock = null; }); }).catch(() => { wakeLock = null; }); }
   if (!want && wakeLock && wakeLock !== 'pending') { wakeLock.release().catch(() => {}); wakeLock = null; }
 }
+// ---------- Version 27: partikelbudget (PARTIKLAR: AUTO / LÅG / NORMAL / HÖG) ----------
+// Alla partikeltak (VAPEN 150/215, miljön 180–220, FIENDER 235, FX27 120/150/200, taket 260) multipliceras med PB.k.
+// LÅG 0,6 · NORMAL 1 (taken före version 27.1) · HÖG 2 · AUTO 1–2: höjs långsamt när bildtiden har god marginal och sänks snabbt
+// när den närmar sig gränsen för det automatiska lågeffektläget; AUTO går aldrig under 1, så en telefon får samma tak som förut.
+// Under automatiserade tester (navigator.webdriver) är AUTO = NORMAL, så att testernas tak inte beror på datorns fart (PB.test slår på det).
+// När listan är full tas dekor (rök, damm, glöd: drift/fade utan additiv blandning) bort först, sedan de äldsta.
+const PB = { k: 1, base: { wb: 150, wh: 215, soft: 120, frame: 200, boom: 150 }, ema: 1 / 60, upT: 0, trims: 0, decor: 0, test: false };
+function pcap(n) { return (n * PB.k) | 0; }
+function pbApply(k) { PB.k = Math.max(0.6, Math.min(2, k)); WP_BUDGET = pcap(PB.base.wb); WP_HARD = pcap(PB.base.wh); FX27_SOFT = pcap(PB.base.soft); FX27_ROOM.frame = pcap(PB.base.frame); FX27_ROOM.boom = pcap(PB.base.boom); }
+function pbTick(realDt) {
+  const m = settings.particles || 'auto';
+  if (m !== 'auto' || (navigator.webdriver && !PB.test)) { const k = m === 'low' ? 0.6 : m === 'high' ? 2 : 1; if (k !== PB.k) pbApply(k); return; }
+  if (state !== 'play' || !(realDt > 0) || realDt > 0.25) return;
+  PB.ema += (realDt - PB.ema) * 0.05;
+  if (PB.ema > 1 / 34) { PB.upT = 0; if (PB.k > 1) pbApply(Math.max(1, PB.k - realDt * 0.6)); } // nära gränsen (1/28 s): ned snabbt
+  else if (PB.ema < 1 / 50) { PB.upT += realDt; if (PB.upT > 2 && PB.k < 2) pbApply(PB.k + realDt * 0.1); } // god marginal: upp långsamt
+  else PB.upT = 0;
+}
+function pbTrim(n) { // på plats (ingen ny lista): dekor först, sedan de äldsta
+  let over = particles.length - n; if (over <= 0) return; PB.trims += over;
+  let w = 0; for (let i = 0; i < particles.length; i++) { const p = particles[i]; if (over > 0 && (p.drift || p.fade) && !p.add) { over--; PB.decor++; continue; } particles[w++] = p; }
+  particles.length = w; if (particles.length > n) particles.splice(0, particles.length - n);
+}
+const pbApi = { st: () => ({ k: PB.k, ema: PB.ema, trims: PB.trims, decor: PB.decor, caps: { wb: WP_BUDGET, wh: WP_HARD, soft: FX27_SOFT, frame: FX27_ROOM.frame, boom: FX27_ROOM.boom, hard: pcap(260) } }), apply: pbApply, tick: pbTick, trim: pbTrim, set: o => Object.assign(PB, o), list: () => particles, upd: dt => updateParticles(dt) };
 function lowFpsGuard(realDt) { // låg bildfrekvens en längre stund: minska effekterna automatiskt
   if (settings.autoLowFx === false || settings.lowfx || state !== 'play') { lowFpsT = 0; return; }
   lowFpsT = realDt > 1 / 28 ? lowFpsT + realDt : Math.max(0, lowFpsT - realDt * 2);
@@ -2626,7 +2650,7 @@ const wfxApi = {
 // rökmoln som stiger och dröjer kvar) med chockvågsring, skräp och ett ljus som falnar. Allt via den vanliga partikellistan med budget
 // (inga nya spår när listan är nästan full), lowfx stänger av partiklarna; det billiga ljuset finns kvar.
 const WP = { sched: [], lights: [], n: { trail: 0, booms: 0, stages: 0, smoke: 0, ring: 0, debris: 0, impacts: { metal: 0, wood: 0, stone: 0, ice: 0 }, die: 0 } };
-const WP_BUDGET = 150, WP_HARD = 215; // spår slutar när listan har 150 partiklar; nedslag och explosioner fyller på till 215 (miljön stannar vid 180–200, FIENDER vid 235, taket i updateParticles är 260)
+let WP_BUDGET = 150, WP_HARD = 215; // spår slutar när listan har 150 partiklar; nedslag och explosioner fyller på till 215 (miljön stannar vid 180–200, FIENDER vid 235, taket i updateParticles är 260)
 function wpLight(x, y, t, r, s, col, merge) { // ett ljus som falnar; kedjeexplosioner förnyar ett ljus i närheten i stället för att stapla nya
   if (merge) for (const l of WP.lights) if (Math.abs(l.x - x) + Math.abs(l.y - y) < 1.5 && l.life >= t * 0.5) { l.t = l.life = Math.max(l.life, t); l.s = Math.max(l.s, s); return; }
   if (WP.lights.length < 8) WP.lights.push({ x, y, t, life: t, r, s, col });
@@ -2740,7 +2764,9 @@ function efxOk(k, x, y) {
   if (EFX.off || settings.lowfx || !fx.efx || !fx.efx[k]) return false;
   const dx = x - P.x, dy = y - P.y, d2 = dx * dx + dy * dy; if (d2 > 400 || d2 < EFX_NEAR[k] * EFX_NEAR[k]) return false; // bara inom 20 rutor och inte vid kameran
   let live = 0; for (const p of particles) if (p.efx) live++;
-  if (live >= EFX_CAP) { EFX.n.skip++; return false; }
+  if (live >= pcap(EFX_CAP)) { // version 27: taket skalas med partikelbudgeten
+    if (k === 'boom' || k === 'burst') { const i = particles.findIndex(p => p.efx && p.efx !== 'boom' && p.efx !== 'burst'); if (i >= 0) { particles.splice(i, 1); EFX.n.evict = (EFX.n.evict || 0) + 1; return true; } } // en smäll får ta platsen från den äldsta lågan, giftet eller liknande
+    EFX.n.skip++; return false; }
   return true;
 }
 function efxBoom(x, y, r, big) { // stor explosion: eldklot + chockvåg (komponerad av tre Effekseer-lager)
@@ -2932,9 +2958,9 @@ function fx27Muzzle(wp, mq, s) { // från drawWeapon: ritar typens flamma (den g
   if (t === 'heavy' && !nf) { ctx.globalAlpha = 0.5; ctx.drawImage(frs[(FX27.muzF + 1) % 3], -k * 0.75, -k * 0.75, k * 1.5, k * 1.5); } // tunga vapen: en större, svagare låga bakom
   ctx.restore(); return true;
 }
-const FX27_SOFT = 120; // det nya fyller partikellistan bara till 120, så att kärnan i smällen (VAPEN, version 25), blodet och träffarna alltid får plats
+let FX27_SOFT = 120; // det nya fyller partikellistan bara till 120, så att kärnan i smällen (VAPEN, version 25), blodet och träffarna alltid får plats
 const FX27_ROOM = { frame: 200, boom: 150 }; // samlad budget (prestandakollen): listan hålls under VAPENs hårda tak 215, och en smäll får plats för sin kärna
-function fx27Room(n) { if (FX27.off || settings.lowfx || particles.length <= n) return; FX27.n.trim = (FX27.n.trim || 0) + particles.length - n; particles.splice(0, particles.length - n); } // de äldsta (rök, glöd, droppar som snart är borta) får ge plats, som taket 260 redan gör
+function fx27Room(n) { if (FX27.off || settings.lowfx || particles.length <= n) return; FX27.n.trim = (FX27.n.trim || 0) + particles.length - n; pbTrim(n); } // de äldsta (rök, glöd, droppar som snart är borta) får ge plats, som taket 260 redan gör
 function fx27P(p, hard) { if (hard !== 'hard' && particles.length >= FX27_SOFT) return null; if (p.maxLife === undefined) p.maxLife = p.life; return wpPart(p, hard === 'hard') ? p : null; } // bossarna och effektsprites: VAPENs hårda tak 215
 function fx27Cool(p, kind) { if (!p) return; p.c27 = kind; if (FX27.cool.length >= 48) FX27.cool.shift(); FX27.cool.push({ p, kind, end: tmr + p.life }); }
 const FX27_COOL = { ember: [[255, 240, 160], [255, 160, 60], [210, 70, 25], [90, 28, 12]], spark: [[255, 250, 210], [255, 200, 110], [230, 110, 40], [120, 40, 15]] };
@@ -3005,8 +3031,8 @@ function fx27Step(sp) { // ett steg (räknat på sträckan): snö och damm under
 const FX27_GLIM = { rune: [255, 140, 220], legend: [255, 215, 90], cardpick: [190, 160, 255], scroll: [255, 235, 180], shard: [160, 230, 255], page: [255, 230, 170], key: [255, 225, 120] };
 function fx27Env(dt) { // steg, sågklingor, brinnande mark och glimmer (miljön ger vika först: inget när listan är full)
   const sp = Math.hypot(P.vx, P.vy);
-  if (P.jz <= 0.05 && sp > 0.8) { FX27.stepD += sp * dt; if (FX27.stepD > 1.1) { FX27.stepD = 0; if (particles.length < 190) fx27Step(sp); } } else if (sp <= 0.8) FX27.stepD = 0.7;
-  if (particles.length > 180) return;
+  if (P.jz <= 0.05 && sp > 0.8) { FX27.stepD += sp * dt; if (FX27.stepD > 1.1) { FX27.stepD = 0; if (particles.length < pcap(190)) fx27Step(sp); } } else if (sp <= 0.8) FX27.stepD = 0.7;
+  if (particles.length > pcap(180)) return;
   const I = fx27Imgs();
   if ((FX27.sawT -= dt) <= 0) { FX27.sawT = 0.09; let n = 0; // sågklingorna sprutar gnistor där de skär i spåret
     for (const s of saws) { if ((s.stopT || 0) > tmr || Math.abs(s.x - P.x) + Math.abs(s.y - P.y) > 10) continue; FX27.n.saw++;
@@ -8599,7 +8625,7 @@ function updateParticles(dt) {
     else if (p.frames) p.img = p.frames[clamp(Math.floor((1 - p.life / p.maxLife) * p.frames.length), 0, p.frames.length - 1)];
   }
   particles = particles.filter(p => p.life > 0 && (p.z > -0.05 || !p.drift));
-  if (particles.length > 260) particles.splice(0, particles.length - 260);
+  if (particles.length > pcap(260)) pbTrim(pcap(260)); // version 27: taket skalas med partikelbudgeten, och dekor (rök, damm) får ge plats först
 }
 
 // ---------- Bossarna ----------
@@ -9177,6 +9203,7 @@ function reportError(err) { // sparas så att felet kan hittas efteråt
 function spriteError(err, s) { if (s && s.o) s.o.renderFail = (s.o.renderFail || 0) + 1; if (loopErrors < 5) { loopErrors++; lastError = String(err && err.message || err).toUpperCase().slice(0, 60); reportError(err); console.error(err); } }
 function frameStep(t) {
   const realDt = Math.min(0.05, (t - last) / 1000 || 0); last = t;
+  pbTick(realDt); // version 27: partikelbudgeten (AUTO)
   lowFpsGuard(realDt); if (Math.floor(t / 1000) !== Math.floor((t - realDt * 1000) / 1000)) updateWakeLock();
   syncEndScreens(); // dödsskärmen och nivåslutet (DOM)
   if (state !== 'play') pollGamepad(realDt);
@@ -9467,6 +9494,7 @@ function openSettings(onClose) {
     check('VISA FPS', 'fps');
     check('STILMÄTARE', 'styleMeter');
     if (settings.blood === undefined) settings.blood = DEVICE === 'mobil' ? 1 : 2; select('BLOD', 'blood', [[0, 'AV'], [1, 'NORMAL'], [2, 'MYCKET']], v27Sync); // version 27 (BLOOD): AV ger damm i stället för blod
+    select('PARTIKLAR', 'particles', [['auto', 'AUTO'], ['low', 'LÅG'], ['normal', 'NORMAL'], ['high', 'HÖG']]); // version 27: partikelbudgeten
     check('MINSKADE EFFEKTER', 'lowfx');
     check('HUVUDEN LOSSNAR', 'heads'); // version 26C
     check('VAPNET GUNGAR', 'bob');
@@ -11236,7 +11264,7 @@ function updateV24(dt) {
   if (v24.lvl !== lvl || v24.doors !== doors) v24Setup(); // (startLevel gör alltid ett nytt doors-objekt)
   for (const s of v24.shortcuts) { const d = s.d; if (d.oneway && d.target === 1 && !occupied(d)) d.target = 0; } // något annat försökte öppna den: den förblir stängd
   for (const a of v24.ambushes) if (!a.done && ((a.item && a.item.taken) || (a.chest && a.chest.open) || Math.hypot(P.x - a.trigger.x - 0.5, P.y - a.trigger.y - 0.5) < 0.7)) v24Ambush(a);
-  if (v24.hints.length && (v24.dustT -= dt) <= 0 && !settings.lowfx && particles.length < 200) { // damm silar ur springorna kring hemliga väggar
+  if (v24.hints.length && (v24.dustT -= dt) <= 0 && !settings.lowfx && particles.length < pcap(200)) { // damm silar ur springorna kring hemliga väggar
     v24.dustT = 0.35;
     const img = fx.parts && fx.parts.dust ? fx.parts.dust[0] : fx.hit[1];
     for (const h of v24.hints) {
@@ -15326,7 +15354,7 @@ const gfxEDead = [], gfxEGrow = [], gfxEFly = []; // väntande blodpölar, pöla
 let gfxELvl = null, gfxELvlT = 0;
 const gfxELow = () => !gfxE.on || settings.lowfx;
 // gfxEPart: force = kärnåterkopplingen (bitarna) trängs inte undan av det mjuka taket – taket 260 i updateParticles tar de äldsta
-function gfxEPart(p, force) { if (!force && particles.length > 235) return false; if (p.maxLife === undefined) p.maxLife = p.life; particles.push(p); gfxE.parts++; return true; }
+function gfxEPart(p, force) { if (!force && particles.length > pcap(235)) return false; if (p.maxLife === undefined) p.maxLife = p.life; particles.push(p); gfxE.parts++; return true; }
 function gfxEKind(e) { // vad fienden är gjord av: kött, ben, slem eller metall/sten
   if (e.gKind) return e.gKind; const s = (e.d && e.d.sheet) || '';
   return (e.gKind = e.d && e.d.stone || /golem|livearmor|clock|gear|steambot|spark|marionette|mirrorknight|templeguardian|gargoyle|crystal|shard|weepingangel/.test(s) ? 'metal'
@@ -15674,7 +15702,7 @@ function gfxWChest(c) { // locket slår upp: gnistor, damm och ett kort sken
 }
 const GFXW_STEPLIQ = { 'Ĕ': 'shallow', 'Đ': 'deep', 'Ǜ': 'acid', 'Ȳ': 'sludge', 'Ɩ': 'honey', 'Ŭ': 'ink', 'Ȃ': 'piranha', 'ȴ': 'oasis', 'Ť': 'sporepool', '-': 'water' };
 function gfxWStep() { // fotsteg: plask och ringar i vätskor, dammpuffar på torr mark när man springer
-  if (!gfxWOn() || !map || particles.length > 200 || P.jz > 0.05) return;
+  if (!gfxWOn() || !map || particles.length > pcap(200) || P.jz > 0.05) return;
   const ch = cellUnder(), sp = Math.hypot(P.vx, P.vy), a = Math.atan2(P.vy, P.vx), bx = P.x - Math.cos(a) * 0.25, by = P.y - Math.sin(a) * 0.25, lq = GFXW_STEPLIQ[ch];
   if (lq) { gfxW.steps++; const tint = GFXW_BUB[lq] || [200, 230, 255];
     if (ch !== '-') for (let i = 0; i < 6; i++) { const b = i / 6 * TAU; particles.push({ x: bx + Math.cos(b) * 0.12, y: by + Math.sin(b) * 0.12, z: 0.01, vx: Math.cos(b) * 0.7, vy: Math.sin(b) * 0.7, vz: 0, life: 0.45, maxLife: 0.45, img: fx.hit[1], size: 0.03, add: true, tint, fade: true }); } // ringar på ytan
@@ -15687,7 +15715,7 @@ function gfxWStep() { // fotsteg: plask och ringar i vätskor, dammpuffar på to
   for (let i = 0; i < 2; i++) particles.push({ x: bx + rnd(-0.1, 0.1), y: by + rnd(-0.1, 0.1), z: 0.03, vx: -Math.cos(a) * rnd(0.2, 0.5) + rnd(-0.2, 0.2), vy: -Math.sin(a) * rnd(0.2, 0.5) + rnd(-0.2, 0.2), vz: rnd(0.05, 0.2), life: 0.6, maxLife: 0.6, img: gfxWPuff(), size: rnd(0.06, 0.1), fade: true, drift: true, tint });
 }
 function gfxWMech(dt) { // fällor, spakar, tryckplattor, hemliga väggar, portaler och utgången: reaktioner när något slår om
-  const cap = particles.length < 200, dust = gfxWPuff();
+  const cap = particles.length < pcap(200), dust = gfxWPuff();
   for (const o of props) { if (!o.def || o.broken) continue; const dx = o.x - P.x, dy = o.y - P.y; if (dx * dx + dy * dy > 144) continue;
     const up = !!o.up, used = !!o.used;
     if (o.gUp === undefined) { o.gUp = up; o.gUsed = used; continue; }
@@ -15721,7 +15749,7 @@ function gfxWExit(e, d2) { // utgången: pulserande ljuspelare + en ring av ljus
 }
 function gfxWDeathFx(e) { // fiender som dör i vatten plaskar, i lava fräser de (ånga och glöd)
   if (!gfxWOn() || !map || e.boss) return; const c = map[e.y | 0] && map[e.y | 0][e.x | 0], lq = GFXW_STEPLIQ[c], hot = c === '_' || c === 'Ź';
-  if (!lq && !hot) return; gfxW.deathFx = (gfxW.deathFx || 0) + 1; const cap = particles.length < 220;
+  if (!lq && !hot) return; gfxW.deathFx = (gfxW.deathFx || 0) + 1; const cap = particles.length < pcap(220);
   if (hot) { play('steam_hiss', 0.5, rnd(0.9, 1.1), { x: e.x, y: e.y });
     if (cap) for (let i = 0; i < 7; i++) { const sm = fx.parts.steam || fx.parts.smoke || fx.hit; particles.push({ x: e.x + rnd(-0.3, 0.3), y: e.y + rnd(-0.3, 0.3), z: rnd(0.05, 0.3), vx: rnd(-0.2, 0.2), vy: rnd(-0.2, 0.2), vz: rnd(0.4, 0.8), life: rnd(0.9, 1.5), maxLife: 1.5, frames: sm, img: sm[0], size: rnd(0.18, 0.3), fade: true, drift: true, tint: [225, 220, 215] }); }
     if (cap) for (let i = 0; i < 6; i++) particles.push({ x: e.x, y: e.y, z: 0.1, vx: rnd(-1, 1), vy: rnd(-1, 1), vz: rnd(1, 2.2), life: 0.6, maxLife: 0.6, img: (fx.parts.lavadrop || fx.fireball)[0], size: 0.04, add: true, grav: true, tint: [255, 150, 50] });
@@ -15739,13 +15767,13 @@ function gfxWDefer(fn) { // kistans kortval väntar ~0,3 s så att locket och gn
 function gfxWScorch(x, y, r) { // brännmärken på väggarna runt en explosion
   if (settings.lowfx || gfxW.off || !map || solid(x, y)) return;
   const R = Math.min(3.2, r + 0.7);
-  if (!lvl.sky && particles.length < 200) for (let i = 0; i < 5; i++) { const a = rnd(0, TAU), d = rnd(0.3, R); const px2 = x + Math.cos(a) * d, py2 = y + Math.sin(a) * d; if (!solid(px2, py2)) particles.push({ x: px2, y: py2, z: 0.97, vx: 0, vy: 0, vz: rnd(-0.2, 0), life: rnd(0.8, 1.3), maxLife: 1.3, img: gfxWPuff(), size: rnd(0.04, 0.07), grav: true, tint: [150, 135, 115] }); } // damm och grus faller från taket
+  if (!lvl.sky && particles.length < pcap(200)) for (let i = 0; i < 5; i++) { const a = rnd(0, TAU), d = rnd(0.3, R); const px2 = x + Math.cos(a) * d, py2 = y + Math.sin(a) * d; if (!solid(px2, py2)) particles.push({ x: px2, y: py2, z: 0.97, vx: 0, vy: 0, vz: rnd(-0.2, 0), life: rnd(0.8, 1.3), maxLife: 1.3, img: gfxWPuff(), size: rnd(0.04, 0.07), grav: true, tint: [150, 135, 115] }); } // damm och grus faller från taket
   for (let i = 0; i < 8; i++) { const a = i / 8 * TAU + rnd(-0.2, 0.2), dx = Math.cos(a), dy = Math.sin(a), h = cast(x, y, dx, dy, R); if (h && h.mx !== undefined && h.dist < R) { wallMark(h, dx, dy, rnd(0.12, 0.4) + (1 - h.dist / R) * 0.15, 'scorch'); gfxW.scorch++; } }
 }
 function gfxWDoors() { // dörrar dammar när de börjar öppnas
   for (const k in doors) { const d = doors[k];
     if (d.target === 1 && !d.gfxDust) { d.gfxDust = true; const dx = d.x + 0.5 - P.x, dy = d.y + 0.5 - P.y;
-      if (dx * dx + dy * dy < 144 && particles.length < 200) { gfxW.doors++; for (let i = 0; i < 7; i++) particles.push({ x: d.x + 0.5 + rnd(-0.45, 0.45), y: d.y + 0.5 + rnd(-0.45, 0.45), z: Math.random() < 0.5 ? 0.03 : rnd(0.7, 0.95), vx: rnd(-0.4, 0.4), vy: rnd(-0.4, 0.4), vz: rnd(-0.2, 0.2), life: rnd(0.7, 1.2), maxLife: 1.2, img: gfxWPuff(), size: rnd(0.07, 0.12), fade: true, drift: true, tint: [160, 145, 120] }); } }
+      if (dx * dx + dy * dy < 144 && particles.length < pcap(200)) { gfxW.doors++; for (let i = 0; i < 7; i++) particles.push({ x: d.x + 0.5 + rnd(-0.45, 0.45), y: d.y + 0.5 + rnd(-0.45, 0.45), z: Math.random() < 0.5 ? 0.03 : rnd(0.7, 0.95), vx: rnd(-0.4, 0.4), vy: rnd(-0.4, 0.4), vz: rnd(-0.2, 0.2), life: rnd(0.7, 1.2), maxLife: 1.2, img: gfxWPuff(), size: rnd(0.07, 0.12), fade: true, drift: true, tint: [160, 145, 120] }); } }
     else if (d.target === 0 && d.open <= 0.01) d.gfxDust = false; }
 }
 function gfxWAir(dt) { // biomernas egna luftpartiklar (det som väder-tabellen saknar), i världen och få
@@ -15781,7 +15809,7 @@ function gfxWUpdate(dt) { // anropas från updateWeather varje bildruta
   gfxW.acc += dt; if (gfxW.acc >= 1 / 15) { gfxW.acc = 0; for (const k of gfxW.used) { gfxWWarp(k); floorTexs[animTex[k]] = gfxW.buf[k]; } gfxW.active = gfxW.used.length > 0; gfxW.ticks++; if (gfxW.hasBan) gfxWBanner(); }
   if (lightning > gfxW.lastL + 0.5) gfxW.bolts++; gfxW.lastL = lightning;
   gfxWDoors(); gfxWMech(dt);
-  if (particles.length > 180) return; // taket på partiklar delas med strider – miljön ger vika först
+  if (particles.length > pcap(180)) return; // taket på partiklar delas med strider – miljön ger vika först
   gfxWAir(dt); gfxWTorchFx(dt); gfxWLiquidFx(dt);
 }
 function gfxWApi() { // window.__game.gfxW: tillstånd och mätning för t105
@@ -15969,6 +15997,7 @@ function v26cTouchUse() { // ANVÄND-knappen på pekskärmen: krok för version 
   window.__game.efx = efxApi; // version 25: Effekseer-effekter (t115)
   window.__game.fix251 = fix251Api(); // version 25.1: lobbar och smällar genom väggar, röster (t116)
   window.__game.v26a = v26aApi(); // version 26A: sprängskott och myntet (t120, t121)
+  window.__game.pb = pbApi; // version 27: partikelbudgeten (t147)
   window.__game.efx2 = efx2Api; // version 25.1: fler Effekseer-effekter (t117)
   window.__game.flame = { groundFires: () => groundFires, light: (x, y) => lightAt(x, y) }; // version 25.1: eldkastarens ljus (t119)
   if (params.has('autostart')) begin('new');
