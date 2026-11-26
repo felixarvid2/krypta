@@ -3030,7 +3030,9 @@
 "assets/gfx/sky_jungle.png",
 "assets/gfx/sky_purgatory.png",
 "assets/gfx/sky_sky.png",
-"assets/gfx/sky_volcano.png"
+"assets/gfx/sky_volcano.png",
+"assets/gfx/efx_burst.png",
+"assets/gfx/efx_ring.png"
 ]
 },
 "p-cards-2": {
