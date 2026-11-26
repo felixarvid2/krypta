@@ -2000,6 +2000,7 @@ function renderSprites(plX, plY) { // sprites bakifrån och fram (egen funktion:
       const tint = o.dead ? null : o.goldT > tmr ? [255, 205, 60] : o.backT > tmr ? [255, 150, 40] : o.empowered ? [210, 120, 255] : o.bounty ? (tmr % 0.6 < 0.3 ? [255, 120, 60] : [255, 200, 90]) : o.champion ? [255, 215, 90] : o.frozen > 0 ? [150, 210, 255] : o.burn > 0 ? [255, 150, 70] : o.slow > 0 ? [120, 170, 255] : o.marks >= 4 ? [210, 110, 255] : o.poison > 0 ? [140, 255, 100] : o.haste > 0 ? [150, 255, 150] : o.elite ? o.elite.tint : o.veteran ? [255, 175, 165] : null;
       if (!o.dead && fx.parts.shadow && s.d < 200) drawSprite(fx.parts.shadow[0], o.x, o.y, 0.05 * o.d.size * gfxEShadowK(o), 0, false, null, 0, 0); // skugga på golvet (flygare: mindre ju högre)
       gfxEPose(o, enemyFrames[o.type]); // FIENDER: squash & stretch, knuff, andning, gångstuds, spawn och dödsfall
+      if (o.airZ > 0) gfxEOff.z += v26bAirZ(o); // version 26B (krokrad, B): jonglering – fienden i luften ritas högre
       const tele = !o.dead && o.state === 'attack' && o.d.melee && enemyFrames[o.type] && o.t < enemyFrames[o.type].attack.length / o.d.atkFps * o.d.hitAt && o.t > enemyFrames[o.type].attack.length / o.d.atkFps * o.d.hitAt - 0.18 ? 0.45 : 0; // anfallet blinkar i förväg
       const tw = o.dead && o.t < 0.5 && !o.boss ? Math.sin(tmr * 70) * 0.025 * (0.5 - o.t) * 2 : 0; // sista ryckningen
       if (settings.outline && !o.dead && !o.dormant) spriteOutline = o.elite || o.boss ? 0xff30c0ff : 0xff3050ff;
@@ -3731,6 +3732,7 @@ function hurtEnemy(e, dmg, hx, hy, opt = {}) {
   if (e.charge > 0 && e.d.ai === 'charge' && !e.boss) { e.charge = 0; e.stun = 0.6; spawnText(e.x, e.y, 'SNUBBLAR', '#e8d9b0'); } // träffad mitt i språnget
   if (e.leapT > 0 && !e.boss) { e.leapT = 0; e.stun = 0.5; }
   if (!opt.noProc && !e.boss && e.alert === false && !e.dormant) { dmg *= 1.5 + mod('stealthDmg'); if ((e.surpT || 0) < tmr) { e.surpT = tmr + 1; spawnText(e.x, e.y, 'ÖVERRASKAD', '#c0c0ff'); } } // ovetande fiender
+  if (e.airZ > 0) dmg = v26bAirHit(e, dmg, opt); else v26bShotLaunch(e, opt); // version 26B: jonglering – +25 % i luften, hagel på nära håll lyfter
   if (run) run.dmgDealt = (run.dmgDealt || 0) + Math.max(0, Math.min(dmg, e.hp));
   e.hp -= dmg; e.flash = 0.12; alertEnemy(e, true); gfxEHit(e, dmg, opt);
   staggerCheck(e, opt); if (e.boss && cmode('clock')) clockAdd(0.25);
@@ -3867,6 +3869,7 @@ function explode(x, y, dmg, r, hurtsPlayer, big) {
   if (dp < 12) P.shake = Math.max(P.shake, (big ? 2.4 : 1.2 + r * 0.2) * (1 - dp / 12)); // skakar efter avstånd
   for (let i = 0; i < 5; i++) particles.push({ x: x + rnd(-0.3, 0.3), y: y + rnd(-0.3, 0.3), z: rnd(0.2, 0.6), vx: rnd(-1, 1), vy: rnd(-1, 1), vz: rnd(0, 1), life: 0.4, maxLife: 0.4, frames: fx.fireball, img: fx.fireball[0], size: 0.45, add: true });
   for (const e of ents) if (!e.dead && Math.hypot(e.x - x, e.y - y) < r && boomSees(x, y, e.x, e.y)) hurtEnemy(e, dmg, e.x, e.y, { noProc: true, boom: true }); // version 25.1: inte genom väggar
+  if (typeof v26bBlast === 'function') v26bBlast(x, y, r); // version 26B (krokrad, B): jonglering – fiender nära smällen kastas upp
   for (const pt of pots) if (!pt.broken && Math.hypot(pt.x - x, pt.y - y) < r) breakPot(pt);
   for (const pr of props) if (pr.def && !pr.broken && (pr.def.boom || pr.def.crate) && Math.hypot(pr.x - x, pr.y - y) < r + 0.4) hitProp(pr, x, y); // kedjereaktioner
   for (let cy = Math.max(0, (y - r - 1) | 0); cy <= Math.min(mh - 1, (y + r + 1) | 0); cy++) for (let cx = Math.max(0, (x - r - 1) | 0); cx <= Math.min(mw - 1, (x + r + 1) | 0); cx++)
@@ -6795,9 +6798,11 @@ function wakeMimic(e) {
 }
 function updateEnemy(e, dt) {
   e.t += dt; e.flash = Math.max(0, e.flash - dt); e.spotT = Math.max(0, (e.spotT || 0) - dt);
+  if (e.airZ > 0 && e.dead) v26bFall(e, dt); // version 26B: ett lik som dog i luften faller ned
   if (e.dead) return;
   if (e.dummy) { e.state = e.flash > 0 ? 'pain' : 'idle'; e.alert = false; e.burn = 0; e.poison = 0; e.knock = null; e.x = e.hx; e.y = e.hy; return; } // skjutbanans provdocka
   if (e.dormant) { e.state = 'idle'; if (e.hp < e.maxHp || Math.hypot(P.x - e.x, P.y - e.y) < (e.type === 'Ö' ? 3 : 1.15)) wakeMimic(e); return; } // mimicen väntar som en kista, gargoylen som en staty
+  if (e.airZ > 0) { statusTick(e, dt); if (e.dead || v26bAirTick(e, dt)) return; } // version 26B: i luften – ingen AI, inga anfall, ingen rörelse
   if (e.frozen > 0) { statusTick(e, dt); e.state = 'pain'; e.t = 0; return; }
   statusTick(e, dt); if (e.dead) return;
   eliteTick(e, dt); enemyFeel(e, dt); enemyFeelV6(e, dt);
@@ -7544,8 +7549,61 @@ function v26bWantsUse() { // för touchCanUse (C): ANVÄND/handen ska synas för
 function v26bApi() { // window.__game.v26b: tillstånd, räknare och av/på för t125–t127
   return { st: () => V26B.st, flags: V26B, state: () => ({ on: V26B.on, parry: V26B.parry, lunge: V26B.lunge, ret: V26B.ret, lunging: !!V26B.L, lcd: V26B.lcd, err: V26B.st.err }),
     set: (k, v) => { if (k in V26B && typeof V26B[k] === 'boolean') V26B[k] = !!v; if (!V26B.on) V26B.L = null; return V26B[k]; },
-    win: e => v26bWin(e), kick: () => kick(), wantsUse: () => v26bWantsUse(), lobs: () => lobs, lobShot, t: () => tmr };
+    win: e => v26bWin(e), kick: () => kick(), wantsUse: () => v26bWantsUse(), lobs: () => lobs, lobShot, t: () => tmr,
+    launch: (e, vz) => launchEnemy(e, vz), air: e => ({ z: e.airZ || 0, vz: e.airVz || 0, t: e.airT || 0 }), jst: () => V26B.jst };
 }
+// --- Version 26B: jonglering (ULTRAKILL) ---
+// launchEnemy(e, vz): fiender som inte är tunga (storlek < 1,3, inte boss, väktare, flygare eller grävare) kastas upp. Det sker av
+// explosioner inom 0,6 × radien (krokrad i explode), hagelgeväret och dubbelbössan på under 1,2 rutor (krokrad i hurtEnemy) och agent A:s
+// markslag om det finns (typeof launchEnemy === 'function'). I luften är fienden bedövad (updateEnemy hoppar över all AI: AI24, R25,
+// egna ENEMY_AI, anfall och rörelse), tar +25 % skada och varje träff lyfter den lite (jonglering, högst 3 s i luften). Ett dödande i
+// luften ger +JONGLERING. Landningen ger 3 skada och en dammpuff (i tomrummet: FÖLL!). Spriten stiger (gfxEOff.z, högst cirka 0,85) och
+// skuggan krymper. Liket efter ett dödande i luften faller ned. Av: v26b.set('jug', false).
+V26B.jug = true; V26B.jst = { launches: 0, bumps: 0, lands: 0, airKills: 0, airDrawn: 0, maxZ: 0 };
+const V26B_NOAIR = new Set(['fly', 'wisp', 'burrower', 'lavaworm', 'eel', 'worm', 'tentacle', 'alligator', 'anglerfish']);
+function launchEnemy(e, vz, dx, dy) { // true = fienden lyfte; (dx, dy) = knuff i sidled (rutor/s)
+  if (!V26B.on || !V26B.jug || !e || !e.d || e.dead || e.dying || e.boss || e.guardian || e.dormant || e.dummy || e.hidden || e.under || e.frozen > 0) return false;
+  if (e.d.size * (e.formK || 1) >= 1.3 || e.d.float || V26B_NOAIR.has(e.d.ai)) return false;
+  if (e.v26lT === tmr || (e.v26noL || 0) > tmr) return false; // en gång per bildruta (hagelns alla kulor); kort spärr efter landningen
+  if (e.airZ > 0 && (e.airZ >= 0.6 || e.airT >= 3)) return false; // redan högt eller länge i luften: inget nytt lyft (aldrig genom taket)
+  e.v26lT = tmr; vz = clamp(vz || 3.5, 1, 4); // högst cirka 0,85 rutor upp (taket ligger på 1)
+  if (!(e.airZ > 0)) { e.airZ = 0.02; e.airT = 0; e.airVz = vz; } else e.airVz = Math.max(e.airVz, Math.min(vz, 2.5));
+  e.avx = dx || 0; e.avy = dy || 0; e.state = 'pain'; e.t = 0; e.didHit = true; e.charge = 0; e.leapT = 0; V26B.jst.launches++;
+  return true;
+}
+function v26bAirTick(e, dt) { // från updateEnemy: fienden i luften gör ingenting själv – den stiger, faller och landar
+  e.airT = (e.airT || 0) + dt; e.airVz -= 9.5 * dt; e.airZ += e.airVz * dt; if (e.airZ > V26B.jst.maxZ) V26B.jst.maxZ = e.airZ;
+  if (e.avx || e.avy) { tryMove(e, e.avx * dt, e.avy * dt, 0.28); e.avx *= 0.96; e.avy *= 0.96; }
+  e.state = 'pain'; e.t = 0; e.didHit = true; e.cd = Math.max(e.cd || 0, 0.5); e.mvx = e.mvy = 0;
+  if (e.airZ > 0) return true;
+  e.airZ = 0; e.airVz = 0; e.avx = e.avy = 0; e.v26land = tmr; V26B.jst.lands++; e.stun = Math.max(e.stun || 0, 0.35);
+  e.v26noL = tmr + (e.elite || e.champion ? 1.5 : 0.6); // ingen evig bedövning (hagel var 0,95 s, explosiva kulor)
+  if (voidAt(e.x, e.y)) { spawnText(e.x, e.y, 'FÖLL!', '#c0e0ff'); play('void_fall', 0.5, 1.3, { x: e.x, y: e.y }); hurtEnemy(e, e.hp + 999, e.x, e.y, { noProc: true, land: true }); stat('voidKills'); return true; } // som knockTick
+  if (!settings.lowfx) spawnPuff(e.x, e.y, 4); play('land', 0.45, 0.8, { x: e.x, y: e.y });
+  hurtEnemy(e, 3, e.x, e.y, { noProc: true, land: true });
+  return true;
+}
+function v26bFall(e, dt) { // från updateEnemy: ett lik som dog i luften faller ned
+  e.airVz = (e.airVz || 0) - 9.5 * dt; e.airZ = Math.max(0, e.airZ + e.airVz * dt);
+}
+function v26bAirHit(e, dmg, opt) { // från hurtEnemy: +25 % i luften, och träffen håller den uppe (högst 3 s)
+  if (opt.land || e.dead || !(e.airT > 0)) return dmg; // inte samma salva/smäll som kastade upp den
+  if ((e.airT || 0) < 3 && e.airZ < 0.6 && e.airVz < 1.4 && !opt.infight) { e.airVz = 1.4; V26B.jst.bumps++; } // svävar, stiger inte mot taket
+  return dmg * 1.25;
+}
+function v26bShotLaunch(e, opt) { // från hurtEnemy: hagelgeväret och dubbelbössan på nära håll (skottet från fire() har bara { crit })
+  if (!V26B.on || !V26B.jug || !('crit' in opt) || opt.boom || opt.melee || opt.noProc) return;
+  const w = WEAPONS[P.weapon]; if (!w || (w.id !== 'shotgun' && w.id !== 'dbshotgun')) return;
+  const dx = e.x - P.x, dy = e.y - P.y, d = Math.hypot(dx, dy); if (d >= 1.2 + e.d.size * 0.15 || d < 0.01) return;
+  launchEnemy(e, w.id === 'dbshotgun' ? 3.5 : 3.0,dx / d * 1.6, dy / d * 1.6);
+}
+function v26bBlast(x, y, r) { // från explode: fiender inom 0,6 × radien kastas upp, hårdare ju närmare
+  if (!V26B.on || !V26B.jug) return;
+  for (const e of ents) { if (e.dead || e.dying) continue; const dx = e.x - x, dy = e.y - y, d = Math.hypot(dx, dy); if (d > r * 0.6 || !boomSees(x, y, e.x, e.y)) continue;
+    const k = 1 - d / (r * 0.6 + 0.01), s = d > 0.05 ? 1.5 / d : 0; launchEnemy(e, 2.6 + 1.4 * k,dx * s, dy * s); }
+}
+function v26bShadowK(o) { return clamp(1 - o.airZ * 0.7, 0.3, 1); } // från gfxEShadowK: skuggan krymper med höjden
+function v26bAirZ(o) { V26B.jst.airDrawn++; return o.airZ; } // från renderSprites: höjden läggs på gfxEOff.z (stjärnor, ögon och markeringen följer med)
 // --- ritning: befälhavarens fana, granaten och den blinkande ringen ---
 function drawR25World(list) {
   if (!R25.active) return;
@@ -10908,6 +10966,7 @@ function loopKill(e) { // varje död: stilpoäng, blodläkning, resurser och klo
   if (!ctx.infight && !ctx.quiet && !ctx.exec) { const n = style.last.filter(w => w === wid).length; if (style.last.length >= 3 && n === 0) tags.push(['NYTT VAPEN', 6]); else if (n >= 5) pts *= 0.5; style.last.unshift(wid); if (style.last.length > 6) style.last.length = 6; }
   if (P.jz > 0.25) tags.push(['I LUFTEN', 8]);
   if (P.slide > 0) tags.push(['GLIDNING', 6]);
+  if ((e.airZ > 0 && e.airT > 0) || e.v26land === tmr) { tags.push(['JONGLERING', 10]); V26B.jst.airKills++; } // version 26B: dödad i luften
   if (e.headT && tmr - e.headT < 0.1) tags.push(['HUVUDTRÄFF', 5]);
   if (killTimes.length >= 2) tags.push([killTimes.length >= 4 ? 'MASSAKER' : 'FLERDÖD', 4 * killTimes.length]);
   if (ctx.stealth) tags.push(['SMYGDÖD', 8]);
@@ -14312,6 +14371,7 @@ function gfxETick(dt) { // från update(): spawn, väntande blodpölar, växande
     if (p.z <= 0.001 && p.vz <= 0 && !p.gS && fx.parts.blood_trail && !solid(p.x, p.y)) { p.gS = 1; gfxE.splats++; decals.push({ x: p.x, y: p.y, img: fx.parts.blood_trail[(Math.random() * 2) | 0], size: 0.04, life: 20 }); if (decals.length > 70) decals.shift(); gfxEFly.splice(i, 1); } }
 }
 function gfxEShadowK(o) { // flygare: skuggan krymper med höjden
+  if (o.airZ > 0) return v26bShadowK(o); // version 26B (krokrad, B): jonglering – skuggan krymper med höjden
   if (!((o.d.ai === 'fly' || o.d.ai === 'wisp' || o.d.float) && !o.anchored)) return 1;
   return clamp(0.85 - (0.3 + Math.sin(tmr * 3 + o.x) * 0.06) * 1.1, 0.35, 1);
 }
