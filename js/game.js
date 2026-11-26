@@ -47,6 +47,7 @@ const DEVICE = (() => { try { return matchMedia('(pointer: coarse)').matches || 
 const settings = Object.assign({ sens: 1, vol: 0.8, muted: false, diff: 1, fov: 74, gamma: 1, shake: 1, xstyle: 'kors', xcolor: '', fps: false, lowfx: false, bob: true,
   smartAI: true, // version 24: fiende-AI med attackpoletter, skydd, trupp och barks (AI24)
   voices: true, // version 25.1: röster till fiendernas utrop (FIX251)
+  parryTell: true, // version 26B: pareringsmarkeringen (PARERINGSMARKERING)
   vibrate: true, lefty: false, btnScale: 1, map: 1, mouseLook: DEVICE !== 'mobil', invertY: false }, store.get('settings.' + DEVICE, null) || store.get('settings', {}));
 if (params.has('diff')) settings.diff = clamp(+params.get('diff'), 0, 4);
 const saveSettings = () => { store.set('settings.' + DEVICE, settings); store.set('settings', settings); };
@@ -1749,10 +1750,11 @@ function playMusic() { if (!window.Music) return; if (settings.music === false) 
 function applyMixer() { if (window.Music) Music.setVolumes({ music: settings.music === false ? 0 : settings.musicVol ?? 0.6, sfx: settings.sfxVol ?? 1, amb: settings.ambVol ?? 0.8 }); }
 let intensity = 0;
 function updateAudioMood(dt) { // musiken intensivare i strid, dov ljudbild vid låg hälsa
+  v26cStyle(); // version 26C: stilrangen styr musiken (räknas även utan ljud)
   if (!window.Music || !Music.sfxIn) return;
   const fighting = ents.filter(e => e.alert && !e.dead && !e.dormant && Math.hypot(e.x - P.x, e.y - P.y) < 12).length;
   const want = boss && !boss.dead ? 0.4 + boss.phase * 0.2 : clamp(fighting / 5 + (ents.some(e => e.elite && e.alert && !e.dead && Math.hypot(e.x - P.x, e.y - P.y) < 12) ? 0.4 : 0), 0, 1); // eliter ger stridsmusik
-  intensity += (want - intensity) * Math.min(1, dt * 0.8); Music.setIntensity(intensity);
+  intensity += (v26cWant(want) - intensity) * Math.min(1, dt * 0.8); Music.setIntensity(intensity);
   if (settings.focusMode) { const amb = (settings.ambVol ?? 0.8) * (1 - Math.min(0.8, intensity * 0.9)); if (Math.abs(amb - (P.ambSet ?? -1)) > 0.03) { P.ambSet = amb; Music.setVolumes({ music: settings.music === false ? 0 : settings.musicVol ?? 0.6, sfx: settings.sfxVol ?? 1, amb }); } } // fokusläge
   const low = (P.hp < maxHp() * 0.25 && settings.lowHpGray !== false) || (map && cellUnder() === '-' && P.crouch > 0.5); if (low !== P.muffled) { P.muffled = low; Music.muffle(low); } // dämpat under vattnet
   if (P.boom > 0.2 && !P.duckT) { P.duckT = 0.5; Music.duck(0.6, 0.6); } if (P.duckT) P.duckT = Math.max(0, P.duckT - dt);
@@ -2203,6 +2205,7 @@ function project(wx, wy, z) {
 }
 function enemyFrame(e) {
   const set = enemyFrames[e.type];
+  if (e.dead && e.v26hd && gfxE.on) return e.v26hd; // version 26C: kroppen utan huvud
   let key = 'move', n = 0;
   if (e.anchored && set.anchored && !e.dead && e.state !== 'pain') return set.anchored[Math.floor(tmr * 6 + e.x) % set.anchored.length]; // vindanden har fäst sig
   if (e.kingImg && bossFx.mirrorking) return bossFx.mirrorking.idle[Math.floor(tmr * 6 + e.x * 3) % bossFx.mirrorking.idle.length]; // spegelkungens spegelbild
@@ -6457,6 +6460,7 @@ function pollGamepad(dt) {
     aimDown = (g.buttons[6] && g.buttons[6].value > 0.4) || (aimDown && !gp.active);
     if (edge(gpb('jump'))) jump(); if (edge(gpb('use'))) useKey(); if (edge(gpb('swap'))) cycleWeapon(1); if (edge(gpb('lamp'))) toggleLamp(); if (edge(gpb('stone'))) throwStone(); if (edge(gpb('dash'))) dash(0, 0); if (edge(gpb('reload'))) reloadKey(); if (edge(gpb('potion'))) { if (P.potions && P.potions.length) drinkPotion(); else inspect(); } if (edge(gpb('ability'))) useAbility();
     if (edge(gpb('grenade'))) grenadeStart(); if (!b(gpb('grenade')) && gp.prev[gpb('grenade')]) grenadeThrow();
+    if (gpb('taunt') >= 0 && edge(gpb('taunt'))) v26cTaunt(); // version 26C: hån (valfri knapp)
     if (edge(8)) { showMap = (showMap + 1) % 3; settings.map = showMap; saveSettings(); }
     gp.crouch = b(gpb('crouch')); gp.run = b(10) || Math.hypot(lx, ly) > 0.95;
     if (edge(9)) pause();
@@ -8727,6 +8731,7 @@ function openSettings(onClose) {
     check('VISA FPS', 'fps');
     check('STILMÄTARE', 'styleMeter');
     check('MINSKADE EFFEKTER', 'lowfx');
+    check('HUVUDEN LOSSNAR', 'heads'); // version 26C
     check('VAPNET GUNGAR', 'bob');
     check('VIBRATION (MOBIL)', 'vibrate');
     check('VÄNSTERHÄNT (MOBIL)', 'lefty', applyTouchLayout);
@@ -8742,6 +8747,7 @@ function openSettings(onClose) {
     check('UNDERTEXTER FÖR LJUD', 'subtitles');
     check('LJUDSIGNAL VID ANFALL BAKIFRÅN', 'backCue');
     check('RÖSTER (FIENDERNAS UTROP)', 'voices'); // version 25.1
+    check('MUSIKEN FÖLJER STILEN', 'styleMusic'); // version 26C
     sec('SPEL');
     check('BYT TILL NYTT VAPEN', 'autoSwitch');
     check('LADDA OM AUTOMATISKT', 'autoReload');
@@ -8750,6 +8756,7 @@ function openSettings(onClose) {
     check('KAMERAN LUTAR', 'tilt');
     check('MÅL-TEXT', 'objective');
     check('SMART FIENDE-AI (SKYDD, TRUPP, ATTACKTURER)', 'smartAI'); // version 24
+    check('PARERINGSMARKERING', 'parryTell'); // version 26B (raden lagd av 26C)
     check('TIMER', 'timer');
     check('FIENDERNAS LIVMÄTARE', 'enemyBars');
     check('SKADESIFFROR', 'dmgNumbers');
@@ -8871,11 +8878,11 @@ function openPadMap(onClose) {
   CardUI.panel('HANDKONTROLLEN', 'KLICKA PÅ EN HANDLING OCH TRYCK SEDAN PÅ EN KNAPP PÅ HANDKONTROLLEN.', c => {
     for (const [act, name] of GP_ACTS) {
       const r = CardUI.el('label', 'cu-row'); r.appendChild(CardUI.el('span', '', name));
-      const b = document.createElement('button'); b.type = 'button'; b.className = 'cu-btn'; b.textContent = 'KNAPP ' + gpb(act);
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'cu-btn'; b.textContent = gpb(act) < 0 ? 'INGEN KNAPP' : 'KNAPP ' + gpb(act);
       b.onclick = ev => { ev.stopPropagation(); b.textContent = 'TRYCK EN KNAPP…'; const t0 = performance.now();
         const poll = setInterval(() => { let g = null; try { g = [...(navigator.getGamepads ? navigator.getGamepads() : [])].find(p => p && p.connected); } catch (e) { g = null; }
           const i = g ? g.buttons.findIndex(x => x.pressed) : -1;
-          if (i >= 0 || performance.now() - t0 > 6000) { clearInterval(poll); if (i >= 0) { settings.padMap = Object.assign({}, settings.padMap, { [act]: i }); saveSettings(); } b.textContent = 'KNAPP ' + gpb(act); } }, 50); };
+          if (i >= 0 || performance.now() - t0 > 6000) { clearInterval(poll); if (i >= 0) { settings.padMap = Object.assign({}, settings.padMap, { [act]: i }); saveSettings(); } b.textContent = gpb(act) < 0 ? 'INGEN KNAPP' : 'KNAPP ' + gpb(act); } }, 50); };
       r.appendChild(b); c.appendChild(r);
     }
     const reset = document.createElement('button'); reset.type = 'button'; reset.className = 'cu-btn'; reset.textContent = 'ÅTERSTÄLL'; reset.onclick = ev => { ev.stopPropagation(); settings.padMap = {}; saveSettings(); CardUI.close(); openPadMap(onClose); }; c.appendChild(reset);
@@ -8952,6 +8959,7 @@ addEventListener('keydown', e0 => {
     if (e.code === 'KeyV') kick();
     if (e.code === 'KeyH' && !e.repeat) drinkPotion();
     if (e.code === 'KeyT' && !e.repeat) useAbility();
+    if (e.code === 'KeyY' && !e.repeat) v26cTaunt(); // version 26C: hån
     if (e.code === 'KeyL' && !e.repeat) toggleLamp();
     if (e.code === 'KeyG' && !e.repeat) throwStone();
     if (e.code === 'KeyJ' && !e.repeat) swapPotion();
@@ -9059,9 +9067,11 @@ function touchCanUse() { // samma saker som useKey() når – och sparken, som h
   for (const dist of [0.6, 1.0, 1.4]) { const nx = P.x + ca * dist, ny = P.y + sa * dist; if (doorAt(nx, ny) && isDoorChar(cellAt(nx, ny))) return true; }
   for (const e of ents) { if (e.dead || e.dying || e.hidden || e.dormant || !e.d) continue; const d = Math.hypot(e.x - P.x, e.y - P.y); if (d > 1.5 + e.d.size * 0.3) continue;
     let off = Math.atan2(e.y - P.y, e.x - P.x) - P.a; off = Math.atan2(Math.sin(off), Math.cos(off)); if (Math.abs(off) < 0.7) return true; } // sparka/avrätta fienden framför
+  if (typeof v26bWantsUse === 'function' && v26bWantsUse()) return true; // version 26B: flygspark och granatretur
   for (const pt of pots) if (!pt.broken && Math.hypot(pt.x - P.x, pt.y - P.y) < 1.4) return true;
   const fx0 = P.x + ca * 0.9, fy0 = P.y + sa * 0.9;
   for (const pr of props) if (pr.def && !pr.broken && (pr.def.boom || pr.ch === 'u') && Math.hypot(pr.x - fx0, pr.y - fy0) < 0.8) return true;
+  if (v26cTouchUse()) return true; // version 26C: krok för 26A om den behöver ANVÄND (v26aTouchUse)
   return solid(fx0, fy0); // en vägg tätt framför: hemliga dörrar hittas med handen
 }
 function touchCanReload() { const wp = WEAPONS[P.weapon]; if (!wp || wp.melee || TOUCH_NO_RELOAD.some(k => wp[k])) return false; if (WS.state === 'reload') return true; return P.mags[P.weapon] < effMag(P.weapon) && P.ammo[wp.ammo] > 0; }
@@ -9152,6 +9162,7 @@ function setupTouch() {
         if (act === 'jump') jump();
         if (act === 'crouch') touch.crouch = true;
         if (act === 'dash') dash(0, 0);
+        if (act === 'taunt') v26cTaunt(); // version 26C: hån (ALLA KNAPPAR)
         if (act === 'grenade') grenadeStart();
         if (act === 'potion') drinkPotion();
         if (act === 'ability') useAbility();
@@ -11019,6 +11030,7 @@ function drawLoopHud(g) {
   const r = styleRank(), R = STYLE_RANKS[r], x0 = W - 76 - hudIX, y0 = HL ? HL.styleY : 72, nx = STYLE_RANKS[r + 1], k = nx ? (style.v - R[3]) / (nx[3] - R[3]) : 1, lines = style.feed.slice(0, HL && HL.t ? clamp(Math.floor((VH - 44 - y0 - 23) / 9), 0, 3) : 3); // MENY: pekskärm – listan slutar ovanför tipsraden längst ned // smal, i högerkanten (utanför bildens mitt)
   g.fillStyle = 'rgba(0,0,0,0.45)'; g.fillRect(x0 - 3, y0 - 3, 75, 26 + lines.length * 9);
   txt(R[0], x0, y0, R[2], 2);
+  v26cRankFx(g, x0, y0, r); // version 26C: ny rang – ram som växer ut
   g.fillStyle = '#2a2018'; g.fillRect(x0, y0 + 18, 72, 2); g.fillStyle = R[2]; g.fillRect(x0, y0 + 18, Math.round(72 * clamp(k, 0, 1)), 2);
   lines.forEach((f, i) => { const s = f.t.length > 9 ? f.t.slice(0, 9) : f.t; txt(s, x0, y0 + 23 + i * 9, '#e8d9b0', 1, true, Math.min(1, f.k * 2)); });
 }
@@ -14236,6 +14248,7 @@ function gfxEKill(e) { // från killEnemy (direkt efter e.dead = true)
   if (e.gHitX === undefined || tmr - (e.gHitT || -9) > 0.6) { const dx = e.x - P.x, dy = e.y - P.y, d = Math.hypot(dx, dy) || 1; e.gHitX = dx / d; e.gHitY = dy / d; e.gHitK = 0.6; }
   if (!e.boss && !gfxELow() && gfxEDead.length < 16) gfxEDead.push(e);
   if (gfxE.on && e.burn > 0 && !e.boss && !(e.frozen > 0) && !e.overkill && e.d.ai !== 'wisp' && e.type !== 'Ü' && enemyFrames[e.type]) { e.gBurnt = true; gfxE.chars++; if (gfxEChars.length < 8) gfxEChars.push(e); }
+  v26cKill(e); // version 26C: huvudet lossnar vid ett dödande huvudskott
 }
 function gfxEGib(e) { // från gib(): bitarna beror på vad fienden är gjord av; returnerar true om partiklarna är klara
   if (!gfxE.on) return false;
@@ -14269,6 +14282,7 @@ function gfxERing(x, y, n, sp, col, size = 0.08) { for (let i = 0; i < n; i++) {
 function gfxETick(dt) { // från update(): spawn, väntande blodpölar, växande pölar, köttbitar som landar, bossfaser och bossdöd
   gfxELoad(); if (gfxE.on) gfxEIntroTick(dt); if (lvl !== gfxELvl) { gfxELvl = lvl; gfxELvlT = tmr; gfxEDead.length = gfxEGrow.length = gfxEFly.length = gfxEChars.length = 0; }
   gfxECharTick(dt);
+  v26cTick(); // version 26C: blodfontänen ur halsen
   const fresh = tmr - gfxELvlT < 1.5;
   for (const e of ents) {
     if (e.gBorn === undefined) { e.gBorn = fresh || !gfxE.on || e.boss || e.dead || e.hidden || e.under || e.dormant || e.asleep || e.dummy || Math.hypot(e.x - P.x, e.y - P.y) > 16 ? -9 : tmr; if (e.gBorn === tmr) { gfxE.spawns++; gfxESpawnFx(e); } }
@@ -14309,6 +14323,7 @@ function gfxEPose(o, set) { // squash & stretch, knuff, andning, gångstuds, spa
     if (k > 0.5) gfxEOff.z = -Math.min(1, (k - 0.5) / 1.1) * o.d.size * 1.2;
     return;
   }
+  if (o.dead && o.v26hd && v26cPose(o, K, hx, hy)) return; // version 26C: huvudlös kropp
   if (o.dead) { // faller bakåt i skottriktningen, studsar lätt mot golvet och blir liggande
     const k = tmr - (o.gDeadT || -9); if (k > 2 || k < 0) { const s = 0.2 * K; gfxEOff.x = hx * s; gfxEOff.y = hy * s; return; }
     const p = Math.min(1, k / 0.35), s = (1 - (1 - p) * (1 - p)) * 0.2 * K; gfxEOff.x = hx * s; gfxEOff.y = hy * s;
@@ -14659,6 +14674,144 @@ function gfxWApi() { // window.__game.gfxW: tillstånd och mätning för t105
     marks: () => { let n = 0; for (const a of wallMarks.values()) for (const m of a) if (m.kind === 'scorch') n++; return n; },
     bench: (n = 200) => { const ts = []; for (let i = 0; i < n; i++) { const t0 = performance.now(); tmr += 1 / 60; updateWeather(1 / 60); updateParticles(1 / 60); updateLight(); render(); ts.push(performance.now() - t0); } const mean = ts.reduce((a, b) => a + b, 0) / n; ts.sort((a, b) => a - b); return { mean, med: ts[n >> 1], p90: ts[(n * 0.9) | 0], parts: particles.length }; } };
 }
+// ---------- Version 26C: huvudet lossnar och musiken följer stilen ----------
+// HUVUDET (Selaco): ett dödande huvudskott (headshotCheck sätter e.headT) på en upprätt fiende av kött eller ben skär ut huvudet
+// (den sammanhängande biten överst mitt på den stående rutan, en gång per bild, cachad) och skjuter iväg det som en snurrande bit.
+// Kroppen står huvudlös ett ögonblick med en kort blodfontän (ben: damm) och segnar sedan ned i golvet (borta efter cirka 1,7 s).
+// Lärdom från Prodeus: kortlivat och inget i skärmen – ett huvud och högst sex droppar per död; huvud och droppar lever högst 1,2 s,
+// fläcken där huvudet landar 8 s, och ett huvud nära kameran tas bort. Ben som inte går att skära ger dödskallen (fx.parts.skull).
+// Av med MINSKADE EFFEKTER (gfxELow) och inställningen HUVUDEN LOSSNAR.
+// MUSIKEN (ULTRAKILL): stilrangen höjer musikens intensitet (A lite, S och uppåt nästan fullt) och en ny rang A–SSS ger en kort
+// syntad stinger (Music.rankSting i music.js), högst en per 4 s. Av med STILMÄTARE av eller MUSIKEN FÖLJER STILEN av.
+const v26c = { on: true, heads: 0, bodies: 0, drops: 0, cuts: 0, skip: '', music: true, bonus: 0, want: 0, rank: 0, rankUps: 0, stings: 0, stingT: -9, lastSting: -1, log: [] };
+const V26C_CUT = new Map(); // stående bild -> { head: [fyra vridna rutor], body, hb, nz, hs } (tak 40 poster)
+const v26cFount = [], v26cHeads = []; // huvudlösa kroppar som blöder just nu (tak 6), huvuden i luften (tak 4)
+if (settings.heads === undefined) settings.heads = true; // HUVUDEN LOSSNAR
+if (settings.styleMusic === undefined) settings.styleMusic = true; // MUSIKEN FÖLJER STILEN
+function v26cCut(img) { // skär ut huvudet (den sammanhängande biten överst mitt på figuren, högst 28 % av höjden) och gör en huvudlös kropp
+  if (!img || !img.data || !img.w) return null; const old = V26C_CUT.get(img); if (old !== undefined) return old;
+  if (V26C_CUT.size >= 40) V26C_CUT.clear();
+  const w = img.w, h = img.h, d = img.data, op = i => d[i] >>> 24 >= 100;
+  let top = -1, bot = -1, f0 = w, f1 = -1;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (op(y * w + x)) { if (top < 0) top = y; bot = y; if (x < f0) f0 = x; if (x > f1) f1 = x; }
+  const fw = f1 - f0 + 1, fh = bot - top + 1; let c = null;
+  if (top >= 0 && fh >= 8 && fh >= fw * 0.95) { // bara upprätta figurer (inte fåglar, hundar, krabbor …)
+    const band = Math.max(3, Math.round(fh * 0.28)), cx = (f0 + f1) / 2;
+    let sx = -1, sy = -1; // fröet: översta pixeln nära mitten – ett höjt vapen vid sidan blir inte huvudet
+    for (let y = top; y < top + band && sx < 0; y++) { let best = 1e9; for (let x = 0; x < w; x++) { const dx = Math.abs(x - cx); if (dx <= fw * 0.3 && dx < best && op(y * w + x)) { best = dx; sx = x; } } if (sx >= 0) sy = y; }
+    if (sx >= 0) {
+      const y1 = Math.min(bot, sy + band - 1), m = new Uint8Array(w * h), st = [sy * w + sx]; m[st[0]] = 1; let n = 0, x0 = w, x1 = -1, yb = sy;
+      while (st.length) { const i = st.pop(), x = i % w, y = (i - x) / w; n++; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y > yb) yb = y; // fyllning inom bandet
+        for (const j of [x > 0 ? i - 1 : -1, x < w - 1 ? i + 1 : -1, y > sy ? i - w : -1, y < y1 ? i + w : -1]) if (j >= 0 && !m[j] && op(j)) { m[j] = 1; st.push(j); } }
+      const bw = x1 - x0 + 1, bh = yb - sy + 1;
+      if (n >= 6 && bh >= 3 && bw <= fw * 0.92) { // ett huvud smalare än kroppen (kultistens huva är nästan lika bred)
+        const s = Math.max(bw, bh), hd = new Uint32Array(s * s), ox = (s - bw) >> 1, oy = (s - bh) >> 1, body = new Uint32Array(d);
+        for (let y = sy; y <= yb; y++) for (let x = x0; x <= x1; x++) { const i = y * w + x; if (m[i]) { hd[(y - sy + oy) * s + x - x0 + ox] = d[i]; body[i] = 0; } }
+        for (let y = sy; y <= yb; y++) for (let x = x0; x <= x1; x++) if (m[y * w + x]) for (let k = 1; k <= 2 && y + k < h; k++) { const j = (y + k) * w + x; if (!m[j] && op(j)) body[j] = k === 1 ? 0xff1e1ea0 : 0xff121266; } // halsen: mörkröd stump
+        const rot = a => { const o = new Uint32Array(s * s); for (let y = 0; y < s; y++) for (let x = 0; x < s; x++) o[x * s + (s - 1 - y)] = a[y * s + x]; return o; }; // 90° medurs
+        const r1 = rot(hd), r2 = rot(r1), r3 = rot(r2), mk = a => ({ w: s, h: s, data: a });
+        c = { head: [mk(hd), mk(r1), mk(r2), mk(r3)], body: { w, h, data: body }, hb: Math.max(0, 1 - (sy - oy + s) / h), nz: 1 - (yb + 1) / h, hs: s / h, fw, fh, bw, n };
+      }
+    }
+  }
+  V26C_CUT.set(img, c); v26c.cuts++; return c;
+}
+function v26cKill(e) { // från gfxEKill: dödade ett huvudskott fienden? (e.headT sattes i samma skott)
+  if (tmr < v26c.tauntUntil && !e.boss && run) { v26c.tauntKills++; styleAdd(e.elite ? 15 : 8, '+HÅNAD'); } // hånet: dödanden inom 4 s
+  if (!e.headT || tmr - e.headT > 0.1 || e.boss || e.guardian) return;
+  if (!v26c.on || settings.heads === false) { v26c.skip = 'off'; return; }
+  if (gfxELow()) { v26c.skip = 'lowfx'; return; }
+  if (e.frozen > 0 || e.burn > 0 || e.d.ai === 'wisp' || e.type === 'Ü' || e.ghost > 0.5 || e.kingImg || e.hidden || e.under || e.downT > 0 || e.sinkT > 0 || e.riseT > 0 || e.anchored) { v26c.skip = 'state'; return; } // inte liggande, nedgrävda eller fastsatta
+  const k = gfxEKind(e); if (k !== 'flesh' && k !== 'bone') { v26c.skip = k; return; }
+  const set = enemyFrames[e.type], c = v26cCut(set && ((set.idle && set.idle[0]) || (set.move && set.move[0])));
+  if (!c && k === 'bone' && fx.parts.skull) { const a = rnd(0, TAU); gfxEPart({ x: e.x, y: e.y, z: e.d.size * 0.8, vx: (e.gHitX || 0) * 2 + Math.cos(a) * 0.4, vy: (e.gHitY || 0) * 2 + Math.sin(a) * 0.4, vz: rnd(2.2, 3), life: 1.2, img: fx.parts.skull[0], size: 0.14, grav: true, bounce: true, tint: [230, 220, 200], v26head: true }, true); // ben som inte går att skära: dödskallen
+    v26c.heads++; v26c.skulls = (v26c.skulls || 0) + 1; v26c.skip = ''; play('bonesnap', 0.45, 1.25, { x: e.x, y: e.y }); return; }
+  if (!c) { v26c.skip = 'img'; return; } // inte upprätt eller inget smalt huvud (fåglar, hundar, krabbor …): vanlig död
+  const sz = e.d.size * 1.15, fz = (e.d.ai === 'fly' || e.d.float) && !e.anchored ? 0.3 : 0, hx = e.gHitX || 0, hy = e.gHitY || 0, sp = rnd(1.6, 2.4);
+  gfxEPart({ x: e.x, y: e.y, z: fz + c.hb * sz, vx: hx * sp + rnd(-0.5, 0.5), vy: hy * sp + rnd(-0.5, 0.5), vz: rnd(2.2, 3), life: 1.2, img: c.head[0], frames: c.head, flap: true, size: c.hs * sz, grav: true, bounce: true, v26head: true }, true);
+  { const p = particles[particles.length - 1]; if (p && p.v26head && v26cHeads.length < 6) { p.v26land = k !== 'flesh'; v26cHeads.push(p); } } // följs: fläcken där det landar, och det tas bort nära kameran
+  v26c.heads++; gfxE.heads = (gfxE.heads || 0) + 1; v26c.skip = '';
+  v26c.log.unshift({ type: e.type, kind: k, body: !e.overkill }); if (v26c.log.length > 6) v26c.log.length = 6;
+  play(k === 'bone' ? 'bonesnap' : 'splat', 0.45, k === 'bone' ? 1.25 : 0.8, { x: e.x, y: e.y });
+  if (e.overkill) return; // sprängs ändå i bitar: bara huvudet flyger
+  e.v26hd = c.body; e.v26nz = fz + c.nz * sz; e.v26k = k; e.v26n = 0; v26c.bodies++;
+  if (v26cFount.length < 6) v26cFount.push(e);
+}
+function v26cTick() { // från gfxETick: fontänen ur halsen, sex droppar under en halv sekund (ben: ett dammoln)
+  for (let i = v26cHeads.length - 1; i >= 0; i--) { const p = v26cHeads[i]; // huvudet slår i golvet: en liten blodfläck som torkar bort efter 8 s
+    if (p.life <= 0 || !particles.includes(p)) { v26cHeads.splice(i, 1); continue; }
+    if ((p.x - P.x) ** 2 + (p.y - P.y) ** 2 < 0.25) { p.life = 0; p.size = 0; v26c.nearCam = (v26c.nearCam || 0) + 1; v26cHeads.splice(i, 1); continue; } // aldrig ett huvud som fyller skärmen
+    if (p.z <= 0.001 && !p.v26land) { p.v26land = true; /* första studsen */ const f = fx.parts.blood_pool; if (f && !solid(p.x, p.y)) { decals.push({ x: p.x, y: p.y, img: f[(Math.random() * f.length) | 0], size: 0.05, life: 8 }); if (decals.length > 70) decals.shift(); v26c.marks = (v26c.marks || 0) + 1; } }
+  }
+  for (let i = v26cFount.length - 1; i >= 0; i--) {
+    const e = v26cFount[i], k = tmr - (e.gDeadT || -9);
+    if (k > 0.5 || k < 0 || e.gibbed || !ents.includes(e)) { v26cFount.splice(i, 1); continue; }
+    if (e.v26k === 'bone') { if (!e.v26n && fx.parts.smoke) { e.v26n = 1; gfxEPart({ x: e.x, y: e.y, z: e.v26nz, vx: 0, vy: 0, vz: 0.4, life: 0.7, frames: fx.parts.smoke, img: fx.parts.smoke[0], size: 0.16, drift: true, tint: [215, 205, 185] }); } continue; }
+    const want = Math.min(6, Math.floor(k / 0.5 * 6) + 1);
+    while (e.v26n < want) { e.v26n++; v26c.drops++; gfxEPart({ x: e.x + rnd(-0.04, 0.04), y: e.y + rnd(-0.04, 0.04), z: e.v26nz, vx: rnd(-0.35, 0.35) + (e.gHitX || 0) * 0.3, vy: rnd(-0.35, 0.35) + (e.gHitY || 0) * 0.3, vz: rnd(1.5, 2.4), life: rnd(0.4, 0.62), img: fx.blood[e.v26n % 3], size: rnd(0.07, 0.1), grav: true }); }
+  }
+}
+function v26cPose(o, K, hx, hy) { // från gfxEPose: den huvudlösa kroppen vacklar, segnar ned och sjunker i golvet (som de förkolnade)
+  const k = tmr - (o.gDeadT || -9); if (k < 0) return false;
+  const p = Math.min(1, k / 0.3), s = (1 - (1 - p) * (1 - p)) * 0.12 * K; gfxEOff.x = hx * s; gfxEOff.y = hy * s;
+  if ((o.d.ai === 'fly' || o.d.float) && !o.anchored && k < 0.4) { const q = k / 0.4; gfxEOff.z = 0.3 * (1 - q * q); }
+  if (k < 0.45) { spriteSX = 1 + Math.sin(k / 0.45 * Math.PI * 3) * 0.04 * (1 - k / 0.45); return true; }
+  const q = Math.min(1, (k - 0.45) / 0.35); spriteSY = 1 - 0.55 * q * q; spriteSX = 1 + 0.25 * q; spriteClip = 1;
+  if (k > 0.8) gfxEOff.z = -Math.min(1, (k - 0.8) / 0.9) * o.d.size * 1.2;
+  return true;
+}
+function v26cStyle() { // från updateAudioMood (före ljudkollen): stilrangens tillskott och stingern vid ny rang
+  const on = v26c.music && !!run && settings.styleMeter !== false && settings.styleMusic !== false, r = run ? styleRank() : 0;
+  v26c.bonus = on ? 0.15 * Math.max(0, r - 2) : 0;
+  if (r >= 4 && v26c.tauntOn && !isTouch() && !gp.active && r > v26c.rank) firstHint('taunt', 'Y HÅNAR: FIENDERNA NÄRA ANFALLER DIG, MEN DÖDANDEN DIREKT EFTERÅT GER MER STIL.'); // hånet syns en gång (rang S)
+  if (r > v26c.rank) { v26c.rankUps++; v26c.rankUpT = tmr; if (on && r >= 3 && tmr - v26c.stingT >= 4) { v26c.stingT = tmr; v26c.stings++; v26c.lastSting = r; if (window.Music && Music.rankSting) Music.rankSting(r - 3); } }
+  v26c.rank = r;
+}
+function v26cRankFx(g, x0, y0, r) { // från drawLoopHud: en ram som växer ut från rangbokstaven när rangen stiger (form, inte bara färg; ingen vit blixt)
+  const k = (tmr - (v26c.rankUpT ?? -9)) / 0.6; if (k < 0 || k >= 1 || r < 1) return;
+  const w = textW(STYLE_RANKS[r][0]) * 2 + 6, e = settings.reduceMotion ? 0 : Math.round(k * 8); // MINSKAD RÖRELSE: ramen står still och tonar bort g.globalAlpha = 1 - k; g.strokeStyle = STYLE_RANKS[r][2]; g.lineWidth = 1;
+  g.strokeRect(x0 - 3.5 - e, y0 - 3.5 - e, w + 1 + e * 2, 18 + e * 2); g.globalAlpha = 1; v26c.rankFx = (v26c.rankFx || 0) + 1;
+}
+const v26cWant = want => (v26c.want = clamp(want + v26c.bonus, 0, 1)); // fiendernas värde plus stilens, 0–1
+function v26cApi() { return { st: v26c, t: () => tmr, set: o => Object.assign(v26c, o), cut: v26cCut, cache: () => V26C_CUT.size, fount: () => v26cFount.length,
+  fill: () => { for (const s of Object.values(enemyFrames)) if (s && s.idle) v26cCut(s.idle[0]); return V26C_CUT.size; }, // alla fiendetyper: cachens tak
+  sheet: () => Object.entries(ENEMY_DEFS).filter(([t]) => enemyFrames[t] && enemyFrames[t].idle).map(([t, d]) => { const k = gfxEKind({ d }), im = enemyFrames[t].idle[0]; return [t, k, im, k === 'flesh' || k === 'bone' ? v26cCut(im) : null]; }).filter(r => r[1] === 'flesh' || r[1] === 'bone'), // kontaktark (null = inget huvud)
+  taunt: () => v26cTaunt(), binds: () => ({ key: ACTIONS.some(a => a[0] === 'KeyY' && a[1] === 'HÅNA'), pad: gpb('taunt'), padAct: GP_ACTS.some(a => a[0] === 'taunt') }), // hånet (t132)
+  state: () => ({ on: v26c.on, heads: v26c.heads, bodies: v26c.bodies, drops: v26c.drops, cuts: v26c.cuts, skip: v26c.skip, log: v26c.log.slice(), bonus: v26c.bonus, want: v26c.want, rank: v26c.rank, rankUps: v26c.rankUps, stings: v26c.stings, lastSting: v26c.lastSting, marks: v26c.marks || 0, rankFx: v26c.rankFx || 0, nearCam: v26c.nearCam || 0, skulls: v26c.skulls || 0, intensity, music: !!(window.Music && Music.sfxIn), musicI: window.Music ? Music.intensity : -1 }),
+  headParts: () => particles.filter(p => p.v26head).map(p => ({ life: +p.life.toFixed(2), z: +p.z.toFixed(2), size: +p.size.toFixed(3) })),
+  bench: (n = 400) => { const im = enemyFrames.S && enemyFrames.S.idle[0]; const t0 = performance.now(); for (let i = 0; i < n; i++) { V26C_CUT.delete(im); v26cCut(im); } return (performance.now() - t0) / n; } }; } // ms per utskärning
+// HÅN (Boltgun, förslag 12): Y (valfri tangent), en valfri knapp på handkontrollen eller klockknappen i ALLA KNAPPAR väcker fienderna
+// inom 10 rutor och ger de fyra närmaste en anfallspolett (SMART FIENDE-AI). Ett dödande inom 4 s ger +HÅNAD och extra stilpoäng.
+// Nedkylning 8 s speltid. Bossar, väktare, slumrande mimicer och statyer berörs inte.
+const V26C_TAUNTS = ['KOM HIT!', 'ÄR DET ALLT?', 'NÄSTA!', 'FRAM MED ER!'];
+Object.assign(v26c, { tauntOn: true, taunts: 0, tauntT: -99, tauntUntil: -99, taunted: 0, tauntKills: 0, tauntDeny: 0, denyT: -9 });
+ACTIONS.push(['KeyY', 'HÅNA']); // tangentbytet
+GP_ACTS.push(['taunt', 'HÅNA', -1]); // handkontrollen: alla knappar är upptagna – ingen som standard, välj en under HANDKONTROLLEN
+function v26cTaunt() {
+  if (state !== 'play' || !run || !P || !map || !v26c.tauntOn) return false;
+  if (tmr < v26c.tauntT + 8) { v26c.tauntDeny++; if (tmr - v26c.denyT > 1) { v26c.denyT = tmr; say(`HÅNET LADDAR: ${Math.ceil(v26c.tauntT + 8 - tmr)} S`, 0.8); } return false; }
+  v26c.tauntT = tmr; v26c.tauntUntil = tmr + 4; v26c.taunts++;
+  const near = [];
+  for (const e of ents) { if (e.dead || e.dying || e.boss || e.guardian || e.dormant || e.hidden || e.asleep || e.dummy || !e.d) continue; const d = Math.hypot(e.x - P.x, e.y - P.y); if (d > 10) continue;
+    alertEnemy(e, false); e.lx = P.x; e.ly = P.y; e.lostT = 0; near.push([d, e]); }
+  near.sort((a, b) => a[0] - b[0]);
+  if (settings.smartAI !== false) for (const [, e] of near.slice(0, 4)) try { ai24Grant(e, 0.6, true); } catch (er) { /* AI:n saknar fienden */ }
+  v26c.taunted = near.length;
+  say(V26C_TAUNTS[(v26c.taunts - 1) % V26C_TAUNTS.length], 1.2); play('bell', 0.45, 0.7); P.shake = Math.max(P.shake || 0, 0.25);
+  return true;
+}
+function v26cTouchBtn() { // klockknappen i ALLA KNAPPAR (xtra: syns inte i den nya layouten); stilen läggs här så att index.html inte ändras
+  const ui = document.getElementById('touch'); if (!ui || ui.querySelector('.tauntb')) return;
+  ui.insertAdjacentHTML('beforeend', `<button class="tb tauntb xtra" data-act="taunt" aria-label="taunt"><img src="${A}touch/btn.png" alt=""><img class="ic" src="${A}touch/icon_bell.png" alt=""></button>`);
+  const s = document.createElement('style');
+  s.textContent = '#touch .tauntb { width: calc(var(--b) * .7); height: calc(var(--b) * .7); right: calc(var(--m) + 1vw + var(--b) * .95 + env(safe-area-inset-right, 0px)); bottom: calc(min(62.5vw, 100vh) * .2 + 1vh + var(--b) * 3.4 + var(--g) * 4); }'
+    + ' @media (orientation: portrait) { #touch .tauntb { width: calc(var(--b) * .8); height: calc(var(--b) * .8); right: auto; left: var(--p); bottom: auto; top: calc(var(--cb) + 3vw + var(--b) * 3 + 9vw); } }';
+  document.head.appendChild(s);
+}
+function v26cTouchUse() { // ANVÄND-knappen på pekskärmen: krok för version 26A (v26aTouchUse() ger true när ANVÄND ska synas) om den finns
+  try { if (typeof v26aTouchUse === 'function' && v26aTouchUse()) return true; } catch (e) { /* valfritt – 26B har en egen rad (v26bWantsUse) */ }
+  return false;
+}
 
 (async () => {
   const st = document.getElementById('status');
@@ -14672,6 +14825,7 @@ function gfxWApi() { // window.__game.gfxW: tillstånd och mätning för t105
     for (const id of ['start', 'daily', 'unlocks', 'altar']) document.getElementById(id).disabled = false;
   } catch (e) { st.textContent = 'FEL: ' + e.message; console.error(e); }
   checkAch(); refreshTitle(); setupTouch(); setupSliders(); applyDisplay();
+  v26cTouchBtn(); // version 26C: hånknappen i ALLA KNAPPAR
   if (isTouch()) document.body.classList.add('touch');
   addEventListener('resize', () => { if (settings.rotatePause && isTouch() && state === 'play' && innerHeight > innerWidth * 1.1) { pause(); say('PAUSAT – VRID TILLBAKA MOBILEN', 2); } }); // pausa vid stående läge
   CardUI.sfx = n => { const m = { flip: ['card', 0.4, 1.3], pick: ['card', 0.8, 0.9], deny: ['click', 0.6, 0.7], open: ['card', 0.3, 0.8], hover: ['ui_hover', 0.3, 1], click: ['ui_click', 0.5, 1] }[n]; if (m) play(m[0], m[1], m[2]); };
@@ -14685,6 +14839,7 @@ function gfxWApi() { // window.__game.gfxW: tillstånd och mätning för t105
   window.__game.hudRects = () => { const L = hudLay(); return { hp: L.hp, ammo: L.ammo, map: L.map }; }; window.__game.settings = window.__game.settings || settings; window.__game.say = say; window.__game.msgs = () => msgs; // HUD-hörnen i spelkoordinater (320×200) – pekkontrollerna trycker på dem
   window.__game.sky = skyApi; // version 25.1: egna himlar per biom (t118)
   window.__game.gfxE = gfxEApi(); // FIENDER: räknare och av/på för t104
+  window.__game.v26c = v26cApi(); // version 26C: huvudet lossnar, stilstyrd musik och hån (t130–t133)
   window.__game.ai = ai24Api(); // version 24: fiende-AI – poletter, roller, skyddspunkter och barks (t112)
   window.__game.roles = r25Api(); // version 25: fienderoller – sköldvakt, befälhavare och granatkastare (t114)
   window.__game.v26b = v26bApi(); // version 26B: närstridsparering, flygspark och granatretur (t125–t127)
