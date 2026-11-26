@@ -62,7 +62,7 @@ await gwait(2.5);
 const cap1 = await ev(() => { const E = __game.ents(), whole = E.filter(e => e.dead && !e.gibbed); return { whole: whole.length, near: E.filter(e => e.v27near && !e.gibbed).length, ghoul: E.filter(e => e.v27ghoul && !e.gibbed).length, gone: __game.v27b.n.corpseGone, cap: __game.v27b.corpseCap() }; });
 ok(cap0 === 56 && cap1.whole <= 40 && cap1.near === 3 && cap1.ghoul === 3, 'taket: högst 40 hela lik; de nära spelaren och nära ghoulen ligger kvar ' + JSON.stringify({ cap0, cap1 }));
 // 6) sårade: under 40 % droppar och spår, friska inte, lowfx inte; under 20 % haltar och läker tillbaka
-await scene({ p: [3, 5], en: [['Ä', 14, 3], ['Ä', 14, 7]], move: true }); await gwait(0.3);
+await scene({ p: [3, 5], en: [['W', 14, 3], ['W', 14, 7]], move: true }); await gwait(0.3);
 const w0 = await ev(() => { const g = __game, [a, b] = g.ents(); a.hp = a.maxHp * 0.35; b.hp = b.maxHp; a.alert = b.alert = true; return { ...g.v27b.n }; });
 await gwait(1.5);
 const w1 = await ev(() => ({ ...__game.v27b.n }));
@@ -71,12 +71,13 @@ const fresh = await ev(() => { const g = __game, b = g.ents()[1]; return { d: b.
 ok(fresh.d, 'en frisk fiende droppar inte');
 await ev(() => { __game.settings.lowfx = true; }); const l0 = await ev(() => __game.v27b.n.drips); await gwait(1); const l1 = await ev(() => __game.v27b.n.drips); await ev(() => { __game.settings.lowfx = false; });
 ok(l1 === l0, 'lowfx: inga droppar ' + (l1 - l0));
-const lp = await ev(() => { const g = __game, a = g.ents()[0]; window.__sp = a.d.speed; a.hp = a.maxHp * 0.15; return a.d.speed; });
+const lp = await ev(() => { const g = __game, a = g.ents()[0]; window.__sp = a.d.speed / (a.r25mor ? 1.15 : 1); a.hp = a.maxHp * 0.15; return a.d.speed; });
 await gwait(0.3);
-const lp2 = await ev(() => { const a = __game.ents()[0]; return { sp: a.d.speed, limp: !!a.v27limp }; });
+const lp2 = await ev(() => { const a = __game.ents()[0]; return { sp: a.d.speed, limp: !!a.v27limp, mor: !!a.r25mor }; });
 await ev(() => { const a = __game.ents()[0]; a.hp = a.maxHp * 0.6; }); await gwait(0.3);
-const lp3 = await ev(() => { const a = __game.ents()[0]; return { sp: a.d.speed, limp: !!a.v27limp, orig: window.__sp }; });
-ok(lp2.limp && Math.abs(lp2.sp - lp * 0.8) < 1e-9 && !lp3.limp && Math.abs(lp3.sp - lp3.orig) < 1e-9, 'under 20 % haltar köttfienden (fart × 0,8), tillbaka när den läker ' + JSON.stringify({ lp, lp2, lp3 }));
+const lp3 = await ev(() => { const a = __game.ents()[0]; return { sp: a.d.speed, limp: !!a.v27limp, orig: window.__sp, mor: !!a.r25mor }; });
+const mf = m => m ? 1.15 : 1; // befälhavarens moral (r25Mor) är en egen faktor som kan slå till eller från under tiden
+ok(lp2.limp && Math.abs(lp2.sp - lp3.orig * 0.8 * mf(lp2.mor)) < 1e-9 && !lp3.limp && Math.abs(lp3.sp - lp3.orig * mf(lp3.mor)) < 1e-9, 'under 20 % haltar köttfienden (fart × 0,8), tillbaka när den läker ' + JSON.stringify({ lp, lp2, lp3 }));
 await ev(() => { window.__pin = [12.5, 5.5]; window.__pinA = Math.PI / 2; }); await gwait(0.2); await shot('saarad');
 // 7) stjärnfläcken efter en smäll som dödar köttfiender
 const boom = async (en, o = {}) => { await scene({ p: [3, 5], en, ...o }); await gwait(0.4);
