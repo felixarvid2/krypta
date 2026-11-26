@@ -1287,6 +1287,70 @@ Version 7 lägger till 200 förbättringar:
 
 Kombinerade utmaningar multiplicerar själarna. Sparplatsen väljs på startskärmen, och `?fro=XXXX` i adressen fyller i ett delat frö.
 
+## Version 27: Blodbad – mer blod, fler effekter och fler banor
+
+### Mer blod
+- **Blodstänk på väggarna.** När en fiende träffas eller dödas nära en vägg stänker det på väggen bakom den, i skottets riktning, och dropparna rinner nedåt. Färgen följer fiendens material: kött är rött, insekter gulgröna, slem har sin egen färg, odöda är mörka och skelett dammar. Metall, spöken, eld och urverk lämnar inget stänk.
+- **Riktade blodstrålar** sprutar ut ur fiendens baksida. Hagel och tunga vapen ger mer.
+- **Överdöd** ger en fontän, köttbitar som studsar och lämnar fläckar, och flera väggstänk. Intill en vägg fastnar några bitar på väggen och glider långsamt ned med ett blodspår efter sig.
+- **Golvet.**
+  - Pölarna är bredare och växer en stund.
+  - Går du genom en pöl lämnar du blodiga fotspår några steg.
+  - En smäll som dödar köttfiender lämnar en stjärnformad blodfläck runt sig.
+- **Lik går att skjuta och sparka sönder,** som i Doom och ULTRAKILL. Lik som ghoulen äter, lik som nekromanten kan väcka och lik efter bossar och väktare går inte sönder. Högst 40 hela lik ligger kvar samtidigt.
+- **Sårade fiender.**
+  - De får blodfläckar på kroppen som växer med skadan.
+  - Under 40 % hälsa droppar de blod och lämnar ett spår.
+  - Under 20 % haltar köttfiender och går 20 % långsammare.
+- **Närstrid.**
+  - Sparkar, kolvslag, närstridsvapen och avrättningar stänker mer.
+  - Närstridsvapnet blir blodigt i förstapersonsvyn och blodet tonas bort efter några sekunder.
+  - Sprängs en fiende nära dig stänker det i skärmens hörn, men aldrig över siktet.
+- **Inställningen BLOD** under BILD har lägena AV, NORMAL och MYCKET. AV ger damm och stenflisor i stället för blod. Standard är MYCKET på dator och NORMAL på telefon.
+- **Tester:** t135–t139d.
+
+### Fler effekter
+- **Mynningsflammor per vapentyp:** hagel, gevär, kpist, magi i vapnets färg och tunga vapen. Ljuset från mynningen får vapnets färg.
+- **Nedslag efter material:**
+  - metall: gnistor som studsar och svalnar
+  - sten: dammoln
+  - trä: snurrande flisor
+  - is och glas: glitter
+  - vatten och lava: stänk och fräsande lava
+- **Explosioner** får en chockvåg längs golvet (Effekseer), en dammvåg, skräp som studsar och ryker, glöd som falnar och rök som dröjer kvar.
+- **Dödseffekter för fiender som inte blöder:**
+  - metall sprutar gnistor och tappar skruvar och kugghjul
+  - spöken löses upp i en stigande spiral
+  - slem stänker
+  - kristall och is splittras
+  - eldväsen flammar upp och lämnar aska
+- **Spår efter fiendernas skott:** eldklot ryker, magiska kulor gnistrar, pilar drar en strimma och syra droppar.
+- **Statuseffekter syns tydligare:**
+  - bedövade fiender har fåglar runt huvudet
+  - den som vacklar och kan avrättas får en ring och en markör
+  - frusna fiender ångar
+  - förgiftade droppar grönt
+  - brinnande fiender syns på avstånd
+  - fiender som kastas upp i luften får fartlinjer
+- **Rök ur pipan** efter tunga skott och långa salvor.
+- **Miljö:** snö och damm under fötterna, lava som fräser, gnistor från sågklingor och glimmer från kistor.
+- **Fiender som dyker upp mitt i striden gör det på biomens sätt:** eld ur golvet i vulkanen, is i frosten, slem i kloaken, sand och rök i gravkammaren, glitter i kristallgrottorna, löv i skogen och vattenstänk i hamnen.
+- **Bossar** får en smäll och en chockvåg när de byter fas. När de dör kommer smällar, en ljuspelare i guld och guldgnistor.
+- **Prestanda.** Blod och effekter delar en gemensam partikelbudget, så explosionerna alltid får plats. Det automatiska lågeffektläget stänger av allt nytt. Med processorn strypt sex gånger, ungefär en mellantelefon, går en stor strid i cirka 30 bilder per sekund med eller utan version 27.
+- **Källor och tester:** två nya Effekseer-strippar (CC0, cirka 19 kB). Tester: t140–t144b.
+
+### Fler banor: planritningar, scener och handgjorda rumsmallar
+- **Planritningar.** Från våning 2 byggs ungefär var femte vanlig våning efter en planritning. Planritningens namn visas när våningen börjar. Det finns fyra:
+  - **RINGBORGEN:** salarna ligger i en sluten ring runt vaktarens sal.
+  - **KORSFÄSTNINGEN:** fyra flyglar kring en mittgård, med torn i hörnen.
+  - **STORMLÖPET:** en lång, slingrande kedja av salar fram till vaktaren.
+  - **BORGGÅRDEN:** en stor öppen gård med byggnader runt om.
+- **Scener:** PELARSALEN, KORSGÅNGEN (fiender gömmer sig i nischerna), HYLLGÅNGARNA (en liten labyrint), TRONSALEN (skatten ligger bakom tronen) och BRON ÖVER LAVAN (bara i vulkanen). Scenens namn visas första gången du går in i rummet.
+- **16 handgjorda rumsmallar,** till exempel vaktpost, gästabud, kryptrad, vapenförråd, benhög och altarring. De vrids och speglas slumpvis.
+- **Stabilitet.** Antalet fiender och skatter är detsamma som förut. Allt ligger i ett eget pass i gen.js med eget slumpflöde, och `opts.v27off` ger exakt samma banor som version 26.
+- **Förhandsvisa** med `node tools/gen-preview.js dungeon 5 3 --plan=court` eller `--scene=throne`.
+- **Tester:** t145–t146.
+
 ## Version 26: Samspel – efter moderna boomer shooters
 
 Inför version 26 gick vi igenom ett femtontal moderna boomer shooters och jämförde dem med det Krypta redan har:
