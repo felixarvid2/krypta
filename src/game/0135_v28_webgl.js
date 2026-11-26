@@ -39,7 +39,8 @@ void main() {
 precision highp float; uniform sampler2D uT; uniform vec2 uInv; uniform float uThr; out vec4 o;
 void main() { vec2 uv = gl_FragCoord.xy * uInv, d = uInv * 0.25; vec3 s = vec3(0.0);
   for (int k = 0; k < 4; k++) { vec3 c = texture(uT, uv + d * vec2(k == 0 || k == 2 ? -1.0 : 1.0, k < 2 ? -1.0 : 1.0)).rgb; float m = max(c.r, max(c.g, c.b));
-    float w = smoothstep(uThr, 1.0, m) * clamp(0.55 + (c.r - c.b) * 0.9 + (m - (c.r + c.g + c.b) / 3.0) * 0.6, 0.35, 1.0); s += c * w; } // ljust, varmt och mättat väger mest
+    // tröskeln på ljusheten (inte starkaste kanalen): en varmt upplyst vägg (~0,70) glöder inte, lågor, magi och smällar (>0,8) gör det; varmt och mättat väger mest
+    float l = dot(c, vec3(0.299, 0.587, 0.114)), w = smoothstep(uThr, uThr + 0.18, l) * clamp(0.55 + (c.r - c.b) * 0.9 + (m - (c.r + c.g + c.b) / 3.0) * 0.6, 0.35, 1.0); s += c * w; }
   o = vec4(s * 0.25, 1.0); }`,
   blur: `#version 300 es
 precision highp float; uniform sampler2D uT; uniform vec2 uInv, uDir; out vec4 o;
@@ -56,7 +57,7 @@ void main() {
   if (q.x < 0.0 || q.y < 0.0 || q.x >= 320.0 || q.y >= 200.0) { o = vec4(0.0, 0.0, 0.0, 1.0); return; }
   vec2 uv = q / vec2(320.0, 200.0); vec3 c;
   if (uAb > 0.0) { vec2 dd = (uv - 0.5) * uAb * 0.01; c = vec3(texture(uP, uv + dd).r, texture(uP, uv).g, texture(uP, uv - dd).b); } else c = texture(uP, uv).rgb;
-  if (uBloom > 0.0) c += (texture(uB1, uv).rgb * 0.55 + texture(uB2, uv).rgb * 0.35 + texture(uB3, uv).rgb * 0.25) * uBloom;
+  if (uBloom > 0.0) { vec3 b = min((texture(uB1, uv).rgb * 0.55 + texture(uB2, uv).rgb * 0.35 + texture(uB3, uv).rgb * 0.25) * uBloom, vec3(1.0)); c = c + b * (1.0 - c); } // "screen": glöden kan aldrig göra bilden vit
   if (uVig > 0.0) { vec2 k = (uv - 0.5) * vec2(1.0, 0.8); c *= 1.0 - uVig * smoothstep(0.08, 0.5, dot(k, k)); }
   o = vec4(min(c, vec3(1.0)), 1.0);
 }`,
@@ -67,7 +68,7 @@ void main() {
   if (vD >= min(texelFetch(uZb, ivec2(ip.x, 0), 0).r, texelFetch(uSd, ip, 0).r)) discard; // bakom väggen, en fiende eller ett gallers spjälor
   vec4 c = texture(uA, clamp(vUV, vR.xy, vR.zw));
   if (vMode < 0.5) { if (c.a < 0.392) discard; o = vec4(min(min(c.rgb * vT, vec3(1.0)) * vM + vA, vec3(1.0)), 1.0); } // som drawSprite: färgton, ljus och dimma
-  else o = vec4(c.rgb * (c.a * vM) * vT, 1.0); // additiv: blandas ONE, ONE
+  else { if (c.a < 0.392) discard; o = vec4(c.rgb * (c.a * vM) * vT, 1.0); } // additiv: blandas ONE, ONE; svaga bildpunkter hoppas över som i drawSprite
 }`
 };
 const GL_VS_PART = `#version 300 es
@@ -255,14 +256,14 @@ function glDraw() {
   gl.uniform1f(fp.u('uVig'), fxOn && GLR.flags.vig !== false ? 0.22 : 0); gl.uniform1f(fp.u('uAb'), fxOn && !settings.noFlash && !settings.reduceMotion && state === 'play' ? Math.min(1, (P.hurt || 0) * 2.5) : 0);
   gl.drawArrays(gl.TRIANGLES, 0, 3); gl.bindVertexArray(null);
 }
-function glBloomK() { return settings.bloom !== false && !settings.lowfx && GLR.flags.bloom ? (settings.noFlash ? 0.4 : 0.85) : 0; } // BLOOM: på som standard; noFlash dämpar, lowfx stänger av
+function glBloomK() { return settings.bloom !== false && !settings.lowfx && GLR.flags.bloom ? (settings.noFlash ? 0.45 : 0.9) : 0; } // BLOOM: på som standard; noFlash dämpar, lowfx stänger av
 function glBloom() {
   const gl = GLR.gl, F = GLR.F, P5 = GLR.P;
   const pass = (prog, src, dst, set) => { gl.bindFramebuffer(gl.FRAMEBUFFER, dst.fb); gl.viewport(0, 0, dst.w, dst.h); gl.useProgram(prog); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, src.t);
     gl.uniform1i(prog.u('uT'), 0); gl.uniform2f(prog.u('uInv'), 1 / dst.w, 1 / dst.h); if (set) set(prog); gl.drawArrays(gl.TRIANGLES, 0, 3); };
   const blur = (a, b) => { pass(P5.blur, a, b, p => gl.uniform2f(p.u('uDir'), 1, 0)); pass(P5.blur, b, a, p => gl.uniform2f(p.u('uDir'), 0, 1)); };
   gl.bindTexture(gl.TEXTURE_2D, F.post.t); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-  pass(P5.bright, F.post, F.b1, p => gl.uniform1f(p.u('uThr'), 0.66)); // tröskeln: bara de ljusaste (ljusa biomer tvättas inte ut, t164) blur(F.b1, F.b1b);
+  pass(P5.bright, F.post, F.b1, p => gl.uniform1f(p.u('uThr'), 0.74)); blur(F.b1, F.b1b); // tröskeln: bara ljuset över den (ljusa och varmt upplysta rum tvättas inte ut, t161/t164)
   pass(P5.down, F.b1, F.b2); blur(F.b2, F.b2b); pass(P5.down, F.b2, F.b3); blur(F.b3, F.b3b);
 }
 function glDrawParts(bw, bh, S) {
@@ -311,5 +312,12 @@ function glApi() { // window.__game.gl: för t160–t164
       for (let j = 0; j < w * h; j++) for (let k = 0; k < 3; k++) o[j * 3 + k] /= Math.max(1, n[j]); return Array.from(o); },
     lose: () => { const e = GLR.loseExt = GLR.gl && GLR.gl.getExtension('WEBGL_lose_context'); if (e) e.loseContext(); return !!e; }, restore: () => { const e = GLR.loseExt; if (e) e.restoreContext(); return !!e; }, // tillägget hämtas före förlusten
     sd: () => GLR.sd, bench: (n = 60) => { const ts = []; for (let i = 0; i < n; i++) { const t0 = performance.now(); render(); ts.push(performance.now() - t0); } ts.sort((a, b) => a - b); return { med: ts[n >> 1], p90: ts[(n * 0.9) | 0], mean: ts.reduce((a, b) => a + b, 0) / n, used: GLR.used, inst: GLR.n.inst, parts: particles.length }; },
-    pb: () => ({ max: PB.max, autoMax: PB.autoMax, k: PB.k }) };
+    pb: () => ({ max: PB.max, autoMax: PB.autoMax, k: PB.k }),
+    probe: (rgb, spot) => { // t161: en jämn färg (och en liten ljus fläck) som världsbild, ut på duken; bildpunkter (r,g,b) i mitten och bredvid fläcken
+      if (!glInit()) return null; const n = SW * SVH, save = spx.slice(0, n), col = 0xff000000 | (rgb[2] << 16) | (rgb[1] << 8) | rgb[0]; spx.fill(col, 0, n);
+      if (spot) for (let y = 96; y < 104; y++) for (let x = 156; x < 164; x++) spx[y * SW + x] = 0xff000000 | (spot[2] << 16) | (spot[1] << 8) | spot[0];
+      const lk = LK.on, parts = GLR.parts; LK.on = false; GLR.parts = false; let out = null;
+      try { glDraw(); const gl = GLR.gl, rd = (fx, fy) => { const o = new Uint8Array(4); gl.readPixels(Math.round(fx * GLR.cw), Math.round((1 - fy) * GLR.ch), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, o); return [o[0], o[1], o[2]]; };
+        out = { mid: rd(0.5, 0.5 * SVH / H), near: rd(0.5 + 10 / SW, 0.5 * SVH / H), edge: rd(0.2, 0.3 * SVH / H) }; }
+      finally { spx.set(save); LK.on = lk; GLR.parts = parts; } return out; } };
 }

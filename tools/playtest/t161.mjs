@@ -32,7 +32,7 @@ await fire();
 const vigOn = await grab({ bloom: true }); await ev(() => { __game.gl.GLR.flags.vig = false; }); // bloom mäts utan vinjetten
 const off = await grab({ bloom: false }), on = await grab({ bloom: true });
 ok(off.mean < 8, 'med eld och bloom av: WebGL ≈ CPU ' + JSON.stringify(off));
-ok(on.bloom > 0.5 && on.gain > off.gain + 0.005 && on.big > 20 && on.mean > off.mean + 0.3,'BLOOM på: bilden lyser upp kring elden ' + JSON.stringify({ off, on }));
+ok(on.bloom > 0.5 && on.gain > off.gain + 0.005 && on.big > 10 && on.mean > off.mean + 0.3, 'BLOOM på: bilden lyser upp kring elden (bara ljuset över tröskeln, så skenet är mindre än före rättningen) ' + JSON.stringify({ off, on }));
 await ev(() => { __game.settings.bloom = true; }); await until(null, 0.3); await shot('bloom_pa');
 await ev(() => { __game.settings.bloom = false; }); await until(null, 0.3); await shot('bloom_av');
 const nf = await grab({ bloom: true, noFlash: true }), lf = await grab({ bloom: true, noFlash: false, lowfx: true });
@@ -40,6 +40,12 @@ ok(nf.bloom > 0 && nf.bloom < on.bloom && nf.gain < on.gain, 'noFlash dämpar bl
 ok(lf.bloom === 0 && Math.abs(lf.gain - off.gain) < 0.02, 'lowfx stänger av bloom ' + JSON.stringify(lf));
 ok(vigOn.gain < on.gain, 'vinjetten gör kanterna mörkare ' + JSON.stringify({ vig: vigOn.gain, utan: on.gain }));
 await ev(() => { Object.assign(__game.settings, { lowfx: false, noFlash: false, bloom: true }); __game.gl.GLR.flags.vig = true; });
+// ett jämnt, varmt och ljust upplyst rum (som ett gästabud med ljusstakar) tvättas inte ut: bara ljuset över tröskeln glöder (rapport: allt blev gulvitt)
+const pr = await ev(() => { const g = __game, GL = g.gl; GL.GLR.flags.vig = false; const run = b => { g.settings.bloom = b; return { wall: GL.probe([217, 178, 115]), spot: GL.probe([40, 30, 25], [255, 230, 160]) }; };
+  const off = run(false), on = run(true); GL.GLR.flags.vig = true; g.settings.bloom = true; return { off, on }; });
+const dW = pr.on.wall.mid.map((v, i) => v - pr.off.wall.mid[i]), dS = pr.on.spot.near.map((v, i) => v - pr.off.spot.near[i]);
+ok(pr.off.wall.mid[0] > 150 && Math.max(...dW) <= 14, 'ljus varm vägg: bloom lägger till högst lite ' + JSON.stringify({ utan: pr.off.wall.mid, med: pr.on.wall.mid }));
+ok(Math.max(...dS) >= 3, 'en liten ljus låga i mörker glöder fortfarande ' + JSON.stringify({ utan: pr.off.spot.near, med: pr.on.spot.near, mitt: pr.on.spot.mid }));
 // lutning (sidosteg/döden) och skada (aberration) ger inga fel
 await ev(() => { __game.P.roll = 0.2; __game.P.hurt = 0.5; }); await until(null, 0.2); await shot('lutning');
 const rl = await ev(() => { const g = __game; window.__pin = null; const P = g.P; P.roll = 0.2; const A = g.gl.snap(80, 50); P.roll = 0; const B = g.gl.snap(80, 50); window.__pin = [4.5, 6.5];
