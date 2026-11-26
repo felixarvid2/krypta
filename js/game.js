@@ -2006,6 +2006,7 @@ function renderSprites(plX, plY) { // sprites bakifrån och fram (egen funktion:
       spriteOutline = 0; spriteSX = spriteSY = 1; spriteClip = 0; gfxETele(o); gfxEOver(o, s.d); // FIENDER: glöd före skott, stjärnor vid bedövning
       if (o.carry && !o.dead && !(o.ghost > 0.5)) { const ci = o.carry === 'key' ? spr.key : o.carry === 'grenade' ? spr.grenade : o.carry === 'potion' ? spr.potion_unknown || spr.health : fx.coin[Math.floor(tmr * 8) % 4]; if (ci) drawSprite(ci, o.x, o.y, 0.12, o.d.size * 1.05 + 0.05 * Math.sin(tmr * 4), false, null, 0, 0.6); } // bär ett föremål
       if (o.leader && !o.dead && fx.parts.star) drawSprite(fx.parts.star[0], o.x, o.y, 0.08, o.d.size * 1.12, false, 1.6, 0, 0, true, [255, 220, 90]); // ledaren
+      if (!o.dead) v26bTell(o, s.d); // version 26B: gul blink och romb = parerbart slag, blått kryss = inte parerbart
       if (!o.dead && o.alert && !o.dormant && !(o.ghost > 0.5) && s.d < 220 && lightAt(o.x, o.y) < 0.4 && o.d.ai !== 'wisp' && gfxEOff.z > -0.3 * o.d.size) drawSprite(fx.parts.eye ? fx.parts.eye[0] : fx.hit[1], o.x + gfxEOff.x, o.y + gfxEOff.y, fx.parts.eye ? 0.035 * o.d.size : 0.03, gfxEOff.z + (o.d.ai === 'fly' ? 0.3 : 0) + o.d.size * Math.min(0.82, gfxEHead(enemyFrame(o)) * 1.15 - 0.17), false, 2.2, 0, 0, true, [255, 50, 30]); // glödande ögon i mörkret
     } else if (s.k === 'i') {
       const hopZ = o.hop > 0 ? Math.sin(o.hop / 0.5 * Math.PI) * 0.25 : 0; gfxWItem(o, s.d, plX, plY); // VÄRLD: skugga och glimt
@@ -6121,13 +6122,16 @@ function useKey() {
 }
 function kick() { // spark: knuffar fiender bakåt, bryter krukor och lådor
   if (P.kickT > 0 || state !== 'play') return;
+  if (v26bLunge()) return; // version 26B: flygspark mot en vacklande fiende längre bort
   P.kickT = 0.55; WS.kick = 0.3; play('whoosh', 0.4, 1.4);
   let hit = kickParry() > 0;
+  const v26p = v26bKick(); if (v26p) hit = true; // version 26B: närstridsparering och granatretur
   for (const e of ents) {
     if (e.dead || e.dying || e.hidden) continue;
     const dx = e.x - P.x, dy = e.y - P.y, d = Math.hypot(dx, dy);
     let off = Math.atan2(dy, dx) - P.a; off = Math.atan2(Math.sin(off), Math.cos(off));
     if (d > 1.5 + e.d.size * 0.3 || Math.abs(off) > 0.7) continue;
+    if (v26p && v26p.has(e)) continue; // version 26B: den parerade fienden sparkas inte i samma spark (den vacklar och avrättas av nästa)
     if (canExec(e)) { execute(e); hit = true; continue; } // avrättning
     hit = true; hurtEnemy(e, 2 * (1 + mod('dmg')), e.x, e.y, { noProc: true });
     if (!e.boss && !e.dead) { for (let i = 0; i < 6; i++) tryMove(e, dx / d * 0.22, dy / d * 0.22, 0.28); e.state = 'pain'; e.t = 0; e.charge = 0; }
@@ -6816,6 +6820,7 @@ function updateEnemy(e, dt) {
   e.cd -= dt;
   if (e.state === 'attack') {
     const dur = enemyFrames[e.type].attack.length / e.d.atkFps;
+    v26bAtk(e, dur); // version 26B: parerbara slag – när slaget träffar (blinken och sparkens fönster)
     if (!e.didHit && e.t > dur * e.d.hitAt) { e.didHit = true; enemyStrike(e, dist); }
     if (e.t > dur) { e.state = 'move'; e.t = 0; e.cd = e.d.cd * rnd(0.8, 1.2); }
     return;
@@ -6857,6 +6862,7 @@ function updateEnemy(e, dt) {
   e.mvx = e.x - ox; e.mvy = e.y - oy;
 }
 function enemyStrike(e, dist) {
+  if ((e.v26pT || 0) > tmr) return; // version 26B: slaget parerades
   let dmg = e.d.dmg * (1 + 0.1 * (run.depth - 1));
   if (e.d.melee) {
     if (dist < e.d.range + 0.35) {
@@ -7242,6 +7248,7 @@ function r25Sync() { // ny bana: nollställ (anropas både före och efter trupp
   if (R25.map !== map) { R25.map = map; R25.buffed.length = 0; R25.cmds.length = 0; R25.live.length = 0; R25.nadeT = 0; R25.st = r25Stats(); }
 }
 function r25Frame(dt) { // varje bildruta (även med smartAI av, så att allt städas): granaterna
+  v26bFrame(dt); // version 26B: flygsparken och granater som sparkats tillbaka
   r25Sync();
   if (settings.smartAI === false || !R25.on || R25.err || AI24.err || AI24.clock) { if (R25.active) r25Off(); return; }
   R25.active = true;
@@ -7354,6 +7361,7 @@ function r25Nade(g) {
   if (Math.hypot(tx - t.x, ty - t.y) < 2.5 || g.some(o => !o.dead && Math.hypot(o.x - tx, o.y - ty) < r + 0.6)) return; // för nära kastaren eller de egna
   const d = Math.hypot(tx - t.x, ty - t.y), fuse = [1.5, 1.25, 1.1, 1.0, 1.5][settings.diff] || 1.25;
   R25.live.push({ x0: t.x, y0: t.y, tx, ty, t: 0, T: clamp(0.55 + d * 0.07, 0.7, 1.3), fuse, ph: 0, bT: 0, r, dmg: 14 * (1 + 0.1 * (((run && run.depth) || 1) - 1)), name: t.d.name });
+  R25.live[R25.live.length - 1].src = t; // version 26B: kastaren, för granatreturen
   t.state = 'attack'; t.t = 0; t.didHit = true; play('grenade_throw', 0.7, 0.9, { x: t.x, y: t.y });
   const until = tmr + rnd(9, 12); for (const e of g) e.r25nadeT = until; R25.nadeT = tmr + 3; AI24.pressT = Math.max(AI24.pressT, tmr + rnd(6, 8)); AI24.st.press++; AI24.st.flush++; R25.st.nades++;
   const L = R25.st.log; L.push({ t: +tmr.toFixed(2), type: t.type, to: [+tx.toFixed(2), +ty.toFixed(2)], lk: [+lk.x.toFixed(2), +lk.y.toFixed(2)], p: [+P.x.toFixed(2), +P.y.toFixed(2)], hid: hid, fuse, T: +R25.live[R25.live.length - 1].T.toFixed(2) }); if (L.length > 12) L.shift();
@@ -7370,10 +7378,169 @@ function r25NadeTick(dt) {
   R25.live = R25.live.filter(n => !n.done);
 }
 function r25Boom(n) {
+  if (n.ret) return v26bRetBoom(n); // version 26B: granaten som sparkats tillbaka
   const d = Math.hypot(P.x - n.tx, P.y - n.ty);
   explode(n.tx, n.ty, n.dmg * 0.5, n.r, false); play('bigboom', 0.6, 1.2, { x: n.tx, y: n.ty }); R25.st.booms++;
   const L = R25.st.boomLog || (R25.st.boomLog = []); L.push({ t: +tmr.toFixed(2), fuse: +(tmr - (n.landT ?? tmr)).toFixed(2), dP: +d.toFixed(2), at: [+n.tx.toFixed(2), +n.ty.toFixed(2)] }); if (L.length > 12) L.shift();
   if (d < n.r && P.jz < 0.4 && boomSees(n.tx, n.ty, P.x, P.y)) { run.cause = 'GRANATEN'; hurtPlayer(n.dmg, n.tx, n.ty, 'proj'); R25.st.nadeHits++; }
+}
+// ---------- Version 26B: närstridsparering, flygspark och granatretur (V26B) ----------
+// PARERING (ULTRAKILL, Cultic, Worch): närstridsfiendens slag syns komma. De sista V26B.win sekunderna före träffen blinkar fienden gult
+// och en gul romb visas ovanför den (går att parera), eller blått med ett blått kryss (går inte: explosiva eliter, orkkrigarens stormning
+// och det tända bombskelettet; bossar och väktare går genom updateBoss och får ingen markering). Med FÄRGBLIND eller INGA BLIXTAR blinkar inget:
+// ljuset lyser fast och formen blir större. En spark inom 1,6 rutor framför dig i fönstret parerar: slaget uteblir, vanliga fiender
+// vacklar (nästa spark avrättar), eliter och champions bedövas bara 1,2 s. +10 överhälsa, träffstopp och +PARERING. Ett kort "ting"
+// hörs när ett parerbart slag laddas (hjälper den som inte ser färgen eller fienden).
+// FLYGSPARK (Boltgun): sparkar du mot en vacklande fiende under hårkorset på 1,6–4,5 rutor kastar du dig fram (högst 0,35 s, osårbar,
+// stannar vid väggar och stängda dörrar) och sparken vid ankomsten avrättar. 1,2 s nedkylning och 0,3 uthållighet; annars vanlig spark.
+// GRANATRETUR (HROT, Cultic): en landad R25-granat inom 1,5 rutor framför dig, eller en lobb (kanonkula, eldkruka) som håller på att landa,
+// sparkas tillbaka mot kastaren (mot hårkorset om kastaren är död) och smäller med full skada mot fiender.
+// Av: __game.v26b.set('on' | 'parry' | 'lunge' | 'ret', false). Markeringen: settings.parryTell = false (C lägger den i inställningarna).
+const V26B = { on: true, parry: true, lunge: true, ret: true, win: 0.25, L: null, lcd: 0, img: null,
+  st: { tells: 0, blue: 0, parries: 0, stuns: 0, drawn: 0, lunges: 0, lungeExec: 0, lungeBlocked: 0, rets: 0, lobRets: 0, retBooms: 0, err: null } };
+function v26bCanParry(e) { return !!e.d.melee && !e.boss && !e.guardian && e.d.ai !== 'charge' && e.d.ai !== 'bomb' && !hasMod(e, 'explosive'); }
+function v26bAtk(e, dur) { // från updateEnemy (det vanliga anfallet, varje bildruta): när slaget träffar, och "ting" när ett parerbart slag laddas
+  if (!V26B.on || !e.d.melee || e.didHit) return;
+  e.v26w = tmr; e.v26h = tmr + dur * e.d.hitAt - e.t;
+  if (e.v26h - tmr > V26B.win || Math.abs((e.v26tg ?? -9) - e.v26h) < 0.1) return;
+  e.v26tg = e.v26h; const d = Math.hypot(e.x - P.x, e.y - P.y);
+  if (!V26B.parry) return;
+  if (v26bCanParry(e)) { V26B.st.tells++; if (d < 8) play('parry', 0.25, 2, { x: e.x, y: e.y }); if (d < 3) firstHint('parry26', 'GUL BLINK OCH ROMB: SPARKA PRECIS FÖRE SLAGET SÅ PARERAR DU. BLÅTT KRYSS GÅR INTE ATT PARERA.'); }
+  else V26B.st.blue++;
+}
+function v26bWin(e) { // 0 = inget, 1 = parerbart slag på väg, 2 = slag som inte går att parera
+  if (!V26B.on || !V26B.parry || !e || e.dead || e.dying || e.hidden || !e.d) return 0;
+  if (e.d.ai === 'bomb' && e.lit !== undefined) return 2;
+  if (e.d.ai === 'charge' && e.charge > 0) return 2;
+  if (e.state !== 'attack' || e.didHit || !(tmr - (e.v26w ?? -9) < 0.12)) return 0;
+  const left = e.v26h - tmr; if (left > V26B.win || left < -0.06) return 0;
+  return v26bCanParry(e) ? 1 : 2;
+}
+function v26bKick() { // från kick(): parera närstridsslag och sparka tillbaka granater; en Set med de parerade (null = inget hände)
+  if (!V26B.on) return null;
+  let out = null;
+  try {
+    if (V26B.parry) for (const e of ents) {
+      const w = v26bWin(e); if (!w) continue;
+      const dx = e.x - P.x, dy = e.y - P.y, d = Math.hypot(dx, dy); let off = Math.atan2(dy, dx) - P.a; off = Math.atan2(Math.sin(off), Math.cos(off));
+      if (d > 1.6 + e.d.size * 0.3 || Math.abs(off) > 0.8) continue;
+      if (w === 1) { (out || (out = new Set())).add(e); v26bParry(e); }
+      else if (e.state === 'attack' && !e.didHit && e.d.melee) { e.didHit = true; V26B.st.trades = (V26B.st.trades || 0) + 1; enemyStrike(e, d); } // blått: sparken avbryter inte slaget – det träffar ändå
+    }
+    if (V26B.ret && v26bReturn()) out = out || new Set();
+  } catch (err) { V26B.st.err = String((err && err.stack) || err).slice(0, 400); }
+  return out;
+}
+function v26bParry(e) { // slaget uteblir; vanliga fiender vacklar, eliter och champions bedövas bara
+  e.didHit = true; e.v26pT = tmr + 0.5; e.state = 'pain'; e.t = 0; e.cd = Math.max(e.cd || 0, 0.8);
+  if (e.elite || e.champion) { e.stun = Math.max(e.stun || 0, 1.2); V26B.st.stuns++; spawnText(e.x, e.y, 'BEDÖVAD', '#ffe9a8'); }
+  else { e.staggerT = Math.max(e.staggerT || 0, tmr + 2.4); e.stun = Math.max(e.stun || 0, 1.3); spawnText(e.x, e.y, 'VACKLAR', '#80e0ff'); }
+  V26B.st.parries++; overheal(10); hitStop = Math.max(hitStop, 0.1); P.shake = Math.max(P.shake, 0.8); play('parry', 0.9, 1.0);
+  if (!settings.noFlash) flashes.push({ x: P.x, y: P.y, t: 0.12, r: 3, col: [255, 240, 200] });
+  spawnText(P.x + Math.cos(P.a), P.y + Math.sin(P.a), 'PARERAT! +10', '#ffe9a8'); styleAdd(12, '+PARERING'); stat('parries');
+}
+function v26bLunge() { // från kick(): true = flygsparken tog över (eller pågår redan)
+  if (!V26B.on || !V26B.lunge) return false;
+  if (V26B.L) return true;
+  if (V26B.lcd > tmr || P.stam < 0.3 || P.rootT > 0) return false;
+  let best = null, bd = 9;
+  for (const e of ents) {
+    if (!canExec(e) || e.hidden || e.dormant || !e.d) continue;
+    const dx = e.x - P.x, dy = e.y - P.y, d = Math.hypot(dx, dy);
+    if (d <= 1.5 + e.d.size * 0.3 || d > 4.5 || d >= bd) continue;
+    let off = Math.atan2(dy, dx) - P.a; off = Math.atan2(Math.sin(off), Math.cos(off));
+    if (Math.abs(off) > Math.max(0.12, 0.4 * e.d.size / d) || !hasLOS(P.x, P.y, e.x, e.y)) continue;
+    let safe = true; for (let s = 0.5; s < d - 0.4 && safe; s += 0.25) safe = walkableForEnemy((P.x + dx / d * s) | 0, (P.y + dy / d * s) | 0); // inte över tomrum, djupt vatten, lava eller rekvisita
+    if (!safe) continue;
+    best = e; bd = d;
+  }
+  if (!best) return false;
+  V26B.L = { e: best, t: 0 }; V26B.lcd = tmr + 1.2; P.stam -= 0.3; P.stamT = 0.9; P.kickT = 0.6; P.iframe = Math.max(P.iframe, 0.4); P.dashHit = new Set(); // dashHits() körs medan P.dashT > 0
+  best.staggerT = Math.max(best.staggerT, tmr + 0.6); V26B.st.lunges++; play('dash', 0.6, 1.25); play('whoosh', 0.5, 0.8); WS.punch = Math.max(WS.punch || 0, 0.05);
+  return true;
+}
+function v26bLungeTick(dt) { // flygsparken: i små steg mot målet; vid ankomst (eller vägg, eller 0,35 s) körs sparken
+  const L = V26B.L; if (!L) return;
+  if (state !== 'play' || !P) { V26B.L = null; return; }
+  const e = L.e, reach = 0.8 + e.d.size * 0.3; L.t += dt; P.vx = P.vy = 0; P.dashT = Math.max(P.dashT, 0.05);
+  let end = e.dead || e.dying || L.t > 0.35, blocked = false;
+  if (!end) {
+    const dx = e.x - P.x, dy = e.y - P.y, d = Math.hypot(dx, dy) || 1; let go = Math.min(Math.max(0, d - reach), 22 * dt);
+    while (go > 1e-4) { const s = Math.min(0.2, go), ox = P.x, oy = P.y; tryMove(P, dx / d * s, dy / d * s, 0.24); go -= s; if (Math.hypot(P.x - ox, P.y - oy) < s * 0.3) { blocked = true; break; } }
+    if (blocked || Math.hypot(e.x - P.x, e.y - P.y) <= reach + 0.02) end = true;
+  }
+  if (!end) return;
+  V26B.L = null; P.dashT = 0; P.kickT = 0; if (blocked) V26B.st.lungeBlocked++;
+  const was = !e.dead; kick(); if (was && e.dead) V26B.st.lungeExec++;
+}
+function v26bAlive(s) { return !!s && !s.dead && !s.dying && s.x !== undefined; }
+function v26bAim(x0, y0) { return lobClip(x0, y0, P.x + Math.cos(P.a) * 7, P.y + Math.sin(P.a) * 7); } // kastaren är död: mot hårkorset
+function v26bReturn() { // R25-granater som landat och lobbar som håller på att landa sparkas tillbaka mot kastaren
+  let n = 0;
+  const front = (x, y, r) => { const dx = x - P.x, dy = y - P.y, d = Math.hypot(dx, dy); if (d > r) return false; if (d < 0.35) return true; let off = Math.atan2(dy, dx) - P.a; off = Math.atan2(Math.sin(off), Math.cos(off)); return Math.abs(off) < 1.0; };
+  if (R25.active) for (const g of R25.live) {
+    if (g.ph !== 1 || g.ret || g.done || !front(g.tx, g.ty, 1.5)) continue;
+    const s = v26bAlive(g.src) ? g.src : null, [tx, ty] = s ? lobClip(g.tx, g.ty, s.x, s.y) : v26bAim(g.tx, g.ty);
+    g.x0 = g.tx; g.y0 = g.ty; g.tx = tx; g.ty = ty; g.ph = 0; g.t = 0; g.T = clamp(0.35 + Math.hypot(tx - g.x0, ty - g.y0) * 0.05, 0.4, 0.8); g.fuse = 0.35; g.ret = true; g.src = s; n++; V26B.st.rets++;
+  }
+  for (const l of lobs) {
+    if (l.ret || l.done || l.T - l.t > 0.4 || l.t < l.T * 0.5) continue;
+    const k = l.t / l.T, x = l.x0 + (l.tx - l.x0) * k, y = l.y0 + (l.ty - l.y0) * k; if (Math.hypot(l.tx - P.x, l.ty - P.y) > 2 || !front(x, y, 2.8)) continue; // på väg ned mot dig
+    const s = v26bAlive(l.src) ? l.src : null, [tx, ty] = s ? lobClip(x, y, s.x, s.y) : v26bAim(x, y);
+    l.x0 = x; l.y0 = y; l.tx = tx; l.ty = ty; l.t = 0; l.T = clamp(0.4 + Math.hypot(tx - x, ty - y) * 0.06, 0.5, 1.0); l.ret = true; l.src = s; l.dmg = Math.max(8, l.dmg || 0) * 1.5; n++; V26B.st.lobRets++;
+  }
+  if (n) { say('TILLBAKA TILL AVSÄNDAREN!', 1.2); styleAdd(10 * n, '+RETUR'); play('kick', 0.9, 0.8); hitStop = Math.max(hitStop, 0.06); }
+  return n;
+}
+function v26bFrame(dt) { // från r25Frame (varje bildruta, före dess tidiga returer): flygsparken och returer som söker kastaren
+  if (!V26B.on) { V26B.L = null; return; }
+  try {
+    v26bLungeTick(dt);
+    for (const g of R25.live) if (g.ret && g.ph === 0 && v26bAlive(g.src)) [g.tx, g.ty] = lobClip(g.x0, g.y0, g.src.x, g.src.y);
+    for (const l of lobs) if (l.ret && v26bAlive(l.src)) [l.tx, l.ty] = lobClip(l.x0, l.y0, l.src.x, l.src.y);
+  } catch (err) { V26B.st.err = String((err && err.stack) || err).slice(0, 400); V26B.L = null; }
+}
+function v26bRetBoom(n) { // från r25Boom: den återsparkade granaten skadar fiender fullt; spelaren bara om han står mitt i
+  const d = Math.hypot(P.x - n.tx, P.y - n.ty);
+  explode(n.tx, n.ty, n.dmg * 2, n.r, false); play('bigboom', 0.6, 1.2, { x: n.tx, y: n.ty }); R25.st.booms++; V26B.st.retBooms++;
+  if (d < n.r * 0.6 && P.jz < 0.4 && boomSees(n.tx, n.ty, P.x, P.y)) { run.cause = 'GRANATEN'; hurtPlayer(n.dmg * 0.5, n.tx, n.ty, 'proj'); }
+}
+function v26bLobLand(l) { // från lobLand: den återsparkade lobben skadar fiender (kanonkulan sprängs, krukan sprids som vanligt)
+  V26B.st.retBooms++;
+  if (l.kind === 'cball') { play('cannonball_land', 0.8, 1, { x: l.tx, y: l.ty }); explode(l.tx, l.ty, l.dmg, l.r, false); }
+  else { v17Cloud(l.tx, l.ty, l.fx, l.r * 1.2); for (const e of ents) if (!e.dead && !e.dying && Math.hypot(e.x - l.tx, e.y - l.ty) < l.r && boomSees(l.tx, l.ty, e.x, e.y)) hurtEnemy(e, l.dmg, e.x, e.y, { noProc: true, boom: true }); }
+  const d = Math.hypot(P.x - l.tx, P.y - l.ty); if (d < l.r * 0.6 && P.jz < 0.4 && boomSees(l.tx, l.ty, P.x, P.y)) { run.cause = l.name || 'KANONKULAN'; hurtPlayer(l.dmg * 0.5, l.tx, l.ty, 'proj'); }
+  return true;
+}
+function v26bImg() { // romb (går att parera) och kryss (går inte), 11×11 med mörk kant: formen bär betydelsen även utan färg
+  if (V26B.img) return V26B.img;
+  const mk = (inside, edge, col) => { const w = 11, data = new Uint32Array(w * w); for (let y = 0; y < w; y++) for (let x = 0; x < w; x++) data[y * w + x] = inside(x - 5, y - 5) ? col : edge(x - 5, y - 5) ? 0xff101010 : 0; return { w, h: w, data }; };
+  const rIn = (x, y) => Math.abs(x) + Math.abs(y) <= 3, rEd = (x, y) => Math.abs(x) + Math.abs(y) <= 5;
+  const xIn = (x, y) => (Math.abs(x - y) <= 1 || Math.abs(x + y) <= 1) && Math.abs(x) <= 4 && Math.abs(y) <= 4, xEd = (x, y) => Math.abs(x - y) <= 2 || Math.abs(x + y) <= 2;
+  return (V26B.img = { yes: mk(rIn, rEd, 0xff30d8ff), no: mk(xIn, xEd, 0xffff8a40) });
+}
+function v26bTell(o, d2) { // från renderSprites: blinken och formen (romb/kryss) över fienden medan slaget laddas
+  if (!V26B.on || settings.parryTell === false || d2 > 220) return;
+  const w = v26bWin(o); if (!w) return;
+  const calm = !!(settings.noFlash || settings.cb), on = calm || Math.floor(tmr * 14) % 2 === 0, col = w === 1 ? [255, 215, 50] : [70, 140, 255], sz = o.d.size;
+  const z0 = gfxEOff.z + ((o.d.ai === 'fly' || o.d.ai === 'wisp' || o.d.float) && !o.anchored ? 0.3 : 0);
+  if (on && !settings.lowfx) drawSprite(fx.hit[1], o.x - view.dirX * 0.12, o.y - view.dirY * 0.12, calm ? 0.26 : 0.34, z0 + sz * 0.5, false, calm ? 1.2 : 2, 0, 0, true, col);
+  const top = view.camZ + view.hor * Math.sqrt(d2) / PSC * 0.85 - 0.16; // nära fiender: formen hamnar annars ovanför bildkanten
+  drawSprite(v26bImg()[w === 1 ? 'yes' : 'no'], o.x, o.y, calm ? 0.15 : 0.11, Math.min(z0 + gfxEHead(enemyFrame(o)) * sz * 1.15 + 0.06, top), false, 1.4, 0, 0);
+  V26B.st.drawn++;
+}
+function v26bWantsUse() { // för touchCanUse (C): ANVÄND/handen ska synas för flygsparken och för en granat eller lobb som går att sparka tillbaka
+  if (!V26B.on || !P || !map) return false;
+  if (V26B.lunge) for (const e of ents) { if (!canExec(e) || e.hidden || !e.d) continue; const dx = e.x - P.x, dy = e.y - P.y, d = Math.hypot(dx, dy); if (d > 4.5) continue;
+    let off = Math.atan2(dy, dx) - P.a; off = Math.atan2(Math.sin(off), Math.cos(off)); if (Math.abs(off) < Math.max(0.12, 0.4 * e.d.size / d)) return true; }
+  if (V26B.ret) { if (R25.active) for (const g of R25.live) if (g.ph === 1 && !g.ret && Math.hypot(g.tx - P.x, g.ty - P.y) < 1.5) return true;
+    for (const l of lobs) if (!l.ret && l.T - l.t < 0.4 && Math.hypot(l.tx - P.x, l.ty - P.y) < 2) return true; }
+  return false;
+}
+function v26bApi() { // window.__game.v26b: tillstånd, räknare och av/på för t125–t127
+  return { st: () => V26B.st, flags: V26B, state: () => ({ on: V26B.on, parry: V26B.parry, lunge: V26B.lunge, ret: V26B.ret, lunging: !!V26B.L, lcd: V26B.lcd, err: V26B.st.err }),
+    set: (k, v) => { if (k in V26B && typeof V26B[k] === 'boolean') V26B[k] = !!v; if (!V26B.on) V26B.L = null; return V26B[k]; },
+    win: e => v26bWin(e), kick: () => kick(), wantsUse: () => v26bWantsUse(), lobs: () => lobs, lobShot, t: () => tmr };
 }
 // --- ritning: befälhavarens fana, granaten och den blinkande ringen ---
 function drawR25World(list) {
@@ -11724,12 +11891,14 @@ function lobShot(src, tx, ty, o) {
   for (let i = 0; i < 6 && solid(tx, ty); i++) { tx += (src.x - tx) * 0.2; ty += (src.y - ty) * 0.2; }
   [tx, ty] = lobClip(src.x, src.y, tx, ty); // version 25.1: landar före första väggen på linjen
   lobs.push({ x0: src.x, y0: src.y, tx, ty, t: 0, T: o.T || 1.2, dmg: o.dmg, r: o.r || 1.2, kind: o.kind || 'cball', fx: o.fx, name: src.d ? src.d.name : '' });
+  lobs[lobs.length - 1].src = src; // version 26B: kastaren, för granatreturen
 }
 function updateLobs(dt) {
   for (const l of lobs) { l.t += dt; if (l.t >= l.T) { l.done = true; lobLand(l); } }
   lobs = lobs.filter(l => !l.done);
 }
 function lobLand(l) {
+  if (l.ret && v26bLobLand(l)) return; // version 26B: lobben som sparkats tillbaka
   const d = Math.hypot(P.x - l.tx, P.y - l.ty);
   if (l.kind === 'cball') {
     play('cannonball_land', 0.8, rnd(0.9, 1.1), { x: l.tx, y: l.ty }); explodeFx(l.tx, l.ty, 0.2); flashes.push({ x: l.tx, y: l.ty, t: 0.2, r: 3 });
@@ -14518,6 +14687,7 @@ function gfxWApi() { // window.__game.gfxW: tillstånd och mätning för t105
   window.__game.gfxE = gfxEApi(); // FIENDER: räknare och av/på för t104
   window.__game.ai = ai24Api(); // version 24: fiende-AI – poletter, roller, skyddspunkter och barks (t112)
   window.__game.roles = r25Api(); // version 25: fienderoller – sköldvakt, befälhavare och granatkastare (t114)
+  window.__game.v26b = v26bApi(); // version 26B: närstridsparering, flygspark och granatretur (t125–t127)
   window.__game.v20 = v20api; window.__game.v21 = v21api; window.__game.v22 = v22api; window.__game.v23 = v23api; window.__game.gfxW = gfxWApi(); window.__game.weaponFrame = () => { const r = weaponFrame(); return { idx: r.idx, dx: r.dx, dy: r.dy }; }; window.__game.fogK = () => fogK;
   window.__game.look = { LK, max: LK_MAX, tot: LK_TOT, bufW: LK_W, bufH: LK_H, dims: lkDims, project, // upp/ned-blicken för t111
     probe: () => { tpx.fill(0); spx.fill(0); const c0 = LK.clamps, lk = lkBegin(); try { renderWorld(W, VH, px); if (lk) lkProject(); } finally { if (lk) lkEnd(); } // världen utan färgton; ofyllda punkter har alfa 0
