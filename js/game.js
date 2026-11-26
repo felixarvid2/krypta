@@ -3068,6 +3068,7 @@ function fx27Tick(dt) { // från updateWeather: listor, scheman, miljö och boss
     if (p.z > 0.05 && (t.acc += dt) > 0.08) { t.acc = 0; fx27P({ x: p.x, y: p.y, z: p.z, vx: 0, vy: 0, vz: 0.15, life: 0.45, frames: fx.parts.smoke || null, img: (fx.parts.smoke || fx.hit)[0], size: 0.06, drift: true, tint: [90, 84, 78] }, true); } }
   if (fx27On('env')) fx27Env(dt);
   fx27Tick2(dt); // del 2: dödseffekter efter material och spår efter fiendeskotten
+  fx27Tick3(dt); // del 3: tydliga statuseffekter, rök ur pipan och biomernas framträdanden
   if (fx27On('boss')) fx27Boss(); else for (const e of ents) if (e.boss) { e.fx27Ph = e.phase; e.fx27A = e.fx27A || !e.dead; if (e.dead) e.fx27D = 2; }
 }
 function fx27DrawHud(g) { // skärmeffekterna efter HUD-rutorna: chockvåg som ring från bossen, en färgpuls i kanterna och den vita blixten
@@ -3162,6 +3163,91 @@ function fx27Tick2(dt) { // från fx27Tick
   if (fx27On('trails') && dt > 0) fx27Trails(dt);
 }
 Object.assign(fx27Api, { mat: e => fx27Mat(e), kill: e => fx27Kill(e), trails: dt => fx27Trails(dt || 0.1) });
+
+// ---------- Version 27: FX del 3 – tydliga statuseffekter, rök ur pipan och biomernas framträdanden ----------
+// Bygger på FIENDER (version 23: stjärnor vid bedövning, glimt och isflisor vid frost, bubblor vid gift, lågor vid brand) och
+// V26B (vacklande fiender blinkar och ryker blått) utan att dubblera: två fåglar som flaxar runt huvudet på en bedövad fiende,
+// isande ånga som sjunker från en frusen, gröna droppar och små bubblor som spricker på en förgiftad, större lågor på brinnande
+// fiender längre bort än FIENDERs 10 rutor (så att de syns på avstånd), fartlinjer kring en fiende som jongleras i luften och en
+// pulserande ring på golvet med en markör över huvudet på den som vacklar ("avrätta mig"). Pipan ryker en stund efter ett tungt skott
+// och efter en lång salva (VAPENs rökslingor i skärmen fortsätter när den varma pipan svalnar). Fiender som dyker upp mitt i striden
+// (arenavågor, larm, bakhåll: gfxE:s gBorn) får biomens eget framträdande ovanpå det mörka hålet: eld ur golvet, is, slem, sand och rök,
+// kristallglitter, löv eller vattenstänk. Allt läses av från fx27Tick; samma tak (120) och lowfx som resten av version 27.
+Object.assign(FX27.f, { status: true, barrel: true, spawn: true });
+Object.assign(FX27.n, { status: { stun: 0, frost: 0, poison: 0, burn: 0, air: 0, stagger: 0 }, barrel: 0, spawn: { fire: 0, ice: 0, slime: 0, sand: 0, crystal: 0, leaf: 0, water: 0 } });
+Object.assign(FX27, { ov: [], ovLvl: null, bw: -1, bws: 99, barT: -9, barD: 1, heatPrev: 0 });
+const FX27_SPAWN = { volcano: 'fire', purgatory: 'fire', foundry: 'fire', frost: 'ice', sewer: 'slime', swamp: 'slime', lab: 'slime', fungus: 'slime', hive: 'slime',
+  tomb: 'sand', desert: 'sand', mine: 'sand', battlefield: 'sand', graveyard: 'sand', crystal: 'crystal', mirror: 'crystal', observatory: 'crystal', dream: 'crystal',
+  forest: 'leaf', garden: 'leaf', jungle: 'leaf', harbor: 'water', sunken: 'water', ship: 'water', bathhouse: 'water' };
+function fx27Spawn(e) { // biomens framträdande (FIENDERs mörka hål och damm finns kvar under)
+  const k = lvl && FX27_SPAWN[lvl.biome]; if (!k) return; const dx = e.x - P.x, dy = e.y - P.y; if (dx * dx + dy * dy > 256) return;
+  FX27.n.spawn[k]++; const x = e.x, y = e.y, sz = e.d.size * (e.formK || 1), I = fx27Imgs(), P2 = fx.parts, sm = P2.smoke || fx.hit;
+  const ring = (n, sp, img, tint, add, extra) => { for (let i = 0; i < n; i++) { const a = i / n * TAU + rnd(-0.2, 0.2); fx27P(Object.assign({ x: x + Math.cos(a) * 0.2, y: y + Math.sin(a) * 0.2, z: 0.03, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, vz: 0.1, life: rnd(0.5, 0.8), img, size: 0.05, add, fade: add, tint }, extra)); } };
+  if (k === 'fire') { const fl = P2.flame || fx.fire; for (let i = 0; i < 5; i++) fx27P({ x: x + rnd(-0.25, 0.25) * sz, y: y + rnd(-0.25, 0.25) * sz, z: 0, vx: 0, vy: 0, vz: rnd(0.9, 1.6), life: rnd(0.4, 0.6), frames: fl, img: fl[0], size: rnd(0.25, 0.4) * sz, add: true, drift: true }); // eld ur golvet
+    for (let i = 0; i < 6; i++) fx27Cool(fx27P({ x, y, z: 0.05, vx: rnd(-1, 1), vy: rnd(-1, 1), vz: rnd(1.5, 3), life: rnd(0.6, 1), img: (P2.ember || fx.hit)[0], size: 0.035, add: true, grav: true, tint: [255, 230, 150] }), 'ember'); }
+  else if (k === 'ice') { const sh = P2.glassshard || P2.ice; for (let i = 0; i < 7; i++) { const a = rnd(0, TAU); fx27P({ x, y, z: 0.05, vx: Math.cos(a) * rnd(0.5, 1.5), vy: Math.sin(a) * rnd(0.5, 1.5), vz: rnd(1.8, 3), life: rnd(0.7, 1.1), frames: sh || null, img: sh ? sh[i % sh.length] : I.dot, flap: !!sh, size: rnd(0.05, 0.08), grav: true, bounce: true, tint: [205, 235, 255] }); } // isflisor
+    ring(8, 0.8, sm[0], [215, 235, 250], false, { frames: sm, size: 0.14, drift: true }); } // kall dimma längs golvet
+  else if (k === 'slime') { const c = lvl.biome === 'hive' ? [255, 200, 70] : lvl.biome === 'lab' ? [150, 255, 120] : lvl.biome === 'fungus' ? [170, 255, 190] : [130, 190, 80], dr = (P2.drop || fx.hit)[0];
+    for (let i = 0; i < 10; i++) fx27P({ x: x + rnd(-0.15, 0.15), y: y + rnd(-0.15, 0.15), z: 0.03, vx: rnd(-0.8, 0.8), vy: rnd(-0.8, 0.8), vz: rnd(1.4, 2.6), life: rnd(0.5, 0.8), img: dr, size: rnd(0.05, 0.07), grav: true, tint: c }); // slem som sprutar upp
+    ring(8, 0.9, fx.hit[1], c, true); }
+  else if (k === 'sand') { const c = /tomb|desert/.test(lvl.biome) ? [205, 180, 125] : lvl.biome === 'graveyard' ? [120, 118, 130] : [150, 135, 115];
+    for (let i = 0; i < 4; i++) fx27P({ x: x + rnd(-0.2, 0.2), y: y + rnd(-0.2, 0.2), z: rnd(0, 0.3), vx: rnd(-0.15, 0.15), vy: rnd(-0.15, 0.15), vz: rnd(0.4, 0.8), life: rnd(1, 1.4), frames: sm, img: sm[0], size: rnd(0.25, 0.35) * sz, drift: true, tint: c }); // rökpelare
+    const sd = P2.sand || P2.dust || fx.hit; for (let i = 0; i < 6; i++) fx27P({ x, y, z: rnd(0.2, 0.7) * sz, vx: rnd(-0.6, 0.6), vy: rnd(-0.6, 0.6), vz: rnd(0, 0.8), life: rnd(0.6, 0.9), img: sd[0], size: 0.03, grav: true, tint: c }); } // sand som rinner av
+  else if (k === 'crystal') { const c = BIOME_TINT[lvl.biome] || [200, 170, 255]; for (let i = 0; i < 10; i++) { const a = i / 10 * TAU; fx27P({ x: x + Math.cos(a) * 0.35 * sz, y: y + Math.sin(a) * 0.35 * sz, z: rnd(0, 0.8) * sz, vx: -Math.cos(a) * 0.6, vy: -Math.sin(a) * 0.6, vz: rnd(-0.1, 0.3), life: rnd(0.5, 0.8), img: I.star, size: rnd(0.05, 0.09), add: true, fade: true, drift: true, tint: c }); } } // glitter som dras ihop
+  else if (k === 'leaf') { const lf = P2.leaf || P2.petal || fx.hit; for (let i = 0; i < 8; i++) fx27P({ x: x + rnd(-0.2, 0.2), y: y + rnd(-0.2, 0.2), z: rnd(0, 0.4), vx: rnd(-0.9, 0.9), vy: rnd(-0.9, 0.9), vz: rnd(0.8, 1.6), life: rnd(1, 1.5), frames: lf, img: lf[0], sway: rnd(0, 6), size: 0.06, drift: true, tint: lvl.biome === 'garden' ? [255, 190, 210] : null }); } // löv som virvlar
+  else { const c = GFXW_BUB.water, dr = (P2.drop || fx.hit)[0]; for (let i = 0; i < 9; i++) fx27P({ x, y, z: 0.03, vx: rnd(-0.6, 0.6), vy: rnd(-0.6, 0.6), vz: rnd(1.8, 2.8), life: rnd(0.5, 0.8), img: dr, size: 0.035, grav: true, tint: c }); ring(8, 1, fx.hit[1], c, true); } // vattenstänk
+}
+function fx27Ov(e, kind) { // följande partiklar (fåglar, ring, markör) som uppdateras varje bildruta medan statusen varar
+  if (e.fx27O && e.fx27O.kind === kind) return e.fx27O; if (FX27.ov.length >= 6 && !e.fx27O) return null;
+  fx27OvEnd(e); const o = { kind, ps: [] }; e.fx27O = o; FX27.ov.push(e); return o;
+}
+function fx27OvEnd(e) { const o = e.fx27O; if (!o) return; for (const p of o.ps) p.life = 0; e.fx27O = null; const i = FX27.ov.indexOf(e); if (i >= 0) FX27.ov.splice(i, 1); }
+function fx27Status(dt) { // statuseffekterna, bara nära (fåglar och ring inom 12 rutor, lågor på avstånd upp till 22)
+  const I = fx27Imgs(), P2 = fx.parts, nf = !!settings.noFlash; let n = 0;
+  for (const e of ents) {
+    if (e.dead || e.dying || e.hidden || e.dormant || (e.ghost || 0) > 0.5) { if (e.fx27O) fx27OvEnd(e); continue; }
+    const dx = e.x - P.x, dy = e.y - P.y, d2 = dx * dx + dy * dy; if (d2 > 484) { if (e.fx27O) fx27OvEnd(e); continue; }
+    const sz = e.d.size * (e.formK || 1) * (e.boss ? 0.8 : 1), z0 = ((e.d.ai === 'fly' || e.d.float) && !e.anchored && !e.boss ? 0.3 : 0) + (e.airZ > 0 ? e.airZ : 0), at = r => Math.random() < dt * r;
+    const stag = !e.boss && (e.staggerT || 0) > tmr, stun = !stag && e.stun > 0.15 && e.alert && !(e.frozen > 0) && !e.boss;
+    if (d2 < 144 && (stag || stun)) { const o = fx27Ov(e, stag ? 'stag' : 'stun'); if (o) {
+      if (stun) { FX27.n.status.stun += o.ps.length ? 0 : 1; const f = P2.bat || P2.feather || null; // två fåglar som flaxar runt huvudet (FIENDERs tre stjärnor snurrar åt andra hållet)
+        if (!o.ps.length) for (let i = 0; i < 2; i++) { const p = fx27P({ x: e.x, y: e.y, z: z0 + sz, vx: 0, vy: 0, vz: 0, life: 1, frames: f || [I.star], img: (f || [I.star])[0], flap: !!f, size: 0.1, add: !f, tint: [255, 225, 90] }, 'hard'); if (p) o.ps.push(p); }
+        o.ps.forEach((p, i) => { const a = -tmr * 4.2 + i * Math.PI, r = 0.26 * sz; p.x = e.x + Math.cos(a) * r; p.y = e.y + Math.sin(a) * r; p.z = z0 + sz * 1.02 + Math.sin(a * 2 + 1) * 0.04; p.life = p.maxLife = 1; }); }
+      else { if (!o.ps.length) { FX27.n.status.stagger++; const rf = fx.efx && fx.efx.ring; // ring på golvet och en markör över huvudet: "avrätta mig"
+          const r = fx27P({ x: e.x, y: e.y, z: 0, vx: 0, vy: 0, vz: 0, life: 1, frames: rf ? [rf[2]] : null, img: rf ? rf[2] : I.dot, size: 0.2, add: true, tint: [120, 220, 255] }, 'hard'), m = fx27P({ x: e.x, y: e.y, z: 0, vx: 0, vy: 0, vz: 0, life: 1, img: I.star, size: 0.14, add: true, tint: [190, 240, 255] }, 'hard');
+          if (r) o.ps.push(r); if (m) o.ps.push(m); }
+        const pu = 0.5 + 0.5 * Math.sin(tmr * 9), k = nf ? 0.55 : 1;
+        o.ps.forEach((p, i) => { p.x = e.x; p.y = e.y; p.life = p.maxLife = 1; if (i === 0) { p.size = (0.16 + 0.05 * pu) * Math.max(0.8, sz); p.z = -p.size / 2 + 0.03; p.tint = [120 * k, (190 + 50 * pu) * k, 255 * k]; } else { p.size = 0.11 + 0.05 * pu; p.z = z0 + sz * 1.08 + 0.04 * pu; p.tint = [(170 + 60 * pu) * k, 240 * k, 255 * k]; } }); } }
+    } else if (e.fx27O) fx27OvEnd(e);
+    if (n > 8 || particles.length >= FX27_SOFT) continue;
+    const R = () => rnd(-0.18, 0.18) * sz, H = () => z0 + rnd(0.15, 0.85) * sz;
+    if (e.frozen > 0 && d2 < 144 && at(5)) { n++; FX27.n.status.frost++; const sm = P2.smoke || fx.hit; fx27P({ x: e.x + R(), y: e.y + R(), z: H(), vx: rnd(-0.1, 0.1), vy: rnd(-0.1, 0.1), vz: -rnd(0.1, 0.2), life: rnd(0.9, 1.3), frames: sm, img: sm[0], size: 0.12 * sz, add: true, fade: true, drift: true, tint: [120, 160, 200] }); // isande ånga som sjunker
+      if (at(2)) fx27P({ x: e.x + R(), y: e.y + R(), z: H(), vx: 0, vy: 0, vz: 0, life: 0.3, img: I.star, size: 0.06, add: true, fade: true, tint: [220, 245, 255] }); } // rimfrost som glimtar
+    if (e.poison > 0 && d2 < 144 && at(3)) { n++; FX27.n.status.poison++; fx27P({ x: e.x + R(), y: e.y + R(), z: H(), vx: 0, vy: 0, vz: 0, life: rnd(0.6, 0.9), img: (P2.drop || fx.hit)[0], size: 0.035, grav: true, tint: [120, 230, 80] }); // gröna droppar
+      if (at(1.5)) fx27P({ x: e.x + R(), y: e.y + R(), z: z0 + sz * rnd(0.8, 1.05), vx: 0, vy: 0, vz: 0.2, life: 0.18, img: I.star, size: 0.05, add: true, fade: true, tint: [160, 255, 110] }); } // en bubbla spricker
+    if (e.burn > 0 && d2 >= 100 && at(6)) { n++; FX27.n.status.burn++; const fl = P2.flame || fx.fire; fx27P({ x: e.x + R(), y: e.y + R(), z: H() - 0.1, vx: 0, vy: 0, vz: rnd(0.5, 0.9), life: 0.4, frames: fl, img: fl[0], size: 0.32 * sz, add: true, drift: true }); } // större lågor på avstånd
+    if (e.airZ > 0 && d2 < 144 && at(22)) { n++; FX27.n.status.air++; const up = (e.airVz || 0) >= 0, ra = (P2.rain || P2.drop || fx.hit)[0]; // fartlinjer: under när den stiger, över när den faller
+      fx27P({ x: e.x + rnd(-0.28, 0.28) * sz, y: e.y + rnd(-0.28, 0.28) * sz, z: up ? z0 + rnd(-0.25, 0.1) : z0 + sz * rnd(0.9, 1.2), vx: 0, vy: 0, vz: 0, life: 0.13, img: ra, size: 0.16, add: true, fade: true, tint: [235, 240, 255] }); }
+  }
+}
+function fx27Barrel(dt) { // pipan ryker en stund efter ett tungt skott och efter en lång salva (VAPENs rökslingor i skärmen)
+  const wp = WEAPONS[P.weapon]; if (!wp) return;
+  if (FX27.bw !== P.weapon) { FX27.bw = P.weapon; FX27.barT = -9; FX27.bws = 99; FX27.heatPrev = 0; }
+  const smoky = !WA_SMOKELESS[wp.id] && !wp.melee && wp.flash > 0.25;
+  if (WS.shot < FX27.bws - 1e-6 && WS.shot < 0.05 && smoky && (wp.flash >= 1.1 || wp.kick >= 1.8)) { FX27.barD = 1 + Math.min(1.5, wp.flash * 0.8); FX27.barT = tmr + FX27.barD; } // ett tungt skott
+  FX27.bws = WS.shot;
+  if (smoky && FX27.heatPrev >= 0.45 && WA.heat < 0.45) { FX27.barD = 1.5; FX27.barT = tmr + 1.5; } // salvan är slut: den varma pipan fortsätter ryka när den svalnar
+  FX27.heatPrev = WA.heat;
+  const left = FX27.barT - tmr; if (left <= 0 || !waFx() || WA.mx === undefined || WS.state === 'draw' || WS.state === 'holster') return;
+  if (Math.random() < dt * 9 * Math.min(1, left / FX27.barD + 0.2)) { waPuff(WA.mx + rnd(-1, 1), WA.my - 1, 0.6); FX27.n.barrel++; }
+}
+function fx27Tick3(dt) { // från fx27Tick
+  if (FX27.ovLvl !== lvl || !fx27On('status')) { for (const e of FX27.ov.slice()) fx27OvEnd(e); FX27.ovLvl = lvl; }
+  if (fx27On('spawn')) for (const e of ents) if (e.gBorn > 0 && !e.fx27B && tmr - e.gBorn < 0.2) { e.fx27B = 1; fx27Spawn(e); }
+  if (fx27On('status') && dt > 0) fx27Status(dt);
+  if (fx27On('barrel') && dt > 0) fx27Barrel(dt);
+}
+Object.assign(fx27Api, { spawnFx: e => fx27Spawn(e), styles: () => ({ ...FX27_SPAWN }), barrel: () => ({ t: FX27.barT - tmr, n: FX27.n.barrel, heat: WA.heat }), ov: () => FX27.ov.length });
 
 // ---------- HUD ----------
 function drawWorldOverlay() { // skadesiffror, livmätare för eliter

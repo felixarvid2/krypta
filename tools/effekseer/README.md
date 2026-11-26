@@ -130,3 +130,30 @@ version 27: `fx27Tick` anropar `fx27Tick2`, som läser av fienderna och projekti
   `fire()` direkt, eftersom lansen skjuter först när knappen släpps. Ingen ändring behövdes.
 - Spärrarna är `FX27.f.kill` och `FX27.f.trails`. Testerna är `tools/playtest/t142.mjs` (material, spår, tak, lowfx, kostnad) och
   `t143.mjs` (stjärnlansen, blixtstaven och yxan, och en blandad strid mätt med och utan version 27).
+
+### Version 27, del 3: statuseffekter, rök ur pipan och biomernas framträdanden
+
+Blocket `// ---------- Version 27: FX del 3 ...` behöver inga nya bilder. `fx27Tick` anropar `fx27Tick3`, och allt läses av därifrån.
+
+- **Statuseffekter** (`fx27Status`). De bygger vidare på FIENDER och V26B utan att dubblera dem:
+  - bedövad: två fåglar som flaxar runt huvudet, åt andra hållet än FIENDERs stjärnor
+  - vacklande (`staggerT`): en pulserande ring på golvet (en bildruta ur `efx_ring`) och en markör över huvudet som säger "avrätta mig"
+  - frusen: isande ånga som sjunker och rimfrost som glimtar
+  - förgiftad: gröna droppar och bubblor som spricker
+  - brinnande: större lågor längre bort än FIENDERs 10 rutor (upp till 22), så att de syns på avstånd
+  - jonglerad (`airZ`): fartlinjer under fienden när den stiger och över den när den faller
+  - Fåglarna, ringen och markören är partiklar som följer fienden (`FX27.ov`, högst 6 fiender) och tas bort när statusen släpper.
+- **Rök ur pipan** (`fx27Barrel`): efter ett tungt skott (`flash` ≥ 1,1 eller `kick` ≥ 1,8) ryker pipan i 1,9–2,5 s. Efter en lång
+  salva fortsätter den ryka i 1,5 s när den varma pipan (VAPENs `WA.heat`) svalnar under 0,45. Röken är VAPENs egna rökslingor i
+  skärmen (`waPuff`, taket 14). Vapnen i `WA_SMOKELESS` och närstridsvapnen ryker inte.
+- **Framträdanden per biom** (`fx27Spawn`): fiender som dyker upp mitt i striden (FIENDERs `gBorn`: arenavågor, larm, bakhåll) får
+  biomens framträdande ovanpå det mörka hålet. Indelningen står i `FX27_SPAWN`:
+  - eld ur golvet: vulkanen, skärselden, gjuteriet
+  - is: frost
+  - slem: kloaken, träsket, laboratoriet, svamparna, bikupan
+  - sand och rök: gravkammaren, öknen, gruvan, slagfältet, kyrkogården
+  - kristallglitter: kristall, spegel, observatoriet, drömmen
+  - löv: skogen, trädgården, djungeln
+  - vattenstänk: hamnen, det sjunkna, skeppet, badhuset
+  - Övriga biomer har bara FIENDERs hål och damm som förut.
+- Spärrarna är `FX27.f.status`, `FX27.f.barrel` och `FX27.f.spawn`. Testet är `tools/playtest/t144.mjs`.
