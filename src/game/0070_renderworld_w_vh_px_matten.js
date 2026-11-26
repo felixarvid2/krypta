@@ -23,6 +23,7 @@ function renderWorld(W, VH, px) { // måtten och bufferten som parametrar (snabb
     if (y === hor) { for (let x = 0; x < W; x++) px[y * W + x] = 0xff000000 | (fogB << 16) | (fogG << 8) | fogR; continue; }
     const rowDist = isFloor ? PSC * camZ / (y - hor) : PSC * (1 - camZ) / (hor - y);
     const dim = isFloor ? 1 : 0.62;
+    const cs = isFloor ? null : V28C.m; // version 28 (REND): takfläckarna (null utan fläckar: ingen kostnad)
     const x0 = P.x + (dirX - qX) * rowDist, y0 = P.y + (dirY - qY) * rowDist;
     const stx = (2 * qX * rowDist) / W, sty = (2 * qY * rowDist) / W;
     const sk = (hor - y) / Math.max(40, hor - HORIZON + SHOR + 30), skm = ((sk - 1) * SKY_TOPR / 14) % 2; // sk > 1 bara när man tittar upp: ovanför panoramat
@@ -40,11 +41,12 @@ function renderWorld(W, VH, px) { // måtten och bufferten som parametrar (snabb
       } else {
         const t = isFloor ? floorTexs[inside ? cellFloor[ci] : 0] : ce;
         const u = ((fx2 - cx) * t.w) | 0, v = ((fy2 - cy) * t.h) | 0;
-        px[y * W + x] = shadeFog(t.data[v * t.w + u], (inside ? light[ci] : lvl.ambient) * dim, rowDist, inside ? ci : -1);
+        px[y * W + x] = shadeFog(cs === null || !inside || cs[ci] === 0 ? t.data[v * t.w + u] : v28CeilPx(t.data[v * t.w + u], cs[ci], fx2 - cx, fy2 - cy, ci), (inside ? light[ci] : lvl.ambient) * dim, rowDist, inside ? ci : -1); // version 28: takfläck
       }
       if (sz === 0) { x++; fx2 += stx; fy2 += sty; } else { us += sz; const nx = us | 0; fx2 += stx * (nx - x); fy2 += sty * (nx - x); x = nx; } // gles rad: hoppa till nästa punkt som läses
     }
   }
   renderWalls(W, VH, px, dirX, dirY, qX, qY, hor, camZ, nd);
   renderSprites(plX, plY);
+  v28Flush(); // version 28 (REND): galler och fönster som ingen sprite har ritat än
 }

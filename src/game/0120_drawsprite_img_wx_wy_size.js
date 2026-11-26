@@ -18,8 +18,10 @@ function drawSprite(img, wx, wy, size, z, flip, fixedLight, whiteFlash = 0, minL
   const aMul = additive && fixedLight != null ? Math.min(1.2, fixedLight / 2) : 1; // additiva sprites: fixedLight styr styrkan (uttoning)
   const tr = tint ? tint[0] / 255 * 1.3 : 1, tg = tint ? tint[1] / 255 * 1.3 : 1, tb = tint ? tint[2] / 255 * 1.3 : 1;
   const nd = px === tpx ? LK.need : null, bp = px, bw = W; // upp/ned-blicken: bara raderna som skärmen läser
+  const v28g = V28T.any ? V28T.gd : null; // version 28 (REND): kolumner med galler framför bakväggen
   for (let x = x0; x <= x1; x++) {
     if (ty >= zbuf[x]) continue;
+    if (v28g !== null && ty < v28g[x]) v28Over(x, ty); // version 28 (REND): spriten är framför gallret – gallret ritas först
     let u = Math.floor((x - left) / sw * img.w); if (flip) u = img.w - 1 - u;
     if (u < 0 || u >= img.w) continue;
     for (let y = y0; y <= y1; y++) {

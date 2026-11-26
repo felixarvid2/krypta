@@ -254,6 +254,7 @@ function drawMapCells(mini, s, ox, oy, x0, y0, x1, y1) {
   for (const p of portals) if (inside(p.x | 0, p.y | 0)) { ctx.fillStyle = tmr % 0.6 < 0.3 ? '#c080ff' : '#7040d0'; ctx.fillRect(ox + p.x * s - 2, oy + p.y * s - 2, 4, 4); }
   v19Map(s, ox, oy, inside); v20Map(s, ox, oy, inside); v21Map(s, ox, oy, inside); v22Map(s, ox, oy, inside); v23Map(s, ox, oy, inside);
   v24Map(s, ox, oy, inside); // version 24: stängda enkelriktade dörrar
+  v28Map(s, ox, oy, inside); // version 28 (REND): fönster och galler
   ctx.fillStyle = '#4dff7a'; ctx.fillRect(ox + P.x * s - 1, oy + P.y * s - 1, 3, 3);
   ctx.fillRect(ox + (P.x + Math.cos(P.a) * 1.4) * s, oy + (P.y + Math.sin(P.a) * 1.4) * s, 1, 1);
 }

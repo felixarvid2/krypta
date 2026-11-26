@@ -45,6 +45,7 @@ function gfxEKill(e) { // från killEnemy (direkt efter e.dead = true)
   if (gfxE.on && e.burn > 0 && !e.boss && !(e.frozen > 0) && !e.overkill && e.d.ai !== 'wisp' && e.type !== 'Ü' && enemyFrames[e.type]) { e.gBurnt = true; gfxE.chars++; if (gfxEChars.length < 8) gfxEChars.push(e); }
   v26cKill(e); // version 26C: huvudet lossnar vid ett dödande huvudskott
   v27Kill(e); // version 27 (BLOOD): kraftigare väggstänk, överdödens fontän och studsande bitar, fler pölar, stänk på skärmen
+  v28Kill(e); // version 28 (REND): överdöd och smällar stänker blod i taket
 }
 function gfxEGib(e) { // från gib(): bitarna beror på vad fienden är gjord av; returnerar true om partiklarna är klara
   if (v27GibOff(e)) return true; // version 27 (BLOOD): BLOD AV – damm och stenflisor i stället för köttbitar
@@ -100,6 +101,7 @@ function gfxETick(dt) { // från update(): spawn, väntande blodpölar, växande
       if (!gfxELow()) { gfxERing(e.x, e.y, 24, 6, [255, 200, 120], 0.12); const f = fx.parts.gib || fx.parts.rock; if (f) for (let i = 0; i < 10; i++) { const a = rnd(0, TAU), sp = rnd(2, 4.5); gfxEPart({ x: e.x, y: e.y, z: rnd(0.5, 1.5), vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, vz: rnd(2, 4), life: 2.2, img: f[i % f.length], frames: f, flap: true, size: rnd(0.12, 0.2), grav: true, bounce: true }); } } }
   }
   v27Tick(dt); // version 27 (BLOOD): pölar som växer, bitar som landar, blodiga fotspår (BLOD AV tömmer gfxEDead)
+  v28Tick(dt); // version 28 (REND): droppar från taket, BLOD AV tar bort takblodet, genomsiktliga rutor
   for (let i = gfxEDead.length - 1; i >= 0; i--) { const e = gfxEDead[i]; if (tmr - e.gDeadT < 0.3) continue; gfxEDead.splice(i, 1); // liket har landat: en pöl som växer under det
     if (e.gibbed || gfxELow() || !ents.includes(e)) continue; const k = gfxEKind(e); if (k === 'metal' || k === 'bone' || e.d.ai === 'wisp') continue;
     const f = k === 'slime' ? fx.parts.sludge : fx.parts.blood_pool; if (!f || solid(e.x, e.y)) continue;

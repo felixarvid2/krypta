@@ -362,6 +362,7 @@ function startLevel(level) {
   if (run && lvl.biome && !boss) run.biomes = (run.biomes || []).concat(lvl.biome);
   else say(lvl.name, 3);
   v27Start(); // version 27: planritningens namn
+  v28Start(); // version 28 (REND): takfläckar nollställs, fönstrens ramar och genomsiktliga rutor
   if (boss) { bossIntro = 2.2; boss.cd = Math.max(boss.cd, 3); }
   if (boss) { bossBanner = 3.5; slowmo = 1.2; play('stinger', 0.8); if (window.Music) Music.sting('boss'); setTimeout(() => play('bossroar', 0.9, 0.8), 600); }
   startAmbient(); buildGrade(); fogK = biomeFx().fogK * fogMul; lightning = 0; lightningT = rnd(4, 10);

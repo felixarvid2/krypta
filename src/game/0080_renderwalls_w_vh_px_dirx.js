@@ -1,7 +1,8 @@
 function renderWalls(W, VH, px, dirX, dirY, qX, qY, hor, camZ, nd) { // väggar (egen funktion: egen inbäddningsbudget, så att shadeFog bäddas in både här och i golvloopen)
+  v28Begin(); // version 28 (REND): genomsiktliga lager per kolumn
   for (let x = 0; x < W; x++) {
     const camX = 2 * x / W - 1, rdx = dirX + qX * camX, rdy = dirY + qY * camX;
-    const hit = cast(P.x, P.y, rdx, rdy, 48, true);
+    const hit = V28.glass ? v28Cast(P.x, P.y, rdx, rdy, x) : cast(P.x, P.y, rdx, rdy, 48, true); // version 28 (REND): strålen går förbi galler och fönster
     const perp = Math.max(0.05, hit.dist);
     zbuf[x] = perp;
     const scale = PSC / perp;

@@ -25,6 +25,7 @@
   window.__game.sky = skyApi; // version 25.1: egna himlar per biom (t118)
   window.__game.gfxE = gfxEApi(); // FIENDER: räknare och av/på för t104
   window.__game.v27b = v27bApi(); // version 27 (BLOOD): väggstänk, strålar, pölar, fotspår och BLOD AV/NORMAL/MYCKET (t135–t139)
+  window.__game.v28 = v28Api(); // version 28 (REND): blod i taket, genomsiktliga galler och fönster (t150–t154)
   window.__game.v26c = v26cApi(); // version 26C: huvudet lossnar, stilstyrd musik och hån (t130–t133)
   window.__game.ai = ai24Api(); // version 24: fiende-AI – poletter, roller, skyddspunkter och barks (t112)
   window.__game.roles = r25Api(); // version 25: fienderoller – sköldvakt, befälhavare och granatkastare (t114)

@@ -8,6 +8,7 @@ function explode(x, y, dmg, r, hurtsPlayer, big) {
   for (const e of ents) if (e.dead && !e.gibbed && !e.boss && Math.hypot(e.x - x, e.y - y) < r * 0.8) gib(e); // liken sprängs i bitar
   burnWebs(x, y, r);
   v27Boom(x, y, r); // version 27 (BLOOD): dödar smällen köttfiender blir det en stjärnformad blodfläck runt den
+  v28Boom(x, y, r); // version 28 (REND): stor smäll inomhus sotar taket
   if (pet && Math.hypot(pet.x - x, pet.y - y) < r + 0.5 && hurtsPlayer) hurtPet(10);
   for (const e of ents) if (!e.dead && e.sleep && Math.hypot(e.x - x, e.y - y) < 8) { e.sleep = false; alertEnemy(e, false); } // explosioner väcker sovande
   play('fireburst', 0.6, rnd(0.8, 1), { x, y });
