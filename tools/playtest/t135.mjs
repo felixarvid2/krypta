@@ -1,7 +1,7 @@
 // t135: version 27 (BLOOD) – blodstänk på väggar. En träff eller ett dödande nära en vägg lämnar ett stänk på väggytan bakom fienden
 // (rätt ruta och rätt sida, i skottets riktning) i materialets färg: kultisten (kött) rött, spindeln (insekt) gulgrönt, skelettet
 // (ben) damm, ghoulen (odöd) mörkt; kristallgolemen (metall) och bansheen (spöke) lämnar inget. Färgen kontrolleras både på märket och
-// på de ritade pixlarna (före/efter-bild av väggen utan fiender). Ett riktigt pistolskott (fire) ger stänket, och mot golemen inget
+// på de ritade pixlarna (samma bildruta ritad utan och med stänken). Ett riktigt pistolskott (fire) ger stänket, och mot golemen inget
 // (det gamla röda stänket är borta). Taket håller (60 MYCKET, 30 NORMAL, 16 lowfx) och de äldsta återvinns. Standard är MYCKET på
 // dator. Inga sidfel. Väntetider i speltid (__game.v27b.t()).
 import { setup } from './head.mjs';
@@ -25,11 +25,12 @@ const scene = o => pg.evaluate(sceneFn, o);
 const gt = () => ev(() => __game.v27b.t());
 const until = async (cond, sec, arg) => { const t0 = await gt(), w0 = Date.now(); for (;;) { if (cond && await ev(cond, arg)) return true; if ((await gt()) - t0 >= sec || Date.now() - w0 > 120000) return !cond; await wait(80); } };
 const gwait = sec => until(null, sec);
-// före/efter-bild av väggen utan fiender, partiklar och golvfläckar: medelfärgen på de pixlar som ändrats
-const snapA = () => ev(() => { const g = __game, E = g.ents(); window.__E = E.slice(); E.length = 0; g.particles().length = 0; const D = g.v27b.decalArr(); window.__D = D.slice(); D.length = 0;
-  g.v27b.bench(1); const c = document.getElementById('screen'); window.__A = c.getContext('2d').getImageData(0, 0, c.width, c.height).data.slice(); E.push(...window.__E); D.push(...window.__D); return c.width; });
-const snapB = () => ev(() => { const g = __game, E = g.ents(), keep = E.slice(); E.length = 0; g.particles().length = 0; const D = g.v27b.decalArr(), kd = D.slice(); D.length = 0;
-  g.v27b.bench(1); const c = document.getElementById('screen'), B = c.getContext('2d').getImageData(0, 0, c.width, c.height).data, A = window.__A; E.push(...keep); D.push(...kd);
+// samma bildruta (ingen speltid emellan) ritas två gånger: utan och med väggstänken; medelfärgen på de pixlar som skiljer.
+// Allt annat (ljus, blixtar, lik, partiklar, andra effekter) är detsamma i båda bilderna, så bara stänket räknas.
+const snapB = () => ev(() => { const g = __game, WM = g.v27b.wallMarks(), saved = [];
+  for (const a of WM.values()) { saved.push([a, a.slice()]); for (let i = a.length - 1; i >= 0; i--) if (a[i].v27) a.splice(i, 1); }
+  const c = document.getElementById('screen'), cx = c.getContext('2d'); g.v27b.render(); const A = cx.getImageData(0, 0, c.width, c.height).data.slice();
+  for (const [a, s] of saved) { a.length = 0; a.push(...s); } g.v27b.render(); const B = cx.getImageData(0, 0, c.width, c.height).data;
   let n = 0, r = 0, gg = 0, b = 0; for (let i = 0; i < B.length; i += 4) { const d = Math.abs(B[i] - A[i]) + Math.abs(B[i + 1] - A[i + 1]) + Math.abs(B[i + 2] - A[i + 2]); if (d > 18) { n++; r += B[i]; gg += B[i + 1]; b += B[i + 2]; } }
   return n ? { n, r: Math.round(r / n), g: Math.round(gg / n), b: Math.round(b / n) } : { n: 0 }; });
 const hitOne = (type, dmg) => ev(([type, dmg]) => { const g = __game, e = g.ents().find(x => x.type === type && !x.dead); if (!e) return null; const m0 = g.v27b.marks().length, o0 = g.v27b.oldMarks();
@@ -40,11 +41,10 @@ const W = 18, H = 9;
 const mats = [['Ä', 'kött', c => c.r > c.g * 1.8 && c.r > c.b * 1.8 && c.r > 25], ['U', 'insekt', c => c.g > c.b * 2 && c.r > c.b * 1.6 && c.g >= c.r * 0.75], ['S', 'ben (damm)', c => c.r >= c.g && c.g >= c.b * 0.95 && c.r < c.g * 1.8 && c.b > c.r * 0.45], ['Å', 'odöd (mörkt)', c => c.r >= c.g && c.r >= c.b && c.r + c.g + c.b < 180]];
 for (const [t, name, test] of mats) {
   await scene({ W, H, p: [13, 4], en: [[t, 16, 4]] }); await gwait(0.4);
-  await snapA();
   const h = await hitOne(t, 'kill');
   ok(h && h.add >= 1 && h.old === 0 && h.last && h.last.mx === 17 && h.last.my === 4 && h.last.face === 0, `${name}: dödandet ger ett stänk på östra väggen (ruta 17,4, västra sidan) och inget gammalt rött märke ` + JSON.stringify(h));
   ok(h && h.mat && test({ r: h.mat[0], g: h.mat[1], b: h.mat[2] }), `${name}: märkets färg följer materialet ` + JSON.stringify(h && h.mat));
-  await gwait(1.0); // blixtar och ljus från dödandet hinner slockna
+  await gwait(0.3);
   const px = await snapB();
   ok(px.n > 20 && test(px), `${name}: de ritade pixlarna på väggen har materialets färg ` + JSON.stringify(px));
   if (t === 'Ä') await shot('kott');
