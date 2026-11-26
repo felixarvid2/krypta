@@ -2936,6 +2936,7 @@ function drawAmmoCorner(g, L) { // magasinet stort + "/reserv" litet; granater, 
   for (let k = wlvl(wp.id); k > 0; k--) it.push([6, x => hudIcon(g, 'star', x, y + 1, '#ffd24a')]);
   for (let k = Math.min(P.keys || 0, 5); k > 0; k--) it.push([7, x => hudIcon(g, 'key', x, y + 1, '#ffd24a')]);
   if (P.grenades > 0) { const s = String(P.grenades); it.push([9 + textW(s), x => { hudIcon(g, 'gren', x, y - 1, '#7a9a50'); txt(s, x + 9, y, '#c8e8a0'); }]); }
+  if (v26aCoinOn(wp)) it.push(v26aHudItem(g, y)); // version 26A: mynten (fyllda = redo, ringar = laddas)
   let x = L.exR - it.reduce((a, [w]) => a + w + 3, -3); for (const [w, f] of it) { f(Math.round(x)); x += w + 3; }
   if (hudGoldRun !== run) { hudGoldRun = run; hudGoldV = run.gold; } // guldet syns bara när det ändras: "+15" som stiger och bleknar
   else if (run.gold !== hudGoldV) { const d = run.gold - hudGoldV; hudGoldV = run.gold; if (d > 0) goldPop = { v: (goldPop && goldPop.t > 0.3 ? goldPop.v : 0) + d, t: 1.8 }; }
@@ -3362,6 +3363,7 @@ function fire() {
       const rx = pr.x - P.x, ry = pr.y - P.y, along = rx * dx + ry * dy;
       if (along > 0.1 && along < wallDist && Math.abs(rx * dy - ry * dx) < (pr.big ? 0.35 : 0.25)) hits.push({ o: pr, d: along, k: 'f' });
     }
+    v26aTargets(hits, dx, dy, wallDist); // version 26A: egna sprängämnen, mynt och fiendens granat går att skjuta
     for (const pt of pots) {
       if (pt.broken) continue;
       const rx = pt.x - P.x, ry = pt.y - P.y, along = rx * dx + ry * dy;
@@ -3382,6 +3384,7 @@ function fire() {
       if (h.k === 'p') { breakPot(h.o); continue; } // krukor och lådor tar inte stopp på kulan
       if (h.k === 'o') { const pass = h.o.def.crate || h.o.ch === 'c' || h.o.def.balloon; if (!hitProp(h.o, P.x + dx * h.d, P.y + dy * h.d, base)) { stopped = true; break; } if (!pass) left--; continue; }
       if (h.k === 'f') { h.o.dead = true; h.o.life = 0; play('ricochet', 0.4, 1.6, { x: h.o.x, y: h.o.y }); hitMark = 0.12; left--; continue; }
+      if (h.k === 'g' || h.k === 'n' || h.k === 'c') { const r = v26aShot(h, base, wp); if (r === 1) { stopped = true; break; } if (r === 0) left--; continue; } // version 26A
       const far = up('marksman') && h.d > 7; // skarpskytten: långa träffar är alltid kritiska utan avståndsförlust
       let dmg = base * (far || slug ? 1 : falloff(wp, h.d)) * (h.d < 2 && wp.id === 'shotgun' && !slug ? 1.3 : 1);
       const c = far || Math.random() < mod('critChance');
@@ -3511,6 +3514,7 @@ function updateFuses(dt) {
   for (const f of fuses) {
     f.t -= dt; if (!f.e.dead) { f.x = f.e.x; f.y = f.e.y; }
     if (f.t <= 0 && f.kind) { barrelBurst(f); explode(f.x, f.y, f.dmg * 0.35, 1.6, f.hurt); continue; } // gift- och isfat
+    if (f.t <= 0 && f.hurt) V26A.own = tmr; // version 26A: krutfatets smäll räknas som din (spränghopp)
     if (f.t <= 0) { explode(f.x, f.y, f.dmg, f.r || 1.8, f.hurt); play('bigboom', f.hurt ? 0.8 : 0.5, f.hurt ? 1 : 1.3, { x: f.x, y: f.y }); if (f.hurt) P.shake = Math.max(P.shake, 1.2); }
   }
   for (let i = fuses.length - 1; i >= 0; i--) if (fuses[i].t <= 0) fuses.splice(i, 1);
@@ -3698,6 +3702,7 @@ function updateGrenade(p, dt) { // studsar mot väggar och golv, piper och smäl
   if (solid(p.x, p.y)) { if (solid(p.x, oy)) p.vx = -p.vx * 0.5; if (solid(ox, p.y)) p.vy = -p.vy * 0.5; p.x = ox; p.y = oy; play('grenade_bounce', 0.4, 1.3, { x: p.x, y: p.y }); }
   else if (solid(p.x, oy) && solid(ox, p.y)) { p.vx = -p.vx * 0.5; p.vy = -p.vy * 0.5; p.x = ox; p.y = oy; } // version 25.1: inte snett mellan två väggar som möts i ett hörn
   p.beepT -= dt; if (p.beepT <= 0) { p.beepT = p.life < 0.6 ? 0.12 : 0.35; play('grenade_beep', 0.35, p.life < 0.6 ? 1.3 : 1, { x: p.x, y: p.y }); }
+  if (p.life <= 0) V26A.own = tmr; // version 26A: smällen är din (spränghopp)
   if (p.life <= 0) {
     p.dead = true; explode(p.x, p.y, p.dmg, p.radius || 2.6, settings.diff > 0, true);
     if (p.cluster) for (let i = 0; i < 3; i++) { const a = rnd(0, TAU); projectiles.push({ x: p.x, y: p.y, z: 0.4, vz: 1.5, vx: Math.cos(a) * 3, vy: Math.sin(a) * 3, kind: 'pgren', friendly: true, life: 0.7, dmg: p.dmg * 0.4, beepT: 9, radius: 1.4 }); }
@@ -3853,6 +3858,7 @@ function killEnemy(e) {
 const flashes = []; // tillfälligt ljus från explosioner
 function explode(x, y, dmg, r, hurtsPlayer, big) {
   const pd = Math.hypot(P.x - x, P.y - y);
+  const v26bj = v26aBlastJump(x, y, pd); // version 26A: spränghopp på egen smäll
   if (pd < r + 1.2 && pd > 0.05) { const k = (1 - pd / (r + 1.2)) * (big ? 0.9 : 0.4); for (let i = 0; i < 5; i++) tryMove(P, (P.x - x) / pd * k / 5, (P.y - y) / pd * k / 5, 0.24); if (big) P.jv = Math.max(P.jv, 1.2 * (1 - pd / (r + 1.2))); } // tryckvågen knuffar dig
   if (fx.parts.scorch && !solid(x, y)) { decals.push({ x, y, img: fx.parts.scorch[0], size: 0.05 + r * 0.03 }); if (decals.length > 70) decals.shift(); } // sotfläck
   gfxWScorch(x, y, r); // VÄRLD: brännmärken på väggarna
@@ -3875,6 +3881,7 @@ function explode(x, y, dmg, r, hurtsPlayer, big) {
   for (const pr of props) if (pr.def && !pr.broken && (pr.def.boom || pr.def.crate) && Math.hypot(pr.x - x, pr.y - y) < r + 0.4) hitProp(pr, x, y); // kedjereaktioner
   for (let cy = Math.max(0, (y - r - 1) | 0); cy <= Math.min(mh - 1, (y + r + 1) | 0); cy++) for (let cx = Math.max(0, (x - r - 1) | 0); cx <= Math.min(mw - 1, (x + r + 1) | 0); cx++)
     if (map[cy][cx] === '{' && Math.hypot(cx + 0.5 - x, cy + 0.5 - y) < r + 0.9) blowWall(cx, cy); // spruckna väggar rasar
+  if (v26bj) dmg *= 0.5; // version 26A: spränghoppet halverar egenskadan
   if (hurtsPlayer && Math.hypot(P.x - x, P.y - y) < r && boomSees(x, y, P.x, P.y)) hurtPlayer(dmg, x, y, 'proj');
   P.flash = Math.max(P.flash, 0.05);
 }
@@ -6526,6 +6533,7 @@ function updateMovement(dt, fwd, str) {
   tryMove(P, P.vx * dt, P.vy * dt, 0.24);
   P.dashCd = Math.max(0, P.dashCd - dt);
   // hopp och fall
+  v26aSlamTick(crouchKey); // version 26A: markslag
   if (!ground || P.jv > 0) {
     P.jz += P.jv * dt; P.jv -= 9.5 * dt * (P.launch && !P.launch.keepG ? 0.45 : 1) * v19Grav(); // studsplattan ger lång lufttid
     if (P.jz <= 0) {
@@ -6536,6 +6544,7 @@ function updateMovement(dt, fwd, str) {
     }
   }
   P.landT = Math.max(0, P.landT - dt);
+  v26aSlamLand(); // version 26A: markslagets stötvåg
   // kamerahöjd, lutning och synfält
   P.camZ = 0.5 + P.jz * 0.55 - P.crouch * 0.17 - Math.sin(P.landT / 0.18 * Math.PI) * 0.04;
   const side = (-Math.sin(P.a) * P.vx + Math.cos(P.a) * P.vy) / 4.7;
@@ -6545,10 +6554,13 @@ function updateMovement(dt, fwd, str) {
 function jump() {
   if (state !== 'play' || P.swim) return;
   if (v23NoJump()) return;
+  if (v26aBounce()) return; // version 26A: studshopp direkt efter markslaget
+  if (v26aWallJump()) return; // version 26A: väggstuds i luften
   if (onGround()) { if (P.stam < 0.1) return; stat('jumps'); P.jv = 3.4; P.jz = 0.001; P.stam = Math.max(0, P.stam - 0.12); P.stamT = 0.9; play('jump', 0.4, rnd(0.95, 1.05)); P.crouch = 0; slideJump(); return; }
   if ((mod('doubleJump') > 0 || (run && run.featherFloor === run.depth) || (P.owlJumpT || 0) > tmr) && !P.dj) { P.dj = true; P.jv = 3.0; play('jump', 0.45, 1.25); spawnPuff(P.x, P.y, 4); }
 }
 function dash(dx, dy) { // rusning: snabbt utfall med kort osårbarhet
+  if (v26aSlamDash(dx, dy)) return; // version 26A: pekskärmens markslag (RUSA i luften utan spaken framåt)
   if (state !== 'play' || P.dashCd > 0 || P.stam < 0.3) return;
   if (!dx && !dy) { dx = Math.cos(P.a); dy = Math.sin(P.a); }
   const l = Math.hypot(dx, dy); dx /= l; dy /= l;
@@ -6561,6 +6573,204 @@ function dashHits() { // rusa igenom fiender: skada (kort), guld dras till dig
   for (const it of items) if (!it.taken && it.type.startsWith('gold') && Math.hypot(it.x - P.x, it.y - P.y) < 2.2) { it.x += (P.x - it.x) * 0.5; it.y += (P.y - it.y) * 0.5; }
   if (!mod('dashDmg')) return;
   for (const e of ents) if (!e.dead && !e.dormant && !P.dashHit.has(e) && Math.hypot(e.x - P.x, e.y - P.y) < 0.8) { P.dashHit.add(e); hurtEnemy(e, mod('dashDmg'), e.x, e.y, { noProc: true }); }
+}
+// ---------- Version 26A: sprängskott och myntet (agent A) ----------
+// SPRÄNGSKOTT: ett träffskott (fire) som träffar din egen granat (granaten eller granatkastaren), ett sparkat krutfat eller fiendens
+// granat (version 25) spränger den direkt med 1,5× radie (egna sprängämnen också 1,5× skada). Bara träffskott: vapen som skjuter
+// projektiler (spik, kniv, bloss …) lämnar fire() före skottloopen. Sprängämnen närmare än V26A_ARM rutor smäller inte (inte i ansiktet).
+// MYNTET: kortet SKARPSKYTTENS MYNT (mod coin). Pistolens högerklick (ALT på pekskärm, LT på handkontroll) kastar ett mynt i båge.
+// Ett träffskott på myntet studsar vidare till nästa mål i fri sikt: andra mynt (kedja) → egna sprängämnen → fiendeskott och
+// fiendens granat → närmaste fiendes huvud (huvudträff, minst 2× skada och +1× per mynt i kedjan). Inget mål: studsen går åt ett
+// slumpat håll. Mynt på golvet är förbrukade. Högst 4 mynt, ett nytt var 4:e sekund.
+const V26A = { blast: true, coin: true, slamOn: true, moveOn: true, own: -1, coins: 4, regen: 0, held: false, reg: false, slamHeld: false, slamLandT: -9, st: null };
+const v26aStats = () => ({ blasts: 0, nade: 0, barrel: 0, enade: 0, armed: 0, throws: 0, coinHits: 0, chains: 0, maxChain: 0, coinDmg: 0, coinKills: 0, heads: 0, wild: 0, deflects: 0, held: 0, slams: 0, slamLands: 0, slamHits: 0, slamDmg: 0, bounces: 0, wallJumps: 0, blastJumps: 0, log: [] });
+V26A.st = v26aStats();
+const V26A_MAXC = 4, V26A_REGEN = 4, V26A_ARM = 1.6, V26A_MUL = 1.5;
+function v26aNadePos(n) { if (n.ph) return { x: n.tx, y: n.ty }; const k = Math.min(1, n.t / n.T); return { x: n.x0 + (n.tx - n.x0) * k, y: n.y0 + (n.ty - n.y0) * k }; }
+const v26aBomb = p => p.friendly && !p.dead && !p.v26hit && p.life > 0 && (p.kind === 'pgren' || p.kind === 'barrel');
+function v26aTargets(hits, dx, dy, wallDist) { // krok i fire(): egna sprängämnen, mynt och fiendens granat blir träffmål längs strålen
+  if (!V26A.blast && !V26A.coin) return;
+  for (const p of projectiles) {
+    const isC = p.kind === 'coin' && !p.dead && V26A.coin;
+    if (!isC && !(V26A.blast && v26aBomb(p))) continue;
+    const rx = p.x - P.x, ry = p.y - P.y, along = rx * dx + ry * dy;
+    if (along <= 0.1 || along >= wallDist) continue;
+    if (Math.abs(rx * dy - ry * dx) < (p.kind === 'barrel' ? 0.38 : 0.3)) hits.push({ o: p, d: along, k: isC ? 'c' : 'g' });
+  }
+  if (V26A.blast) for (const n of R25.live) {
+    if (n.done || n.v26shot) continue;
+    const q = v26aNadePos(n), rx = q.x - P.x, ry = q.y - P.y, along = rx * dx + ry * dy;
+    if (along > 0.1 && along < wallDist && Math.abs(rx * dy - ry * dx) < 0.3) hits.push({ o: n, d: along, k: 'n' });
+  }
+}
+function v26aShot(h, base, wp) { // krok i fire(): 0 = kulan förbrukad, 1 = kulan stannar (myntet styr om den), 2 = kulan går förbi
+  if (h.k === 'c') { if (h.o.dead) return 2; v26aCoinHit(h.o, base, wp, 1); return 1; }
+  if (h.k === 'g' && h.d < V26A_ARM) { V26A.st.armed++; return 2; } // för nära pipan
+  if (h.k === 'g' && fireHeld) { V26A.st.held++; return 2; } // bara ett nytt tryck på avtryckaren: kpist eller autoeld som hålls in spränger inte granaten du nyss kastade
+  return v26aBlast(h.o, h.k) ? 0 : 2;
+}
+function v26aBlast(o, k) { // spräng direkt; själva smällen sker i nästa bildruta i sprängämnets egen kod (granaten, krutfatet, R25)
+  let x, y;
+  if (k === 'n') { // fiendens granat: går ut direkt där den är (även i luften), 1,5× radie
+    if (o.done || o.v26shot) return false;
+    if (!o.ph) { const q = v26aNadePos(o); o.tx = q.x; o.ty = q.y; o.ph = 1; o.landT = tmr; }
+    o.v26shot = true; o.t = o.fuse; o.bT = 9; o.r *= V26A_MUL; x = o.tx; y = o.ty; V26A.st.enade++;
+  } else {
+    if (!v26aBomb(o)) return false;
+    o.v26hit = true; x = o.x; y = o.y;
+    if (o.kind === 'pgren') { o.radius = (o.radius || 2.6) * V26A_MUL; o.dmg *= V26A_MUL; o.life = 0; o.beepT = 9; o.stuck = null; V26A.st.nade++; }
+    else { // krutfatet: eget slag så att krutfatsgrenen i updateProjectiles (som inte tittar på dead) inte smäller en gång till
+      v26aReg(); o.dead = true; o.kind = 'v26dead'; o.vx = o.vy = 0;
+      fuses.push({ e: { dead: true }, x, y, t: 0.01, dmg: 30 * (1 + mod('dmg') * 0.5) * V26A_MUL, r: 2.4 * V26A_MUL, hurt: true }); V26A.st.barrel++; }
+  }
+  V26A.st.blasts++; const L = V26A.st.log; L.push({ t: +tmr.toFixed(2), k, at: [+x.toFixed(2), +y.toFixed(2)] }); if (L.length > 12) L.shift();
+  spawnText(x, y, 'SPRÄNGSKOTT!', '#ffb040'); styleAdd(15, '+SPRÄNG'); hitStop = Math.max(hitStop, 0.05); // stilraden visar högst 9 tecken
+  play('ricochet', 0.5, 0.7, { x, y });
+  return true;
+}
+// --- myntet ---
+function v26aCoinOn(wp) { return V26A.coin && wp.id === 'pistol' && mod('coin') > 0; }
+function v26aReg() { if (V26A.reg) return; V26A.reg = true; PROJ_UPD_V8.coin = v26aCoinUpd; PROJ_DRAW_V8.coin = v26aCoinDraw; PROJ_UPD_V8.v26dead = () => {}; PROJ_DRAW_V8.v26dead = () => {}; } // registret finns först längre ned i filen
+function v26aWeaponTick(wp, dt) { // krok i updateWeapon: mynten laddas och högerklick kastar
+  if (mod('coin') <= 0) { V26A.held = aimDown; return; }
+  v26aReg();
+  if (V26A.coins < V26A_MAXC) { V26A.regen += dt; if (V26A.regen >= V26A_REGEN) { V26A.regen = 0; V26A.coins++; } } else V26A.regen = 0;
+  const edge = aimDown && !V26A.held, toggle = !gp.active && (touch.active || settings.toggleAim); V26A.held = aimDown;
+  if (!edge && toggle && aimDown && v26aCoinOn(wp)) { aimDown = false; V26A.held = false; } // siktet stod på från ett annat vapen: nästa tryck ska bli ett kast
+  if (!edge || !v26aCoinOn(wp)) return;
+  if (toggle) { aimDown = false; V26A.held = false; } // ALT och växla sikte slår av och på: varje tryck blir ett kast
+  if (state !== 'play' || WS.state === 'holster' || WS.state === 'draw') return;
+  if (V26A.coins <= 0) { play('click', 0.4, 1.6); return; }
+  V26A.coins--; v26aThrow();
+}
+function v26aThrow() {
+  const a = P.a, sp = 3.0; // flyter ungefär 1,3 s och når högst 0,9 (under taket)
+  projectiles.push({ x: P.x + Math.cos(a) * 0.35, y: P.y + Math.sin(a) * 0.35, z: P.camZ - 0.08, vz: 1.8, vx: Math.cos(a) * sp + P.vx * 0.4, vy: Math.sin(a) * sp + P.vy * 0.4, kind: 'coin', friendly: true, life: 3 });
+  V26A.st.throws++; play('coin', 0.7, 1.35); WS.kick = Math.max(WS.kick, 0.15);
+}
+function v26aCoinUpd(p, dt) { // båge med lätt tyngd; mot väggen faller det rakt ned; på golvet är det förbrukat
+  p.vz -= 3.5 * dt; p.z += p.vz * dt;
+  if (solid(p.x, p.y)) { p.x -= p.vx * dt; p.y -= p.vy * dt; p.vx = 0; p.vy = 0; }
+  if (p.z <= 0.04 || p.life <= 0) { p.dead = true; if (p.z <= 0.04) play('coin', 0.25, 0.8, { x: p.x, y: p.y }); }
+}
+function v26aCoinDraw(o) { // myntet snurrar; ett litet guldsken gör det lättare att se mot mörka väggar (inte med lowfx)
+  if (!settings.lowfx) drawSprite(fx.hit[1], o.x, o.y, 0.16, o.z + 0.02, false, 2, 0, 0, true, [255, 210, 90]);
+  drawSprite(fx.coin[Math.floor(tmr * 14 + o.x * 3) % 4], o.x, o.y, 0.14, o.z, false, null, 0, 0.6);
+}
+function v26aTrail(x0, y0, z0, x1, y1, z1) { // spårljus från myntet till målet
+  const n = Math.min(24, Math.ceil(Math.hypot(x1 - x0, y1 - y0) / (settings.lowfx ? 0.9 : 0.4)));
+  for (let i = 1; i <= n; i++) { const k = i / n; particles.push({ x: x0 + (x1 - x0) * k, y: y0 + (y1 - y0) * k, z: z0 + (z1 - z0) * k, vx: 0, vy: 0, vz: 0, life: 0.14, maxLife: 0.14, img: fx.hit[1], size: 0.06, add: true, tint: [255, 225, 120] }); }
+}
+function v26aCoinPick(c) { // prioritet: mynt → egna sprängämnen → fiendeskott och fiendens granat → närmaste fiende
+  let best = null, bd = 1e9;
+  const take = (o, x, y, R, k) => { const d = Math.hypot(x - c.x, y - c.y); if (d < R && d < bd && hasLOS(c.x, c.y, x, y)) { bd = d; best = { o, k, x, y }; } };
+  for (const p of projectiles) if (p !== c && p.kind === 'coin' && !p.dead) take(p, p.x, p.y, 14, 'c');
+  if (best) return best;
+  if (V26A.blast) for (const p of projectiles) if (v26aBomb(p) && Math.hypot(p.x - P.x, p.y - P.y) >= V26A_ARM) take(p, p.x, p.y, 12, 'g');
+  if (best) return best;
+  for (const p of projectiles) if (!p.friendly && !p.dead && p.kind !== 'rock') take(p, p.x, p.y, 10, 'f');
+  if (V26A.blast) for (const n of R25.live) if (!n.done && !n.v26shot) { const q = v26aNadePos(n); take(n, q.x, q.y, 10, 'n'); }
+  if (best) return best;
+  for (const e of ents) if (!e.dead && !e.dying && !e.hidden && !e.ally && !e.dormant && !(e.ghost > 0.5)) take(e, e.x, e.y, 16, 'e');
+  return best;
+}
+function v26aCoinHit(c, base, wp, n) { // n = mynt i kedjan hittills (det här inräknat)
+  c.dead = true; c.v26hit = true; const S = V26A.st; S.coinHits++; S.maxChain = Math.max(S.maxChain, n); if (n > 1) S.chains++;
+  play('coin', 0.9, Math.min(2.2, 1.5 + 0.12 * n), { x: c.x, y: c.y }); hitStop = Math.max(hitStop, 0.03);
+  styleAdd(n > 1 ? 8 : 10, n > 1 ? '+KEDJA ×' + n : '+MYNT'); // högst 9 tecken på stilraden
+  const T = v26aCoinPick(c);
+  if (!T) { const a = rnd(0, TAU), d = cast(c.x, c.y, Math.cos(a), Math.sin(a)).dist; v26aTrail(c.x, c.y, c.z, c.x + Math.cos(a) * Math.min(d, 8), c.y + Math.sin(a) * Math.min(d, 8), c.z); S.wild++; return; }
+  const tz = T.k === 'e' ? Math.min(1, T.o.d.size * 0.75) : T.o.z ?? 0.3;
+  v26aTrail(c.x, c.y, c.z, T.x, T.y, tz);
+  if (T.k === 'c') { v26aCoinHit(T.o, base, wp, n + 1); return; }
+  if (T.k === 'g' || T.k === 'n') { v26aBlast(T.o, T.k); return; }
+  if (T.k === 'f') { T.o.dead = true; T.o.life = 0; play('ricochet', 0.5, 1.6, { x: T.x, y: T.y }); S.deflects++; return; }
+  const e = T.o, hs = headshotCheck(e, 0, wp); e.headT = tmr; // räknas som huvudträff (stenfiender och hagel ger 1 här – golvet 2× gäller ändå)
+  const dmg = base * Math.max(2, (1 + n) * Math.max(1, hs)) * (e.elite || e.boss ? 1 + mod('bossDmg') : 1);
+  S.heads++; S.coinDmg += dmg; hitCrit = true; hitMark = 0.15;
+  const k = hurtEnemy(e, dmg, e.x, e.y, { crit: true });
+  hitKill = !!k; if (k) S.coinKills++;
+  alertEnemy(e, true);
+}
+// --- MARKSLAG (reserv 8): ducka i luften slår ned mot golvet; landningen ger en stötvåg; hopp direkt efter ger ett studshopp ---
+// Dator: Ctrl i luften. Handkontroll: duckknappen. Pekskärm: RUSA i luften med spaken bakåt eller släppt (framåt är vanlig rusning).
+const V26A_SLAM = { r: 2.2, vz: -12, stam: 0.2, bounce: 0.15, minZ: 0.12 };
+function v26aSlamStart() {
+  if (!V26A.slamOn || P.slam || P.swim || state !== 'play' || P.jz <= V26A_SLAM.minZ || P.stam < V26A_SLAM.stam) return false;
+  P.slam = true; P.slamZ = P.jz; P.jv = V26A_SLAM.vz; P.launch = null; P.stam = Math.max(0, P.stam - V26A_SLAM.stam); P.stamT = 0.9;
+  play('whoosh', 0.55, 0.7); WS.punch = Math.max(WS.punch, 0.06); V26A.st.slams++;
+  if (!settings.lowfx) for (let i = 0; i < 6; i++) particles.push({ x: P.x + rnd(-0.3, 0.3), y: P.y + rnd(-0.3, 0.3), z: P.jz * 0.55 + 0.6, vx: 0, vy: 0, vz: 3, life: 0.18, maxLife: 0.18, img: fx.hit[1], size: 0.04, add: true, tint: [230, 220, 200] }); // fartlinjer
+  return true;
+}
+function v26aSlamTick(crouchKey) { // krok i updateMovement före fallet: ducka nedtryckt i luften (ny tryckning)
+  const edge = crouchKey && !V26A.slamHeld; V26A.slamHeld = !!crouchKey;
+  if (P.slam && (P.swim || state !== 'play')) P.slam = false;
+  if (edge && !onGround()) v26aSlamStart();
+}
+function v26aSlamLand() { // krok i updateMovement efter fallet: stötvågen när markslaget når golvet (och väggstudsarna räknas om)
+  if (P.jz <= 0) P.wj = 0;
+  if (!P.slam || P.jz > 0) return;
+  P.slam = false; V26A.slamLandT = tmr; const h = Math.max(0, P.slamZ || 0), S = V26A.st; S.slamLands++;
+  const dmg = (4 + 0.5 * h * 10) * (1 + mod('dmg')) * (1 + mod('airDmg')); // fallhöjden räknas i tiondels rutor (hoppet når ~0,6)
+  let n = 0;
+  for (const e of ents) {
+    if (e.dead || e.dormant || e.ally || e.dying || (e.ghost > 0.5)) continue;
+    const d = Math.hypot(e.x - P.x, e.y - P.y); if (d > V26A_SLAM.r || !hasLOS(P.x, P.y, e.x, e.y)) continue;
+    n++; hurtEnemy(e, dmg, e.x, e.y, { noProc: true });
+    if (!e.boss && !e.guardian) { e.stun = Math.max(e.stun || 0, 0.8); if (d > 0.05) for (let i = 0; i < 4; i++) tryMove(e, (e.x - P.x) / d * 0.12, (e.y - P.y) / d * 0.12, 0.28); }
+    if (typeof launchEnemy === 'function' && d < 1.2) launchEnemy(e, 3); // agent B:s jonglering, om den finns
+  }
+  for (const pt of pots) if (!pt.broken && Math.hypot(pt.x - P.x, pt.y - P.y) < V26A_SLAM.r) breakPot(pt);
+  for (const pr of props) if (pr.def && !pr.broken && pr.def.crate && Math.hypot(pr.x - P.x, pr.y - P.y) < V26A_SLAM.r) hitProp(pr, P.x, P.y);
+  S.slamHits += n; S.slamDmg = +dmg.toFixed(2);
+  play('hammer_slam', 0.8, rnd(0.9, 1.05)); noise(10); P.shake = Math.max(P.shake, settings.reduceMotion ? 0.5 : 1.4); hitStop = Math.max(hitStop, n ? 0.06 : 0.02);
+  if (!settings.lowfx) for (let i = 0; i < 14; i++) { const a = i / 14 * TAU; particles.push({ x: P.x + Math.cos(a) * 0.3, y: P.y + Math.sin(a) * 0.3, z: 0.03, vx: Math.cos(a) * 4, vy: Math.sin(a) * 4, vz: 0.3, life: 0.45, maxLife: 0.45, img: fx.parts.dust ? fx.parts.dust[0] : fx.hit[1], size: 0.12, fade: true, tint: [190, 170, 140] }); }
+  if (n) styleAdd(10, '+MARKSLAG');
+}
+function v26aBounce() { // krok i jump(): hopp inom 0,15 s efter markslaget = studshopp (1,45× hopp)
+  const since = tmr - V26A.slamLandT; // båda gränserna: tmr kan börja om (ny runda) medan slamLandT är kvar
+  if (!V26A.slamOn || !onGround() || !(since >= 0 && since < V26A_SLAM.bounce) || P.stam < 0.1 || P.swim) return false;
+  V26A.slamLandT = -9; P.jv = 3.4 * 1.45; P.jz = 0.001; P.stam = Math.max(0, P.stam - 0.12); P.stamT = 0.9; P.crouch = 0;
+  play('jump', 0.5, 0.85); spawnPuff(P.x, P.y, 5); V26A.st.bounces++; return true;
+}
+// --- VÄGGSTUDS och SPRÄNGHOPP (reserv 11) ---
+// Väggstuds: hopp i luften intill en vägg (inom 0,38) studsar ut från väggen, högst 3 gånger per lufttur (före dubbelhoppet).
+// Spränghopp: en egen granat eller ett krutfat som smäller inom 1,2 rutor medan du är i luften eller hoppar kastar dig uppåt och bort
+// från smällen; egenskadan halveras. Fiendernas smällar räknas inte (explode får veta att smällen är din via V26A.own).
+const V26A_WJ = { reach: 0.38, out: 4.5, jv: 3.2, max: 3 }, V26A_BJ = { reach: 1.2, jv: 3.8, push: 8 };
+function v26aWallJump() { // krok i jump()
+  if (!V26A.moveOn || onGround() || P.swim || state !== 'play' || (P.wj || 0) >= V26A_WJ.max) return false;
+  const R = V26A_WJ.reach, nx = (solid(P.x - R, P.y) ? 1 : 0) - (solid(P.x + R, P.y) ? 1 : 0), ny = (solid(P.x, P.y - R) ? 1 : 0) - (solid(P.x, P.y + R) ? 1 : 0);
+  if (!nx && !ny) return false;
+  if (nx) P.vx = nx * V26A_WJ.out; if (ny) P.vy = ny * V26A_WJ.out;
+  P.jv = V26A_WJ.jv; P.wj = (P.wj || 0) + 1; P.slam = false; V26A.st.wallJumps++;
+  play('jump', 0.45, 1.15 + 0.08 * P.wj); play('kick', 0.3, 1.4); spawnPuff(P.x - nx * 0.3, P.y - ny * 0.3, 3);
+  return true;
+}
+function v26aBlastJump(x, y, pd) { // krok i explode(): true = spränghopp (halv egenskada)
+  const own = V26A.own === tmr; V26A.own = -1;
+  if (!own || !V26A.moveOn || pd > V26A_BJ.reach || (P.jz <= 0.001 && P.jv <= 0) || P.swim) return false;
+  let dx = P.x - x, dy = P.y - y; const d = Math.hypot(dx, dy);
+  if (d < 0.05) { dx = -Math.cos(P.a); dy = -Math.sin(P.a); } else { dx /= d; dy /= d; } // rakt under dig: bakåt
+  P.jv = Math.max(P.jv, V26A_BJ.jv); P.jz = Math.max(P.jz, 0.002); P.vx += dx * V26A_BJ.push; P.vy += dy * V26A_BJ.push; P.slam = false; P.launch = null;
+  V26A.st.blastJumps++; styleAdd(8, '+LUFTFÄRD'); say('SPRÄNGHOPP!', 0.8);
+  return true;
+}
+function v26aSlamDash(dx, dy) { // krok i dash(): pekskärmens RUSA i luften med spaken bakåt eller släppt blir markslag
+  return !dx && !dy && touch.active && !onGround() && touch.my > -0.3 && v26aSlamStart();
+}
+function v26aHudItem(g, y) { // ammohörnets ikonrad: fyra små mynt; redo = fyllt mynt, tomt = bara en ring (form, inte bara färg)
+  return [4 * 6 - 2, x => { for (let i = 0; i < V26A_MAXC; i++) { const cx = x + i * 6, full = i < V26A.coins;
+    g.fillStyle = '#000a'; g.fillRect(cx, y, 4, 6); g.fillRect(cx - 1, y + 1, 6, 4);
+    g.fillStyle = full ? '#ffd24a' : '#8a7040'; g.fillRect(cx + 1, y, 2, 1); g.fillRect(cx + 1, y + 5, 2, 1); g.fillRect(cx, y + 1, 1, 4); g.fillRect(cx + 3, y + 1, 1, 4);
+    if (full) { g.fillRect(cx + 1, y + 1, 2, 4); g.fillStyle = '#fff4c0'; g.fillRect(cx + 1, y + 1, 1, 1); } } }];
+}
+function v26aApi() { // window.__game.v26a: av/på och räknare (t120, t121)
+  return { on: () => V26A.blast && V26A.coin && V26A.slamOn && V26A.moveOn, set: (k, v) => { if (k === 'blast' || k === 'coin') V26A[k] = !!v; if (k === 'slam') { V26A.slamOn = !!v; P.slam = false; } if (k === 'move') V26A.moveOn = !!v; }, st: () => V26A.st,
+    slam: () => ({ on: V26A.slamOn, active: !!P.slam, jz: P.jz, jv: P.jv, landT: V26A.slamLandT, R: V26A_SLAM.r }),
+    state: () => ({ blast: V26A.blast, coin: V26A.coin, slam: V26A.slamOn, move: V26A.moveOn, wj: P.wj || 0, coins: V26A.coins, regen: +V26A.regen.toFixed(2), card: mod('coin') > 0, live: (projectiles || []).filter(p => p.kind === 'coin' && !p.dead).length }),
+    reset: () => { V26A.st = v26aStats(); V26A.coins = V26A_MAXC; V26A.regen = 0; }, throwCoin: () => { v26aReg(); v26aThrow(); },
+    coins: () => (projectiles || []).filter(p => p.kind === 'coin' && !p.dead).map(p => ({ x: p.x, y: p.y, z: p.z })), MAX: V26A_MAXC, REGEN: V26A_REGEN, ARM: V26A_ARM };
 }
 const tapT = {}; // dubbeltryck på en riktning = rusning
 function dirTap(code) {
@@ -6663,6 +6873,7 @@ function updateWeapon(dt) {
   WS.swayX *= Math.pow(0.0001, dt); WS.swayY *= Math.pow(0.0001, dt);
   const wantAim = aimDown && (WS.state === 'idle') && !WEAPONS[P.weapon].melee && !WEAPONS[P.weapon].scimitar && !WEAPONS[P.weapon].flail && !WEAPONS[P.weapon].blunderbuss && !WEAPONS[P.weapon].trident && !WEAPONS[P.weapon].brimstone && !WEAPONS[P.weapon].hookchain && !WEAPONS[P.weapon].bombard ? 1 : 0;
   WS.aim += (wantAim - WS.aim) * Math.min(1, dt * 10);
+  if (v26aCoinOn(wp)) WS.aim = 0; // version 26A: med myntkortet kastar pistolens högerklick mynt i stället för att sikta
   WS.punch = Math.max(0, WS.punch - dt * 0.35); WS.kick = Math.max(0, WS.kick - dt); WS.nameT = Math.max(0, WS.nameT - dt); P.kickT = Math.max(0, P.kickT - dt);
   plane = BASE_PLANE * (1 - WS.aim * (wp.zoom || 0.22)) * (1 + WS.punch) * (1 + P.runK * 0.07);
   if (WS.inspect > 0) WS.inspect = Math.max(0, WS.inspect - dt);
@@ -6694,6 +6905,7 @@ function updateWeapon(dt) {
   if (P.iframe > 0) P.iframe -= dt;
   const trig = mouseDown || touch.tap > 0 || touch.autoFire;
   weaponV9Tick(wp, dt); weaponV11Tick(wp, dt); weaponV13Tick(wp, dt); weaponV15Tick(wp, dt); weaponV16Tick(wp, dt); weaponV17Tick(wp, dt, trig); weaponV18Tick(wp, dt, trig); weaponV19Tick(wp, dt, trig); weaponV20Tick(wp, dt, trig); weaponV21Tick(wp, dt, trig); weaponV22Tick(wp, dt, trig); weaponV23Tick(wp, dt, trig);
+  v26aWeaponTick(wp, dt); // version 26A: myntet
   if (weaponV7Tick(wp, dt, trig)) return;
   if (wp.melee) { // yxan: håll för laddat slag, högerklick kastar
     if (trig && WS.state === 'idle' && WS.cd <= 0) { WS.charge = (WS.charge || 0) + dt; if (WS.charge > 0.5 && !WS.chargeSnd) { WS.chargeSnd = true; play('axe_charge', 0.4, 1.3); } }
@@ -14952,6 +15164,7 @@ function v26cTouchUse() { // ANVÄND-knappen på pekskärmen: krok för version 
       return { on: LK.on, holes, clamps: LK.clamps - c0, TW: LK.TW, TH: LK.TH, hash: h >>> 0, px: Array.from(spx) }; } };
   window.__game.efx = efxApi; // version 25: Effekseer-effekter (t115)
   window.__game.fix251 = fix251Api(); // version 25.1: lobbar och smällar genom väggar, röster (t116)
+  window.__game.v26a = v26aApi(); // version 26A: sprängskott och myntet (t120, t121)
   window.__game.efx2 = efx2Api; // version 25.1: fler Effekseer-effekter (t117)
   window.__game.flame = { groundFires: () => groundFires, light: (x, y) => lightAt(x, y) }; // version 25.1: eldkastarens ljus (t119)
   if (params.has('autostart')) begin('new');

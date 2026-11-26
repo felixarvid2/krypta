@@ -23,8 +23,8 @@ function makeRng(seed) {
 const { ALL, RARITY, MOD_KEYS } = Cards;
 const keys = Object.keys(MOD_KEYS);
 const BASE = ALL.filter(c => !c.pact && !c.weapon && !c.active);
-ok(BASE.length === 455, 'antal vanliga kort ' + BASE.length + ' ska vara 455 (16 i version 23 + 16 i version 22 +50 gamla + 50 i version 4 + 30 i version 5 + 25 i version 6 + 20 i version 7 + 24 i version 8 + 24 i version 9 + 24 i version 11 + 24 i version 13 + 24 i version 15 + 24 i version 16 + 24 i version 17 + 24 i version 18 + 24 i version 19 + 16 i version 20 + 16 i version 21)');
-ok(keys.length === 206, 'MOD_KEYS ska ha 206 nycklar, har ' + keys.length);
+ok(BASE.length === 456, 'antal vanliga kort ' + BASE.length + ' ska vara 456 (1 i version 26 + 16 i version 23 + 16 i version 22 +50 gamla + 50 i version 4 + 30 i version 5 + 25 i version 6 + 20 i version 7 + 24 i version 8 + 24 i version 9 + 24 i version 11 + 24 i version 13 + 24 i version 15 + 24 i version 16 + 24 i version 17 + 24 i version 18 + 24 i version 19 + 16 i version 20 + 16 i version 21)');
+ok(keys.length === 207, 'MOD_KEYS ska ha 207 nycklar (coin i version 26), har ' + keys.length);
 // de 27 nya mod-nycklarna
 const NEW_KEYS = ['grenades', 'grenadeDmg', 'stamina', 'dashCd', 'airDmg', 'backstab', 'comboGold', 'trapResist', 'freezeChance', 'poisonChance',
   'shockChance', 'interest', 'floorHeal', 'killExplode', 'reloadNova', 'eliteGold', 'trapSense', 'enemySense', 'critHeal', 'dashDmg',
@@ -506,7 +506,7 @@ ok(Cards.byId('sjalastenen+').text === '+2 SJÄLAR PER KRÖNIKESIDA' && Cards.by
 ok(Cards.computeMods(['smygskorna', 'smygskorna', 'guldsallet']).noiseReduce === 0.4 && Cards.computeMods(['nattblinda_ogat']).lampRadius === -1, 'computeMods med nya nycklar');
 { // nya kort dras (alla upplåsta) och låsta dras inte
   const rng = makeRng(707), hit = new Set();
-  for (let i = 0; i < 4000; i++) for (const c of Cards.draw(rng, 3, { unlocked: unlockedAll, depth: i % 6 })) hit.add(c.id);
+  for (let i = 0; i < 8000; i++) for (const c of Cards.draw(rng, 3, { unlocked: unlockedAll, depth: i % 6 })) hit.add(c.id);
   ok(V7_IDS.every(id => hit.has(id)), 'alla version 7-kort ska kunna dras: saknas ' + V7_IDS.filter(id => !hit.has(id)).join(','));
 }
 // pakter och uppgraderingar: vapnet (weapon) och de unika uppgraderingarna (wup) som spelet implementerar
@@ -539,7 +539,7 @@ for (const w in PACTS7) {
 }
 { // pakterna dras utan pakt men aldrig en andra
   const rng = makeRng(33), hit = new Set();
-  for (let i = 0; i < 4000; i++) for (const c of Cards.draw(rng, 3, { unlocked: unlockedAll })) if (c.pact) hit.add(c.id);
+  for (let i = 0; i < 8000; i++) for (const c of Cards.draw(rng, 3, { unlocked: unlockedAll })) if (c.pact) hit.add(c.id);
   ok(['pakt_kniv', 'pakt_hammare', 'pakt_musköt'].every(id => hit.has(id)), 'nya pakter dras');
 }
 // bilder: 96x96, unika (bland alla kort) och byggda i tools/card-art/make.py

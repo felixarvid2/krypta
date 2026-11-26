@@ -1300,7 +1300,29 @@ Det mesta som de spelen gör bra fanns redan, till exempel stilmätare, avrättn
 - närstrid som går att läsa
 - rörelse som hör ihop med striden
 
-<!-- V26A -->
+### Sprängskott (ULTRAKILL, Cultic)
+- Ett träffskott på din egen granat (handgranat eller granatkastare), ett sparkat krutfat eller fiendens granat spränger den direkt, i luften eller där den ligger och piper. Smällen blir 1,5 gånger större, och dina egna sprängämnen gör 1,5 gånger mer skada ("SPRÄNGSKOTT!", +SPRÄNG).
+- Två spärrar: ett sprängämne närmare än 1,6 rutor smäller inte, och bara ett nytt tryck på avtryckaren räknas. En kpist som hålls in spränger alltså inte granaten du nyss kastade.
+- Bara vapen med träffskott kan göra det, inte vapen som skjuter projektiler.
+
+### Myntet: kortet SKARPSKYTTENS MYNT (ULTRAKILL)
+- Nytt ovanligt kort. Med kortet kastar pistolens högerklick (ALT på pekskärm, LT på handkontroll) ett mynt i båge i stället för att sikta.
+- Skjuter du myntet studsar kulan vidare, i den här ordningen:
+  1. andra mynt, vilket ger en kedja
+  2. dina sprängämnen
+  3. fiendens skott och granater
+  4. närmaste fiendes huvud
+- En fiendeträff räknas som huvudträff och gör minst dubbel skada, plus en gång till per mynt i kedjan.
+- Du har högst fyra mynt, och ett nytt laddas var fjärde sekund. Mynten syns vid ammoräknaren: ett fyllt mynt är redo och en ring laddas.
+
+### Markslag, studshopp, väggstuds och spränghopp (ULTRAKILL, Dread Templar)
+- **Markslag:** ducka i luften för att slå ned mot golvet. Det är Ctrl eller duckknappen; på pekskärm RUSA i luften utan att föra spaken framåt.
+  - Stötvågen har radie 2,2. Den skadar, bedövar och knuffar fiender, kastar lätta fiender upp i luften och krossar krukor och lådor.
+- **Studshopp:** hoppar du direkt efter landningen blir hoppet högre.
+- **Väggstuds:** hoppa i luften intill en vägg för att studsa ut från den, högst tre gånger per hopp.
+- **Spränghopp:** smäller din egen granat eller ett krutfat nära dig medan du är i luften kastas du uppåt och bort och tar bara halva skadan (+LUFTFÄRD). På så sätt kommer du över lava och tomrum.
+
+**Tester:** t120–t124.
 
 ### Närstrid som går att läsa (ULTRAKILL, Cultic)
 - **Markeringen:** närstridsfiendernas slag syns komma. Strax före träffen blinkar fienden **gult och får en gul romb** ovanför sig.

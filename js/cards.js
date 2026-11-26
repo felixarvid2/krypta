@@ -59,6 +59,7 @@ const MOD_KEYS = {
   stamina: 'Andel mer uthållighet',
   dashCd: 'Andel kortare återhämtning för rusning',
   airDmg: 'Andel extra skada medan man är i luften (hopp)',
+  coin: 'Pistolens högerklick kastar mynt som styr om skotten (1 = på, version 26)',
   backstab: 'Andel extra skada mot fiender som inte sett dig',
   comboGold: 'Extra guld per steg i kombomätaren (platt)',
   trapResist: 'Andel mindre skada från fällor, lava och gas',
@@ -311,6 +312,7 @@ const DEFS = [
   ['sollinsen', 'BRÄNNGLASET', 'vanlig', { critChance: 0.04, burnChance: 0.05 }, 3, '+4 % KRITCHANS\n5 % BRANDCHANS'],
   ['glasogat', 'SPRUCKNA LUPPEN', 'vanlig', { critHeal: 1 }, 3, '+1 HP PER KRITISK TRÄFF'],
   ['akrobaten', 'GYCKLARENS SKUGGA', 'vanlig', { airDmg: 0.2 }, 3, '+20 % SKADA I LUFTEN'],
+  ['skarpskyttens_mynt', 'SKARPSKYTTENS MYNT', 'ovanlig', { coin: 1 }, 1, 'HÖGERKLICK MED PISTOLEN\nKASTAR ETT MYNT. SKJUT DET:\nKULAN TAR NÄRMASTE HUVUD\n2× SKADA, +1× PER MYNT', { unlock: 20 }], // version 26
   ['urtidsrunan', 'URTIDSURNAN', 'vanlig', { ammoRegen: 0.02 }, 3, '2 % AV ETT MAGASIN PER\nSEKUND TILL RESERVEN'],
   ['fyrkanten', 'RUNPLATTAN', 'vanlig', { shieldOnKill: 1 }, 3, '+1 SKÖLD PER DÖDAD FIENDE'],
   ['idolen', 'GULDIDOLEN', 'vanlig', { eliteGold: 0.3 }, 3, '+30 % GULD FRÅN ELIT\nOCH VÄKTARE'],
@@ -1358,6 +1360,7 @@ const FMT = {
   shieldOnKill: ['n', 'SKÖLD PER DÖDAD'], ammoRegen: ['p', 'MAGASIN PER S I RESERVEN'], knockback: ['p', 'KNUFF'],
   chestChoice: ['n', 'VAL I KISTOR'], freeReroll: ['n', 'GRATIS NYA KORT PER VÅNING'], hazardImmune: ['f', 'IMMUN MOT LAVA, VATTEN, IS OCH NÄT'],
   doubleJump: ['f', 'DUBBELHOPP'],
+  coin: ['f', 'MYNTKAST MED PISTOLEN'],
   potionPower: ['p', 'STARKARE DRYCKER'], potionChance: ['p', 'FLER DRYCKER'], petPower: ['p', 'STARKARE FÖLJESLAGARE'],
   meleeDmg: ['p', 'NÄRSTRIDSSKADA'], fireDmg: ['p', 'BRANDSKADA'], coldResist: ['p', 'SKYDD MOT KÖLD OCH FROST'],
   headshot: ['p', 'SKADA VID HUVUDTRÄFF'], bleedChance: ['p', 'CHANS TILL BLÖDNING'], allyChance: ['p', 'CHANS TILL ALLIERADE'],
