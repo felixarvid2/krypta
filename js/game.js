@@ -1992,6 +1992,7 @@ function renderSprites(plX, plY) { // sprites bakifrån och fram (egen funktion:
         gfxEBoss(o); // FIENDER: skugga, skakning, fasbyte, dödsskakningar (sätter spriteSX/SY/Clip och gfxEOff)
         drawSprite(bossFrame(o), o.x + gfxEOff.x, o.y + gfxEOff.y, o.d.size * (o.formK || 1), o.dying ? -o.dying * 0.3 : 0, flip, null, Math.max(gfxEOff.f, o.flash > 0 ? o.flash : 0), 0.75, false,
           o.dying ? [255, 120, 60] : o.stun > 0 ? [160, 200, 255] : o.id === 'ghost' ? [190, 220, 255] : o.id === 'monk' ? [190, 140, 255] : null, o.id === 'ghost' ? 0.2 : o.ghostB || 0);
+        if (!o.dying) v26bTell(o, s.d); // version 26B (krokrad, B): pareringsmarkeringen för bossar och väktare
         spriteSX = spriteSY = 1; spriteClip = 0; spriteOutline = 0; continue;
       }
       if (!o.dead && o.state === 'attack') o.flip = (o.x - P.x) * plX + (o.y - P.y) * plY > 0; // vänd mot mitten när den anfaller
@@ -7419,6 +7420,7 @@ function v26bAtk(e, dur) { // från updateEnemy (det vanliga anfallet, varje bil
 }
 function v26bWin(e) { // 0 = inget, 1 = parerbart slag på väg, 2 = slag som inte går att parera
   if (!V26B.on || !V26B.parry || !e || e.dead || e.dying || e.hidden || !e.d) return 0;
+  if (e.boss) return v26bBossWin(e); // bossar och väktare (updateBoss): egen tabell
   if (e.d.ai === 'bomb' && e.lit !== undefined) return 2;
   if (e.d.ai === 'charge' && e.charge > 0) return 2;
   if (e.state !== 'attack' || e.didHit || !(tmr - (e.v26w ?? -9) < 0.12)) return 0;
@@ -7432,8 +7434,9 @@ function v26bKick() { // från kick(): parera närstridsslag och sparka tillbaka
     if (V26B.parry) for (const e of ents) {
       const w = v26bWin(e); if (!w) continue;
       const dx = e.x - P.x, dy = e.y - P.y, d = Math.hypot(dx, dy); let off = Math.atan2(dy, dx) - P.a; off = Math.atan2(Math.sin(off), Math.cos(off));
-      if (d > 1.6 + e.d.size * 0.3 || Math.abs(off) > 0.8) continue;
-      if (w === 1) { (out || (out = new Set())).add(e); v26bParry(e); }
+      if (e.boss ? d > 2 + e.d.size * 0.3 || Math.abs(off) > Math.max(0.8, Math.atan2(e.d.size * 0.25, d)) : d > 1.6 + e.d.size * 0.3 || Math.abs(off) > 0.8) continue; // bossen är bred
+      if (w === 1 && e.boss) { (out || (out = new Set())).add(e); v26bBossParry(e); }
+      else if (w === 1) { (out || (out = new Set())).add(e); v26bParry(e); }
       else if (e.state === 'attack' && !e.didHit && e.d.melee) { e.didHit = true; V26B.st.trades = (V26B.st.trades || 0) + 1; enemyStrike(e, d); } // blått: sparken avbryter inte slaget – det träffar ändå
     }
     if (V26B.ret && v26bReturn()) out = out || new Set();
@@ -7507,6 +7510,7 @@ function v26bFrame(dt) { // från r25Frame (varje bildruta, före dess tidiga re
     v26bLungeTick(dt);
     for (const g of R25.live) if (g.ret && g.ph === 0 && v26bAlive(g.src)) [g.tx, g.ty] = lobClip(g.x0, g.y0, g.src.x, g.src.y);
     for (const l of lobs) if (l.ret && v26bAlive(l.src)) [l.tx, l.ty] = lobClip(l.x0, l.y0, l.src.x, l.src.y);
+    if (boss) v26bBossTing(boss); if (guardianE && guardianE !== boss) v26bBossTing(guardianE);
   } catch (err) { V26B.st.err = String((err && err.stack) || err).slice(0, 400); V26B.L = null; }
 }
 function v26bRetBoom(n) { // från r25Boom: den återsparkade granaten skadar fiender fullt; spelaren bara om han står mitt i
@@ -7531,11 +7535,12 @@ function v26bImg() { // romb (går att parera) och kryss (går inte), 11×11 med
 function v26bTell(o, d2) { // från renderSprites: blinken och formen (romb/kryss) över fienden medan slaget laddas
   if (!V26B.on || settings.parryTell === false || d2 > 220) return;
   const w = v26bWin(o); if (!w) return;
-  const calm = !!(settings.noFlash || settings.cb), on = calm || Math.floor(tmr * 14) % 2 === 0, col = w === 1 ? [255, 215, 50] : [70, 140, 255], sz = o.d.size;
-  const z0 = gfxEOff.z + ((o.d.ai === 'fly' || o.d.ai === 'wisp' || o.d.float) && !o.anchored ? 0.3 : 0);
-  if (on && !settings.lowfx) drawSprite(fx.hit[1], o.x - view.dirX * 0.12, o.y - view.dirY * 0.12, calm ? 0.26 : 0.34, z0 + sz * 0.5, false, calm ? 1.2 : 2, 0, 0, true, col);
-  const top = view.camZ + view.hor * Math.sqrt(d2) / PSC * 0.85 - 0.16; // nära fiender: formen hamnar annars ovanför bildkanten
-  drawSprite(v26bImg()[w === 1 ? 'yes' : 'no'], o.x, o.y, calm ? 0.15 : 0.11, Math.min(z0 + gfxEHead(enemyFrame(o)) * sz * 1.15 + 0.06, top), false, 1.4, 0, 0);
+  const calm = !!(settings.noFlash || settings.cb), on = calm || Math.floor(tmr * 14) % 2 === 0, col = w === 1 ? [255, 215, 50] : [70, 140, 255], sz = o.d.size * (o.formK || 1), bk = o.boss ? 1.8 : 1;
+  const z0 = gfxEOff.z + (!o.boss && (o.d.ai === 'fly' || o.d.ai === 'wisp' || o.d.float) && !o.anchored ? 0.3 : 0);
+  if (on && !settings.lowfx) drawSprite(fx.hit[1], o.x - view.dirX * 0.12, o.y - view.dirY * 0.12, (calm ? 0.26 : 0.34) * bk, z0 + sz * (o.boss ? 0.3 : 0.5), false, calm ? 1.2 : 2, 0, 0, true, col);
+  const top = view.camZ + view.hor * Math.sqrt(d2) / PSC * (o.boss ? 0.6 : 0.85) - 0.16 * bk; // nära: annars ovanför bildkanten (bossen: under namnlisten)
+  const head = o.boss ? sz * 0.5 : gfxEHead(enemyFrame(o)) * sz * 1.15; // bossen: på bröstet, framför kroppen
+  drawSprite(v26bImg()[w === 1 ? 'yes' : 'no'], o.x, o.y, (calm ? 0.15 : 0.11) * bk, Math.min(z0 + head + 0.06, top), false, 1.4, 0, 0);
   V26B.st.drawn++;
 }
 function v26bWantsUse() { // för touchCanUse (C): ANVÄND/handen ska synas för flygsparken och för en granat eller lobb som går att sparka tillbaka
@@ -7550,7 +7555,8 @@ function v26bApi() { // window.__game.v26b: tillstånd, räknare och av/på för
   return { st: () => V26B.st, flags: V26B, state: () => ({ on: V26B.on, parry: V26B.parry, lunge: V26B.lunge, ret: V26B.ret, lunging: !!V26B.L, lcd: V26B.lcd, err: V26B.st.err }),
     set: (k, v) => { if (k in V26B && typeof V26B[k] === 'boolean') V26B[k] = !!v; if (!V26B.on) V26B.L = null; return V26B[k]; },
     win: e => v26bWin(e), kick: () => kick(), wantsUse: () => v26bWantsUse(), lobs: () => lobs, lobShot, t: () => tmr,
-    launch: (e, vz) => launchEnemy(e, vz), air: e => ({ z: e.airZ || 0, vz: e.airVz || 0, t: e.airT || 0 }), jst: () => V26B.jst };
+    launch: (e, vz) => launchEnemy(e, vz), air: e => ({ z: e.airZ || 0, vz: e.airVz || 0, t: e.airT || 0 }), jst: () => V26B.jst,
+    bst: () => V26B.bst, bossTable: () => V26B_BOSS, boss: () => boss, guardian: () => guardianE };
 }
 // --- Version 26B: jonglering (ULTRAKILL) ---
 // launchEnemy(e, vz): fiender som inte är tunga (storlek < 1,3, inte boss, väktare, flygare eller grävare) kastas upp. Det sker av
@@ -7603,6 +7609,42 @@ function v26bBlast(x, y, r) { // från explode: fiender inom 0,6 × radien kasta
     const k = 1 - d / (r * 0.6 + 0.01), s = d > 0.05 ? 1.5 / d : 0; launchEnemy(e, 2.6 + 1.4 * k,dx * s, dy * s); }
 }
 function v26bShadowK(o) { return clamp(1 - o.airZ * 0.7, 0.3, 1); } // från gfxEShadowK: skuggan krymper med höjden
+// --- Version 26B: parering mot bossar och väktare ---
+// Bossar och väktare går genom updateBoss och BOSS_AI[id]. Tabellen säger när varje tidsstyrt slag träffar (tillstånd → [b.t då slaget
+// kommer, 1 = parerbart, 2 = inte]), avläst ur BOSS_AI: "if (!b.didHit && b.t > T)". Rena närstridsslag (hugg, klo, bett, piska, svans,
+// stav, slägga, skopa) är gula; markslag med chockvåg, ringar av skott eller istaggar är blå. Rusningar, dyk och utfall (ingen fast tid)
+// och de första 0,8 s av ett specialanfall är blå. Väktare har samma id och samma BOSS_AI, så de följer samma tabell.
+// En parering mot en boss ger aldrig vacklan eller avrättning: slaget uteblir (b.didHit), bossen bedövas 0,6 s, och sedan går den inte att
+// parera på 4 s (markeringen är blå så länge). +PARERING, +8 överhälsa och träffstopp. Faser, ilska och arenans tider påverkas inte (b.t
+// räknas som vanligt; tillståndet avslutas på sin vanliga tid). Av: v26b.set('boss', false).
+V26B.boss = true; V26B.bst = { tells: 0, blue: 0, parries: 0 };
+const V26B_BOSS = {
+  ringmaster: { whip: [0.4, 1] }, serpent: { tail: [0.45, 1] }, ratking: { bite: [0.45, 1] }, sphinx: { paw: [0.55, 1] },
+  executioner: { chop: [0.6, 1] }, tidepriest: { staff: [0.5, 1] }, bathmaster: { ladle: [0.55, 1] }, pyrelord: { claw: [0.55, 1] },
+  butcher: { cleave: [0.55, 1] }, warlord: { sword: [0.55, 1] }, foreman: { sledge: [0.5, 1] },
+  demon: { slam: [0.85, 2] }, ogre: { smash: [0.6, 2] }, frost: { slam: [0.7, 2] }, flame: { slam: [0.75, 2] }, mycelmother: { slam: [0.45, 2] },
+  colossus: { slam: [0.6, 2] }, alchemist: { smash: [0.6, 2] },
+};
+const V26B_RUSH = new Set(['windup', 'charge', 'dash', 'lunge', 'dive', 'slash']);
+function v26bBossWin(b) { // 0, 1 (gult) eller 2 (blått) för en boss eller väktare
+  if (!V26B.boss || b.dead || b.dying || b.hidden || b.asleep) return 0;
+  if (b.state === 'special') return b.t < 0.8 ? 2 : 0;
+  const T = V26B_BOSS[b.id] && V26B_BOSS[b.id][b.state];
+  if (T) { if (b.didHit || b.t < T[0] - V26B.win || b.t > T[0]) return 0; return T[1] === 1 && (b.v26pCd || 0) <= tmr && !(b.stun > 0) ? 1 : 2; }
+  return V26B_RUSH.has(b.state) && Math.hypot(b.x - P.x, b.y - P.y) < 7 ? 2 : 0;
+}
+function v26bBossTing(b) { // från v26bFrame: "ting" en gång per parerbart slag, och räknare
+  if (!V26B.on || !V26B.parry || b.dead) return;
+  const w = v26bBossWin(b); if (!w) return;
+  const key = b.state + ':' + Math.round((tmr - b.t) * 10); if (b.v26tk === key) return; b.v26tk = key;
+  if (w === 1) { V26B.bst.tells++; if (Math.hypot(b.x - P.x, b.y - P.y) < 10) play('parry', 0.3, 1.8, { x: b.x, y: b.y }); } else V26B.bst.blue++;
+}
+function v26bBossParry(b) { // slaget uteblir, kort bedövning med nedkylning – ingen vacklan eller avrättning
+  b.didHit = true; b.stun = Math.max(b.stun || 0, 0.6); b.v26pCd = tmr + 4; V26B.bst.parries++; V26B.st.parries++;
+  overheal(8); hitStop = Math.max(hitStop, 0.12); P.shake = Math.max(P.shake, 1); play('parry', 1, 0.85);
+  if (!settings.noFlash) flashes.push({ x: P.x, y: P.y, t: 0.12, r: 3, col: [255, 240, 200] });
+  spawnText(P.x + Math.cos(P.a), P.y + Math.sin(P.a), 'PARERAT!', '#ffe9a8'); spawnText(b.x, b.y, 'BEDÖVAD', '#ffe9a8'); styleAdd(12, '+PARERING'); stat('parries');
+}
 function v26bAirZ(o) { V26B.jst.airDrawn++; return o.airZ; } // från renderSprites: höjden läggs på gfxEOff.z (stjärnor, ögon och markeringen följer med)
 // --- ritning: befälhavarens fana, granaten och den blinkande ringen ---
 function drawR25World(list) {
