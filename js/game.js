@@ -1378,6 +1378,7 @@ function startLevel(level) {
   if (!boss) levelBanner = 3; // stort titelkort med namn och biom
   if (run && lvl.biome && !boss) run.biomes = (run.biomes || []).concat(lvl.biome);
   else say(lvl.name, 3);
+  v27Start(); // version 27: planritningens namn
   if (boss) { bossIntro = 2.2; boss.cd = Math.max(boss.cd, 3); }
   if (boss) { bossBanner = 3.5; slowmo = 1.2; play('stinger', 0.8); if (window.Music) Music.sting('boss'); setTimeout(() => play('bossroar', 0.9, 0.8), 600); }
   startAmbient(); buildGrade(); fogK = biomeFx().fogK * fogMul; lightning = 0; lightningT = rnd(4, 10);
@@ -6818,6 +6819,7 @@ function update(dt) {
     if (d && !d.secret && !d.gate && !d.arena && d.target === 0 && cellAt(nx, ny) === 'D') { d.target = 1; play('door', 0.6, 1, { x: d.x + 0.5, y: d.y + 0.5 }); }
   }
   updateV24(dt); // version 24: genvägar, bakhåll och ledtrådar
+  updateV27(dt); // version 27: scenernas namn när man kliver in
   for (const e of ents) if (!e.dead && !e.dying) pushOut(P, e.x, e.y, e.boss ? 1.1 : 0.55);
   for (const pt of pots) if (!pt.broken) pushOut(P, pt.x, pt.y, 0.45);
   for (const c of chests) pushOut(P, c.x, c.y, 0.5);
@@ -11267,6 +11269,32 @@ function v24Map(s, ox, oy, inside) { // stängda enkelriktade dörrar syns röda
 }
 const v24api = () => ({ state: v24, setup: v24Setup, side: v24Side, use: v24Use, bump: v24Bump, ambush: v24Ambush, kick, total: () => totalEnemies, kills: () => kills,
   cell: (x, y) => map[y][x], walk: (x, y) => walkableForEnemy(x, y), flowAt: (x, y) => { updateFlow(); return flow[y * mw + x]; }, torches: () => torches.filter(t => t.v24), light: (x, y) => light[y * mw + x] });
+// ---------- Version 27: fler banor ----------
+// Läser level.plan27 (planritningen: ring, cross, gauntlet, court) och level.scenes27 (scener och rumsmallar, gen.js). Allt på kartan är vanliga tecken;
+// spelet visar bara planritningens namn när våningen börjar och scenens namn första gången man kliver in i rummet (en kontroll var fjärdedels sekund).
+const V27_PLAN_TXT = { ring: 'RINGBORGEN: SALARNA LIGGER I EN RING RUNT VAKTARENS SAL', cross: 'KORSFÄSTNINGEN: FYRA FLYGLAR KRING EN MITTGÅRD',
+  gauntlet: 'STORMLÖPET: EN LÅNG RAD AV SALAR FRAM TILL VAKTAREN', court: 'BORGGÅRDEN: EN STOR GÅRD MED BYGGNADER RUNT OM' };
+const V27_SCENE_TXT = { pillarhall: 'PELARSALEN', cloister: 'KORSGÅNGEN – SE UPP I NISCHERNA', stacks: 'HYLLGÅNGARNA', throne: 'TRONSALEN', lavabridge: 'BRON ÖVER LAVAN' };
+let v27 = { lvl: null, scenes: [], seen: {}, t: 0, shown: [] };
+function v27Start() {
+  v27 = { lvl, scenes: [], seen: {}, t: 0, shown: [] };
+  if (window.__game && !window.__game.v27) window.__game.v27 = () => ({ plan: v27.lvl && v27.lvl.plan27 || null, scenes: v27.scenes.slice(), shown: v27.shown.slice() });
+  if (!lvl || !run || run.custom || run.practiceT || lvl.arena || lvl.hub) return;
+  if (lvl.plan27 && V27_PLAN_TXT[lvl.plan27]) { say(V27_PLAN_TXT[lvl.plan27], 3.5); v27.shown.push(lvl.plan27); }
+  const rm = lvl.roomMask;
+  if (Array.isArray(lvl.scenes27) && Array.isArray(rm)) for (const s of lvl.scenes27) if (s && V27_SCENE_TXT[s.kind] && Number.isInteger(s.room)) v27.scenes.push({ kind: s.kind, room: s.room });
+}
+function updateV27(dt) {
+  if (v27.lvl !== lvl || !v27.scenes.length || state !== 'play') return;
+  if ((v27.t -= dt) > 0) return;
+  v27.t = 0.25;
+  const x = Math.floor(P.x), y = Math.floor(P.y), rm = lvl.roomMask;
+  if (!rm || y < 0 || y >= rm.length || x < 0 || x >= rm[y].length || rm[y][x] === '-') return;
+  const k = rm[y].charCodeAt(x) - 48, s = v27.scenes.find(o => o.room === k);
+  if (!s || v27.seen[k]) return;
+  v27.seen[k] = 1; v27.shown.push(s.kind); say(V27_SCENE_TXT[s.kind], 2.5);
+}
+
 // ---------- Version 11: sporkastaren, spegelskölden och piskan ----------
 let pclouds = []; // spelarens giftmoln
 function sporeFire(wp, base) {

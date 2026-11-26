@@ -89,6 +89,8 @@ const biome = pos[0] || 'random';
 const seed0 = pos[1] === undefined ? 1 : (/^\d+$/.test(pos[1]) ? +pos[1] : pos[1]);
 const depth = +(pos[2] || 1);
 const n = +(flag('n') || 1);
+// version 27: --plan=ring|cross|gauntlet|court tvingar fram en planritning, --scene=throne (eller prefab:feast) en scen, --v27off stänger av version 27
+const V27OPT = flag('v27off') ? { v27off: true } : (flag('plan') || flag('scene')) ? { v27: Object.assign(flag('plan') ? { plan: flag('plan') } : {}, flag('scene') ? { scenes: String(flag('scene')).split(',') } : {}) } : {};
 const LEGEND = [
   'väggar: 1-5 sten  6 skogsbryn  7 kyrkogårdsmur  8 grottberg  9 timmer  # demon  % best  ~ mardröm  & ogre  = vålnad',
   'D dörr  G grind  * hemlig vägg  P start  x utgång  B boss  Z vaktare  Q mimic  E elit  S K V I L N O R W fiender',
@@ -257,7 +259,7 @@ const arrow = b => (b.dx > 0 ? '>' : b.dx < 0 ? '<' : b.dy > 0 ? 'v' : '^');
 const makeLevel = (seed, d, shop) => (flag('secret') ? Gen.secret(seed, { biome: biome === 'random' ? undefined : biome, depth: d })
   : flag('maze') ? Gen.maze(seed, { biome: biome === 'random' ? undefined : biome, depth: d })
   : biome.startsWith('boss') ? Gen.boss(seed, { arena: biome.split(':')[1], boss: flag('boss') })
-    : Gen.floor(seed, d, { biome: biome === 'random' ? undefined : biome, shop, weapon: flag('weapon'), guardian: flag('guardian') }));
+    : Gen.floor(seed, d, Object.assign({ biome: biome === 'random' ? undefined : biome, shop, weapon: flag('weapon'), guardian: flag('guardian') }, V27OPT)));
 if (flag('stats')) {
   // statistik över n banor (djupet roterar 1-5 om inget djup anges)
   const F = {}, FN = {}, EN = {}, T = {}; let ms = 0;
@@ -315,6 +317,8 @@ for (let k = 0; k < n; k++) {
   if (lv.landmarks && lv.landmarks.length) console.log('landmärken: ' + lv.landmarks.map(l => `${l.kind} ${l.x},${l.y} (ljus ${l.light})`).join('; '));
   if (lv.breadcrumbs && lv.breadcrumbs.length) console.log('brödsmulor: ' + lv.breadcrumbs.map(b => b.ch + ' ' + b.x + ',' + b.y).join('  '));
   if (lv.secretHints && lv.secretHints.length) console.log('ledtrådar: ' + lv.secretHints.map(h => `${h.x},${h.y}`).join('  ') + (lv.cover && lv.cover.length ? '; skydd: ' + lv.cover.map(c => c.x + ',' + c.y).join(' ') : ''));
+  if (lv.plan27) console.log('planritning (version 27): ' + lv.plan27 + ' – ' + lv.planName27 + (lv.hub27 >= 0 ? ' (mittgården är rum ' + lv.hub27 + ')' : ''));
+  if (lv.scenes27 && lv.scenes27.length) console.log('scener (version 27): ' + lv.scenes27.map(s => `${s.kind} i rum ${s.room} (${s.x},${s.y} ${s.w}x${s.h})`).join('; '));
   if (lv.pacing && lv.pacing.length) console.log('takt: ' + lv.pacing.map(p => `rum ${p.room} ${p.beat}`).join(', '));
   const errs = Gen.validate(lv);
   if (errs.length) console.log('VALIDERINGSFEL:\n  ' + errs.slice(0, 10).join('\n  '));

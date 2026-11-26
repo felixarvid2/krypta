@@ -236,6 +236,14 @@ try {
     : require('child_process').execFileSync('git', ['show', GEN_V23_REF + ':js/gen.js'], { cwd: path.join(__dirname, '..'), encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 1 << 26 });
   (0, eval)(src); OldGen23 = global.Gen; global.Gen = undefined;
 } catch (e) { oldGen23Err = String(e.message || e).split('\n')[0]; }
+// version 26 av generatorn (för frö-stabiliteten i version 27): GEN_OLD26=sökväg, annars ur git (gen.js när version 27 påbörjades, GEN_V26_REF)
+const GEN_V26_REF = process.env.GEN_V26_REF || '0b2bcdf2b31805e9bbb58e4d818351be8c7c1003';
+let OldGen26 = null, oldGen26Err = '', oldGen26Src = process.env.GEN_OLD26 ? path.basename(process.env.GEN_OLD26) : GEN_V26_REF.slice(0, 7);
+try {
+  const src = process.env.GEN_OLD26 ? fs.readFileSync(process.env.GEN_OLD26, 'utf8')
+    : require('child_process').execFileSync('git', ['show', GEN_V26_REF + ':js/gen.js'], { cwd: path.join(__dirname, '..'), encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 1 << 26 });
+  (0, eval)(src); OldGen26 = global.Gen; global.Gen = undefined;
+} catch (e) { oldGen26Err = String(e.message || e).split('\n')[0]; }
 (0, eval)(fs.readFileSync(path.join(__dirname, '..', 'js', 'gen.js'), 'utf8'));
 
 // version 14: de äldre frö-stabilitetsproven jämför med version 14-sakerna avstängda (opts.v14off: exakt version 13, se provet för version 14)
@@ -4699,14 +4707,14 @@ function freeLineT(r, x, y) { let best = 0; const at = (xx, yy) => (r[yy] && r[y
       if (JSON.stringify(old) !== JSON.stringify(Gen.floor(seed, depth, Object.assign({ v24off: true }, opts)))) fail(tag + ' frö-stabilitet: skiljer sig från version 23 med opts.v24off');
       if (i % 3 === 0 && JSON.stringify(OldGen23.floor(seed, depth, Object.assign({ v23off: true }, opts))) !== JSON.stringify(Gen.floor(seed, depth, Object.assign({ v23off: true }, opts)))) fail(tag + ' frö-stabilitet: opts.v23off stänger inte av version 24');
       const lv = Gen.floor(seed, depth, opts);
-      cmp24(old, lv, tag); check24(lv, tag);
+      cmp24(old, Gen.floor(seed, depth, Object.assign({ v27off: true }, opts)), tag); check24(lv, tag); // (version 27 av i jämförelsen, se provet för version 27)
     }
     for (let i = 0; i < 300; i++) { // utan opts.biome (spelets anropsform med seed RNG.hash)
       const pos = 1 + (i % 5), cyc = Math.floor(i / 5) % 3, depth = Math.min(5, pos + cyc), seed = i % 2 ? 'stabilmix24-' + i : RNG.hash('krypta24s-' + i + ':' + (pos + 6 * cyc));
       const opts = { shop: pos === 2 || pos === 4, weapon: OW[i % OW.length] }, old = OldGen23.floor(seed, depth, opts), tag = `[stabil24 mix seed=${seed} d=${depth}]`;
       if (JSON.stringify(old) !== JSON.stringify(Gen.floor(seed, depth, Object.assign({ v24off: true }, opts)))) fail(tag + ' frö-stabilitet: skiljer sig från version 23 med opts.v24off');
       const lv = Gen.floor(seed, depth, opts);
-      cmp24(old, lv, tag); check24(lv, tag);
+      cmp24(old, Gen.floor(seed, depth, Object.assign({ v27off: true }, opts)), tag); check24(lv, tag); // (version 27 av i jämförelsen, se provet för version 27)
       if (i % 10 === 0 && JSON.stringify(Gen.floor(seed, depth, opts)) !== JSON.stringify(lv)) fail(tag + ' inte deterministisk');
     }
     const strip2 = o => { const c = Object.assign({}, o); delete c.features; return JSON.stringify(c); };
@@ -4763,6 +4771,116 @@ function freeLineT(r, x, y) { let best = 0; const at = (xx, yy) => (r[yy] && r[y
       if (!msg24(cv, l => { l.pacing.push({ room: 999, beat: 'reward' }); }, /ogiltig takt/)) fail('validate: ogiltig takt ej upptäckt');
       if (!msg24(Gen.boss('neg24b', { arena: 'hall' }), l => { l.shortcuts = [{ x: 1, y: 1, oneway: false, sx: 2, sy: 1 }]; }, /arena\/labyrint|pekar inte/)) fail('validate: genväg i en arena ej upptäckt');
       if (!msg24(sc, l => { l.ambushes = {}; }, /ogiltigt/)) fail('validate: level.ambushes som inte är en lista ej upptäckt');
+    }
+  }
+}
+
+// ---- version 27: fler banor (planritningar ring/cross/gauntlet/court, scener och handgjorda rumsmallar i rummen). Frö-stabilitet mot version 26
+// (git-objektet GEN_V26_REF = 0b2bcdf, eller filen i GEN_OLD26): med opts.v27off (och med en äldre vNNoff) identiska banor. Med version 27 på: alla
+// gamla kontroller (checkLevel) på tvingade planritningar i alla biomer som byggs med salar och på tvingade scener, validering, determinism, att
+// scenerna bara lägger väggar och vanlig rekvisita (och flyttar rummets egna saker), frekvenser och negativa validate-tester ----
+{
+  const PLANS27 = ['ring', 'cross', 'gauntlet', 'court'], PROPS27 = 'uTcjJHkq';
+  const PLAN_B27 = ['dungeon', 'frost', 'volcano', 'tomb', 'sunken', 'clock', 'sky', 'mirror', 'library', 'foundry', 'hive', 'garden', 'dream', 'ship', 'lab',
+    'circus', 'jungle', 'mine', 'observatory', 'sewer', 'desert', 'prison', 'harbor', 'bathhouse', 'purgatory', 'abattoir', 'battlefield'];
+  const F27 = ['plan27', 'planName27', 'scenes27', 'hub27'];
+  const S27 = { n: 0, nB: 0, plans: {}, scenes: {}, nS: 0, moved: 0 };
+  stats.v27 = [];
+  const strip27 = o => { const c = Object.assign({}, o); delete c.features; delete c.map; for (const k of F27) delete c[k]; return JSON.stringify(c); };
+  const cnt27 = m => { const n = {}; for (const r of m) for (const c of r) n[c] = (n[c] || 0) + 1; return n; };
+  // en bana med version 27 (base: samma bana med opts.v27off)
+  const check27 = (lv, tag, base, opts, depth, seed) => {
+    const e = Gen.validate(lv); if (e.length) { fail(tag + ' validate: ' + e[0]); return; }
+    if (!Array.isArray(lv.scenes27) || !('plan27' in lv)) { fail(tag + ' level.scenes27/plan27 saknas'); return; }
+    S27.n++; if (PLAN_B27.includes(lv.biome)) S27.nB++;
+    if (lv.plan27) { S27.plans[lv.plan27] = (S27.plans[lv.plan27] || 0) + 1; checkLevel(lv, seed, depth, opts, lv.biome); }
+    for (const s of lv.scenes27) { S27.scenes[s.kind] = (S27.scenes[s.kind] || 0) + 1; S27.nS++; }
+    if (lv.plan27 || !base) return;
+    // utan planritning: samma bana, kartan ändrad bara med väggar, vanlig rekvisita (och lava i vulkanen); allt annat finns kvar i samma antal
+    if (strip27(base) !== strip27(lv)) { fail(tag + ' version 27 ändrade andra fält än kartan'); return; }
+    if (!lv.scenes27.length && lv.map.join('\n') !== base.map.join('\n')) { fail(tag + ' kartan ändrad utan scener'); return; }
+    const a = cnt27(base.map), b = cnt27(lv.map);
+    for (const c of new Set(Object.keys(a).concat(Object.keys(b)))) {
+      if ((a[c] || 0) === (b[c] || 0) || isWall(c) || c === '.' || PROPS27.includes(c) || (c === '_' && lv.biome === 'volcano')) continue;
+      fail(`${tag} version 27 ändrade antalet "${c}": ${a[c] || 0} -> ${b[c] || 0}`); return;
+    }
+    for (let y = 0; y < lv.map.length; y++) for (let x = 0; x < lv.map[0].length; x++) { const o = base.map[y][x], c = lv.map[y][x]; if (o !== c && !isWall(c) && c !== '.' && !PROPS27.includes(c) && c !== '_') S27.moved++; }
+  };
+  if (!OldGen26) fail('frö-stabilitet: kunde inte läsa gen.js från version 26 (' + oldGen26Err + '); sätt GEN_OLD26=sökväg till den gamla filen');
+  else {
+    const OB = OldGen26.BIOMES.map(b => b.id), OG = Object.keys(OldGen26.GUARDIANS), OW = [null].concat(Object.values(OldGen26.WEAPONS));
+    let total = 0;
+    for (let i = 0; i < 300; i++) { // alla biomer, väktare och vapen
+      const biome = OB[i % OB.length], depth = 1 + (i % 5), seed = i % 2 ? 'stabil27-' + i : 9137 + i * 7919;
+      const opts = { biome, shop: i % 3 === 0, weapon: OW[i % OW.length], guardian: i % 4 === 3 ? undefined : OG[i % OG.length] }, tag = `[stabil27 ${biome} seed=${seed} d=${depth}]`;
+      const old = OldGen26.floor(seed, depth, opts), off = Gen.floor(seed, depth, Object.assign({ v27off: true }, opts));
+      total++; if (JSON.stringify(old) !== JSON.stringify(off)) fail(tag + ' frö-stabilitet: skiljer sig från version 26 med opts.v27off');
+      if (i % 3 === 0) { total++; if (JSON.stringify(OldGen26.floor(seed, depth, Object.assign({ v24off: true }, opts))) !== JSON.stringify(Gen.floor(seed, depth, Object.assign({ v24off: true }, opts)))) fail(tag + ' frö-stabilitet: opts.v24off stänger inte av version 27'); }
+      check27(Gen.floor(seed, depth, opts), tag, off, opts, depth, seed);
+    }
+    for (let i = 0; i < 300; i++) { // utan opts.biome (spelets anropsform med seed RNG.hash)
+      const pos = 1 + (i % 5), cyc = Math.floor(i / 5) % 3, depth = Math.min(5, pos + cyc), seed = i % 2 ? 'stabilmix27-' + i : RNG.hash('krypta27s-' + i + ':' + (pos + 6 * cyc));
+      const opts = { shop: pos === 2 || pos === 4, weapon: OW[i % OW.length] }, tag = `[stabil27 mix seed=${seed} d=${depth}]`;
+      const old = OldGen26.floor(seed, depth, opts), off = Gen.floor(seed, depth, Object.assign({ v27off: true }, opts));
+      total++; if (JSON.stringify(old) !== JSON.stringify(off)) fail(tag + ' frö-stabilitet: skiljer sig från version 26 med opts.v27off');
+      const lv = Gen.floor(seed, depth, opts);
+      check27(lv, tag, off, Object.assign({ biome: lv.biome }, opts), depth, seed);
+      if (i % 10 === 0 && JSON.stringify(Gen.floor(seed, depth, opts)) !== JSON.stringify(lv)) fail(tag + ' inte deterministisk');
+    }
+    for (const arena of OldGen26.ARENAS) if (JSON.stringify(OldGen26.boss('st27-' + arena, { arena })) !== JSON.stringify(Gen.boss('st27-' + arena, { arena }))) fail('frö-stabilitet: arenan ' + arena + ' ändrades');
+    for (const id of OB) {
+      if (JSON.stringify(OldGen26.secret('st27s-' + id, { biome: id, depth: 2 })) !== JSON.stringify(Gen.secret('st27s-' + id, { biome: id, depth: 2 }))) fail('frö-stabilitet: hemliga våningen ' + id + ' ändrades');
+      if (JSON.stringify(OldGen26.maze('st27m-' + id, { biome: id, depth: 3 })) !== JSON.stringify(Gen.maze('st27m-' + id, { biome: id, depth: 3 }))) fail('frö-stabilitet: labyrinten ' + id + ' ändrades');
+    }
+    stats.stable27 = `${total} jämförelser mot version 26 (${oldGen26Src}): med opts.v27off (och v24off) identiska; arenor, hemliga våningar och labyrinter oförändrade`;
+  }
+  const share = S27.nB ? Object.values(S27.plans).reduce((a, b) => a + b, 0) / S27.nB : 0, perS = S27.n ? S27.nS / S27.n : 0;
+  stats.v27.push(`${S27.n} banor (${S27.nB} i biomerna med salar): planritningar på ${(100 * share).toFixed(0)} % ${JSON.stringify(S27.plans)}, scener ${perS.toFixed(2)} per bana, ${S27.moved} flyttade saker`);
+  if (share < 0.1 || share > 0.4) fail('version 27: planritningarnas andel ' + share.toFixed(2));
+  if (perS < 0.7) fail('version 27: för få scener ' + perS.toFixed(2));
+  // tvingade planritningar: varje planritning i varje biom med salar på alla tillåtna djup, med alla gamla kontroller
+  {
+    const T = {}; let n = 0, ok = 0, ms = 0;
+    for (const plan of PLANS27) for (const id of PLAN_B27) {
+      const b = Gen.BIOMES.find(x => x.id === id);
+      for (let d = b.depth[0]; d <= Math.min(5, b.depth[1]); d++) {
+        const seed = 'plan27-' + plan + '-' + id + '-' + d, opts = { biome: id, shop: d % 2 === 0, v27: { plan } };
+        const [lv, t] = timed(() => Gen.floor(seed, d, opts)); n++; ms += t;
+        const tag = `[v27 ${plan} ${id} seed=${seed} d=${d}]`;
+        if (lv.plan27 === plan) { ok++; T[plan + ':' + id] = 1; check27(lv, tag, null, opts, d, seed); } else if (lv.plan27) fail(tag + ' fel planritning ' + lv.plan27);
+        else check27(lv, tag, null, opts, d, seed);
+      }
+    }
+    for (const plan of PLANS27) { const k = PLAN_B27.filter(id => T[plan + ':' + id]).length; if (k < PLAN_B27.length * 0.75) fail(`version 27: planritningen ${plan} lyckades bara i ${k} av ${PLAN_B27.length} biomer`); }
+    for (const id of PLAN_B27) if (!PLANS27.some(p => T[p + ':' + id])) fail('version 27: ingen planritning lyckades i ' + id);
+    if (ok < 0.75 * n) fail(`version 27: tvingade planritningar lyckades bara ${ok} av ${n}`);
+    stats.v27.push(`tvingade planritningar: ${ok} av ${n} lyckades (${(ms / n).toFixed(1)} ms per bana), alla med checkLevel`);
+  }
+  // tvingade scener: varje scen och rumsmall hittas och klarar alla gamla kontroller
+  {
+    const kinds = ['pillarhall', 'cloister', 'stacks', 'throne', 'lavabridge'].concat(['altarring', 'guardpost', 'readingnook', 'cryptrow', 'armory', 'feast', 'bonepit', 'colonnade',
+      'shrine', 'fourpillars', 'barricade', 'statuehall', 'storage', 'ossuary', 'candlewalk', 'wallcorner'].map(k => 'prefab:' + k));
+    const found = {};
+    for (const kind of kinds) for (let i = 0; i < 120 && !found[kind]; i++) {
+      const id = kind === 'lavabridge' ? 'volcano' : PLAN_B27[i % PLAN_B27.length], b = Gen.BIOMES.find(x => x.id === id), d = Math.max(b.depth[0], Math.min(b.depth[1], 5, 1 + (i % 5)));
+      const seed = 'scene27-' + kind + '-' + i, opts = { biome: id, v27: { plan: null, scenes: [kind] } }, lv = Gen.floor(seed, d, opts);
+      if (lv.scenes27.some(s => s.kind === kind)) { found[kind] = 1; check27(lv, `[v27 ${kind} ${id} seed=${seed} d=${d}]`, Gen.floor(seed, d, { biome: id, v27off: true }), opts, d, seed); checkLevel(lv, seed, d, opts, id); }
+    }
+    const miss = kinds.filter(k => !found[k]); if (miss.length) fail('version 27: scenerna hittades inte: ' + miss.join(' '));
+    stats.v27.push(`tvingade scener: ${kinds.length - miss.length} av ${kinds.length} sorter hittade och kontrollerade; per sort (slumpade banor): ${JSON.stringify(S27.scenes)}`);
+  }
+  stats.v27.push('Gen.floor.stats.v27 = ' + JSON.stringify(Gen.floor.stats.v27 || {}));
+  // negativa validate-tester
+  {
+    const msg27 = (lv, f, re) => { const l = JSON.parse(JSON.stringify(lv)); f(l); return Gen.validate(l).some(e => re.test(e)); };
+    let lv = null; for (let i = 0; i < 60 && !lv; i++) { const l = Gen.floor('neg27-' + i, 3, { biome: 'dungeon', v27: { plan: 'ring' } }); if (l.plan27 && l.scenes27.length) lv = l; }
+    if (!lv) fail('validate-test (version 27): ingen bana med planritning och scen');
+    else {
+      if (!msg27(lv, l => { l.plan27 = 'spiral'; }, /okänd planritning/)) fail('validate: okänd planritning ej upptäckt');
+      if (!msg27(lv, l => { l.scenes27 = {}; }, /ogiltigt/)) fail('validate: scenes27 som inte är en lista ej upptäckt');
+      if (!msg27(lv, l => { l.scenes27[0].kind = 'dansgolv'; }, /ogiltig scen/)) fail('validate: okänd scen ej upptäckt');
+      if (!msg27(lv, l => { l.scenes27[0].room = l.rooms.findIndex(r => r.type === 'guardian'); }, /scen i ett guardian/)) fail('validate: scen i vaktarens sal ej upptäckt');
+      if (!msg27(Gen.boss('neg27b', { arena: 'hall' }), l => { l.scenes27 = [{ kind: 'throne', room: 0, x: 1, y: 1, w: 2, h: 2 }]; }, /arena\/labyrint|ogiltig scen|scen i ett/)) fail('validate: scen i en arena ej upptäckt');
     }
   }
 }
@@ -5586,6 +5704,8 @@ console.log('Version 23:\n  ' + (stats.v23 || []).join('\n  '));
 console.log('Frö-stabilitet (version 23): ' + (stats.stable23 || 'EJ KONTROLLERAD'));
 console.log('Version 24 (bandesign): ' + (stats.v24 || 'EJ KONTROLLERAD'));
 console.log('Frö-stabilitet (version 24): ' + (stats.stable24 || 'EJ KONTROLLERAD'));
+console.log('Version 27 (fler banor):\n  ' + (stats.v27 || ['EJ KONTROLLERAD']).join('\n  '));
+console.log('Frö-stabilitet (version 27): ' + (stats.stable27 || 'EJ KONTROLLERAD'));
 console.log('\nFiender per rum (alla rum utom start: antal fiender -> antal rum):');
 for (const id of BIOME_IDS) { const h = B[id].hist; console.log(`  ${id.padEnd(10)} ` + Object.keys(h).sort((a, b) => a - b).map(k => k + ':' + h[k]).join(' ') + `   fiender/budget ${(B[id].enRel / B[id].n).toFixed(2)}  mimics ${B[id].mimic}  P->Z ${(B[id].gdist / B[id].n).toFixed(2)} (min ${B[id].gmin.toFixed(2)}) av längsta vägen`); }
 console.log('Rekvisita per bana:');
