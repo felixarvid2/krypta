@@ -1338,8 +1338,16 @@ Kombinerade utmaningar multiplicerar själarna. Sparplatsen väljs på startskä
 - **Bossar** får en smäll och en chockvåg när de byter fas. När de dör kommer smällar, en ljuspelare i guld och guldgnistor.
 - **Prestanda.** Blod och effekter delar en gemensam partikelbudget, så explosionerna alltid får plats. Det automatiska lågeffektläget stänger av allt nytt. Med processorn strypt sex gånger, ungefär en mellantelefon, går en stor strid i cirka 30 bilder per sekund med eller utan version 27.
 - **Källor och tester:** två nya Effekseer-strippar (CC0, cirka 19 kB). Tester: t140–t144b.
-- **Partikelbudget: inställningen PARTIKLAR** under BILD har lägena AUTO, LÅG, NORMAL och HÖG. Alla partikeltak multipliceras med samma faktor: 0,6 på LÅG, 1 på NORMAL (taken före version 27) och 2 på HÖG, alltså upp till 520 i stället för 260 partiklar.
-  - **AUTO** är standard. Spelet mäter bildtiden löpande: med god marginal höjs budgeten långsamt mot 2, och nära gränsen för det automatiska lågeffektläget sänks den snabbt igen. AUTO går aldrig under dagens nivå, så en telefon får samma tak som förut.
+- **Partikelbudget: inställningen PARTIKLAR** under BILD har lägena AUTO, LÅG, NORMAL, HÖG och MAX. Alla partikeltak multipliceras med samma faktor:
+  - LÅG: 0,6
+  - NORMAL: 1, samma tak som före version 27
+  - HÖG: 4, alltså 1 040 partiklar i stället för 260
+  - MAX: 8, alltså 2 080 partiklar
+- **Tätare effekter.** Över NORMAL kan varje ny partikel få en tvilling, så att blod, skräp, gnistor, rök och glöd blir fler per händelse. Med HÖG blir det ungefär 1,9 gånger så många och med MAX dubbelt så många.
+  - I en stor strid blev det cirka 430–500 partiklar i median mot 175 på NORMAL.
+  - Det kostade ungefär 0,5 ms mer per bildruta på testdatorn, och 1,5–2 ms mer med processorn strypt fyra gånger.
+- **Grafikkortet spelar ingen roll.** Krypta ritar i JavaScript på processorn, så det är processorn som avgör hur mycket som går. På en laptop med RTX 5060 (ofta Core i7-13650HX eller 14650HX, Core 7 240H eller Ryzen 7 260) bör MAX fungera bra i 60 bilder per sekund.
+  - **AUTO** är standard. Spelet mäter bildtiden löpande. Med god marginal höjs budgeten långsamt mot ×4, och nära gränsen för det automatiska lågeffektläget sänks den snabbt igen. AUTO går aldrig under dagens nivå, så en telefon får samma tak som förut.
   - **När listan är full** tas rök, damm och glöd bort först. Explosionskärnor, blod och nedslag ligger kvar. En ny explosion får ta platsen från den äldsta Effekseer-lågan eller giftvirveln.
   - **Kostnad:** med processorn strypt fyra gånger kostar 520 partiklar i en strid ungefär 1 ms mer per bildruta än inga alls.
   - **Test:** t147.

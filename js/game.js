@@ -1728,24 +1728,40 @@ function updateWakeLock() { // skärmen släcks inte under spel på mobilen
 // när den närmar sig gränsen för det automatiska lågeffektläget; AUTO går aldrig under 1, så en telefon får samma tak som förut.
 // Under automatiserade tester (navigator.webdriver) är AUTO = NORMAL, så att testernas tak inte beror på datorns fart (PB.test slår på det).
 // När listan är full tas dekor (rök, damm, glöd: drift/fade utan additiv blandning) bort först, sedan de äldsta.
-const PB = { k: 1, max: 8, base: { wb: 150, wh: 215, soft: 120, frame: 200, boom: 150 }, ema: 1 / 60, upT: 0, trims: 0, decor: 0, test: false };
+// Täthet: över NORMAL får varje ny partikel ibland en tvilling (lite förskjuten, egen fart och livslängd), så att blod, skräp, gnistor,
+// rök och glöd blir fler per händelse: ×1,3 vid faktor 2, ×1,9 vid 4 och ×2 vid MAX. Partiklar som något annat håller reda på
+// (Effekseer-sprites, huvuden, fåglar och ringar som följer en fiende – allt med objekt i sig utöver bild, bildrutor och färg) dubbleras inte.
+// HÖG = ×4 (1 040 partiklar), MAX = ×8 (2 080), AUTO klättrar till ×4 på datorer med marginal (bedömning för en laptop med RTX 5060).
+const PB = { k: 1, max: 8, autoMax: 4, dense: 0, base: { wb: 150, wh: 215, soft: 120, frame: 200, boom: 150 }, ema: 1 / 60, upT: 0, trims: 0, decor: 0, test: false };
 function pcap(n) { return (n * PB.k) | 0; }
 function pbApply(k) { PB.k = Math.max(0.6, Math.min(PB.max, k)); WP_BUDGET = pcap(PB.base.wb); WP_HARD = pcap(PB.base.wh); FX27_SOFT = pcap(PB.base.soft); FX27_ROOM.frame = pcap(PB.base.frame); FX27_ROOM.boom = pcap(PB.base.boom); }
 function pbTick(realDt) {
   const m = settings.particles || 'auto';
-  if (m !== 'auto' || (navigator.webdriver && !PB.test)) { const k = typeof m === 'number' ? m : m === 'low' ? 0.6 : m === 'high' ? 2 : 1; if (k !== PB.k) pbApply(k); return; } // ett tal: fast faktor (mätningar)
+  if (m !== 'auto' || (navigator.webdriver && !PB.test)) { const k = typeof m === 'number' ? m : m === 'low' ? 0.6 : m === 'high' ? 4 : m === 'max' ? 8 : 1; if (k !== PB.k) pbApply(k); return; } // ett tal: fast faktor (mätningar)
   if (state !== 'play' || !(realDt > 0) || realDt > 0.25) return;
   PB.ema += (realDt - PB.ema) * 0.05;
   if (PB.ema > 1 / 34) { PB.upT = 0; if (PB.k > 1) pbApply(Math.max(1, PB.k - realDt * 0.6)); } // nära gränsen (1/28 s): ned snabbt
-  else if (PB.ema < 1 / 50) { PB.upT += realDt; if (PB.upT > 2 && PB.k < 2) pbApply(PB.k + realDt * 0.1); } // god marginal: upp långsamt
+  else if (PB.ema < 1 / 50) { PB.upT += realDt; if (PB.upT > 2 && PB.k < PB.autoMax) pbApply(Math.min(PB.autoMax, PB.k + realDt * 0.2)); } // god marginal: upp långsamt (till ×4)
   else PB.upT = 0;
+}
+function pbDen() { return PB.k <= 1 ? 1 : Math.min(2, 1 + (PB.k - 1) * 0.29); }
+const PB_OBJ_OK = { img: 1, frames: 1, tint: 1 };
+function pbDense() { // nya partiklar (utan _pb) får en tvilling med sannolikheten täthet − 1
+  const den = pbDen(), n = particles.length;
+  for (let i = 0; i < n; i++) { const p = particles[i]; if (p._pb) continue; p._pb = 1;
+    if (den <= 1 || settings.lowfx || p.efx || Math.random() >= den - 1) continue;
+    let ok = true; for (const k in p) { const v = p[k]; if (v && typeof v === 'object' && !PB_OBJ_OK[k]) { ok = false; break; } } if (!ok) continue;
+    const q = Object.assign({}, p), j = 0.06 + (p.size || 0.05);
+    q.x += (Math.random() - 0.5) * j; q.y += (Math.random() - 0.5) * j; q.vx = (p.vx || 0) * (0.75 + Math.random() * 0.5) + (Math.random() - 0.5) * 0.3; q.vy = (p.vy || 0) * (0.75 + Math.random() * 0.5) + (Math.random() - 0.5) * 0.3;
+    if (p.vz !== undefined) q.vz = p.vz * (0.8 + Math.random() * 0.4); if (p.life) q.life = p.life * (0.65 + Math.random() * 0.35); if (p.size) q.size = p.size * (0.75 + Math.random() * 0.35);
+    particles.push(q); PB.dense++; }
 }
 function pbTrim(n) { // på plats (ingen ny lista): dekor först, sedan de äldsta
   let over = particles.length - n; if (over <= 0) return; PB.trims += over;
   let w = 0; for (let i = 0; i < particles.length; i++) { const p = particles[i]; if (over > 0 && (p.drift || p.fade) && !p.add) { over--; PB.decor++; continue; } particles[w++] = p; }
   particles.length = w; if (particles.length > n) particles.splice(0, particles.length - n);
 }
-const pbApi = { st: () => ({ k: PB.k, ema: PB.ema, trims: PB.trims, decor: PB.decor, caps: { wb: WP_BUDGET, wh: WP_HARD, soft: FX27_SOFT, frame: FX27_ROOM.frame, boom: FX27_ROOM.boom, hard: pcap(260) } }), apply: pbApply, tick: pbTick, trim: pbTrim, set: o => Object.assign(PB, o), list: () => particles, upd: dt => updateParticles(dt) };
+const pbApi = { st: () => ({ k: PB.k, den: pbDen(), dense: PB.dense, ema: PB.ema, trims: PB.trims, decor: PB.decor, caps: { wb: WP_BUDGET, wh: WP_HARD, soft: FX27_SOFT, frame: FX27_ROOM.frame, boom: FX27_ROOM.boom, hard: pcap(260) } }), apply: pbApply, tick: pbTick, trim: pbTrim, set: o => Object.assign(PB, o), list: () => particles, upd: dt => updateParticles(dt) };
 function lowFpsGuard(realDt) { // låg bildfrekvens en längre stund: minska effekterna automatiskt
   if (settings.autoLowFx === false || settings.lowfx || state !== 'play') { lowFpsT = 0; return; }
   lowFpsT = realDt > 1 / 28 ? lowFpsT + realDt : Math.max(0, lowFpsT - realDt * 2);
@@ -8615,6 +8631,7 @@ function updateProjectiles(dt) {
   projectiles = projectiles.filter(p => !p.dead);
 }
 function updateParticles(dt) {
+  pbDense(); // version 27: HÖG och MAX gör effekterna tätare (fler partiklar per händelse)
   for (const p of particles) {
     p.life -= dt;
     p.x += p.vx * dt; p.y += p.vy * dt;
@@ -9494,7 +9511,7 @@ function openSettings(onClose) {
     check('VISA FPS', 'fps');
     check('STILMÄTARE', 'styleMeter');
     if (settings.blood === undefined) settings.blood = DEVICE === 'mobil' ? 1 : 2; select('BLOD', 'blood', [[0, 'AV'], [1, 'NORMAL'], [2, 'MYCKET']], v27Sync); // version 27 (BLOOD): AV ger damm i stället för blod
-    select('PARTIKLAR', 'particles', [['auto', 'AUTO'], ['low', 'LÅG'], ['normal', 'NORMAL'], ['high', 'HÖG']]); // version 27: partikelbudgeten
+    select('PARTIKLAR', 'particles', [['auto', 'AUTO'], ['low', 'LÅG'], ['normal', 'NORMAL'], ['high', 'HÖG'], ['max', 'MAX']]); // version 27: partikelbudgeten
     check('MINSKADE EFFEKTER', 'lowfx');
     check('HUVUDEN LOSSNAR', 'heads'); // version 26C
     check('VAPNET GUNGAR', 'bob');

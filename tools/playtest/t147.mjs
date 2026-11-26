@@ -1,6 +1,6 @@
-// t147: version 27, partikelbudgeten (inställningen PARTIKLAR: AUTO / LÅG / NORMAL / HÖG).
+// t147: version 27, partikelbudgeten (inställningen PARTIKLAR: AUTO / LÅG / NORMAL / HÖG / MAX).
 // Testet kontrollerar följande:
-// - Taken skalas med PB.k: NORMAL ger dagens värden (150/215/120/200/150/260), LÅG ×0,6 och HÖG ×2.
+// - Taken skalas med PB.k: NORMAL ger dagens värden (150/215/120/200/150/260), LÅG ×0,6, HÖG ×4 och MAX ×8. Över NORMAL blir effekterna tätare: varje ny partikel kan få en tvilling, och vid MAX alltid.
 // - AUTO är NORMAL under webdriver. Med PB.test höjs AUTO vid god marginal och sänks vid hög bildtid, men aldrig under 1.
 // - När listan är full går dekor (drift/fade) först och additiva kärnor står kvar.
 // - Med HÖG överlever 500 partiklar uppdateringen, medan NORMAL kapar till 260.
@@ -20,16 +20,18 @@ await ev(() => { __game.settings.particles = 'auto'; __game.pb.tick(1 / 60); });
 let c = await caps();
 ok(c.k === 1 && c.caps.wb === 150 && c.caps.wh === 215 && c.caps.soft === 120 && c.caps.frame === 200 && c.caps.boom === 150 && c.caps.hard === 260, `AUTO under webdriver = NORMAL, dagens tak ${JSON.stringify(c.caps)}`);
 await ev(() => { __game.settings.particles = 'high'; __game.pb.tick(1 / 60); }); c = await caps();
-ok(c.k === 2 && c.caps.wh === 430 && c.caps.hard === 520 && c.caps.soft === 240, `HÖG dubblar taken ${JSON.stringify(c.caps)}`);
+ok(c.k === 4 && c.caps.wh === 860 && c.caps.hard === 1040 && c.caps.soft === 480, `HÖG ×4 ${JSON.stringify(c.caps)}`);
+await ev(() => { __game.settings.particles = 'max'; __game.pb.tick(1 / 60); }); c = await caps();
+ok(c.k === 8 && c.caps.hard === 2080 && c.den === 2, `MAX ×8 och dubbel täthet ${JSON.stringify(c.caps)}`);
 await ev(() => { __game.settings.particles = 'low'; __game.pb.tick(1 / 60); }); c = await caps();
 ok(Math.abs(c.k - 0.6) < 1e-9 && c.caps.hard === 156 && c.caps.wb === 90, `LÅG ×0,6 ${JSON.stringify(c.caps)}`);
 
 const auto = await ev(() => { const g = __game; g.settings.particles = 'auto'; g.pb.set({ test: true, ema: 1 / 60, upT: 0 }); g.pb.apply(1);
-  for (let i = 0; i < 60 * 14; i++) g.pb.tick(1 / 60); const up = g.pb.st().k;
+  for (let i = 0; i < 60 * 22; i++) g.pb.tick(1 / 60); const up = g.pb.st().k;
   for (let i = 0; i < 30 * 8; i++) g.pb.tick(1 / 24); const down = g.pb.st().k;
   for (let i = 0; i < 30 * 8; i++) g.pb.tick(1 / 40); const mid = g.pb.st().k;
   g.pb.set({ test: false }); g.pb.tick(1 / 60); return { up, down, mid, after: g.pb.st().k }; });
-ok(auto.up > 1.9 && auto.down === 1 && auto.mid === 1 && auto.after === 1, `AUTO: 60 fps höjer till ${auto.up.toFixed(2)}, 24 fps sänker till ${auto.down}, aldrig under 1`);
+ok(auto.up > 3.9 && auto.up <= 4 && auto.down === 1 && auto.mid === 1 && auto.after === 1, `AUTO: 60 fps höjer till ${auto.up.toFixed(2)}, 24 fps sänker till ${auto.down}, aldrig under 1`);
 
 const prio = await ev(() => { const g = __game, P = g.P, L = g.pb.list(); L.length = 0;
   const mk = o => Object.assign({ x: P.x + 1, y: P.y, z: 0.5, vx: 0, vy: 0, vz: 0, life: 5, maxLife: 5, size: 0.05 }, o);
@@ -38,9 +40,15 @@ const prio = await ev(() => { const g = __game, P = g.P, L = g.pb.list(); L.leng
 ok(prio.n === 260 && prio.cores === 100 && prio.decor === 160, `full lista: dekor går först, alla kärnor kvar ${JSON.stringify(prio)}`);
 
 const hold = await ev(() => { const g = __game, P = g.P; const run = mode => { g.settings.particles = mode; g.pb.tick(1 / 60); const L = g.pb.list(); L.length = 0;
-  for (let i = 0; i < 500; i++) L.push({ x: P.x + 1.5, y: P.y + (i % 10) * 0.05, z: 0.5, vx: 0, vy: 0, vz: 0, life: 9, maxLife: 9, size: 0.04, add: true });
+  for (let i = 0; i < 500; i++) L.push({ x: P.x + 1.5, y: P.y + (i % 10) * 0.05, z: 0.5, vx: 0, vy: 0, vz: 0, life: 9, maxLife: 9, size: 0.04, add: true, _pb: 1 });
   g.pb.upd(1 / 60); const L2 = g.pb.list(); const n = L2.length; L2.length = 0; return n; };
   const r = { high: run('high'), normal: run('normal') }; g.settings.particles = 'auto'; g.pb.tick(1 / 60); return r; });
+const dense = await ev(() => { const g = __game, P = g.P; const run = mode => { g.settings.particles = mode; g.pb.tick(1 / 60); const L = g.pb.list(); L.length = 0;
+  for (let i = 0; i < 200; i++) L.push({ x: P.x + 1.5, y: P.y, z: 0.5, vx: 0.2, vy: 0, vz: 0.1, life: 3, maxLife: 3, size: 0.04 });
+  L.push({ x: P.x + 1, y: P.y, z: 0.5, vx: 0, vy: 0, vz: 0, life: 3, maxLife: 3, size: 0.04, efx: 'boom' }); L.push({ x: P.x + 1, y: P.y, z: 0.5, vx: 0, vy: 0, vz: 0, life: 3, maxLife: 3, size: 0.04, follow: { id: 1 } });
+  g.pb.upd(1 / 60); const L2 = g.pb.list(); const r = { n: L2.length, efx: L2.filter(p => p.efx).length, fol: L2.filter(p => p.follow).length }; L2.length = 0; return r; };
+  const r = { max: run('max'), normal: run('normal') }; g.settings.particles = 'auto'; g.pb.tick(1 / 60); return r; });
+ok(dense.max.n === 402 && dense.max.efx === 1 && dense.max.fol === 1 && dense.normal.n === 202, `täthet: MAX dubblar vanliga partiklar men inte Effekseer eller följande, NORMAL orörd ${JSON.stringify(dense)}`);
 ok(hold.high === 500 && hold.normal === 260, `HÖG håller 500 partiklar, NORMAL kapar till 260 ${JSON.stringify(hold)}`);
 
 const cdp = await pg.context().newCDPSession(pg); await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
