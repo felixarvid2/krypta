@@ -2932,6 +2932,8 @@ function fx27Muzzle(wp, mq, s) { // från drawWeapon: ritar typens flamma (den g
   ctx.restore(); return true;
 }
 const FX27_SOFT = 120; // det nya fyller partikellistan bara till 120, så att kärnan i smällen (VAPEN, version 25), blodet och träffarna alltid får plats
+const FX27_ROOM = { frame: 200, boom: 150 }; // samlad budget (prestandakollen): listan hålls under VAPENs hårda tak 215, och en smäll får plats för sin kärna
+function fx27Room(n) { if (FX27.off || settings.lowfx || particles.length <= n) return; FX27.n.trim = (FX27.n.trim || 0) + particles.length - n; particles.splice(0, particles.length - n); } // de äldsta (rök, glöd, droppar som snart är borta) får ge plats, som taket 260 redan gör
 function fx27P(p, hard) { if (hard !== 'hard' && particles.length >= FX27_SOFT) return null; if (p.maxLife === undefined) p.maxLife = p.life; return wpPart(p, hard === 'hard') ? p : null; } // bossarna och effektsprites: VAPENs hårda tak 215
 function fx27Cool(p, kind) { if (!p) return; p.c27 = kind; if (FX27.cool.length >= 48) FX27.cool.shift(); FX27.cool.push({ p, kind, end: tmr + p.life }); }
 const FX27_COOL = { ember: [[255, 240, 160], [255, 160, 60], [210, 70, 25], [90, 28, 12]], spark: [[255, 250, 210], [255, 200, 110], [230, 110, 40], [120, 40, 15]] };
@@ -3072,6 +3074,7 @@ function fx27Tick(dt) { // från updateWeather: listor, scheman, miljö och boss
   if (fx27On('env')) fx27Env(dt);
   fx27Tick2(dt); // del 2: dödseffekter efter material och spår efter fiendeskotten
   fx27Tick3(dt); // del 3: tydliga statuseffekter, rök ur pipan och biomernas framträdanden
+  fx27Room(FX27_ROOM.frame); // samlad budget: under VAPENs hårda tak, så att nedslag och smällar alltid får plats
   if (fx27On('boss')) fx27Boss(); else for (const e of ents) if (e.boss) { e.fx27Ph = e.phase; e.fx27A = e.fx27A || !e.dead; if (e.dead) e.fx27D = 2; }
 }
 function fx27DrawHud(g) { // skärmeffekterna efter HUD-rutorna: chockvåg som ring från bossen, en färgpuls i kanterna och den vita blixten
@@ -4284,6 +4287,7 @@ function explode(x, y, dmg, r, hurtsPlayer, big) {
   for (const e of ents) if (!e.dead && e.sleep && Math.hypot(e.x - x, e.y - y) < 8) { e.sleep = false; alertEnemy(e, false); } // explosioner väcker sovande
   play('fireburst', 0.6, rnd(0.8, 1), { x, y });
   flashes.push({ x, y, t: 0.3, r: Math.min(6, 2 + r * 1.5) });
+  fx27Room(FX27_ROOM.boom); // version 27 (samlad budget): plats för smällens kärna i en full partikellista
   wpBoom(x, y, r, big); // Grafik: eldklot som växer, rökmoln, chockvågsring, skräp och ljus som falnar
   efxBoom(x, y, r, big); // version 25: Effekseer-explosionen
   fx27Boom(x, y, r, big); // version 27: chockvåg på marken, skräp som ryker, glöd som falnar och kvardröjande rök
