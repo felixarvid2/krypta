@@ -46,6 +46,8 @@ Mynningsflammorna per vapentyp (hagel, gevär, kpist, magi och tunga vapen), stj
 skärmeffekterna vid bossens fasbyte och död (ring, färgpuls i kanterna och den vita blixten) ritas i `js/game.js` (blocket
 `// ---------- Version 27: FX ...`) när spelet körs. De är eget arbete för Krypta och bygger inte på någon annans bilder.
 Partiklarna i övrigt (rök, glöd, skräp, droppar och snö) använder spelets befintliga bilder i `assets/gfx/part_*.png`.
+Del 2 (dödseffekter efter material och spår efter fiendeskotten, blocket `// ---------- Version 27: FX del 2 ...`) har inga nya
+bilder: den använder samma stjärna och prick och spelets befintliga partikelbilder (gnistor, rök, kugghjul, skruvar, glasskärvor, lågor, aska och droppar).
 
 ## Inte använda
 

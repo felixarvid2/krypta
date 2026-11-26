@@ -109,3 +109,24 @@ dem och `efxOk` gäller (högst 10 effektsprites, avståndsgränser, lowfx). Kro
   skärmeffekterna och tar bort den vita blixten. `reduceMotion` tar bort ringen över skärmen.
 - Testkroken är `__game.fx27` (`state()`, `setOff()`, `set({ muzzle, impact, boom, env, boss })`, `fixed()`, `muzzle(id)`, `boom()`, `impact()`,
   `step()`, `env()`, `phase()`, `final()`), testerna `tools/playtest/t140.mjs` (`FX27_SHOTS=<katalog>` sparar före/efter-bilder och flammorna) och `t141.mjs` (riktiga vapen, granatkastaren och en vanlig våning).
+
+### Version 27, del 2: dödseffekter efter material och spår efter fiendeskotten
+
+Blocket `// ---------- Version 27: FX del 2 ...` (direkt efter version 27-blocket) behöver inga nya bilder och ingen krok utanför
+version 27: `fx27Tick` anropar `fx27Tick2`, som läser av fienderna och projektilerna.
+
+- **Dödseffekter**: `fx27Mat` tolkar vad fienden är gjord av. Spöken, eld och kristall/is läses ur `e.d.sheet`, metall och slem ur
+  version 23:s `gfxEKind`. Kött och ben ger `null` och lämnas åt BLOOD och version 23.
+  - metall: gnistor som svalnar, rök, skruvar och kugghjul som studsar
+  - spöken: en spiral av ljus som stiger, i spökets färg
+  - slem: ett stänk och en ring i slemmets färg (pölen ritas redan av version 23)
+  - kristall och is: skärvor som studsar och glitter (frusna fiender splittras redan i version 25.1)
+  - eld: lågor, glöd som stiger och aska som singlar ned
+  - En fiende som sprängs i bitar får ingen effekt i metall eller slem, eftersom version 23:s `gfxEGib` redan ritar bitarna.
+- **Spår efter fiendeskotten** (`FX27_PT`): eldklot (och skott utan sort) ryker, magiska kulor får en gnistrande svans i skottets
+  färg, pilar, spjut och knivar en tunn strimma, och syra, gift och sporer droppar. Spåren ritas bara inom 14 rutor, högst 12 per
+  bildruta och bara när partikellistan har plats (120). Spelarens egna skott sköts som förut av VAPEN.
+- Stjärnlansen ritar sin mynningsflamma när den släpps efter laddningen (`lanceFire`). Den saknades bara när testet anropade
+  `fire()` direkt, eftersom lansen skjuter först när knappen släpps. Ingen ändring behövdes.
+- Spärrarna är `FX27.f.kill` och `FX27.f.trails`. Testerna är `tools/playtest/t142.mjs` (material, spår, tak, lowfx, kostnad) och
+  `t143.mjs` (stjärnlansen, blixtstaven och yxan, och en blandad strid mätt med och utan version 27).
