@@ -3730,6 +3730,7 @@ function fire() {
       afterHit(h.o, dmg, hx, hy, p);
       left--;
     }
+    if (!stopped && left > 0) v27CorpseRay(dx, dy, wallDist, base); // version 27 (BLOOD): kulan går genom liken längs strålen och kan spränga dem
     if (!stopped && left > 0 && wallDist < 30) { // kulnedslag på väggen
       const hx = P.x + dx * (wallDist - 0.04), hy = P.y + dy * (wallDist - 0.04);
       if (p < 3) spawnImpact(hx, hy, rnd(0.25, 0.7));
@@ -4101,6 +4102,7 @@ function gib(e) { // köttbitar och ben flyger
   const f = fx.parts.gib;
   if (!gfxEGib(e)) for (let i = 0; i < 8; i++) { const a = rnd(0, TAU), sp = rnd(1, 3); particles.push({ x: e.x, y: e.y, z: 0.4, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, vz: rnd(1.5, 3.5), life: rnd(1.5, 2.5), img: f ? f[i % f.length] : fx.blood[i % 3], size: 0.1, grav: true, bounce: true }); } // FIENDER: bitarna efter material (kött, ben, slem, metall)
   if (gfxE.on && gfxEKind(e) !== 'flesh') return; // ben, slem och metall blöder inte
+  if (v27NoBleed(e)) return; // version 27 (BLOOD): inte heller spöken och eld
   for (let i = 0; i < 6; i++) spawnBlood(e.x, e.y); addDecal(e.x, e.y); addDecal(e.x + rnd(-0.4, 0.4), e.y + rnd(-0.4, 0.4));
 }
 function shatter(e) { // frusna fiender splittras
@@ -4118,6 +4120,7 @@ function killEnemy(e) {
   hitStop = Math.max(hitStop, e.boss ? 0.15 : e.elite ? 0.07 : 0.02);
   e.dead = true; e.t = 0; e.state = 'dead'; gfxEKill(e); gfxWDeathFx(e); if (e.d.ai !== 'eel') kills++; run.kills++; if (e.tb) { e.tb.t = 0; e.tb = null; } score += Math.round(e.d.score * (e.elite ? 3 : 1) * depthMul());
   multiKill(); addDecal(e.x, e.y); comboKill(e); vib(e.boss ? 'boss' : 'kill');
+  v27NoPool(e); // version 27 (BLOOD): spöken och eld lämnar ingen blodpöl
   play('click', 0.3, 2.4); // tydligt dödsljud
   if (e.boss || e.guardian) for (let i = 0; i < 5; i++) if (fx.parts.scorch) decals.push({ x: e.x + rnd(-0.8, 0.8), y: e.y + rnd(-0.8, 0.8), img: fx.parts.scorch[0], size: rnd(0.14, 0.24) }); // bossen lämnar en krater
   if (e.d.ai === 'wisp' || e.type === 'Ü') dissolve(e);
@@ -4187,6 +4190,7 @@ function explode(x, y, dmg, r, hurtsPlayer, big) {
   for (const e of ents) if (!e.dead && !e.boss && !e.dormant) { const d = Math.hypot(e.x - x, e.y - y); if (d < r + 0.8 && d > 0.05) for (let i = 0; i < 4; i++) tryMove(e, (e.x - x) / d * 0.1 * (1 + mod('knockback')), (e.y - y) / d * 0.1 * (1 + mod('knockback')), 0.28); }
   for (const e of ents) if (e.dead && !e.gibbed && !e.boss && Math.hypot(e.x - x, e.y - y) < r * 0.8) gib(e); // liken sprängs i bitar
   burnWebs(x, y, r);
+  v27Boom(x, y, r); // version 27 (BLOOD): dödar smällen köttfiender blir det en stjärnformad blodfläck runt den
   if (pet && Math.hypot(pet.x - x, pet.y - y) < r + 0.5 && hurtsPlayer) hurtPet(10);
   for (const e of ents) if (!e.dead && e.sleep && Math.hypot(e.x - x, e.y - y) < 8) { e.sleep = false; alertEnemy(e, false); } // explosioner väcker sovande
   play('fireburst', 0.6, rnd(0.8, 1), { x, y });
@@ -14852,8 +14856,8 @@ const v23api = () => ({ targets: v23targets, rocks: v23rocks, balls: v23balls, l
 // Partiklar går via gfxEPart (mjukt tak 235); golvfläckar via v27Decal (samma tak som decals, 70, äldsta först). lowfx: inga strålar,
 // fontäner, fotspår eller skärmstänk (väggstänk med lägre tak). Skärmstänket (MYCKET) följer noFlash (tonas in, svagare) och
 // MINSKA RÖRELSE (av), ligger bara i hörnen och når aldrig siktet. V27B.on = false ger exakt det gamla (för mätningar).
-const V27B = { on: true, n: { hits: 0, jets: 0, walls: 0, wallMiss: 0, none: 0, off: 0, kills: 0, fount: 0, chunks: 0, splats: 0, pools: 0, wide: 0, steps: 0, screen: 0, recycled: 0, offGibs: 0, necks: 0, offSlime: 0, wpn: 0, wpnDraw: 0 },
-  walls: [], fly: [], grow: [], scr: [], step: 0, stepMax: 1, stepImg: null, stepSide: 1, chkT: 0, lvl: null, swapped: false, orig: null, img: new Map(), wideL: [], poolSet: null, poolSrc: null, neck: new Map(), wb: null };
+const V27B = { on: true, n: { hits: 0, jets: 0, walls: 0, wallMiss: 0, none: 0, off: 0, kills: 0, fount: 0, chunks: 0, splats: 0, pools: 0, wide: 0, steps: 0, screen: 0, recycled: 0, offGibs: 0, necks: 0, offSlime: 0, wpn: 0, wpnDraw: 0, noBleed: 0, noPool: 0, corpseHits: 0, corpseGibs: 0, corpseGone: 0, limps: 0, drips: 0, trail: 0, stars: 0, starSplats: 0 },
+  walls: [], fly: [], grow: [], scr: [], step: 0, stepMax: 1, stepImg: null, stepSide: 1, chkT: 0, lvl: null, swapped: false, orig: null, img: new Map(), wideL: [], poolSet: null, poolSrc: null, neck: new Map(), wb: null, kickSeen: false, capT: 0, woundT: 0, boom: null };
 if (settings.blood === undefined) settings.blood = DEVICE === 'mobil' ? 1 : 2;
 const v27B = () => V27B.on ? clamp(Math.round(+(settings.blood ?? (DEVICE === 'mobil' ? 1 : 2)) || 0), 0, 2) : -1; // -1: modulen av (som version 26); saknas värdet (ÅTERSTÄLL ALLA) gäller standarden
 const V27_COL = { flesh: [172, 14, 12], dark: [64, 18, 14], dust: [132, 116, 92], insect: [172, 186, 40], plant: [84, 146, 38] };
@@ -14906,6 +14910,7 @@ function v27Sync() {
 }
 function v27WallOld() { return V27B.on; } // från wallMark: det gamla röda stänket ersätts av v27Hit (färg efter material)
 function v27GibOff(e) { // från gfxEGib: BLOD AV – kött, slem och insekter blir damm och stenflisor (ben och metall som förut)
+  if (v27NoBleed(e, true)) { V27B.n.noBleed++; if (!settings.lowfx && fx.parts.smoke) for (let i = 0; i < 3; i++) gfxEPart({ x: e.x + rnd(-0.3, 0.3), y: e.y + rnd(-0.3, 0.3), z: rnd(0.2, 0.7), vx: rnd(-0.4, 0.4), vy: rnd(-0.4, 0.4), vz: 0.3, life: 0.9, frames: fx.parts.smoke, img: fx.parts.smoke[0], size: rnd(0.2, 0.3), drift: true, tint: [170, 165, 160] }); return true; } // spöken och eld: ingen kött, bara en dammpuff
   if (v27B() !== 0) return false; const k = gfxEKind(e); if (k === 'metal' || k === 'bone') return false;
   V27B.n.offGibs++; const f = fx.parts.rock || fx.hit, lo = settings.lowfx;
   for (let i = 0; i < (lo ? 3 : 7); i++) { const a = rnd(0, TAU), sp = rnd(0.8, 2.6); gfxEPart({ x: e.x, y: e.y, z: rnd(0.3, 0.7), vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, vz: rnd(1.4, 3), life: rnd(0.9, 1.6), img: f[i % f.length], size: rnd(0.04, 0.08), grav: true, bounce: true, tint: [150, 138, 120] }, true); }
@@ -14965,6 +14970,7 @@ function v27Hit(e, dmg, hx, hy, opt) { // från hurtEnemy (efter gfxEBleed): str
 function v27Kill(e) { // från gfxEKill: kraftigare stänk, överdödens fontän och bitar som studsar, fler pölar, stänk på skärmen nära dig
   const L = v27B(); v27Neck(e, L); if (L <= 0 || e.boss || e.frozen > 0 || (e.burn > 0 && !e.overkill)) return; // fryst: splittras; brinnande: blir aska
   v27Sync(); const c = v27Col(e); if (!c) return;
+  if ((killCtx || {}).boom && V27B.boom && V27B.boom.t === tmr && c !== V27_COL.dust && Math.hypot(e.x - V27B.boom.x, e.y - V27B.boom.y) < V27B.boom.r + 1) V27B.boom.cols.push(c); // omgång 3: smällen dödade en köttfiende
   V27B.n.kills++; const kc = killCtx || {}, [dx, dy, dist] = v27Dir(e), melee = !!(kc.melee || kc.exec) || v27Kick(dist), over = !!e.overkill || !!kc.exec, lots = L === 2, lo = settings.lowfx;
   const a0 = Math.atan2(dy, dx), reach = lots ? 2.2 : 1.6; if (kc.melee && !kc.slide) v27WeaponAdd(c, 0.6); // vapnet blir blodigt
   for (let i = 0, n = over ? (lots ? 3 : 2) : 1; i < n; i++) { const a = a0 + (i ? (i % 2 ? 1 : -1) * rnd(0.3, 0.6) : rnd(-0.1, 0.1)), ux = Math.cos(a), uy = Math.sin(a), h = cast(e.x, e.y, ux, uy, reach);
@@ -14987,9 +14993,12 @@ function v27Kill(e) { // från gfxEKill: kraftigare stänk, överdödens fontän
 }
 // ---- golvet: pölar som växer, bitar som landar, blodiga fotspår ----
 function v27Tick(dt) { // från gfxETick (före pölarna)
-  if (lvl !== V27B.lvl) { V27B.lvl = lvl; V27B.walls.length = V27B.fly.length = V27B.grow.length = V27B.scr.length = 0; V27B.step = 0; }
+  if (lvl !== V27B.lvl) { V27B.lvl = lvl; V27B.walls.length = V27B.fly.length = V27B.grow.length = V27B.scr.length = 0; V27B.step = 0; V27B.boom = null; }
   v27Sync(); const L = v27B();
   if (L === 0) gfxEDead.length = 0; // BLOD AV: inga pölar under liken (inte heller slem)
+  if (L > 0) for (let i = gfxEDead.length - 1; i >= 0; i--) if (v27NoBleed(gfxEDead[i], true)) gfxEDead.splice(i, 1); // spöken och eld: ingen pöl under liket
+  if (L >= 0) { v27CorpseTick(dt); if ((V27B.woundT -= dt) <= 0) { V27B.woundT = 0.1; v27WoundTick(0.1, L); } } // omgång 3: lik och sårade
+  { const B = V27B.boom; if (B && B.t !== tmr) { if (B.cols.length && L > 0 && !settings.lowfx) v27Star(B); V27B.boom = null; } } // omgång 3: stjärnfläcken efter smällen
   if (L <= 0) { V27B.fly.length = V27B.grow.length = 0; V27B.step = 0; return; }
   if (L === 2) for (const d of gfxEGrow) if (!d.v27w) { d.v27w = 1; d.img = v27Wide(d.img); d.gTo *= 1.08; V27B.n.wide++; } // MYCKET: pölarna under liken blir bredare (inte högre: de är stående sprites)
   for (let i = V27B.grow.length - 1; i >= 0; i--) { const d = V27B.grow[i]; d.size += (d.v27to - d.size) * Math.min(1, dt * 1.8); if (d.v27to - d.size < 0.004) V27B.grow.splice(i, 1); }
@@ -15038,8 +15047,8 @@ function v27Screen(g) { // från drawHUD (efter blixtarna): ritas i hörnen, hö
 }
 // ---- BLOD AV, det som blev kvar: halsen på den huvudlösa kroppen (v26C) och slemstänket ----
 function v27Neck(e, L) { // från v27Kill: halsens röda pixlar (v26cCut) får materialets färg, eller damm med BLOD AV (då puffar halsen damm)
-  const b = e.v26hd; if (!b || !b.data || L < 0) return; const c = L === 0 ? V27_COL.dust : v27Col(e); if (!c || c === V27_COL.flesh) return;
-  if (L === 0) e.v26k = 'bone'; // fontänen ur halsen blir ett dammoln
+  const b = e.v26hd; if (!b || !b.data || L < 0) return; const mc = v27Mat(e), c = L === 0 || !mc ? V27_COL.dust : mc; if (c === V27_COL.flesh) return;
+  if (L === 0 || !mc) e.v26k = 'bone'; // fontänen ur halsen blir ett dammoln (BLOD AV, spöken och eld)
   let per = V27B.neck.get(b); if (!per) { if (V27B.neck.size > 60) V27B.neck.clear(); per = new Map(); V27B.neck.set(b, per); }
   const key = c.join(','); let im = per.get(key);
   if (!im) { const d = new Uint32Array(b.data), c1 = v27Abgr(c), c2 = v27Abgr([c[0] * 0.62, c[1] * 0.62, c[2] * 0.62]); for (let i = 0; i < d.length; i++) { if (d[i] === 0xff1e1ea0) d[i] = c1; else if (d[i] === 0xff121266) d[i] = c2; } im = { w: b.w, h: b.h, data: d }; per.set(key, im); }
@@ -15078,11 +15087,71 @@ function v27WeaponBlood(f) { // från drawWeapon (efter vapenbilden, före ljuse
   const age = tmr - b.t, a = b.a * (L === 2 ? 0.95 : 0.6) * clamp(1 - (age - 4) / 5, 0, 1); if (a <= 0.02) { V27B.wb = null; return; }
   wctx.save(); wctx.globalCompositeOperation = 'source-atop'; wctx.globalAlpha = a; wctx.drawImage(v27WeaponCan(f, b.c, b.id, v27WeaponBox(f, b.id)), 0, 0); wctx.restore(); V27B.n.wpnDraw++;
 }
+// ---- omgång 3: lik som går sönder (Doom/ULTRAKILL), sårade fiender som blöder och haltar, stjärnformad blodfläck efter en smäll ----
+// Liken ligger kvar i ents (e.dead) tills banan byts. Ett lik får gå sönder om det inte behövs till något annat: inte bossar och väktare,
+// inte uppätna eller uppväckta, inte ett lik som en ghoul äter just nu (o.meal), inte ett som faller (airZ) eller ligger under jord.
+// Explosionerna sprängde redan liken (explode → gib); nu gör kulorna (v27CorpseRay från fire) och sparken/kolvslaget det också.
+// Taket: högst 40 hela lik (NORMAL 30, lowfx 16); de äldsta långt borta (> 7 rutor, ingen ghoul eller nekromant i närheten) försvinner tyst.
+const v27CorpseCap = () => settings.lowfx ? 16 : v27B() === 2 ? 40 : 30;
+function v27CorpseOk(e) { return e.dead && !e.gibbed && !e.boss && !e.guardian && !e.eaten && !e.raised && !e.dummy && !e.under && e.type !== 'Ñ' && !(e.airZ > 0) && tmr - (e.gDeadT ?? -9) > 0.3 && !!enemyFrames[e.type] && !ents.some(o => o.meal === e); }
+function v27CorpseHit(e, dmg, dx, dy) { // en kula eller en spark i ett lik: lite blod, och sönder när skadan räcker
+  if (v27B() < 0 || !v27CorpseOk(e)) return false; const L = v27B(), c = v27Col(e); e.v27ch = (e.v27ch || 0) + dmg; V27B.n.corpseHits++;
+  if (L > 0 && c && !settings.lowfx) { const f = v27Drops(c); if (f) for (let i = 0; i < (L === 2 ? 3 : 1); i++) { const a = Math.atan2(dy, dx) + rnd(-0.6, 0.6), sp = rnd(0.6, 1.6); gfxEPart({ x: e.x, y: e.y, z: 0.08, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, vz: rnd(0.8, 1.8), life: rnd(0.4, 0.7), img: f[i % f.length], size: rnd(0.06, 0.1), grav: true }); } }
+  if (e.v27ch >= clamp(e.maxHp * 0.5, 2.5, 12)) { v27CorpseGib(e, dx, dy); return true; }
+  return false;
+}
+function v27CorpseGib(e, dx, dy) { // liket sprängs: bitar efter material (gfxEGib, BLOD AV: damm och sten), blod och en fläck
+  e.gibbed = true; e.v27gib = true; e.gHitX = dx; e.gHitY = dy; V27B.n.corpseGibs++; play('gib', 0.45, rnd(0.9, 1.1), { x: e.x, y: e.y });
+  gfxEGib(e); const L = v27B(), c = v27Col(e); if (L <= 0 || !c || c === V27_COL.dust) return;
+  if (gfxEKind(e) === 'flesh') { for (let i = 0; i < (settings.lowfx ? 1 : 3); i++) spawnBlood(e.x, e.y); addDecal(e.x, e.y); }
+  if (!settings.lowfx) { const f = v27Tint('trail', (V27B.orig && V27B.orig.trail) || fx.parts.blood_trail, c); if (f) for (let i = 0; i < (L === 2 ? 3 : 1); i++) if (v27Decal(e.x + dx * rnd(0.2, 0.7) + rnd(-0.25, 0.25), e.y + dy * rnd(0.2, 0.7) + rnd(-0.25, 0.25), f[i % f.length], rnd(0.03, 0.05), 0, c)) V27B.n.splats++; }
+}
+function v27CorpseRay(dx, dy, maxD, dmg) { // från fire (en kula som inte stoppats): liken längs strålen fram till väggen
+  if (v27B() < 0) return; for (const e of ents) { if (!e.dead || e.gibbed) continue; const rx = e.x - P.x, ry = e.y - P.y, al = rx * dx + ry * dy;
+    if (al > 0.3 && al < maxD && Math.abs(rx * dy - ry * dx) < 0.32 * e.d.size) v27CorpseHit(e, dmg, dx, dy); }
+}
+function v27CorpseTick(dt) { // från v27Tick: sparken/kolvslaget mot lik framför dig, och taket på hela lik
+  if (P.kickT >= 0.45) { if (!V27B.kickSeen) { V27B.kickSeen = true; for (const e of ents) { if (!e.dead || e.gibbed) continue; const dx = e.x - P.x, dy = e.y - P.y, d = Math.hypot(dx, dy); let off = Math.atan2(dy, dx) - P.a; off = Math.atan2(Math.sin(off), Math.cos(off));
+    if (d < 1.7 && Math.abs(off) < 0.7) v27CorpseHit(e, 99, dx / (d || 1), dy / (d || 1)); } } } else V27B.kickSeen = false;
+  if ((V27B.capT -= dt) > 0) return; V27B.capT = 1;
+  const all = ents.filter(e => e.dead && !e.gibbed && !e.boss); let over = all.length - v27CorpseCap(); if (over <= 0) return;
+  const keep = ents.filter(o => !o.dead && (o.d.ai === 'ghoul' || o.d.ai === 'necro' || o.raiseT !== undefined));
+  all.sort((a, b) => (a.gDeadT ?? -9) - (b.gDeadT ?? -9));
+  for (const e of all) { if (over <= 0) break; if (!v27CorpseOk(e) || Math.hypot(e.x - P.x, e.y - P.y) < 7 || keep.some(o => Math.hypot(o.x - e.x, o.y - e.y) < 8)) continue; e.gibbed = true; e.v27gone = true; over--; V27B.n.corpseGone++; }
+}
+function v27WoundTick(dt, L) { // från v27Tick (var 0,1 s): under 40 % hp droppar blodet tätare och spåret blir tydligare; under 20 % haltar köttfiender
+  for (const e of ents) {
+    if (e.dead || e.boss || e.dummy || e.hidden || e.dormant || !(e.maxHp > 0)) continue; const k = e.hp / e.maxHp, c = v27Col(e);
+    if (c !== V27_COL.flesh && L >= 0) e.trailT = 9; // det gamla röda spåret (enemyFeel) bara för kött; andra material får v27-spåret i sin färg (eller inget)
+    const fl = c === V27_COL.flesh || c === V27_COL.dark; // haltar: fart × 0,8 som en egen faktor på e.d (som r25Mor; går att räkna tillbaka)
+    if (fl && !e.v27limp && k < 0.2 && k > 0) { e.v27limp = true; e.d = { ...e.d, speed: e.d.speed * 0.8 }; V27B.n.limps++; }
+    else if (e.v27limp && k >= 0.3) { e.v27limp = false; e.d = { ...e.d, speed: e.d.speed / 0.8 }; }
+    if (L <= 0 || settings.lowfx || k >= 0.4 || !c || c === V27_COL.dust || Math.abs(e.x - P.x) > 14 || Math.abs(e.y - P.y) > 14) continue;
+    const rate = (L === 2 ? 0.25 : 0.5) * (k < 0.2 ? 0.6 : 1);
+    if ((e.v27dT = (e.v27dT ?? rnd(0, rate)) - 0.1) <= 0) { e.v27dT = rate * rnd(0.7, 1.3); const f = v27Drops(c); if (f) { gfxEPart({ x: e.x + rnd(-0.12, 0.12), y: e.y + rnd(-0.12, 0.12), z: v27Z(e) * rnd(0.6, 1), vx: rnd(-0.2, 0.2), vy: rnd(-0.2, 0.2), vz: 0, life: 0.6, img: f[(Math.random() * f.length) | 0], size: rnd(0.05, 0.08), grav: true }); V27B.n.drips++; } }
+    if ((e.mvx || e.mvy) && (e.v27tT = (e.v27tT ?? 0) - 0.1) <= 0) { e.v27tT = L === 2 ? 0.4 : 0.7; const f = v27Tint('trail', (V27B.orig && V27B.orig.trail) || fx.parts.blood_trail, c); if (f && v27Decal(e.x + rnd(-0.1, 0.1), e.y + rnd(-0.1, 0.1), f[(Math.random() * f.length) | 0], k < 0.2 ? 0.05 : 0.04, 16, c)) V27B.n.trail++; }
+  }
+}
+function v27Boom(x, y, r) { V27B.boom = v27B() > 0 ? { x, y, r, t: tmr, cols: [] } : null; } // från explode: smällen som kanske dödar köttfiender
+function v27Star(B) { // stjärnformad blodfläck: strålar ut från smällens mitt och en ring av stänk (MYCKET 8 strålar × 2, NORMAL 6 × 1)
+  const L = v27B(), c = B.cols[0], f = v27Tint('trail', (V27B.orig && V27B.orig.trail) || fx.parts.blood_trail, c), pf = c === V27_COL.flesh ? (V27B.orig && V27B.orig.pool) || fx.parts.blood_pool : v27Tint('pool', (V27B.orig && V27B.orig.pool) || fx.parts.blood_pool, c);
+  if (!f) return; const n = L === 2 ? 8 : 6, R = clamp(B.r, 1, 2.2), a0 = rnd(0, TAU); V27B.n.stars++;
+  if (pf) v27Decal(B.x, B.y, v27Wide(pf[0]), L === 2 ? 0.1 : 0.07, 0, c);
+  for (let i = 0; i < n; i++) { const a = a0 + i / n * TAU + rnd(-0.15, 0.15); for (let j = 0; j < (L === 2 ? 2 : 1); j++) { const d = R * (j ? rnd(0.75, 0.95) : rnd(0.4, 0.6));
+    if (v27Decal(B.x + Math.cos(a) * d, B.y + Math.sin(a) * d, v27Wide(f[(i + j) % f.length]), rnd(0.035, 0.05) * (j ? 0.8 : 1), 0, c)) V27B.n.starSplats++; } }
+}
+function v27NoBleed(e, quiet) { // spöken, eld, urverk och kristall (materialet null) blöder inte; metall har sina gnistor i gfxEBleed
+  if (!V27B.on || !e || !e.d || gfxEKind(e) === 'metal' || v27Mat(e) !== null) return false; if (!quiet) V27B.n.noBleed++; return true;
+}
+function v27NoPool(e) { // från killEnemy (efter addDecal): pölen under ett spöke eller en eldvarelse tas bort direkt
+  if (!v27NoBleed(e, true)) return; const src = (V27B.orig && V27B.orig.pool) || fx.parts.blood_pool || [];
+  for (let i = decals.length - 1; i >= Math.max(0, decals.length - 3); i--) { const d = decals[i]; if (src.includes(d.img) && Math.abs(d.x - e.x) < 0.2 && Math.abs(d.y - e.y) < 0.2) { decals.splice(i, 1); V27B.n.noPool++; } }
+}
 function v27bApi() { // window.__game.v27b: tillstånd, räknare och av/på för t135–t139
   const marks = () => { const out = []; for (const [key, a] of wallMarks) for (const m of a) if (m.v27) out.push({ key, mx: Math.floor(key / 4) % mw, my: Math.floor(Math.floor(key / 4) / mw), face: key % 4, u: m.u, z: m.z, r: m.r, c: m.c }); return out; };
   return { st: V27B, n: V27B.n, t: () => tmr, set: v => { V27B.on = !!v; v27Sync(); }, level: v27B, mat: e => v27Col(e), cap: v27WallCap, sync: v27Sync, marks, walls: () => V27B.walls.length,
     oldMarks: () => { let n = 0; for (const a of wallMarks.values()) for (const m of a) if (m.kind === 'blood') n++; return n; }, decals: () => decals.filter(d => d.v27).length, swapped: () => V27B.swapped,
-    scr: () => V27B.scr.length, step: () => V27B.step, steps: () => V27B.n.steps, decalArr: () => decals, stepNow: () => stepSound(), wallMarks: () => wallMarks, fx: () => fx, render: () => render(), wpn: () => V27B.wb && { ...V27B.wb }, drawWeapon: () => drawWeapon(),
+    scr: () => V27B.scr.length, step: () => V27B.step, steps: () => V27B.n.steps, decalArr: () => decals, stepNow: () => stepSound(), wallMarks: () => wallMarks, fx: () => fx, render: () => render(), wpn: () => V27B.wb && { ...V27B.wb }, drawWeapon: () => drawWeapon(), corpseOk: e => v27CorpseOk(e), corpseCap: v27CorpseCap, corpseRay: (dx, dy, d, dmg) => v27CorpseRay(dx, dy, d, dmg), corpseHit: (e, dmg) => v27CorpseHit(e, dmg, 1, 0),
     tickBench: (n = 500) => { const t0 = performance.now(); for (let i = 0; i < n; i++) { V27B.chkT = 0; v27Tick(1 / 60); } return (performance.now() - t0) / n; }, // tickBench: ms per anrop (med pölkollen varje gång)
     wall: (hit, dx, dy, z, c, r, k) => v27Wall(hit, dx, dy, z, c, r, k), cast, screenAdd: c => v27ScreenAdd(c || V27_COL.flesh), COL: V27_COL,
     bench: (n = 120) => { const ts = []; for (let i = 0; i < n; i++) { const t0 = performance.now(); tmr += 1 / 60; updateParticles(1 / 60); render(); ts.push(performance.now() - t0); } ts.sort((a, b) => a - b); return { med: ts[n >> 1], p90: ts[(n * 0.9) | 0], parts: particles.length, decals: decals.length }; } };
@@ -15113,6 +15182,7 @@ function gfxEBleed(e, n, x, y) { // träff/död: blod för kött, benflisor och 
     for (let i = 0; i < (settings.lowfx ? 1 : n); i++) { const a = rnd(0, TAU), sp = rnd(0.4, 1.4); gfxEPart({ x, y, z: rnd(0.35, 0.7), vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, vz: rnd(0.3, 1.6), life: rnd(0.4, 0.8), img: fx.hit[1], size: 0.05, add: true, fade: true, grav: true, tint: [190, 235, 255] }, true); }
     return;
   }
+  if (v27NoBleed(e)) return; // version 27 (BLOOD): spöken, eld och urverk blöder inte (FX ritar virvlar och lågor)
   if (k === 'flesh' || e.d.ai === 'wisp') { for (let i = 0; i < n; i++) spawnBlood(x, y); return; }
   if (k === 'metal') { sparks(x, y, rnd(0.4, 0.7), settings.lowfx ? 1 : n + 1); return; }
   if (k === 'slime' && v27SlimeOff(x, y, n)) return; // version 27 (BLOOD): BLOD AV – slemmet stänker damm, inte färgat slem
