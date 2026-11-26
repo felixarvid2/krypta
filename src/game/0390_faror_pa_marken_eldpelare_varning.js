@@ -246,6 +246,7 @@ function reportError(err) { // sparas så att felet kan hittas efteråt
 function spriteError(err, s) { if (s && s.o) s.o.renderFail = (s.o.renderFail || 0) + 1; if (loopErrors < 5) { loopErrors++; lastError = String(err && err.message || err).toUpperCase().slice(0, 60); reportError(err); console.error(err); } }
 function frameStep(t) {
   const realDt = Math.min(0.05, (t - last) / 1000 || 0); last = t;
+  glFrame(); // version 28 (WEBGL): WebGL-duken döljs på startskärmen
   pbTick(realDt); // version 27: partikelbudgeten (AUTO)
   lowFpsGuard(realDt); if (Math.floor(t / 1000) !== Math.floor((t - realDt * 1000) / 1000)) updateWakeLock();
   syncEndScreens(); // dödsskärmen och nivåslutet (DOM)

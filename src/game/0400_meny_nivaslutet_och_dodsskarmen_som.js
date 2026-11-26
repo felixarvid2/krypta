@@ -233,6 +233,7 @@ function openSettings(onClose) {
     check('STILMÄTARE', 'styleMeter');
     if (settings.blood === undefined) settings.blood = DEVICE === 'mobil' ? 1 : 2; select('BLOD', 'blood', [[0, 'AV'], [1, 'NORMAL'], [2, 'MYCKET']], v27Sync); // version 27 (BLOOD): AV ger damm i stället för blod
     select('PARTIKLAR', 'particles', [['auto', 'AUTO'], ['low', 'LÅG'], ['normal', 'NORMAL'], ['high', 'HÖG'], ['max', 'MAX']]); // version 27: partikelbudgeten
+    glSettings(select, check); // version 28 (WEBGL): RENDERING och BLOOM
     check('MINSKADE EFFEKTER', 'lowfx');
     check('HUVUDEN LOSSNAR', 'heads'); // version 26C
     check('VAPNET GUNGAR', 'bob');

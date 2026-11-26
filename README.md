@@ -1287,6 +1287,47 @@ Version 7 lägger till 200 förbättringar:
 
 Kombinerade utmaningar multiplicerar själarna. Sparplatsen väljs på startskärmen, och `?fro=XXXX` i adressen fyller i ett delat frö.
 
+## Version 28: Genom gallret – blod i taket, fönster, nya bantyper och WebGL
+
+### Blod i taket
+- **Stänk i taket.** När en köttfiende sprängs (överdöd), avrättas eller dör i en smäll inomhus stänker blodet upp i taket ovanför, i fiendens materialfärg, och droppar ned en stund.
+- **Sot.** En stor smäll inomhus sotar taket.
+- **Tak för antalet:** högst 48 fläckar (MYCKET), 24 (NORMAL) eller 12 (MINSKADE EFFEKTER), äldsta först. MINSKADE EFFEKTER ger inga droppar. BLOD AV ger inget blod i taket.
+- **Billigt.** Fläckarna ligger i en karta med en byte per ruta. Golv- och takslingan läser den bara på takrader och bara när banan har fläckar.
+- **Tester:** t151 och t152 (mätning).
+
+### Galler och fönster man ser igenom
+- **Fönster (`ǂ`).** Ett nytt kartecken: en vägg med en öppning och järngaller, med en ram i biomens vägg. Man ser igenom men kan inte gå eller skjuta igenom, och fiender ser och skjuter inte genom fönstret.
+- **Cellgallren (`Ɉ`)** i Järnfängelset går också att se igenom. Fängelsets målade cellfronter mot en vägg ser ut som förut.
+- **Det som syns bakom** ritas med rätt djup: rum, golv, tak och fiender. Gallret ritas ovanpå och sprites framför gallret ovanpå det.
+- **Högst två genomsiktliga lager per kolumn** (ett med MINSKADE EFFEKTER).
+- **Kartan** visar fönster och galler som ett streck i väggen.
+- **Tester:** t150 och t153 (riktiga fängelsevåningar och mätning).
+
+### Nya bantyper
+- **Den översvämmade salen.** Grunt vatten över hela salen, några torra öar och djupa bassänger som man simmar i. Bassängerna är aldrig enda vägen.
+- **Vakttornet.** Ett inhägnat torn mitt i salen med galler på tre sidor och en smal ingång. En skytt sitter inne: du ser den genom gallret men måste gå runt.
+- **Balkongen.** En avsats längs väggen bakom galler. Skyttarna på den nås bara från ena änden eller genom en sidogång.
+- **Fönster mot rum längre fram.** Galler i tunna väggar ger en glimt av utgången, skattkammaren eller nyckeln långt innan du når dit.
+- Allt nytt i bangeneratorn ligger i ett eget pass med eget slumpflöde. Med `opts.v28off` blir banorna exakt som i version 27.
+
+### Särskilda våningar
+- **Blodvåningen** kommer ungefär var tolfte våning från våning 3, eller via en blodröd portal. Den har 60 % fler fiender, två extra kistor och guldhögar, blod på väggarna från start, röd färgton och dov musik. Med BLOD AV blir det inget väggblod.
+- **Utmaningsvåningen.** Ibland står en tredje portal bredvid portalerna till nästa våning. Den leder till en våning med en regel: BARA NÄRSTRID, INGEN LÄKNING, SNABBA FIENDER eller MÖRKER. Klarar du våningen får du 60 + 20 guld per djup, och den räknas som en klarad utmaning.
+- **Tester:** gen-test (version 28-blocket) och t155–t158.
+
+### WebGL: grafikkortet ritar
+- **RENDERING** under BILD: AUTO (standard), CPU eller WEBGL. AUTO använder grafikkortet (WebGL2) om det finns, annars CPU som förut. Går WebGL inte att starta, eller förloras kontexten, fortsätter spelet direkt med CPU i samma bildruta.
+- **Grafikkortet ritar ut bilden**: färgton, färgblindläge, gråning vid låg hälsa, upp/ned-blicken och lutningen görs i grafikkortet. HUD, menyer och text ser ut som förut. Pausen, fotoläget, simning och startskärmen ritas med CPU.
+- **BLOOM** (på som standard): eld, magi, explosioner och andra ljusa, varma ljus får ett mjukt sken. Dessutom en mjuk vinjett och en lätt färgförskjutning när du tar skada. MINSKADE BLIXTAR dämpar skenet och MINSKADE EFFEKTER stänger av det.
+- **Partiklar i grafikkortet**: blod, gnistor, rök och eld ritas av grafikkortet som instansierade quads, skarpare men fortfarande pixliga. De syns inte genom väggar, döljs av fiender som står framför och syns genom galler och fönster. 3000 partiklar kostar cirka 2 ms CPU-tid med WebGL mot cirka 35 ms med CPU (4× strypning). Med WebGL har PARTIKLAR ett högre tak: HÖG ×8, MAX ×16, AUTO upp till ×8.
+- Väggar, golv och tak ritas fortfarande av raycastern på processorn. Nästa steg är att flytta golv och tak till grafikkortet, och därefter ett läge med 2× upplösning.
+- **Tester:** t160–t164.
+
+### Koden är uppdelad
+- `js/game.js` byggs nu av 64 delar i `src/game/`, en per system (se `src/game/README.md`). `node tools/build-game.mjs` bygger, `--check` kontrollerar att filen stämmer och `--syntax` kontrollerar varje del och att inget namn på toppnivå finns i två delar.
+- Engelska texter per arbetsområde ligger i `tools/i18n/en/`.
+
 ## Version 27: Blodbad – mer blod, fler effekter och fler banor
 
 ### Mer blod

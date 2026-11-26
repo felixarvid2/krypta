@@ -45,6 +45,7 @@ function drawSprite(img, wx, wy, size, z, flip, fixedLight, whiteFlash = 0, minL
       }
     }
   }
+  if (!additive && GLR.sd !== null) glSprDepth(img, x0, x1, y0, y1, left, sw, topY, vsc, flip, ty, ghost, nd); // version 28 (WEBGL): spritedjupet för partiklarna i grafikkortet
 }
 // projicera en världspunkt till skärmen (för skadesiffror och livmätare)
 function project(wx, wy, z) {

@@ -47,6 +47,7 @@ function renderWorld(W, VH, px) { // måtten och bufferten som parametrar (snabb
     }
   }
   renderWalls(W, VH, px, dirX, dirY, qX, qY, hor, camZ, nd);
+  glPreSprites(); // version 28 (WEBGL): partiklar i grafikkortet i den här bildrutan?
   renderSprites(plX, plY);
   v28Flush(); // version 28 (REND): galler och fönster som ingen sprite har ritat än
 }

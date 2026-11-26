@@ -178,6 +178,7 @@ function objective() { // vad man ska göra just nu
 }
 let photo = false, mapMark = null;
 function screenshot() { // sparar bilden som PNG
+  if (glShot()) return; // version 28 (WEBGL): WebGL-bilden och HUD:en ihop
   try { canvas.toBlob(b => { if (!b) return; const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `krypta-${Date.now()}.png`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }, 'image/png'); say('SKÄRMBILD SPARAD', 1.2); play('click', 0.5, 1.8); } catch (e) { say('SKÄRMBILD GICK INTE', 1.2); }
 }
 function textW(s) { ctx.font = '8px "PressStart2P"'; return ctx.measureText(plain(s)).width; }

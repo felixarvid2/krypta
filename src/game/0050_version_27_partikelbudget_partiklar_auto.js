@@ -13,6 +13,7 @@ function pcap(n) { return (n * PB.k) | 0; }
 function pbApply(k) { PB.k = Math.max(0.6, Math.min(PB.max, k)); WP_BUDGET = pcap(PB.base.wb); WP_HARD = pcap(PB.base.wh); FX27_SOFT = pcap(PB.base.soft); FX27_ROOM.frame = pcap(PB.base.frame); FX27_ROOM.boom = pcap(PB.base.boom); }
 function pbTick(realDt) {
   const m = settings.particles || 'auto';
+  if (glPbTick(m)) return; // version 28 (WEBGL): partiklar i grafikkortet – taket ×16
   if (m !== 'auto' || (navigator.webdriver && !PB.test)) { const k = typeof m === 'number' ? m : m === 'low' ? 0.6 : m === 'high' ? 4 : m === 'max' ? 8 : 1; if (k !== PB.k) pbApply(k); return; } // ett tal: fast faktor (mätningar)
   if (state !== 'play' || !(realDt > 0) || realDt > 0.25) return;
   PB.ema += (realDt - PB.ema) * 0.05;
@@ -167,6 +168,7 @@ function lkBegin() { // väljer bufferten för den här bildrutan; false = vanli
 }
 function lkEnd() { W = SW; VH = SVH; HORIZON = SHOR; px = spx; } // tillbaka till skärmens mått före allt som ritas i skärmkoordinater
 function lkProject() { // tpx → spx (närmaste granne)
+  if (glSkipLK()) return; // version 28 (WEBGL): homografin görs i grafikkortet
   const TW = LK.TW;
   for (let v = 0; v < SVH; v++) {
     const row = LK.rowY[v] * TW, iz = LK.rowZ[v], o = v * SW;

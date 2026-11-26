@@ -15,7 +15,9 @@ function renderSprites(plX, plY) { // sprites bakifrån och fram (egen funktion:
   if (lvl.exit && gfxWOn()) list.push({ x: lvl.exit.x + 0.5, y: lvl.exit.y + 0.5, k: 'gw', o: lvl.exit }); // VÄRLD: utgångens ljuspelare och ring
   if (lvl.beams && !settings.lowfx) for (const b of lvl.beams) list.push({ x: b.x + 0.5, y: b.y + 0.5, k: 'be', o: b });
   for (const a of allies) list.push({ x: a.x, y: a.y, k: 'al', o: a });
+  const glPs = glPartsSwap(); // version 28 (WEBGL): partiklarna blir instanser i grafikkortet (listan nedan ser en tom lista)
   for (const p of particles) list.push({ x: p.x, y: p.y, k: 'x', o: p });
+  glPartsBack(glPs); // version 28 (WEBGL)
   for (const p of projectiles) list.push({ x: p.x, y: p.y, k: 'f', o: p });
   for (const p of portals) list.push({ x: p.x, y: p.y, k: 'g', o: p });
   for (const d of decals) list.push({ x: d.x, y: d.y, k: 'q', o: d });

@@ -1,4 +1,5 @@
 function renderPost() { // färgton, gråning, lutning och utskrift – alltid i skärmens 320×200
+  if (glPost()) return; // version 28 (WEBGL): grafikkortet ritar ut bilden
   applyGrade();
   if (P.hp < maxHp() * 0.3 && state === 'play' && settings.lowHpGray !== false) desaturate(0.55 * (1 - P.hp / (maxHp() * 0.3))); // låg HP: bilden gråas
   if (Math.abs(P.roll) > 0.002 && (state === 'play' || state === 'dead')) { // lutning vid sidosteg och fall vid döden

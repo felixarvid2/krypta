@@ -194,6 +194,7 @@ function v28Draw(x, j) { // en kolumn av gallret j (alfa per texel: genomsiktlig
   const y0 = Math.max(0, Math.ceil(top)), y1 = Math.min(VH - 1, Math.floor(top + lh - 0.001));
   let v = (y0 - top) * step;
   for (let y = y0; y <= y1; y++, v += step) { if (nd !== null && !nd[y]) continue; const c = dd[Math.min(th1, v | 0) * tw + u]; if (c >>> 24 < 128) continue; px[y * W + x] = shadeFog(c, L, perp, ci); }
+  if (GLR.sd !== null) glGrateDepth(x, y0, y1, top, step, u, t, perp, nd); // version 28 (WEBGL): spjälorna i spritedjupet
   V28T.n.drawn++;
 }
 function v28Over(x, ty) { // från drawSprite: spriten ligger framför gallret i kolumnen x – rita gallret (och de bakom) först
