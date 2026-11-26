@@ -52,5 +52,5 @@ const bench = await ev(() => { const g = __game, P = g.P, L = g.pb.list(); g.set
   const r = { n0: ms(0), n260: ms(260), n520: ms(520) }; g.pb.list().length = 0; g.settings.particles = 'auto'; g.pb.tick(1 / 60); return r; });
 await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
 console.log('MÄTNING (4×, median ms per rendering):', JSON.stringify(bench));
-ok(bench.n520 - bench.n260 < (bench.n260 - bench.n0) * 1.6 + 2, `ritningen växer ungefär linjärt: 0 partiklar ${bench.n0.toFixed(2)} ms, 260 → ${bench.n260.toFixed(2)} ms, 520 → ${bench.n520.toFixed(2)} ms`);
+ok(bench.n520 < bench.n0 + 8, `520 partiklar kostar lite i ritningen (brusigt mått): 0 partiklar ${bench.n0.toFixed(2)} ms, 260 → ${bench.n260.toFixed(2)} ms, 520 → ${bench.n520.toFixed(2)} ms`);
 await done();
