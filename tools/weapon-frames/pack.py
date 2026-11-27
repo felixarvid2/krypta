@@ -172,6 +172,39 @@ def blundersmoke_draw(d,mx,my,st,X0,Y0,i):
                 d.point((x,y),fill=c+(255,))
     if k==0:
         d.ellipse((mx-5,my-5,mx+5,my+5),fill=(255,170,60,255)); d.ellipse((mx-3,my-3,mx+3,my+3),fill=(255,230,150,255)); d.point((mx,my),fill=(255,255,235,255))
+# version 30: slungan (sling: närstrid med handsken, extra läget charge = virveln; stenen mot siktet ritas in, SLINGSTONE) och
+# glasbössan (glassgun: extra läget reload; konen av glasskärvor ur klockan ritas in, SHARDFAN)
+TARGET['glassgun']=(140,212,22); HARD.update(('sling','glassgun'))
+SLINGSTONE={'sling':[None,None,(0,0.3),(1,0.65),(2,0.95)]}      # stenen (steg, andel av sträckan mot siktet)
+SHARDFAN={'glassgun':[(0,0.15),(1,0.42),(2,0.72),(3,1.0)]}      # skärvkonen (steg, andel av sträckan mot siktet)
+
+
+def slingstone_draw(d,mx,my,st,X0,Y0,i):
+    """Version 30: slungan: en grå sten som far mot siktet med fartstreck bakom; krymper med avståndet."""
+    k,f=st; ax,ay=160-X0,80-Y0
+    px,py=mx+(ax-mx)*f,my+(ay-my)*f; s=max(0.35,1.3-f*1.0); r=6*s
+    for j in range(3):
+        t=max(0,f-0.07*(j+1)); tx,ty=mx+(ax-mx)*t,my+(ay-my)*t
+        d.line([(tx-r*0.6,ty),(tx+r*0.6,ty)],fill=(170,164,150,255),width=1)
+    d.ellipse((px-r-1,py-r-1,px+r+1,py+r+1),fill=OUTC+(255,))
+    d.ellipse((px-r,py-r,px+r,py+r),fill=(128,120,108,255))
+    d.ellipse((px-r*0.6,py-r*0.7,px,py-r*0.1),fill=(176,168,152,255))
+
+
+def shardfan_draw(d,mx,my,st,X0,Y0,i):
+    """Version 30: glasbössan: åtta kalla blå glasskärvor som sprids i en kon från klockan mot siktet (vassa trianglar med
+    ljus kant), ett vitblått blänk vid klockan i första steget."""
+    import random
+    k,f=st; ax,ay=150-X0,74-Y0; rr=random.Random(301)
+    dx,dy=ax-mx,ay-my; L=max(1.0,np.hypot(dx,dy)); ux,uy=dx/L,dy/L; vx,vy=-uy,ux
+    for j in range(8):
+        t=f*rr.uniform(0.75,1.0); off=(j-3.5)*f*rr.uniform(8,12); off2=rr.uniform(-1,1)*f*10
+        px,py=mx+dx*t+vx*off+ux*off2,my+dy*t+vy*off+uy*off2; s=max(2.4,5.5-f*2.6); a=rr.uniform(0,6.283)
+        pts=[(px+np.cos(a)*s*1.4,py+np.sin(a)*s*1.4),(px+np.cos(a+2.4)*s,py+np.sin(a+2.4)*s),(px+np.cos(a+3.6)*s*0.8,py+np.sin(a+3.6)*s*0.8)]
+        d.polygon([(x+(1 if x>px else -1)*0.8,y+(1 if y>py else -1)*0.8) for x,y in pts],fill=OUTC+(255,))
+        d.polygon(pts,fill=(100,172,206,255)); d.line(pts[:2],fill=(214,244,255,255))
+    if k==0:
+        d.ellipse((mx-5,my-5,mx+5,my+5),fill=(140,210,240,255)); d.ellipse((mx-2.5,my-2.5,mx+2.5,my+2.5),fill=(236,254,255,255))
 AIM=(176,50)                                        # dit harpunen flyger (strax ovanför och till höger om siktet)
 WAIM=(112,80)                                       # version 11: dit piskans snärt når (till vänster om siktet, där bågen slår)
 OUTC=(37,19,26)
@@ -727,6 +760,10 @@ for w,st in d.items():
         atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(HOOKLINE[w],'throw'),lambda m,f:(min(m[0],AIM[0])-14,min(m[1],AIM[1])-8,max(m[0],AIM[0])+20,m[1]+8),hookline_draw)
     if w in HOOKHOLD:
         atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(HOOKHOLD[w],'empty'),lambda m,f:(min(m[0],AIM[0])-14,min(m[1],AIM[1])-8,max(m[0],AIM[0])+20,m[1]+8),hookline_draw)
+    if w in SLINGSTONE:   # version 30
+        atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(SLINGSTONE[w]),lambda m,st:(min(m[0],160)-12,min(m[1],80)-12,max(m[0],160)+12,max(m[1],80)+12),slingstone_draw)
+    if w in SHARDFAN:
+        atlas,x,y,fw,fh=fx_frames(atlas,len(ims),x,y,fw,fh,mz,steps_for(SHARDFAN[w]),lambda m,st:(min(m[0],150)-60,min(m[1],74)-50,max(m[0],150)+60,m[1]+14),shardfan_draw)
     atlas.save(OUT+f'assets/gfx/fp_{w}.png',optimize=True)
     if w in MUZZLE_IDLE: mz=[mz[0] if i in states['fire'] else m for i,m in enumerate(mz)]   # bågen: utan pil räknas mynningen från vilobilden
     out[w]={'x':x,'y':y,'w':fw,'h':fh,'states':states,'muzzle':mz,'dur':{'fire':round(st['fire_dur'],3),**{k:round(v,3) for k,v in st.get('durs',{}).items()}}}
