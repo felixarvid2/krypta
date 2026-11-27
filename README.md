@@ -1355,6 +1355,35 @@ Med RENDERING WEBGL (eller AUTO) gör grafikkortet nu mer än bloom.
 - **Utmaningsportalen** är provad i riktiga rundor för varje regel: regeln, belöningen, sparning och laddning samt att regeln släpps på nästa våning (t172).
 - **Tester:** t170–t172.
 
+### Stabilare speltester och en rättning
+- **Testerna väntar nu i speltid i stället för väggtid.** Spelets klocka räknar högst 0,05 s per bildruta. På en belastad dator går den därför långsammare än väggklockan, och en fast väntan gav för lite speltid. Då föll testerna trots att spelet gjorde rätt.
+  - `tools/playtest/head.mjs` har fått `until`, `gwait` och `gsample`.
+  - `gsample` gör en mätning i varje bildruta.
+- **Andra orsaker till flakiga tester:**
+  - Några tester mätte bara ett ögonblick av något som rör sig eller lever kort, till exempel bossarnas specialanfall, lågor och projektiler. Nu mäts det över flera bildrutor.
+  - Några tester berodde på slumpen. Nu används fasta frön.
+- **Starten är robustare:**
+  - Ett test som möter en upptagen port väntar tills den blir ledig.
+  - Sidan får två minuter på sig att ladda.
+  - `runall.sh` ger varje test tio minuter.
+- **Konstgjord last:** `PW_THROTTLE=12` stryper processorn, så att man kan se om ett test klarar en långsam dator.
+- **Tio tester är stabila nu:** t42, t50, t74, t89, t92, t93, t96, t108, t110 och t150.
+  - t117 är rättat, men slutversionen är bara körd fyra gånger.
+  - t112 föll fortfarande på två olika AI-rader, en gång var. Ingen av dem beror på väggtid och ingen är utredd.
+  - t130 gick inte att få att fallera, så den är inte ändrad.
+- **Rättning i spelet:** en fastsatt igel knuffade spelaren bakåt flera rutor i sekunden. Nu sitter man still medan den suger.
+
+### Mindre paket
+- **Storlekarna:**
+  - .deb-paketet är 50 MB i stället för 54.
+  - Webbzippen är 54 MB i stället för 58.
+- **Förlustfri omkodning:** 1 677 bilder i gfx, wall och touch har kodats om, med palett och lägre färgtyp där det går. De är hälften så stora och avkodas till exakt samma pixlar.
+  - Det är kontrollerat med Pillow, ffmpeg och Chromium.
+- **Nya verktyg:**
+  - `tools/assets/pngopt.py <katalog>` kodar om bilder förlustfritt.
+  - `tools/assets/png_verify.py <ny> <kopia>` kontrollerar att pixlarna är oförändrade.
+- **Ljud och musik är oförändrade.** Musiken ligger redan på 80 kbps och effekterna på 22 kHz mono.
+
 ## Version 28: Genom gallret – blod i taket, fönster, nya bantyper och WebGL
 
 ### Blod i taket
