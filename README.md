@@ -1374,6 +1374,21 @@ Med RENDERING WEBGL (eller AUTO) gör grafikkortet nu mer än bloom.
   - t130 gick inte att få att fallera, så den är inte ändrad.
 - **Rättning i spelet:** en fastsatt igel knuffade spelaren bakåt flera rutor i sekunden. Nu sitter man still medan den suger.
 
+### Världen i grafikkortet, i högre upplösning
+Med RENDERING WEBGL (eller AUTO) kan grafikkortet nu också rita själva världen.
+- **VÄRLD** (under BILD, bara med WebGL): CPU eller GRAFIKKORT. Standard är **CPU**, alltså som förut.
+  - Med GRAFIKKORT kastar CPU:n bara strålarna per kolumn, och grafikkortet fyller väggar, golv, tak och himmel bildpunkt för bildpunkt.
+  - Ljus, dimma, MÖRKER, ficklampan, takblodet och himlarna (med måne, moln, stjärnfall och blixt) ser ut som med CPU:n.
+  - Sprites, väggmärken, galler, fönster och glas ritas av CPU:n som förut och läggs ovanpå.
+- **UPPLÖSNING** (AUTO, 1×, 2×, 3×): hur tätt grafikkortet ritar världen.
+  - Texturerna är fortfarande skarpa pixlar, men det som är långt bort flimrar mindre och kanterna blir rakare.
+  - AUTO följer skärmens storlek på datorn (högst 4×) och ger 2× på telefonen.
+  - Hinner telefonen inte med går AUTO ned till 1×. MINSKADE EFFEKTER ger alltid 1×.
+- **Snabbare:** med GRAFIKKORT 2× tar en bildruta cirka 3,4 ms CPU-tid mot 14 ms för CPU-världen i 1× (4× strypning).
+- **Reserv:** går världens shaderprogram inte att bygga, eller tappar webbläsaren grafikkortet, ritar CPU:n världen igen i samma bildruta.
+- **Paritet:** testat för alla 35 biomer. I 1× är minst 99,8 % av bildpunkterna lika.
+- **Tester:** t180–t184. t180 och t182 tar 10–15 minuter och körs bäst för sig.
+
 ### Mindre paket
 - **Storlekarna:**
   - .deb-paketet är 50 MB i stället för 54.

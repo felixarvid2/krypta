@@ -35,6 +35,7 @@ function drawSprite(img, wx, wy, size, z, flip, fixedLight, whiteFlash = 0, minL
       const i = y * bw + x;
       if (additive) { // eld lyser: additiv blandning
         const d = bp[i], k = ff * (al / 255) * aMul;
+        if (d >>> 24 !== 255 && W29.cur) { bp[i] = w29AddPx(d, c, k * tr, k * tg, k * tb); continue; } // version 29 (VÄRLD): världen under ritas av grafikkortet
         const r = Math.min(255, (d & 255) + (c & 255) * k * tr), g = Math.min(255, ((d >> 8) & 255) + ((c >> 8) & 255) * k * tg), b = Math.min(255, ((d >> 16) & 255) + ((c >> 16) & 255) * k * tb);
         bp[i] = 0xff000000 | (b << 16) | (g << 8) | r;
       } else {

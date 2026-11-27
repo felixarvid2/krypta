@@ -16,6 +16,7 @@ function renderWorld(W, VH, px) { // måtten och bufferten som parametrar (snabb
   const sdat = nd !== null && skyFx && spr.moon && !skyOwn ? skyClean : sky.data; // upp/ned-blicken: panoramats målade måne syns annars som en andra måne bredvid spr.moon
   for (let x = 0; x < W; x++) { const camX = 2 * x / W - 1; colAng[x] = Math.atan2(dirY + qY * camX, dirX + qX * camX); }
   if (skyFx && spr.moon) for (let x = 0; x < W; x++) { const da = colAng[x] - MOON_A; moonDa[x] = Math.atan2(Math.sin(da), Math.cos(da)); }
+  if (W29.cur) { w29World(W, VH, px, dirX, dirY, qX, qY, hor, camZ, nd, plX, plY, sky, sdat, outdoor, ce); return; } // version 29 (VÄRLD): grafikkortet ritar väggar, golv, tak och himmel
   // golv och tak (eller natthimmel där rutan är öppen)
   for (let y = 0; y < VH; y++) {
     if (nd !== null && !nd[y]) continue;

@@ -15,14 +15,15 @@ const L29 = { P: {}, F: {}, ok: { light: false, fin: false }, err: '', n: 0, lp:
   st: { frames: 0, lights: 0, gatherMs: 0, passes: 0, finFrames: 0, pause: 0, photo: 0, swim: 0, mz: 0 } };
 const L29_FS = {
   light: `#version 300 es
-precision highp float; uniform sampler2D uW, uMask; uniform highp sampler2D uCol, uSd; uniform int uN, uSdOn, uOut, uNh; uniform vec4 uLp[${L29_MAX}], uLc[${L29_MAX}], uHot[6], uV, uC, uK, uM, uFx, uRay; uniform vec3 uFogC, uRayC; uniform int uRayN; out vec4 o;
+precision highp float; uniform sampler2D uW, uMask; uniform highp sampler2D uCol, uSd; uniform int uN, uSdOn, uOut, uNh; uniform vec4 uLp[${L29_MAX}], uLc[${L29_MAX}], uHot[6], uV, uC, uK, uM, uFx, uRay; uniform vec3 uFogC, uRayC; uniform int uRayN; uniform float uSs, uRc; out vec4 o; // uSs: bildens skala (1, eller S med VÄRLD GRAFIKKORT)
+ivec2 colAt(float x) { int i = int(x); return ivec2(i % 1024, i / 1024); } // kolumnens texel (VÄRLD GRAFIKKORT: rader à 1024; annars en rad, < 1024)
 float skyAt(vec2 p) { // LJUSSTRÅLAR: är bildpunkten p (bufferns rum) öppen himmel? Takplanet framför väggen i kolumnen, och kartans himmel (B)
-  float dy = p.y - uC.w; if (dy >= -0.5 || p.x < 0.0 || p.x >= uK.x || p.y < 0.0) return 0.0; float pd = 166.0 * (1.0 - uC.z) / -dy, zw = texelFetch(uCol, ivec2(p.x, 0), 0).r; if (pd >= zw) return 0.0;
+  float dy = p.y - uC.w; if (dy >= -0.5 || p.x < 0.0 || p.x >= uK.x || p.y < 0.0) return 0.0; float pd = 166.0 * (1.0 - uC.z) / -dy, zw = texelFetch(uCol, colAt(p.x * uRc), 0).r; if (pd >= zw) return 0.0;
   vec2 q = uC.xy + (uV.xy + uV.zw * (2.0 * floor(p.x) / uK.x - 1.0)) * pd; return q.x < 0.0 || q.y < 0.0 || q.x >= uM.x || q.y >= uM.y ? float(uOut) : texelFetch(uMask, ivec2(q), 0).b; }
 void main() {
-  ivec2 ip = ivec2(gl_FragCoord.xy); vec3 c = texelFetch(uW, ip, 0).rgb; // rad 0 = buffertens översta rad, som i världspasset
-  float camX = 2.0 * float(ip.x) / uK.x - 1.0; vec2 rd = uV.xy + uV.zw * camX, cs = texelFetch(uCol, ivec2(ip.x, 0), 0).rg; // samma stråle som renderWalls
-  float dy = float(ip.y) - uC.w, d, z; vec3 n; bool sky = false, flo = false;
+  ivec2 iq = ivec2(gl_FragCoord.xy); vec2 fq = vec2(iq) / uSs; ivec2 ip = ivec2(fq); vec3 c = texelFetch(uW, iq, 0).rgb; // rad 0 = buffertens översta rad, som i världspasset; fq = punkten i bufferns rum (1×: heltalen)
+  float camX = 2.0 * fq.x / uK.x - 1.0; vec2 rd = uV.xy + uV.zw * camX, cs = texelFetch(uCol, colAt(fq.x * uRc), 0).rg; // samma stråle som renderWalls (uRc: kolumner per bildpunkt, VÄRLD GRAFIKKORT: djupet per R×-kolumn)
+  float dy = fq.y - uC.w, d, z; vec3 n; bool sky = false, flo = false;
   float pd = dy > 0.0 ? 166.0 * uC.z / dy : dy < 0.0 ? 166.0 * (1.0 - uC.z) / -dy : 1e9; // golvets och takets radavstånd (PSC = 166)
   if (pd < cs.r) { d = pd; z = dy > 0.0 ? 0.0 : 1.0; n = vec3(0.0, 0.0, dy > 0.0 ? 1.0 : -1.0); sky = dy < 0.0 && uOut == 1; flo = dy > 0.0; }
   else { d = cs.r; z = uC.z - dy * d / 166.0; n = cs.g < 0.5 ? vec3(-sign(rd.x), 0.0, 0.0) : vec3(0.0, -sign(rd.y), 0.0); } // väggen: sidan mot kameran
@@ -31,10 +32,10 @@ void main() {
   if (uFx.y > 0.0 && !sky) { // VÄRMEDALLER: över lava (kartans G, mjukt filtrerad) och nära eld; bilden förskjuts lätt
     float h = inMap ? texture(uMask, mc / uM.xy).g : 0.0; for (int i = 0; i < 6; i++) { if (i >= uNh) break; float q = length(wp.xy - uHot[i].xy) / uHot[i].z; h += uHot[i].w * max(0.0, 1.0 - q); }
     h = min(1.0, h) * uFx.y * (1.0 - smoothstep(4.0, 9.0, d));
-    if (h > 0.02) { vec2 sp = vec2(ip) + vec2(sin(uM.z * 7.0 + float(ip.y) * 0.55 + wp.x * 3.0) * 1.3, sin(uM.z * 5.3 + float(ip.x) * 0.35) * 0.6) * h; c = texelFetch(uW, clamp(ivec2(sp + 0.5), ivec2(0), ivec2(uK.xy) - 1), 0).rgb; } }
+    if (h > 0.02) { vec2 sp = fq + vec2(sin(uM.z * 7.0 + fq.y * 0.55 + wp.x * 3.0) * 1.3, sin(uM.z * 5.3 + fq.x * 0.35) * 0.6) * h; c = texelFetch(uW, clamp(ivec2(sp * uSs + 0.5), ivec2(0), ivec2(uK.xy * uSs) - 1), 0).rgb; } }
   if (flo && uFx.x > 0.0 && inMap && texelFetch(uMask, ivec2(mc), 0).r > 0.5) { // VATTEN: golvet speglar väggen i samma kolumn (spegling kring väggens fotlinje), svagt och krusigt
-    float yb = uC.w + 166.0 * uC.z / cs.r, yr = 2.0 * yb - float(ip.y) + sin(uM.z * 2.1 + wp.x * 4.0 + wp.y * 3.0) * 1.2;
-    if (yr >= 0.0) { vec3 r = texelFetch(uW, ivec2(clamp(float(ip.x) + sin(uM.z * 1.7 + wp.y * 5.0), 0.0, uK.x - 1.0), int(yr)), 0).rgb;
+    float yb = uC.w + 166.0 * uC.z / cs.r, yr = 2.0 * yb - fq.y + sin(uM.z * 2.1 + wp.x * 4.0 + wp.y * 3.0) * 1.2;
+    if (yr >= 0.0) { vec3 r = texelFetch(uW, ivec2(clamp(fq.x + sin(uM.z * 1.7 + wp.y * 5.0), 0.0, uK.x - 1.0) * uSs, floor(yr * uSs)), 0).rgb;
       c = mix(c, r * vec3(0.64, 0.74, 0.8), uFx.x * (0.16 + 0.26 * clamp(d / 6.0, 0.0, 1.0))); } } // längre bort speglar ytan mer (Fresnel); vattnet tar ljus (spegelbilden är mörkare än väggen)
   if (!sky && uN > 0) {
     vec3 L = vec3(0.0);
@@ -45,7 +46,7 @@ void main() {
     if (y1 > uK.w && y1 > y0) l = c + (l - c) * clamp((uK.w - y0) / (y1 - y0), 0.0, 1.0); // taket: aldrig över L29_CAP (under bloomens tröskel)
     c = l; }
   if (uRayN > 0) { // LJUSSTRÅLAR (skärmrymd): korta steg mot ljuskällan (månen/solen), samla öppen himmel; väggar skuggar (strålar under himlakanten och genom glipor, ingen slöja)
-    vec2 st = normalize(uRay.xy - vec2(ip) + vec2(0.0, -0.001)) * uRay.z; float acc = 0.0, w = 1.0; vec2 p = vec2(ip) + 0.5;
+    vec2 st = normalize(uRay.xy - fq + vec2(0.0, -0.001)) * uRay.z; float acc = 0.0, w = 1.0; vec2 p = fq + 0.5;
     for (int i = 0; i < 16; i++) { if (i >= uRayN) break; p += st; acc += skyAt(p) * w; w *= 0.88; }
     float r = acc / float(uRayN) * uRay.w * (sky ? 0.35 : 1.0); c += uRayC * r * (vec3(1.0) - c); }
   if (uFx.z > 0.0) { // DIMMA som driver sakta: bankar i världens rum, tätast nära golvet och längre bort
@@ -171,27 +172,27 @@ function l29Cap() { // kameran och väggarnas avstånd för passet (zbuf före s
   L29.cap = { bw: W, bh: VH, dirX: view.dirX, dirY: view.dirY, plX: view.plX, plY: view.plY, hor: view.hor, camZ: view.camZ, px: P.x, py: P.y, fog: fogK, out: lvl.sky ? 1 : 0 };
 }
 // ---- från glDraw: ljuspasset (bufferns rum, 1×) → texturen som världspasset läser; null = inget ljus i den här bildrutan ----
-function l29LightPass(bw, bh, lk) {
+function l29LightPass(bw, bh, lk, w29) { // w29: grafikkortets värld (version 29 VÄRLD, S×) som källa, ut i W29.F.lit
   const c = L29.cap; if (!c || !(L29.n || L29.fx) || c.bw !== bw || c.bh !== bh || (LK.on && !lk)) return null; // CPU:ns homografi: inte bufferns rum
   const gl = GLR.gl, T = GLR.T, p = L29.P.light;
-  if (!L29.F.lit) L29.F.lit = glFbo(LK_W, LK_H, false, false);
-  gl.bindTexture(gl.TEXTURE_2D, L29.T.col.t); gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, bw, 1, gl.RG, gl.FLOAT, L29.col.subarray(0, bw * 2));
+  if (!L29.F.lit) L29.F.lit = glFbo(LK_W, LK_H, false, false); const ss = w29 ? w29.sc : 1, dst = w29 && ss > 1 ? W29.F.lit : L29.F.lit;
+  const ct = w29 ? w29ColTex() : L29.T.col; if (!w29) { gl.bindTexture(gl.TEXTURE_2D, ct.t); gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, bw, 1, gl.RG, gl.FLOAT, L29.col.subarray(0, bw * 2)); }
   const sdOn = GLR.sd !== null && GLR.parts && GLR.sdAny !== false && GLR.partsW === bw && GLR.partsH === bh; // spritedjupet bara när partiklarna redan laddar upp det
-  gl.bindFramebuffer(gl.FRAMEBUFFER, L29.F.lit.fb); gl.viewport(0, 0, bw, bh); gl.bindVertexArray(GLR.vao); gl.useProgram(p);
-  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, T.world.t); gl.uniform1i(p.u('uW'), 0);
-  gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, L29.T.col.t); gl.uniform1i(p.u('uCol'), 1);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, dst.fb); gl.viewport(0, 0, bw * ss, bh * ss); gl.bindVertexArray(GLR.vao); gl.useProgram(p); gl.uniform1f(p.u('uSs'), ss);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, w29 ? w29.t : T.world.t); gl.uniform1i(p.u('uW'), 0);
+  gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, ct.t); gl.uniform1i(p.u('uCol'), 1); gl.uniform1f(p.u('uRc'), w29 ? W29.fr.R : 1);
   gl.activeTexture(gl.TEXTURE2); if (sdOn) { gl.bindTexture(gl.TEXTURE_2D, T.sd.t); gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, bw, bh, gl.RED, gl.FLOAT, GLR.sd.subarray(0, bw * bh)); GLR.l29sdUp = true; } else gl.bindTexture(gl.TEXTURE_2D, T.far.t);
   gl.uniform1i(p.u('uSd'), 2); gl.uniform1i(p.u('uSdOn'), sdOn ? 1 : 0); gl.uniform1i(p.u('uOut'), c.out); gl.uniform1i(p.u('uN'), L29.n);
   if (L29.n) { gl.uniform4fv(p.u('uLp'), L29.lp.subarray(0, L29.n * 4)); gl.uniform4fv(p.u('uLc'), L29.lc.subarray(0, L29.n * 4)); }
   // upp/ned-blicken: utan hela bufferten (l29LkFull) har den glesa rader, och då står speglingen och dallret (som läser andra bildpunkter) över
-  const f0 = L29.fx || [0, 0, 0], fx = lk && !L29.lkFull ? [0, 0, f0[2], f0[3]] : f0; gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, (L29.T.mask || T.lut).t); gl.uniform1i(p.u('uMask'), 3);
+  const f0 = L29.fx || [0, 0, 0], fx = lk && !L29.lkFull && !w29 ? [0, 0, f0[2], f0[3]] : f0; gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, (L29.T.mask || T.lut).t); gl.uniform1i(p.u('uMask'), 3); // (med VÄRLD GRAFIKKORT är hela bufferten ritad)
   gl.uniform4f(p.u('uM'), L29.T.mask ? L29.T.mask.w : 1, L29.T.mask ? L29.T.mask.h : 1, settings.reduceMotion ? 0 : tmr % 1000, 0); gl.uniform4f(p.u('uFx'), fx[0], fx[1], fx[2], 0); // reduceMotion: dimman och krusningen står still
   const fc = L29.fogC || [0.5, 0.5, 0.5]; gl.uniform3f(p.u('uFogC'), fc[0], fc[1], fc[2]); gl.uniform1i(p.u('uNh'), fx[1] ? L29.nh : 0); if (fx[1] && L29.nh) gl.uniform4fv(p.u('uHot'), L29.hotA.subarray(0, L29.nh * 4));
   const ry = fx[3] && L29.ray; gl.uniform1i(p.u('uRayN'), ry ? ry[4] : 0); if (ry) { gl.uniform4f(p.u('uRay'), ry[0], ry[1], ry[2], ry[3]); const rc = BIOME_TINT[lvl.biome] || [235, 230, 255]; gl.uniform3f(p.u('uRayC'), 0.6 + rc[0] / 640, 0.6 + rc[1] / 640, 0.6 + rc[2] / 640); L29.st.rays = (L29.st.rays || 0) + 1; }
   if (fx[0]) L29.st.refl = (L29.st.refl || 0) + 1; if (fx[1]) L29.st.haze = (L29.st.haze || 0) + 1; if (fx[2]) L29.st.fog = (L29.st.fog || 0) + 1;
   gl.uniform4f(p.u('uV'), c.dirX, c.dirY, c.plX, c.plY); gl.uniform4f(p.u('uC'), c.px, c.py, c.camZ, c.hor); gl.uniform4f(p.u('uK'), bw, bh, c.fog, L29_CAP);
   gl.drawArrays(gl.TRIANGLES, 0, 3); gl.activeTexture(gl.TEXTURE0); L29.st.frames++; L29.st.passes++;
-  return L29.F.lit;
+  return dst;
 }
 // ---- från glDraw: ut på duken med v29-programmet (pausens oskärpa, vatten, mynningsglöd, fotofilter); null = v28:s program ----
 function l29Swim() { return state === 'play' && BF.swim > 0 && l29SwimOn() && !settings.lowfx ? BF.swim : 0; }

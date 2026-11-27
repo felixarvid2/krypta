@@ -140,6 +140,7 @@ function glBuild() { // program, bufferter och de texturer som inte beror på du
   GLR.T.far = glTex(LK_W, LK_H, 'r32f'); { const f = new Float32Array(LK_W * LK_H).fill(1e9); gl.bindTexture(gl.TEXTURE_2D, GLR.T.far.t); gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, LK_W, LK_H, gl.RED, gl.FLOAT, f); } // inget spritedjup
   GLR.atlas = null; GLR.S = 0;
   l29Build(); // version 29 (LJUS): egna program (ett fel stänger av bara den effekten)
+  w29Build(); // version 29 (VÄRLD): världens program (ett fel ger CPU-världen)
 }
 function glPlace() { // duken följer #screen (samma plats och storlek, i enhetens bildpunkter); S = scenens skala
   const r = canvas.getBoundingClientRect(), dpr = window.devicePixelRatio || 1, cw = Math.max(1, Math.round(r.width * dpr)), ch = Math.max(1, Math.round(r.height * dpr)), cv = GLR.cv;
@@ -215,11 +216,11 @@ function glLKFix() { if (!GLR.skipLK) return; GLR.skipLK = false; GLR.forceLK = 
 // ---- från renderPost: true = bildrutan är utritad av grafikkortet ----
 function glPost() {
   GLR.used = false;
-  if (!glWant() || !glInit()) { if (GLR.shown) glShow(false); glLKFix(); GLR.n.cpu++; return false; }
+  if (!glWant() || !glInit()) { if (GLR.shown) glShow(false); glLKFix(); w29Lost(); GLR.n.cpu++; return false; }
   const gl = GLR.gl;
-  if (gl.isContextLost()) { glFail('KONTEXTEN FÖRLORADES'); glLKFix(); return false; }
-  try { glDraw(); } catch (e) { glFail(String(e && e.message || e).slice(0, 80)); glLKFix(); return false; }
-  if (gl.isContextLost()) { glFail('KONTEXTEN FÖRLORADES'); glLKFix(); return false; }
+  if (gl.isContextLost()) { glFail('KONTEXTEN FÖRLORADES'); glLKFix(); w29Lost(); return false; }
+  try { glDraw(); } catch (e) { glFail(String(e && e.message || e).slice(0, 80)); glLKFix(); w29Lost(); return false; }
+  if (gl.isContextLost()) { glFail('KONTEXTEN FÖRLORADES'); glLKFix(); w29Lost(); return false; } // (w29Lost: version 29 VÄRLD, CPU-världen i samma bildruta)
   ctx.clearRect(0, 0, SW, H); glShow(true); GLR.used = true; GLR.n.frames++; GLR.skipLK = false;
   return true;
 }
@@ -231,10 +232,11 @@ function glDraw() {
   if (cpuG) { applyGrade(); if (des > 0) desaturate(des); des = 0; } // för jämförelsen med CPU-vägen (t160): färgton och gråning som förut
   gl.disable(gl.BLEND); gl.disable(gl.DEPTH_TEST); gl.disable(gl.CULL_FACE);
   gl.bindTexture(gl.TEXTURE_2D, T.world.t); gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, bw, bh, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(src.buffer, 0, bw * bh * 4));
-  GLR.l29sdUp = false; const lit = cpuG || im ? null : l29LightPass(bw, bh, lk), ws = im ? S * SW / im.w : S; // version 29 (LJUS): ljuset i bufferns rum (1×); världspasset läser då den upplysta bilden
+  GLR.l29sdUp = false; const w29 = cpuG || im ? null : w29Pass(bw, bh, lk, S); // version 29 (VÄRLD): grafikkortets värld i S× (null: CPU:ns bild)
+  const lit = cpuG || im ? null : l29LightPass(bw, bh, lk, w29), ws = im ? S * SW / im.w : S; // version 29 (LJUS): ljuset i bufferns rum (1×, med VÄRLD i S×); världspasset läser då den upplysta bilden
   // 1) världen och partiklarna i bufferns rum (S× upplösning)
   gl.bindFramebuffer(gl.FRAMEBUFFER, F.scene.fb); gl.viewport(0, 0, bw * ws, bh * ws); gl.bindVertexArray(GLR.vao);
-  gl.useProgram(P5.world); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, lit ? lit.t : T.world.t); gl.uniform1i(P5.world.u('uW'), 0); gl.uniform1f(P5.world.u('uS'), ws); gl.drawArrays(gl.TRIANGLES, 0, 3);
+  gl.useProgram(P5.world); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, lit ? lit.t : w29 ? w29.t : T.world.t); gl.uniform1i(P5.world.u('uW'), 0); gl.uniform1f(P5.world.u('uS'), w29 ? ws / w29.sc : ws); gl.drawArrays(gl.TRIANGLES, 0, 3);
   const np = !im && GLR.parts && GLR.partsW === bw && GLR.partsH === bh ? GLR.no + GLR.na : 0; GLR.n.inst = np; GLR.n.instO = np ? GLR.no : 0; GLR.n.instA = np ? GLR.na : 0;
   if (np) glDrawParts(bw, bh, S);
   // 2) till skärmen: upp/ned-blickens homografi, färgton, färgblindläge och gråning
@@ -301,6 +303,7 @@ function glSettings(select, check) { // från openSettings (BILD)
   select('RENDERING', 'rendering', [['auto', 'AUTO'], ['cpu', 'CPU'], ['webgl', 'WEBGL']], glApply);
   check('BLOOM', 'bloom');
   l29Settings(select); // version 29: LJUS och VATTEN
+  w29Settings(select); // version 29: VÄRLD och UPPLÖSNING
 }
 function glApply() { GLR.failed = false; GLR.reason = ''; if (glMode() !== 'webgl') glShow(false); } // ett nytt val försöker igen efter ett fel
 function glShot() { // från screenshot: WebGL-bilden och 2D-duken ihop

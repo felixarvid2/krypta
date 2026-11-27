@@ -210,6 +210,7 @@ function v28Draw(x, j) { // en kolumn av gallret j (alfa per texel: genomsiktlig
   let v = (y0 - top) * step;
   for (let y = y0; y <= y1; y++, v += step) { if (nd !== null && !nd[y]) continue; const c = dd[Math.min(th1, v | 0) * tw + u], a = c >>> 24;
     if (a < 128) { if (a === 0 || !gl || ((x + y) & lf)) continue; const s = shadeFog(c, L, perp, ci), i = y * W + x, p = px[i]; // glasrutan: en fjärdedel (reflexen hälften) av glasets färg över bakgrunden
+      if (p >>> 24 !== 255 && W29.cur) { px[i] = (s & 0xffffff) | (a >= 64 ? 0x80000000 : 0x40000000); continue; } // version 29 (VÄRLD): glaset blandas med grafikkortets värld
       px[i] = a >= 64 ? 0xff000000 | (((p >> 1) & 0x7f7f7f) + ((s >> 1) & 0x7f7f7f)) : 0xff000000 | (((p >> 2) & 0x3f3f3f) * 3 + ((s >> 2) & 0x3f3f3f)); continue; }
     px[y * W + x] = shadeFog(c, L, perp, ci); }
   if (GLR.sd !== null) glGrateDepth(x, y0, y1, top, step, u, t, perp, nd); // version 28 (WEBGL): spjälorna i spritedjupet
