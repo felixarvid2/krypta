@@ -5,6 +5,7 @@ function renderWalls(W, VH, px, dirX, dirY, qX, qY, hor, camZ, nd) { // väggar 
     const hit = V28.glass ? v28Cast(P.x, P.y, rdx, rdy, x) : cast(P.x, P.y, rdx, rdy, 48, true); // version 28 (REND): strålen går förbi galler och fönster
     const perp = Math.max(0.05, hit.dist);
     zbuf[x] = perp;
+    l29Side(x, hit.side); // version 29 (LJUS): väggsidan för ljuset i grafikkortet
     const scale = PSC / perp;
     const top = hor - scale * (1 - camZ), lh = scale;
     const t = hit.cell === 'D' ? tex.door_wood : hit.cell === 'G' || hit.cell === '|' ? tex.door_metal_gate : hit.cell === ']' ? tex.door_locked : hit.cell === '*' ? tex[wallTexFor[lvl.secretWall] || wallTexFor[1]]

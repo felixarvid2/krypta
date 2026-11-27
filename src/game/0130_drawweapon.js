@@ -20,6 +20,7 @@ function drawWeapon() {
   if (WS.shot < 0.06 && state === 'play') { // mynningsflamma vid mynningen i just den här bildrutan
     const wp = WEAPONS[P.weapon], m = f.muzzle[idx], s = 34 * wp.flash * (1 - WS.shot / 0.06 * 0.4), mq = wfxPt(m[0] + ox, m[1] + oy2);
     const fx27m = fx27Muzzle(wp, mq, s); // version 27: mynningsflamma per vapentyp (den gamla ritas då genomskinlig)
+    l29Muzzle(mq, s, wp); // version 29 (LJUS): glöden och ljuset kring mynningen i grafikkortet
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
     if (fx27m) ctx.globalAlpha = 0; // version 27
     ctx.translate(mq[0], mq[1]); ctx.rotate(Math.random() * TAU);

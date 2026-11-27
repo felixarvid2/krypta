@@ -257,6 +257,7 @@ function tlRender(a, camZ) {
     const L = (lit[ly * w + lx] + lamp(pd)) * (side ? 0.78 : 1), y0 = Math.max(0, Math.ceil(top)), y1 = Math.min(TL_H - 1, Math.floor(top + lh - 0.001)), st = t.h / lh; let v = (y0 - top) * st;
     for (let y = y0; y <= y1; y++) { buf[y * TL_W + x] = shade(t.data[Math.min(t.h - 1, v | 0) * t.w + u], L, pd); v += st; }
   }
+  if (l29Title()) return; // version 29 (LJUS): med WebGL ritar grafikkortet kameraflykten (bloom), vinjetten som förut
   TL.g.putImageData(TL.img, 0, 0); ctx.drawImage(TL.cv, 0, 0, W, VH); ctx.drawImage(TL.vig, 0, 0);
 }
 // ---------- MENY: HUD-juice – hälsan studsar/skakar/blinkar, ammon pulserar vid omladdning, "+N" för hälsa/skydd/ammo, hörnen skakar vid tung träff ----------

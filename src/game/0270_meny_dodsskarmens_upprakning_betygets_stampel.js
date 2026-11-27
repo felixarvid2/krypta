@@ -43,7 +43,9 @@ function drawBodyFx(g) {
     if (P.burnFx > 0) { P.burnFx = Math.max(0, P.burnFx - dt); edgeFx(g, '255,110,20', P.burnFx * (nf ? 0.5 : 0.7 + 0.3 * Math.random())); // elden fladdrar och glöd stiger
       if (fx) { g.fillStyle = '#ffb040'; for (let i = 0; i < 10; i++) g.fillRect((Math.random() * W) | 0, (VH - Math.random() * 40 * P.burnFx * 2) | 0, 1, 2); } }
     BF.swim = P.swim ? Math.min(1, BF.swim + dt * 2) : Math.max(0, BF.swim - dt * 2);
+    l29SwimPre(); // version 29 (LJUS): vågorna görs i grafikkortet, remsorna hoppas över
     if (BF.swim > 0) { if (fx && !rm) { const t0 = performance.now(); if (!BF.wcv) { BF.wcv = document.createElement('canvas'); BF.wcv.width = W; BF.wcv.height = VH; BF.wg = BF.wcv.getContext('2d'); } // en kopia av bilden, sedan remsor ur kopian (ingen självkopiering per remsa)
+    l29SwimPost(); // version 29 (LJUS)
       BF.wg.drawImage(canvas, 0, 0, W, VH, 0, 0, W, VH); for (let y = 0; y < VH; y += 8) { const o = Math.round(Math.sin(tmr * 2.6 + y * 0.06) * 1.6 * BF.swim); if (o) g.drawImage(BF.wcv, 0, y, W, 8, o, y, W, 8); } const ms = performance.now() - t0; BF.waveMs = BF.waveMs ? BF.waveMs * 0.9 + ms * 0.1 : ms; } edgeFx(g, '10,40,90', 0.45 * BF.swim); } // under ytan: vågor och mörkblå kant
     const want = P.dashT > 0 || (WS.dashT || 0) > 0.15 ? 1 : 0; BF.dashK +=(want - BF.dashK) * Math.min(1, dt * (want > BF.dashK ? 18 : 6));
     if (BF.dashK > 0.04 && !rm) { // rusning (bara den och sablens utfall, inte vanlig löpning): fartlinjer i kanterna och en kort mörk kant
@@ -53,7 +55,9 @@ function drawBodyFx(g) {
   }
   if (state === 'dead') { // döden: färgen rinner ur bilden, kanten blir mörkröd och sluter sig medan kameran faller
     const k = clamp(P.deadT / 1.2, 0, 1); BF.dead = k;
+    l29DeadPre(g); // version 29 (LJUS): med WebGL gråas bilden i shadern (saturation över en genomskinlig duk blir en grå hinna)
     g.globalCompositeOperation = 'saturation'; g.fillStyle = `rgba(128,128,128,${(0.85 * k).toFixed(3)})`; g.fillRect(0, 0, W, VH); g.globalCompositeOperation = 'source-over';
+    l29DeadPost(g); // version 29 (LJUS)
     edgeFx(g, '70,0,0', 0.25 + 0.4 * k); edgeFx(g, '0,0,0', 0.5 * k * k); // svärtan kommer sent, så att fallet syns
   }
 }
@@ -71,6 +75,7 @@ const MENY_API = { // window.__game.meny: tillstånd för testerna (t106)
   hud: () => ({ pops: HJ.pops.map(p => p.kind + p.v), n: HJ.n, hit: HJ.hit, big: HJ.big, rel: HJ.rel, heal: HJ.heal, hpCol: HJ.hpCol, magCol: HJ.magCol }),
 };
 function photoFilter(g) {
+  if (l29Photo()) return; // version 29 (LJUS): med WebGL görs filtret i shadern
   const f = PHOTO_FILTERS[(settings.photoFilter || 0) % PHOTO_FILTERS.length]; if (!f) return;
   g.save();
   if (f === 'svartvit') { g.globalCompositeOperation = 'saturation'; g.fillStyle = '#808080'; g.fillRect(0, 0, W, VH); }

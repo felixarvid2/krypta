@@ -15,7 +15,7 @@
 // Partikelbudgeten: med partiklar i grafikkortet är PB.max ×16 (MAX ×16, HÖG ×8, AUTO upp till ×8).
 const GLR = { cv: null, gl: null, ok: false, failed: false, reason: '', lost: 0, used: false, shown: false, S: 0, cw: 0, ch: 0, P: {}, T: {}, F: {}, vao: null, pvao: null, pbuf: null,
   atlas: null, sdBuf: new Float32Array(LK_W * LK_H), sd: null, zb: new Float32Array(LK_W), skipLK: false, forceLK: false, parts: false, partsW: 0, partsH: 0,
-  io: new Float32Array(20 * 256), ia: new Float32Array(20 * 256), no: 0, na: 0, lut: new Uint8Array(1024), flags: { parts: true, gpuLK: true, cpuGrade: false, bloom: true },
+  io: new Float32Array(20 * 256), ia: new Float32Array(20 * 256), no: 0, na: 0, lut: new Uint8Array(1024), flags: { parts: true, gpuLK: true, cpuGrade: false, bloom: true, light: true, modes: true, swim: true, title: true, refl: true, haze: true, fog: true, rays: false }, // rays (ljusstrålar) är ett utkast: av som standard // v29: light = LJUS, modes = paus/foto/simning i grafikkortet, swim = VATTEN
   n: { frames: 0, cpu: 0, fallbacks: 0, inst: 0, instO: 0, instA: 0, culled: 0, noImg: 0, atlasImgs: 0, atlasResets: 0, lkGpu: 0, bloom: 0 } };
 const GL_VS = '#version 300 es\nin vec2 aP; void main() { gl_Position = vec4(aP, 0.0, 1.0); }';
 const GL_FS = { // bildpunkten i varje pass räknas från gl_FragCoord; alla mellanbuffertar har rad 0 = bildens översta rad
@@ -77,7 +77,7 @@ void main() { vec2 p = mix(iR.xy, iR.zw, aC); vUV = mix(iUV.xy, iUV.zw, aC); vR 
   vT = iT.rgb; vD = iT.a; vM = iM.rgb; vMode = iM.a; vA = iA.rgb; gl_Position = vec4(p / uB * 2.0 - 1.0, clamp(vD / 128.0, 0.0, 1.0) * 2.0 - 1.0, 1.0); }`;
 const GL_AT = 2048; // atlasens sida
 function glMode() { const m = settings.rendering || 'auto'; return m === 'webgl' ? 'webgl' : m === 'cpu' ? 'cpu' : navigator.webdriver ? 'cpu' : 'webgl'; }
-function glWant() { return glMode() === 'webgl' && !GLR.failed && !!map && state !== 'title' && state !== 'pause' && !photo && !(BF.swim > 0); } // bildrutor som läser tillbaka 2D-duken går CPU-vägen
+function glWant() { return glMode() === 'webgl' && !GLR.failed && !!map && state !== 'title' && (state !== 'pause' || l29Mode('pause')) && (!photo || l29Mode('photo')) && (!(BF.swim > 0) || l29Mode('swim')); } // v29: pausen, fotoläget och simningen i grafikkortet (l29Mode); annars CPU-vägen som i v28
 function glPartsOn() { return GLR.flags.parts && settings.glParts !== false && GLR.ok && glWant(); }
 function glFail(why) {
   if (GLR.failed) { glShow(false); return false; } // redan på CPU-vägen (förlusten märks både i glPost och i händelsen)
@@ -113,7 +113,7 @@ function glProg(vs, fs) {
 }
 function glTex(w, h, kind, lin) {
   const gl = GLR.gl, t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
-  if (kind === 'r32f') gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, w, h, 0, gl.RED, gl.FLOAT, null); else gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+  if (kind === 'r32f') gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, w, h, 0, gl.RED, gl.FLOAT, null); else if (kind === 'rg32f') gl.texImage2D(gl.TEXTURE_2D, 0, gl.RG32F, w, h, 0, gl.RG, gl.FLOAT, null); else gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
   const f = lin ? gl.LINEAR : gl.NEAREST; gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, f); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, f);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   return { t, w, h };
@@ -139,6 +139,7 @@ function glBuild() { // program, bufferter och de texturer som inte beror på du
   GLR.T.world = glTex(LK_W, LK_H, 'rgba'); GLR.T.zb = glTex(LK_W, 1, 'r32f'); GLR.T.sd = glTex(LK_W, LK_H, 'r32f'); GLR.T.lut = glTex(256, 1, 'rgba');
   GLR.T.far = glTex(LK_W, LK_H, 'r32f'); { const f = new Float32Array(LK_W * LK_H).fill(1e9); gl.bindTexture(gl.TEXTURE_2D, GLR.T.far.t); gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, LK_W, LK_H, gl.RED, gl.FLOAT, f); } // inget spritedjup
   GLR.atlas = null; GLR.S = 0;
+  l29Build(); // version 29 (LJUS): egna program (ett fel stänger av bara den effekten)
 }
 function glPlace() { // duken följer #screen (samma plats och storlek, i enhetens bildpunkter); S = scenens skala
   const r = canvas.getBoundingClientRect(), dpr = window.devicePixelRatio || 1, cw = Math.max(1, Math.round(r.width * dpr)), ch = Math.max(1, Math.round(r.height * dpr)), cv = GLR.cv;
@@ -163,12 +164,13 @@ function glAtlasRect(img) {
 }
 // ---- från renderWorld (före renderSprites): bestämmer om partiklarna ritas i grafikkortet i den här bildrutan ----
 function glPreSprites() {
-  GLR.parts = false; GLR.sd = null; GLR.no = GLR.na = 0;
+  GLR.parts = false; GLR.sd = null; GLR.no = GLR.na = 0; if (glMode() === 'webgl' && GLR.ok && glWant()) glPreLight(); else { L29.cap = null; L29.n = 0; L29.wantFull = false; }
   if (!particles.length || !glPartsOn()) return; // inga partiklar: inget spritedjup att skriva
   if (GLR.atlas && GLR.atlas.full) { GLR.atlas = null; GLR.n.atlasResets++; }
   GLR.parts = true; GLR.partsW = W; GLR.partsH = VH; GLR.zb.set(zbuf.subarray(0, W)); // zbuf före spritesen: bakväggen (gallren ritas senare och skriver spritedjupet)
   GLR.sd = GLR.sdBuf; GLR.sd.fill(1e9, 0, W * VH); GLR.sdAny = false;
 }
+function glPreLight() { try { l29Gather(); } catch (e) { L29.cap = null; L29.n = 0; spriteError(e, null); } } // version 29 (LJUS): ljuslistan (före partiklarna byts ut)
 const GL_NOPARTS = Object.freeze([]);
 function glPartsSwap() { // från renderSprites: partiklarna blir instanser och sprite-listan ser en tom lista (inga listobjekt, ingen sortering)
   if (!GLR.parts) return null;
@@ -223,15 +225,17 @@ function glPost() {
 }
 function glDraw() {
   const gl = GLR.gl, F = GLR.F, T = GLR.T, P5 = GLR.P; glPlace(); const S = GLR.S;
-  const lk = LK.on && GLR.skipLK, bw = lk ? LK.TW : SW, bh = lk ? LK.TH : SVH, src = lk ? tpx : spx, cpuG = GLR.flags.cpuGrade && !lk;
-  let des = P.hp < maxHp() * 0.3 && state === 'play' && settings.lowHpGray !== false ? 0.55 * (1 - P.hp / (maxHp() * 0.3)) : 0;
+  const im = GLR.img, lk = !im && LK.on && GLR.skipLK, bw = im ? im.w : lk ? LK.TW : SW, bh = im ? im.h : lk ? LK.TH : SVH, src = im ? im.buf : lk ? tpx : spx, cpuG = !im && GLR.flags.cpuGrade && !lk; // v29: im = startskärmens bild (l29Title)
+  let des = im ? 0 : P.hp < maxHp() * 0.3 && state === 'play' && settings.lowHpGray !== false ? 0.55 * (1 - P.hp / (maxHp() * 0.3)) : 0;
+  if (!im && state === 'dead' && GLR.flags.modes !== false) des = Math.max(des, 0.85 * clamp(P.deadT / 1.2, 0, 1)); // v29: döden gråas i shadern (drawBodyFx ritar då ingen saturation-fyllning, l29DeadPre)
   if (cpuG) { applyGrade(); if (des > 0) desaturate(des); des = 0; } // för jämförelsen med CPU-vägen (t160): färgton och gråning som förut
   gl.disable(gl.BLEND); gl.disable(gl.DEPTH_TEST); gl.disable(gl.CULL_FACE);
   gl.bindTexture(gl.TEXTURE_2D, T.world.t); gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, bw, bh, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(src.buffer, 0, bw * bh * 4));
+  GLR.l29sdUp = false; const lit = cpuG || im ? null : l29LightPass(bw, bh, lk), ws = im ? S * SW / im.w : S; // version 29 (LJUS): ljuset i bufferns rum (1×); världspasset läser då den upplysta bilden
   // 1) världen och partiklarna i bufferns rum (S× upplösning)
-  gl.bindFramebuffer(gl.FRAMEBUFFER, F.scene.fb); gl.viewport(0, 0, bw * S, bh * S); gl.bindVertexArray(GLR.vao);
-  gl.useProgram(P5.world); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, T.world.t); gl.uniform1i(P5.world.u('uW'), 0); gl.uniform1f(P5.world.u('uS'), S); gl.drawArrays(gl.TRIANGLES, 0, 3);
-  const np = GLR.parts && GLR.partsW === bw && GLR.partsH === bh ? GLR.no + GLR.na : 0; GLR.n.inst = np; GLR.n.instO = np ? GLR.no : 0; GLR.n.instA = np ? GLR.na : 0;
+  gl.bindFramebuffer(gl.FRAMEBUFFER, F.scene.fb); gl.viewport(0, 0, bw * ws, bh * ws); gl.bindVertexArray(GLR.vao);
+  gl.useProgram(P5.world); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, lit ? lit.t : T.world.t); gl.uniform1i(P5.world.u('uW'), 0); gl.uniform1f(P5.world.u('uS'), ws); gl.drawArrays(gl.TRIANGLES, 0, 3);
+  const np = !im && GLR.parts && GLR.partsW === bw && GLR.partsH === bh ? GLR.no + GLR.na : 0; GLR.n.inst = np; GLR.n.instO = np ? GLR.no : 0; GLR.n.instA = np ? GLR.na : 0;
   if (np) glDrawParts(bw, bh, S);
   // 2) till skärmen: upp/ned-blickens homografi, färgton, färgblindläge och gråning
   for (let i = 0; i < 256; i++) { GLR.lut[i * 4] = gradeLUT[0][i]; GLR.lut[i * 4 + 1] = gradeLUT[1][i]; GLR.lut[i * 4 + 2] = gradeLUT[2][i]; GLR.lut[i * 4 + 3] = 255; }
@@ -240,20 +244,21 @@ function glDraw() {
   const pp = P5.post; gl.useProgram(pp); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, F.scene.t); gl.uniform1i(pp.u('uScene'), 0);
   gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, T.lut.t); gl.uniform1i(pp.u('uLut'), 1);
   gl.uniform1f(pp.u('uS'), S); gl.uniform1i(pp.u('uLK'), lk ? 1 : 0); gl.uniform4f(pp.u('uL'), LK.c, LK.s, LK.hor, LK.TW / 2); gl.uniform2f(pp.u('uBuf'), bw, bh); if (lk) GLR.n.lkGpu++;
-  gl.uniform1i(pp.u('uGrade'), cpuG ? 0 : 1); const cb = !cpuG && settings.cb && CB[settings.cb]; gl.uniform1i(pp.u('uCb'), cb ? 1 : 0);
+  gl.uniform1i(pp.u('uGrade'), cpuG || im ? 0 : 1); const cb = !cpuG && !im && settings.cb && CB[settings.cb]; gl.uniform1i(pp.u('uCb'), cb ? 1 : 0);
   if (cb) gl.uniformMatrix3fv(pp.u('uM'), false, [cb[0], cb[3], cb[6], cb[1], cb[4], cb[7], cb[2], cb[5], cb[8]]); gl.uniform1f(pp.u('uDes'), des);
   gl.drawArrays(gl.TRIANGLES, 0, 3);
   // 3) bloom: tröskel → 160×100 → 80×50 → 40×25, suddat i varje steg
   const bk = glBloomK(); if (bk > 0) glBloom(); GLR.n.bloom = bk;
   // 4) ut på duken: lutning, bloom, vinjett och aberration
   gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, GLR.cw, GLR.ch);
-  const fp = P5.final; gl.useProgram(fp); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, F.post.t);
+  const fp = l29Final(bk) || P5.final; gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, GLR.cw, GLR.ch); gl.bindVertexArray(GLR.vao); // version 29: pausens oskärpa, vatten, mynningsglöd och fotofilter (annars v28:s program)
+  gl.useProgram(fp); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, F.post.t);
   const lin = settings.smooth ? gl.LINEAR : gl.NEAREST; gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, lin); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, lin);
   gl.uniform1i(fp.u('uP'), 0); [F.b1, F.b2, F.b3].forEach((f, i) => { gl.activeTexture(gl.TEXTURE1 + i); gl.bindTexture(gl.TEXTURE_2D, f.t); gl.uniform1i(fp.u('uB' + (i + 1)), 1 + i); });
   const roll = Math.abs(P.roll) > 0.002 && (state === 'play' || state === 'dead') ? P.roll : 0, ar = Math.abs(roll), rs = roll ? Math.max(1.05, Math.min(1.35, Math.cos(ar) + (SW / SVH) * Math.sin(ar))) : 1;
   const fxOn = settings.bloom !== false && !settings.lowfx && GLR.flags.bloom;
   gl.uniform2f(fp.u('uCv'), GLR.cw, GLR.ch); gl.uniform1f(fp.u('uRoll'), roll); gl.uniform1f(fp.u('uRs'), rs); gl.uniform1f(fp.u('uBloom'), bk);
-  gl.uniform1f(fp.u('uVig'), fxOn && GLR.flags.vig !== false ? 0.22 : 0); gl.uniform1f(fp.u('uAb'), fxOn && !settings.noFlash && !settings.reduceMotion && state === 'play' ? Math.min(1, (P.hurt || 0) * 2.5) : 0);
+  gl.uniform1f(fp.u('uVig'), fxOn && GLR.flags.vig !== false && !im ? 0.22 : 0); gl.uniform1f(fp.u('uAb'), fxOn && !settings.noFlash && !settings.reduceMotion && state === 'play' ? Math.min(1, (P.hurt || 0) * 2.5) : 0);
   gl.drawArrays(gl.TRIANGLES, 0, 3); gl.bindVertexArray(null);
 }
 function glBloomK() { return settings.bloom !== false && !settings.lowfx && GLR.flags.bloom ? (settings.noFlash ? 0.45 : 0.9) : 0; } // BLOOM: på som standard; noFlash dämpar, lowfx stänger av
@@ -270,7 +275,7 @@ function glDrawParts(bw, bh, S) {
   const gl = GLR.gl, T = GLR.T, pp = GLR.P.part;
   gl.bindTexture(gl.TEXTURE_2D, T.zb.t); gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, bw, 1, gl.RED, gl.FLOAT, GLR.zb.subarray(0, bw));
   const sdt = GLR.sdAny !== false ? T.sd : T.far; // inget ogenomskinligt sprite-djup i bildrutan: ingen uppladdning
-  if (sdt === T.sd) { gl.bindTexture(gl.TEXTURE_2D, T.sd.t); gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, bw, bh, gl.RED, gl.FLOAT, GLR.sd.subarray(0, bw * bh)); }
+  if (sdt === T.sd && !GLR.l29sdUp) { gl.bindTexture(gl.TEXTURE_2D, T.sd.t); gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, bw, bh, gl.RED, gl.FLOAT, GLR.sd.subarray(0, bw * bh)); }
   gl.useProgram(pp); gl.bindVertexArray(GLR.pvao);
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, GLR.atlas.tex.t); gl.uniform1i(pp.u('uA'), 0);
   gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, T.zb.t); gl.uniform1i(pp.u('uZb'), 1);
@@ -282,7 +287,8 @@ function glDrawParts(bw, bh, S) {
   if (GLR.na) { gl.depthFunc(gl.LEQUAL); gl.depthMask(false); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE); gl.bufferData(gl.ARRAY_BUFFER, GLR.ia.subarray(0, GLR.na * 20), gl.STREAM_DRAW); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, GLR.na); }
   gl.depthMask(true); gl.disable(gl.DEPTH_TEST); gl.disable(gl.BLEND);
 }
-function glFrame() { if (GLR.shown && (state === 'title' || !map)) glShow(false); } // från frameStep: startskärmen ritar själv på 2D-duken
+function glFrame() { if (state === 'title' && !GLR.ok && !GLR.failed && GLR.flags.title !== false && GLR.flags.modes !== false && glMode() === 'webgl' && titleLiveOn()) glInit(); // v29: programmen byggs utanför kameraflyktens tidtagning (TL.cost)
+  if (L29.title && state === 'title') { L29.title = false; return; } L29.title = false; if (GLR.shown && (state === 'title' || !map)) glShow(false); } // v29: startskärmens kameraflykt (l29Title) behåller duken // från frameStep: startskärmen ritar själv på 2D-duken
 function glPbTick(m) { // från pbTick: med partiklar i grafikkortet är taket ×16 (MAX ×16, HÖG ×8, AUTO upp till ×8)
   const on = glMode() === 'webgl' && GLR.ok && !GLR.failed && GLR.flags.parts && settings.glParts !== false && (glWant() || state === 'pause'); // simning och fotoläge (CPU-vägen): taket ×8 som förut
   if (!on) { if (PB.max !== 8) { PB.max = 8; PB.autoMax = 4; if (PB.k > 8) pbApply(8); } return false; }
@@ -294,14 +300,16 @@ function glSettings(select, check) { // från openSettings (BILD)
   if (settings.rendering === undefined) settings.rendering = 'auto'; if (settings.bloom === undefined) settings.bloom = true;
   select('RENDERING', 'rendering', [['auto', 'AUTO'], ['cpu', 'CPU'], ['webgl', 'WEBGL']], glApply);
   check('BLOOM', 'bloom');
+  l29Settings(select); // version 29: LJUS och VATTEN
 }
 function glApply() { GLR.failed = false; GLR.reason = ''; if (glMode() !== 'webgl') glShow(false); } // ett nytt val försöker igen efter ett fel
 function glShot() { // från screenshot: WebGL-bilden och 2D-duken ihop
   if (!GLR.used || !GLR.ok) return false;
-  try { glDraw(); const c = document.createElement('canvas'); c.width = GLR.cw; c.height = GLR.ch; const g = c.getContext('2d'); g.drawImage(GLR.cv, 0, 0); g.imageSmoothingEnabled = false; g.drawImage(canvas, 0, 0, c.width, c.height);
+  try { const c = glShotCanvas();
     c.toBlob(b => { if (!b) return; const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `krypta-${Date.now()}.png`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }, 'image/png');
     say('SKÄRMBILD SPARAD', 1.2); play('click', 0.5, 1.8); return true; } catch (e) { return false; }
 }
+function glShotCanvas() { glDraw(); const c = document.createElement('canvas'); c.width = GLR.cw; c.height = GLR.ch; const g = c.getContext('2d'); g.drawImage(GLR.cv, 0, 0); g.imageSmoothingEnabled = false; g.drawImage(canvas, 0, 0, c.width, c.height); GLR.n.shots = (GLR.n.shots || 0) + 1; return c; } // v29: F9-bilden (t178)
 function glApi() { // window.__game.gl: för t160–t164
   const read = (fb, w, h) => { const gl = GLR.gl, o = new Uint8Array(w * h * 4); gl.bindFramebuffer(gl.FRAMEBUFFER, fb); gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, o); gl.bindFramebuffer(gl.FRAMEBUFFER, null); return o; };
   return { GLR, mode: glMode, want: glWant, partsOn: glPartsOn, init: glInit, n: () => ({ ...GLR.n, failed: GLR.failed, reason: GLR.reason, ok: GLR.ok, used: GLR.used, shown: GLR.shown, S: GLR.S, cw: GLR.cw, ch: GLR.ch, lost: GLR.lost }),
@@ -313,6 +321,9 @@ function glApi() { // window.__game.gl: för t160–t164
     lose: () => { const e = GLR.loseExt = GLR.gl && GLR.gl.getExtension('WEBGL_lose_context'); if (e) e.loseContext(); return !!e; }, restore: () => { const e = GLR.loseExt; if (e) e.restoreContext(); return !!e; }, // tillägget hämtas före förlusten
     sd: () => GLR.sd, bench: (n = 60) => { const ts = []; for (let i = 0; i < n; i++) { const t0 = performance.now(); render(); ts.push(performance.now() - t0); } ts.sort((a, b) => a - b); return { med: ts[n >> 1], p90: ts[(n * 0.9) | 0], mean: ts.reduce((a, b) => a + b, 0) / n, used: GLR.used, inst: GLR.n.inst, parts: particles.length }; },
     pb: () => ({ max: PB.max, autoMax: PB.autoMax, k: PB.k }),
+    shotStats: () => { if (!GLR.used || !GLR.ok) return null; const c = glShotCanvas(), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data, gl = GLR.gl, w = c.width, h = c.height, a = new Uint8Array(w * h * 4); gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, a); // v29 (t178): F9-bilden mot WebGL-duken ensam
+      let lum = 0, hud = 0, n = 0; for (let y = 0; y < h; y += 2) for (let x = 0; x < w; x += 2) { const i = (y * w + x) * 4, j = ((h - 1 - y) * w + x) * 4; lum += d[i] + d[i + 1] + d[i + 2]; if (Math.abs(d[i] - a[j]) + Math.abs(d[i + 1] - a[j + 1]) + Math.abs(d[i + 2] - a[j + 2]) > 30) hud++; n++; }
+      return { w, h, lum: +(lum / n / 3).toFixed(1), hud: +(hud / n).toFixed(4) }; },
     probe: (rgb, spot) => { // t161: en jämn färg (och en liten ljus fläck) som världsbild, ut på duken; bildpunkter (r,g,b) i mitten och bredvid fläcken
       if (!glInit()) return null; const n = SW * SVH, save = spx.slice(0, n), col = 0xff000000 | (rgb[2] << 16) | (rgb[1] << 8) | rgb[0]; spx.fill(col, 0, n);
       if (spot) for (let y = 96; y < 104; y++) for (let x = 156; x < 164; x++) spx[y * SW + x] = 0xff000000 | (spot[2] << 16) | (spot[1] << 8) | spot[0];

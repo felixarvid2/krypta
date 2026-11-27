@@ -62,7 +62,7 @@ const full = look => ev(look => { const g = __game, GL = g.gl, P = g.P; window._
 const f1 = await full(0.35), f2 = await full(-0.45), f3 = await full(0.6);
 ok([f1, f2, f3].every(f => f.mean < 1.5 && f.max < 40), 'upp/ned-blicken på hela duken (alla delpunkter) ≈ CPU-bilden ' + JSON.stringify({ f1, f2, f3 }));
 await ev(() => { __game.P.look = 0.35; }); await until(null, 0.3); await shot('webgl_upp'); await ev(() => { __game.P.look = 0; });
-// pausen och fotoläget går CPU-vägen (2D-duken läses tillbaka)
-const pz = await ev(() => { const g = __game; g.pause(); g.v28.render(); const a = g.gl.n(); g.resume(); return { used: a.used, shown: a.shown }; });
-ok(!pz.used && !pz.shown, 'pausen ritas med CPU (oskärpan läser 2D-duken) ' + JSON.stringify(pz));
+// pausen: utan v29:s lägen (flags.modes av) CPU-vägen som i v28 (2D-duken läses tillbaka); med dem grafikkortet (version 29, t177)
+const pz = await ev(() => { const g = __game, F = g.gl.GLR.flags; g.pause(); F.modes = false; g.v28.render(); const a = g.gl.n(); F.modes = true; g.v28.render(); const b = g.gl.n(); g.resume(); return { used: a.used, shown: a.shown, v29: b.used }; });
+ok(!pz.used && !pz.shown && pz.v29, 'pausen: CPU utan v29-lägena (oskärpan läser 2D-duken), grafikkortet med dem ' + JSON.stringify(pz));
 await done();

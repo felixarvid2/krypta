@@ -37,6 +37,7 @@
       return { on: LK.on, holes, clamps: LK.clamps - c0, TW: LK.TW, TH: LK.TH, hash: h >>> 0, px: Array.from(spx) }; } };
   window.__game.efx = efxApi; // version 25: Effekseer-effekter (t115)
   window.__game.gl = glApi(); // version 28 (WEBGL): t160–t164
+  window.__game.l29 = l29Api(); // version 29 (LJUS): t175–t179
   window.__game.fix251 = fix251Api(); // version 25.1: lobbar och smällar genom väggar, röster (t116)
   window.__game.v26a = v26aApi(); // version 26A: sprängskott och myntet (t120, t121)
   window.__game.pb = pbApi; // version 27: partikelbudgeten (t147)

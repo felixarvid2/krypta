@@ -163,6 +163,7 @@ function lkBegin() { // väljer bufferten för den här bildrutan; false = vanli
     LK.rowY[v] = ty; LK.rowZ[v] = iz; LK.rowU[v] = u0;
     if (need[ty]) { LK.xa[ty] = Math.min(LK.xa[ty], a); LK.xb[ty] = Math.max(LK.xb[ty], b); LK.sZ[ty] = 0; } else { need[ty] = 1; LK.xa[ty] = a; LK.xb[ty] = b; LK.sZ[ty] = iz > 1 ? iz : 0; LK.sU[ty] = u0; }
   }
+  l29LkFull(d); // version 29 (LJUS): med spegling eller värmedaller i grafikkortet ritas hela bufferten (inga glesa rader)
   LK.on = true; W = d.TW; VH = d.TH; HORIZON = d.hor; px = tpx;
   return true;
 }
