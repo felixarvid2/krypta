@@ -25,6 +25,7 @@ function showRunOver(win) {
   const tip = r.records && r.records.length ? 'NYTT REKORD: ' + r.records[0] : !win ? 'TIPS: ' + (DEATH_TIPS[r.cause] || 'VARJE RUNDA LÄR DIG NÅGOT') : '';
   document.getElementById('ro-tip').textContent = tip.length > 60 ? tip.slice(0, 58) + '…' : tip;
   s29RunOver(r); // version 29 (SPEL): blodpakter och fällda blodfurstar
+  a30RunOver(r); // version 30 (ALTARE): förbunden, och ÄNDLÖST:s poäng och topplista
   endScr.ro = { t0: performance.now(), souls: r.practice ? -1 : r.souls || 0, shown: -1, cnt: [r.depth | 0, r.kills | 0, r.time || 0], cs: '' }; menyCount(endScr.ro); // MENY: siffrorna räknas upp
   mouseDown = false; aimDown = false; if (document.pointerLockElement) document.exitPointerLock();
   ro.hidden = false;
@@ -41,6 +42,7 @@ function retryRun() { // FÖRSÖK IGEN: en ny runda direkt med samma inställnin
   const pr = r.practice, ed0 = r.custom ? store.get('editor', null) : null;
   if (ed0 && ed0.grid) playCustom({ biome: 'dungeon', ...ed0 }); else if (pr && (pr.biome || pr.boss)) { practice = { ...pr }; begin('practice'); } // egen bana och övning: samma igen
   else if (r.hunt) beginBossHunt(); else if (r.campaign) beginCampaign(r.campaign.ch | 0); else if (r.survival) beginSurvival(); else if (r.maze) beginMaze(); else if (r.abyss) beginAbyss(!!r.abyssDaily); // speciallägena börjar om i samma läge
+  else if (r.a30e) a30eBegin(); // version 30 (ALTARE): ÄNDLÖST börjar om i samma läge
   else begin(r.weekly ? 'weekly' : r.monthly ? 'monthly' : r.daily ? 'daily' : r.bossrush ? 'bossrush' : 'new');
 }
 function showFloorEnd() {

@@ -51,6 +51,7 @@ function drawHUD() {
     g.fillStyle = '#0007'; for (let i = 1; i < 12; i++) if (i % 4) g.fillRect(Math.round(x + w * i / 12), y, 1, 3); // segment
     if (hb.enraged && tmr % 0.5 < 0.25) { g.strokeStyle = '#ff4030'; g.strokeRect(x - 1.5, y - 1.5, w + 3, 6); }
   }
+  if (a30eBanner()) ; else // version 30 (ALTARE): ÄNDLÖST ritar sitt eget titelkort (raden måste stå direkt ovanför titelkortets if)
   if (levelBanner > 0 && bossBanner <= 0 && state === 'play') { // titelkortet: namnet stort, våningen litet och högst en kort rad till
     const a = Math.min(1, levelBanner, (3 - levelBanner) * 3), sub = lvl.hub ? 'MELLAN RUNDORNA' : run.abyss ? `AVGRUND ${run.depth}` : (cycleOf(run.depth) ? `VARV ${cycleOf(run.depth) + 1} · ` : '') + `VÅNING ${run.depth}`;
     ctx.font = '16px "PressStart2P"'; const w = ctx.measureText(plain(lvl.name)).width;

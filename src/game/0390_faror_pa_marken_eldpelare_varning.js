@@ -86,6 +86,7 @@ function enterPortal(p) {
   if (run.finale) { finaleWon(); return; }
   if (run.campaign) { campaignWon(); return; }
   if (run.abyss) { abyssNext(); return; }
+  if (run.a30e) { a30eNext(); return; } // version 30 (ALTARE): ÄNDLÖST – bossen fälld, ett kort och nästa våning
   if (run.hunt) { bossHuntPick(); return; }
   if (run.bossrush) { bossRushNext(); return; }
   const next = run.depth + 1;

@@ -262,6 +262,7 @@ function loadFloor(depth) {
   run.depth = depth;
   if (run.campaign) { startLevel(campaignLevel(depth)); P.armor = Math.min(200, P.armor + mod('armorPerFloor')); if (mod('floorHeal')) heal(mod('floorHeal'), true); saveRun(); return; }
   if (run.abyss) { const L = abyssLevel(depth); startLevel(L); abyssScale(); P.armor = Math.min(200, P.armor + mod('armorPerFloor')); if (mod('floorHeal')) heal(mod('floorHeal'), true); saveRun(); return; }
+  if (run.a30e) { a30eLoad(depth); return; } // version 30 (ALTARE): ÄNDLÖST (0478)
   const c = cycleOf(depth), pos = cyclePos(depth);
   const level = !isBossDepth(depth)
     ? Gen.floor(RNG.hash(run.seed + ':' + depth), Math.min(5, pos + c), { shop: pos === 2 || pos === 4, weapon: weaponFor(depth), biome: biomeFor(depth), guardian: guardianFor(depth) })

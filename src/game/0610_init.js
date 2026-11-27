@@ -44,6 +44,7 @@
   window.__game.pb = pbApi; // version 27: partikelbudgeten (t147)
   window.__game.efx2 = efx2Api; // version 25.1: fler Effekseer-effekter (t117)
   window.__game.flame = { groundFires: () => groundFires, light: (x, y) => lightAt(x, y) }; // version 25.1: eldkastarens ljus (t119)
+  window.__game.a30 = a30Api(); // version 30 (ALTARE): förbundets altare och ÄNDLÖST (t200–t204)
   if (params.has('autostart')) begin('new');
 })();
 document.getElementById('start').addEventListener('click', () => startMode('new'));
