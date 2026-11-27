@@ -229,6 +229,7 @@ function drawMapBox(mini) { // automap: bara rutor man har sett. mini = liten ka
 function drawMapCells(mini, s, ox, oy, x0, y0, x1, y1) {
   const inside = (x, y) => x >= x0 && y >= y0 && x < x1 && y < y1;
   const sense = mod('secretSense') > 0;
+  f29MapFar(s, ox, oy, x0, y0, x1, y1); // version 29 (FÖNSTER): rutor man bara sett genom galler och fönster, svagt
   for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
     const c = map[y][x];
     if (c === '*' && sense && doors[x + ',' + y].open === 0) { ctx.fillStyle = tmr % 1 < 0.5 ? '#c060ff' : '#7030a0'; ctx.fillRect(ox + x * s, oy + y * s, s, s); continue; }
@@ -452,6 +453,7 @@ function fire() {
       if (up('ricowall')) ricochetWall(hx, hy, dx, dy, wall.side, base * 0.8);
       if (wallDist === wall.dist && (wall.cell === 'š' || wall.cell === 'Ţ')) mirrorShot(hx, hy, dx, dy, wall.side, base, 3, p < 3); // spegelväggen studsar kulan
       if (wallDist === wall.dist && p === 0) v19WallHit(wall, hx, hy); // malmådern
+      if (wallDist === wall.dist) f29Shot(wall, hx, hy, base); // version 29 (FÖNSTER): glaset spricker och går sönder
     }
   }
   if (wp.musket) musketSmoke();

@@ -9,6 +9,7 @@ function explode(x, y, dmg, r, hurtsPlayer, big) {
   burnWebs(x, y, r);
   v27Boom(x, y, r); // version 27 (BLOOD): dödar smällen köttfiender blir det en stjärnformad blodfläck runt den
   v28Boom(x, y, r); // version 28 (REND): stor smäll inomhus sotar taket
+  f29Boom(x, y, r); // version 29 (FÖNSTER): glas krossas och rostiga galler böjs upp
   if (pet && Math.hypot(pet.x - x, pet.y - y) < r + 0.5 && hurtsPlayer) hurtPet(10);
   for (const e of ents) if (!e.dead && e.sleep && Math.hypot(e.x - x, e.y - y) < 8) { e.sleep = false; alertEnemy(e, false); } // explosioner väcker sovande
   play('fireburst', 0.6, rnd(0.8, 1), { x, y });
@@ -74,6 +75,7 @@ function breakCrate(pr) {
 function breakProps(x, y, r, kicking) { // sparken: lådor går sönder, krutfat smäller
   let hit = false;
   for (const pr of props) if (pr.def && !pr.broken && (pr.def.crate || (pr.def.boom && !kicking)) && Math.hypot(pr.x - x, pr.y - y) < r + 0.3) { hitProp(pr, x, y); hit = true; }
+  if (f29Melee(x, y, r, kicking)) hit = true; // version 29 (FÖNSTER): sparken och närstriden krossar glas och böjer rostiga galler
   return hit;
 }
 function useProp() { // brunnen helar en gång, altaret ger ett förbannat kort och guld
