@@ -15480,12 +15480,12 @@ const AI_V20 = {
     return false;
   },
   plumber(e) { if (!e.v20rage && e.hp < e.maxHp * 0.5) { e.v20rage = true; e.d = { ...e.d, speed: e.d.speed * 1.35 }; play('plumber', 1.1, 0.8, { x: e.x, y: e.y }); } return false; },
-  leech(e, dt, dist) { // fäster sig och suger blod
+  leech(e, dt, dist) { // fäster sig och suger blod (räckvidd 0,82: fiender stannar på 0,75 från spelaren, så en igel som skakats av når fram igen)
     if (e.attached) { if (P.leech !== e) { e.attached = false; e.stun = Math.max(e.stun || 0, 1); return false; }
       e.x = P.x + Math.cos(P.a) * 0.45; e.y = P.y + Math.sin(P.a) * 0.45; e.state = 'attack';
       e.suck = (e.suck || 0) + dt; if (e.suck >= 0.5) { e.suck = 0; run.cause = e.d.name; hurtPlayer(1, e.x, e.y, 'gas'); e.hp = Math.min(e.maxHp, e.hp + 0.3); }
       return true; }
-    if (dist < 0.75 && !P.leech && (e.stun || 0) <= 0 && (e.v20free || 0) < tmr) { if (Math.random() < mod('leechResist')) { e.stun = 1; tryMove(e, -Math.cos(P.a), -Math.sin(P.a), 0.2); return false; }
+    if (dist < 0.82 && !P.leech && (e.stun || 0) <= 0 && (e.v20free || 0) < tmr) { if (Math.random() < mod('leechResist')) { e.stun = 1; tryMove(e, -Math.cos(P.a), -Math.sin(P.a), 0.2); return false; }
       e.attached = true; e.jumps = 0; P.leech = e; play('leech', 0.8, 1); firstHint('leech', 'IGELN SUGER BLOD – SKJUT DEN ELLER HOPPA TRE GÅNGER.'); return true; }
     return false;
   },
