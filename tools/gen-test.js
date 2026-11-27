@@ -4901,7 +4901,7 @@ function freeLineT(r, x, y) { let best = 0; const at = (xx, yy) => (r[yy] && r[y
   const F28 = ['scenes28', 'windows28', 'deep28', 'blood28'], SC28 = ['floodhall', 'tower', 'balcony'];
   const S28 = { n: 0, d3: 0, blood: 0, scenes: {}, win: 0, winCells: 0, deep: 0, ms: 0 };
   stats.v28 = [];
-  const strip28 = o => { const c = Object.assign({}, o); delete c.features; delete c.map; for (const k of F28) delete c[k]; return JSON.stringify(c); };
+  const strip28 = o => { const c = Object.assign({}, o); delete c.features; delete c.map; for (const k of F28.concat(['altar29', 'boss29'])) delete c[k]; return JSON.stringify(c); }; // (version 29: blodaltarets och blodfurstens platser på blodvåningar, se provet för version 29)
   const cnt = m => { const n = {}; for (const r of m) for (const c of r) n[c] = (n[c] || 0) + 1; return n; };
   const check28 = (lv, tag, base, opts, depth, seed, full) => {
     const e = Gen.validate(lv); if (e.length) { fail(tag + ' validate: ' + e[0]); return; }
@@ -4980,6 +4980,29 @@ function freeLineT(r, x, y) { let best = 0; const at = (xx, yy) => (r[yy] && r[y
     if (bl1.blood28 !== true || bl0.blood28 !== false || Gen.validate(bl1).length) fail('version 28: opts.v28.blood fungerar inte');
   }
   stats.v28.push('Gen.floor.stats.v28 = ' + JSON.stringify(Gen.floor.stats.v28 || {}));
+// version 29 (SPEL, git-objektet GEN_V28_REF = c4d6a0d, eller filen i GEN_OLD28): blodaltarets plats (level.altar29) och blodfurstens sal (level.boss29)
+// bara på blodvåningar och kartan orörd; med opts.v29off och på alla andra våningar exakt version 28:s bana; altaret har åtta fria grannar.
+{
+  const REF = process.env.GEN_V28_REF || 'c4d6a0d'; let Old28 = null, err = '';
+  try { const src = process.env.GEN_OLD28 ? fs.readFileSync(process.env.GEN_OLD28, 'utf8') : require('child_process').execFileSync('git', ['show', REF + ':js/gen.js'], { cwd: path.join(__dirname, '..'), encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 1 << 26 });
+    const keep = global.Gen; (0, eval)(src); Old28 = global.Gen; global.Gen = keep; } catch (e) { err = String(e.message || e).split('\n')[0]; }
+  if (!Old28) fail('version 29: kunde inte läsa gen.js från version 28 (' + err + '); sätt GEN_OLD28=sökväg till den gamla filen');
+  else {
+    const BI29 = BIOME_IDS; let n = 0, blood = 0, altar = 0, boss = 0;
+    for (let i = 0; i < 240; i++) {
+      const seed = 'v29-' + i, d = 3 + (i % 3), opts = Object.assign({ biome: BI29[i % BI29.length] }, i % 4 === 0 ? { v28: { blood: true } } : {}), tag = `[v29 ${opts.biome} ${seed} d=${d}]`;
+      const old = JSON.stringify(Old28.floor(seed, d, Object.assign({}, opts))), lv = Gen.floor(seed, d, Object.assign({}, opts)), off = Gen.floor(seed, d, Object.assign({ v29off: true }, opts)); n++;
+      if (JSON.stringify(off) !== old) { fail(tag + ' opts.v29off skiljer sig från version 28'); continue; }
+      const c = Object.assign({}, lv); delete c.altar29; delete c.boss29;
+      if (JSON.stringify(c) !== old) { fail(tag + ' version 29 ändrade mer än altar29/boss29'); continue; }
+      if (!lv.blood28) { if ('altar29' in lv || 'boss29' in lv) fail(tag + ' altar29/boss29 utan blodvåning'); continue; }
+      blood++;
+      if (lv.altar29) { altar++; const { x, y } = lv.altar29; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (lv.map[y + dy][x + dx] !== '.') fail(tag + ' altaret har inte fritt runt om'); }
+      if (lv.boss29) { boss++; if (lv.map[lv.boss29.y][lv.boss29.x] !== '.') fail(tag + ' blodfurstens ruta är inte golv'); }
+    }
+    stats.v29 = `${n} banor mot version 28 (${process.env.GEN_OLD28 ? path.basename(process.env.GEN_OLD28) : REF}): med opts.v29off och utan blodvåning identiska; ${blood} blodvåningar, altare på ${altar}, blodfurstens sal på ${boss}`;
+  }
+}
   // negativa validate-tester
   {
     const msg = (lv, f, re) => { const l = JSON.parse(JSON.stringify(lv)); f(l); return Gen.validate(l).some(e => re.test(e)); };
@@ -5821,6 +5844,7 @@ console.log('Version 27 (fler banor):\n  ' + (stats.v27 || ['EJ KONTROLLERAD']).
 console.log('Frö-stabilitet (version 27): ' + (stats.stable27 || 'EJ KONTROLLERAD'));
 console.log('Version 28 (översvämmad sal, vakttorn, balkonger, fönster, blodvåning):\n  ' + (stats.v28 || ['EJ KONTROLLERAD']).join('\n  '));
 console.log('Frö-stabilitet (version 28): ' + (stats.stable28 || 'EJ KONTROLLERAD'));
+console.log('Version 29 (blodaltaret och blodfursten): ' + (stats.v29 || 'EJ KONTROLLERAD'));
 console.log('\nFiender per rum (alla rum utom start: antal fiender -> antal rum):');
 for (const id of BIOME_IDS) { const h = B[id].hist; console.log(`  ${id.padEnd(10)} ` + Object.keys(h).sort((a, b) => a - b).map(k => k + ':' + h[k]).join(' ') + `   fiender/budget ${(B[id].enRel / B[id].n).toFixed(2)}  mimics ${B[id].mimic}  P->Z ${(B[id].gdist / B[id].n).toFixed(2)} (min ${B[id].gmin.toFixed(2)}) av längsta vägen`); }
 console.log('Rekvisita per bana:');

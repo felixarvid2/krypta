@@ -150,6 +150,7 @@ function showStats() {
   rows.push({ label: 'BIOMER', head: true, color: '#ffd24a' }, ...BIOME_IDS.map(b => { const wk = Object.entries((p.wkillsBiome || {})[b] || {}).sort((x, y) => y[1] - x[1])[0]; return { label: BIOME_NAME[b], text: `${(p.biomeFloors || {})[b] || 0} VÅNINGAR${wk ? ' · FAVORITVAPEN ' + ((WEAPONS[weaponIndex(wk[0])] || {}).name || wk[0]) : ''}` }; }));
   rows.push({ label: 'VANLIGASTE DÖDSORSAKER', head: true, color: '#ff7060' }, ...Object.entries(p.deathsBy || {}).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, v]) => ({ label: k, text: `${v} GÅNG${v > 1 ? 'ER' : ''}` })));
   rows.push({ label: 'TOTALT', head: true, color: '#ffd24a' }, { label: 'TOTAL SKADA', text: String(p.totalDmg || 0) }, { label: 'HUVUDTRÄFFAR', text: String(p.headshots || 0) }, { label: 'RUNOR FÄSTA', text: String(p.runesSocketed || 0) }, { label: 'SIDOUPPDRAG', text: String(p.quests || 0) }, { label: 'HEMLIGA VÅNINGAR', text: String(p.secretFloors || 0) }, { label: 'MÅLTIDER', text: String(p.meals || 0) });
+  rows.push(...s29StatRows(p)); // version 29 (SPEL): blodvåningen
   CardUI.list('STATISTIK', 'DITT KRYPTA I SIFFROR', rows, () => refreshTitle());
 }
 // ---------- Version 6: svagheter i bestiariet ----------

@@ -24,6 +24,7 @@ function showRunOver(win) {
   document.getElementById('ro-souls').textContent = '';
   const tip = r.records && r.records.length ? 'NYTT REKORD: ' + r.records[0] : !win ? 'TIPS: ' + (DEATH_TIPS[r.cause] || 'VARJE RUNDA LÄR DIG NÅGOT') : '';
   document.getElementById('ro-tip').textContent = tip.length > 60 ? tip.slice(0, 58) + '…' : tip;
+  s29RunOver(r); // version 29 (SPEL): blodpakter och fällda blodfurstar
   endScr.ro = { t0: performance.now(), souls: r.practice ? -1 : r.souls || 0, shown: -1, cnt: [r.depth | 0, r.kills | 0, r.time || 0], cs: '' }; menyCount(endScr.ro); // MENY: siffrorna räknas upp
   mouseDown = false; aimDown = false; if (document.pointerLockElement) document.exitPointerLock();
   ro.hidden = false;

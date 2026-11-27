@@ -10227,6 +10227,49 @@
     }
   }
 
+  // ---------- Version 29 (SPEL): blodaltarets plats och blodfurstens sal på blodvåningen ----------
+  // Ett pass ovanpå version 28 (Gen.floor = floor29) med eget slumpflöde RNG(seed).fork('v29'). Bara på blodvåningar (level.blood28) och kartan
+  // ändras aldrig: två nya fält som spelet läser. opts.v29off (och alla äldre vNNoff) ger exakt version 28:s bana; en bana som inte är blodvåning
+  // är alltid exakt densamma som i version 28. opts.v29 = { altar: false, boss: false } stänger av ett fält (tester).
+  //  level.altar29 = { x, y }: en golvruta '.' med åtta fria grannar ('.') i ett vanligt rum (inte vaktarens sal, inte startrummet), minst 8 steg från
+  //    P längs gångvägen: spelet ställer blodaltaret där (ett block mitt på golvet stänger aldrig en gång).
+  //  level.boss29 = { room, x, y }: en fri ruta nära mitten av den största salen (normal, elit eller utgång, minst 6×6) långt från P: blodfursten.
+  const V29_OFFS = V28_OFFS.concat(['v29off']);
+  const V29_ROOMS = ['normal', 'elite', 'exit', 'treasure'];
+  function floor29(seed, depth, opts) {
+    opts = opts || {};
+    const L = floor28(seed, depth, opts);
+    if (V29_OFFS.some(k => opts[k]) || !L.blood28) return L;
+    const st = floor29.stats.v29 = floor29.stats.v29 || { n: 0, altar: 0, boss: 0 };
+    content29(L, RNG(seed).fork('v29'), opts.v29 || {}, st);
+    return L;
+  }
+  floor29.stats = floor.stats;
+  function content29(L, rng, F, st) {
+    const m = L.map, H = m.length, W = m[0].length, rm = Array.isArray(L.roomMask) && L.roomMask.length === H ? L.roomMask : null, rooms = L.rooms || [];
+    if (!rm || L.arena || L.maze || L.secret) return;
+    st.n++;
+    let P = null; for (let y = 0; y < H && !P; y++) for (let x = 0; x < W; x++) if (m[y][x] === 'P') { P = [x, y]; break; }
+    if (!P) return;
+    const dist = new Int32Array(W * H).fill(-1), q = [P[1] * W + P[0]]; dist[q[0]] = 0;
+    for (let h = 0; h < q.length; h++) { const c = q[h], x = c % W, y = (c / W) | 0; for (let k = 0; k < 4; k++) { const nx = x + DX[k], ny = y + DY[k], n = ny * W + nx; if (nx < 0 || ny < 0 || nx >= W || ny >= H || dist[n] >= 0 || (isBlock(m[ny][nx]) && !isDoorCh(m[ny][nx]))) continue; dist[n] = dist[c] + 1; q.push(n); } }
+    const roomOf = (x, y) => (rm[y][x] !== '-' ? rm[y].charCodeAt(x) - 48 : -1), startRoom = roomOf(P[0], P[1]);
+    const okRoom = k => k >= 0 && k !== startRoom && rooms[k] && V29_ROOMS.includes(rooms[k].type);
+    const open8 = (x, y) => { if (m[y][x] !== '.') return false; for (let k = 0; k < 8; k++) if ((m[y + RY[k]] || '')[x + RX[k]] !== '.') return false; return true; };
+    if (F.altar !== false) {
+      const cand = []; for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) if (open8(x, y) && okRoom(roomOf(x, y)) && dist[y * W + x] >= 8) cand.push([x, y]);
+      if (cand.length) { const [x, y] = rng.pick(cand); L.altar29 = { x, y }; st.altar++; }
+    }
+    if (F.boss !== false) {
+      const big = rooms.map((r, i) => i).filter(i => okRoom(i) && rooms[i].type !== 'treasure' && rooms[i].w >= 6 && rooms[i].h >= 6).sort((a, b) => rooms[b].w * rooms[b].h - rooms[a].w * rooms[a].h || a - b);
+      for (const i of big.slice(0, 3)) {
+        const r = rooms[i], cx = r.x + r.w / 2, cy = r.y + r.h / 2; let best = null, bd = 1e9;
+        for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) { if (roomOf(x, y) !== i || !open8(x, y) || dist[y * W + x] < 12 || (L.altar29 && L.altar29.x === x && L.altar29.y === y)) continue; const d = Math.hypot(x + 0.5 - cx, y + 0.5 - cy); if (d < bd) { bd = d; best = [x, y]; } }
+        if (best) { L.boss29 = { room: i, x: best[0], y: best[1] }; st.boss++; break; }
+      }
+    }
+  }
+
   // ---------- Validering ----------
   const ENEMY_CHARS = 'SKVILNORWE' + Object.keys(NEW_ENEMIES).join('');
   const VALID = new Set((WALLS + 'DG*xPBhaA$CMfotn.QZ' + ENEMY_CHARS + PROP_CHARS + WEAPON_CHARS + GATES + HAZARD + NPCS + NPCS7 + NPCS8 + ",'}¥ªðþ¼½Ģ" + 'Ŋŋ' + 'Ũ' + 'Ƃ' + 'ƞƳ' + 'ǫǭ' + 'Ǿȏ' + '\u022b' + '\u0246' + '\u025f' + 'ɻ' + 'ʖ').split(''));
@@ -11106,4 +11149,5 @@
   window.Gen = { floor, boss, secret, maze, validate, THEMES, BOSS_THEMES, BIOMES, GUARDIANS, ARCHES: Object.keys(ARCH).concat(SET14_ID, SET17_ID), WEAPONS, ARENAS: ['hall'].concat(Object.keys(ARENAS)) };
   window.Gen.floor = floor27; // version 27: fler banor (planritningar och scener ovanpå version 24)
   window.Gen.floor = floor28; // version 28: översvämmad sal, vakttorn, balkonger, fönster och blodvåning (ovanpå version 27)
+  window.Gen.floor = floor29; // version 29 (SPEL): blodaltarets plats och blodfurstens sal på blodvåningen (ovanpå version 28)
 })();
