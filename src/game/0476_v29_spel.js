@@ -259,3 +259,5 @@ function s29Api() {
   v26aShot = function (h, base, wp) { if (h.o && h.o.s29pool) { if (h.o.hp > 0) { h.o.hp = 0; hitMark = 0.1; } return 0; } return S29w.v26aShot(h, base, wp); };
   explode = function (x, y, dmg, r, ...rest) { const out = S29w.explode(x, y, dmg, r, ...rest); for (const p of S29.pools) if (Math.hypot(p.x - x, p.y - y) < (r || 1.5) + 0.3) p.hp = 0; return out; };
 }
+// labyrintläget spelar sitt eget spår (music/labyrinth.ogg, gjort för version 7 men aldrig inkopplat); bossmusik och smygmusik går före
+let s29PlayMusic0 = playMusic; playMusic = function () { s29PlayMusic0(); if (window.Music && settings.music !== false && lvl && lvl.maze && state === 'play' && !musicSnd && !lvl.hub && !lvl.secret) Music.play('labyrinth'); };
