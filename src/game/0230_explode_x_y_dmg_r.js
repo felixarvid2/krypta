@@ -30,6 +30,7 @@ function explode(x, y, dmg, r, hurtsPlayer, big) {
     if (map[cy][cx] === '{' && Math.hypot(cx + 0.5 - x, cy + 0.5 - y) < r + 0.9) blowWall(cx, cy); // spruckna väggar rasar
   if (v26bj) dmg *= 0.5; // version 26A: spränghoppet halverar egenskadan
   if (hurtsPlayer && Math.hypot(P.x - x, P.y - y) < r && boomSees(x, y, P.x, P.y)) hurtPlayer(dmg, x, y, 'proj');
+  r30Boom(x, y, r); // version 30 (RAS): spruckna väggar rasar, pelare faller bort från smällen (sist: väggen skyddar mot just den här smällen)
   P.flash = Math.max(P.flash, 0.05);
 }
 function dropItem(type, x, y) { const a = rnd(0, TAU), it = { type, x, y, taken: false, drop: true, hop: 0.5, hvx: Math.cos(a) * rnd(0.6, 1.4), hvy: Math.sin(a) * rnd(0.6, 1.4) }; if (type === 'potion') it.pot = randomPotion(); if (type === 'rune') it.rune = RUNE_IDS[(Math.random() * RUNE_IDS.length) | 0]; items.push(it); return it; } // studsar ut
@@ -76,6 +77,7 @@ function breakProps(x, y, r, kicking) { // sparken: lådor går sönder, krutfat
   let hit = false;
   for (const pr of props) if (pr.def && !pr.broken && (pr.def.crate || (pr.def.boom && !kicking)) && Math.hypot(pr.x - x, pr.y - y) < r + 0.3) { hitProp(pr, x, y); hit = true; }
   if (f29Melee(x, y, r, kicking)) hit = true; // version 29 (FÖNSTER): sparken och närstriden krossar glas och böjer rostiga galler
+  if (kicking && r30Melee(x, y, r, true)) hit = true; // version 30 (RAS): sparken är en tung träff mot spruckna väggar och pelare
   return hit;
 }
 function useProp() { // brunnen helar en gång, altaret ger ett förbannat kort och guld

@@ -97,6 +97,7 @@ function v28Tick(dt) { // från gfxETick (efter v27Tick)
   }
   if ((V28T.scanT -= dt) <= 0) { V28T.scanT = 1; v28Scan(); } // cellgallren (version 21) kan stängas och öppnas under spelet
   f29Tick(dt); // version 29: glas och rostiga galler (tips)
+  r30Tick(dt); // version 30 (RAS): fallande pelare, skyddspunkter efter ras, tips
 }
 // ---- fönster och galler: texturer ----
 function v28BarsTex(src) { // cellgallret: stänger och tvärslåar ur version 21:s textur (kolumner och rader som är ljusa i minst 60 %), resten genomsiktligt
@@ -152,6 +153,7 @@ function v28Start() { // från startLevel (efter v27Start)
   V28T.wallCh = best; tex.wall_v28win = v28FrameFor(wallTexFor[best]).solid;
   WP_TEXMAT['ǂ'] = 'metal'; // skott mot fönstret: gnistor mot gallret (WP_TEXMAT står efter den här delen, därför här)
   f29Start(); // version 29: en del fönster blir glas eller rostiga galler (eget slumpflöde), texturer och rutornas tillstånd
+  r30Start(); // version 30 (RAS): spruckna väggar som rasar (eget slumpflöde), texturer och rutornas tillstånd
   v28Scan();
 }
 // ---- fönster och galler: strålen ----

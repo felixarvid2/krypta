@@ -152,6 +152,7 @@ function hammerSwing(wp, k) { // stridshammaren: svep, eller ett laddat slag som
   if (slam) { P.shake = Math.max(P.shake, 2); for (let i = 0; i < 16; i++) { const a = i / 16 * TAU; particles.push({ x: P.x + Math.cos(P.a) * 0.8, y: P.y + Math.sin(P.a) * 0.8, z: 0.05, vx: Math.cos(a) * r * 1.6, vy: Math.sin(a) * r * 1.6, vz: 0.4, life: 0.5, maxLife: 0.5, img: fx.parts.dust ? fx.parts.dust[0] : fx.hit[1], size: 0.12, fade: true, tint: [170, 140, 110] }); } }
   for (const pt of pots) if (!pt.broken && Math.hypot(pt.x - P.x, pt.y - P.y) < r) breakPot(pt);
   breakProps(P.x + Math.cos(P.a), P.y + Math.sin(P.a), slam ? 1.6 : 0.9);
+  r30Melee(P.x + Math.cos(P.a), P.y + Math.sin(P.a), slam ? 1.6 : 0.9, false); // version 30 (RAS): stridshammaren är en tung träff
   if (hits) { play('hammer_hit', 0.9, rnd(0.85, 1)); hitStop = Math.max(hitStop, slam ? 0.12 : 0.07); P.shake = Math.max(P.shake, slam ? 2 : 1); hitMark = 0.15; lvlStat.hits++; }
 }
 function musketSmoke() { // krutrök som ligger kvar och skymmer sikten

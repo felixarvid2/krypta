@@ -322,6 +322,7 @@ function pickHit(wp) {
   for (const r of [0, 0.9, 1.5]) { const cx = (P.x + Math.cos(P.a) * r) | 0, cy = (P.y + Math.sin(P.a) * r) | 0; if (map[cy] && map[cy][cx] === 'Ș') { clearCavein(cx, cy); spawnText(cx + 0.5, cy + 0.5, 'TAKET RASAR UTAN FARA', '#c9a87a'); play('cavein', 0.5, 1.3, { x: cx + 0.5, y: cy + 0.5 }); hit = true; } }
   for (const pt of pots) if (!pt.broken && Math.hypot(pt.x - P.x, pt.y - P.y) < reach) breakPot(pt);
   breakProps(P.x + Math.cos(P.a) * 1, P.y + Math.sin(P.a) * 1, 0.8);
+  r30Melee(P.x + Math.cos(P.a) * 1, P.y + Math.sin(P.a) * 1, 0.8, false); // version 30 (RAS): hackan är en tung träff
   if (hit) { play('pickaxe_hit', 1.4, rnd(0.9, 1.1)); hitStop = Math.max(hitStop, 0.07); P.shake = Math.max(P.shake, 0.9); hitMark = 0.15; lvlStat.hits++; sparks(P.x + Math.cos(P.a) * 1.1, P.y + Math.sin(P.a) * 1.1, 0.45, 4); }
 }
 function mineOre(cx, cy) { // malmådern ger guld och blir vanlig stollvägg

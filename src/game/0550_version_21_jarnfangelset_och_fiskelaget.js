@@ -120,6 +120,7 @@ function flailHit(wp, base, reach, arc, spin) {
     if (!k && up('fl_stun') && !e.boss) e.stun = Math.max(e.stun || 0, spin ? 0.3 : 0.7); }
   for (const pt of pots) if (!pt.broken && Math.hypot(pt.x - P.x, pt.y - P.y) < r) breakPot(pt);
   if (!spin) breakProps(P.x + Math.cos(P.a), P.y + Math.sin(P.a), 0.8);
+  if (!spin) r30Melee(P.x + Math.cos(P.a), P.y + Math.sin(P.a), 0.8, false); // version 30 (RAS): slagan är en tung träff
   for (const pr of props) if (!pr.broken && (v21Breakable(pr) || v20Breakable(pr)) && Math.hypot(pr.x - P.x - (spin ? 0 : Math.cos(P.a) * 0.9), pr.y - P.y - (spin ? 0 : Math.sin(P.a) * 0.9)) < (spin ? r : 0.9)) { if (v21Breakable(pr)) v21HitProp(pr, pr.x, pr.y, base); else v20HitProp(pr, pr.x, pr.y, base); }
   if (hit) { play('flail_hit', spin ? 0.6 : 1, rnd(0.9, 1.1)); if (!spin) hitStop = Math.max(hitStop, 0.05); hitMark = 0.12; lvlStat.hits++; }
   return hit;

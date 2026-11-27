@@ -257,6 +257,7 @@ function drawMapCells(mini, s, ox, oy, x0, y0, x1, y1) {
   v19Map(s, ox, oy, inside); v20Map(s, ox, oy, inside); v21Map(s, ox, oy, inside); v22Map(s, ox, oy, inside); v23Map(s, ox, oy, inside);
   v24Map(s, ox, oy, inside); // version 24: stängda enkelriktade dörrar
   v28Map(s, ox, oy, inside); // version 28 (REND): fönster och galler
+  r30Map(s, ox, oy, inside); // version 30 (RAS): spruckna väggar och grus
   ctx.fillStyle = '#4dff7a'; ctx.fillRect(ox + P.x * s - 1, oy + P.y * s - 1, 3, 3);
   ctx.fillRect(ox + (P.x + Math.cos(P.a) * 1.4) * s, oy + (P.y + Math.sin(P.a) * 1.4) * s, 1, 1);
 }
@@ -454,6 +455,7 @@ function fire() {
       if (wallDist === wall.dist && (wall.cell === 'š' || wall.cell === 'Ţ')) mirrorShot(hx, hy, dx, dy, wall.side, base, 3, p < 3); // spegelväggen studsar kulan
       if (wallDist === wall.dist && p === 0) v19WallHit(wall, hx, hy); // malmådern
       if (wallDist === wall.dist) f29Shot(wall, hx, hy, base); // version 29 (FÖNSTER): glaset spricker och går sönder
+      if (wallDist === wall.dist) r30Shot(wall, base, p); // version 30 (RAS): tunga skott mot spruckna väggar
     }
   }
   if (wp.musket) musketSmoke();
