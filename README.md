@@ -1352,6 +1352,7 @@ Med RENDERING WEBGL (eller AUTO) gör grafikkortet nu mer än bloom.
 ### Rättningar
 - **Balkongskyttarna** och vakttornets skytt stannar på avsatsen, också när de jagar dig.
 - **Under BARA NÄRSTRID** gör sparken, kolvslaget, rusningen, flygsparken och parerade skott full skada. Skott och sprängningar gör fortfarande en fjärdedel.
+- **Labyrintläget** spelar nu sitt eget spår, som gjordes i version 7 men aldrig kopplades in.
 - **Utmaningsportalen** är provad i riktiga rundor för varje regel: regeln, belöningen, sparning och laddning samt att regeln släpps på nästa våning (t172).
 - **Tester:** t170–t172.
 
