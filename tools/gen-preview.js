@@ -1,10 +1,10 @@
 'use strict';
 // Skriver ut en genererad bana som ASCII: node tools/gen-preview.js <biom> [seed] [djup] [flaggor]
 //   biom: dungeon | caves | graveyard | forest | courtyard | swamp | frost | volcano | tomb | crystal | sunken | clock | sky | fungus | mirror
-//         | library | foundry | cathedral | hive | garden | dream | ship | lab | circus | jungle | mine | observatory | sewer | desert | prison | harbor | bathhouse | purgatory | abattoir | battlefield
+//         | library | foundry | cathedral | hive | garden | dream | ship | lab | circus | jungle | mine | observatory | sewer | desert | prison | harbor | bathhouse | purgatory | abattoir | battlefield | ruins | glassworks
 //         | boss | boss:hall | boss:graveyard | boss:cave | boss:forest | boss:swamp | boss:frost | boss:volcano | boss:tomb | boss:crystal
 //         | boss:sunken | boss:clock | boss:sky | boss:fungus | boss:mirror | boss:library | boss:foundry | boss:cathedral | boss:hive
-//         | boss:garden | boss:dream | boss:ship | boss:lab | boss:circus | boss:jungle | boss:mine | boss:observatory | boss:sewer | boss:desert | boss:prison | boss:harbor | boss:bathhouse | boss:purgatory | boss:abattoir | boss:battlefield | random
+//         | boss:garden | boss:dream | boss:ship | boss:lab | boss:circus | boss:jungle | boss:mine | boss:observatory | boss:sewer | boss:desert | boss:prison | boss:harbor | boss:bathhouse | boss:purgatory | boss:abattoir | boss:battlefield | boss:ruins | boss:glassworks | random
 //         (eller --biome=clock, --biome=fungus, --biome=library, --biome=foundry)
 //   flaggor: --biome=swamp  --shop  --weapon=g (eller --weapon=axe, --weapon=harpoon, --weapon=Â, --weapon=spear, --weapon=Į, --weapon=whip, --weapon=Ŕ,
 //            --weapon=runebook, --weapon=Ɓ, --weapon=censer, --weapon=Ɲ, --weapon=shears, --weapon=Ʋ, --weapon=chaincannon, --weapon=Ǭ, --weapon=pinthrower, --weapon=Ȏ, --weapon=pickaxe, --weapon=Ȫ)
@@ -17,6 +17,7 @@
 //            --beams (visa ljusschakten som ~ och rullstenens bana som =)
 //            --winds (visa vindrutorna som pilar > < v ^ i stället för ń)
 //            --streams (version 22: visa eldfloderna ɰ som pilar > < v ^ i flödets riktning)
+//            --ras (version 30: visa förslagen till RAS, level.ras30, som # i ruinstaden; förslagen listas alltid under rubriken)
 //            --teleports (visa teleporterparen som siffror 1 1, 2 2, 3 3 i stället för ť; paren listas alltid under rubriken)
 //            --belts (visa rullbanden som pilar > < v ^ i stället för Ÿ; banden listas alltid under rubriken)
 //            --arenas (version 14: rita arenarummens rektanglar: kanten som + och dörröppningarna som !; arenorna listas alltid under rubriken)
@@ -75,6 +76,8 @@
 //          node tools/gen-preview.js purgatory 7 5 --streams --guardian=pyrelord   (eldfloder ɰ som pilar, runcirklar ɱ)    /    node tools/gen-preview.js boss:bathhouse 3 --boss=bathmaster    /    node tools/gen-preview.js boss:purgatory 3 --boss=pyrelord
 //          node tools/gen-preview.js --biome=abattoir 7 3 --rooms --guardian=butcher   (version 23: slaktkakel ɼ, kylrum ɽ, blodhalka ɿ, köttkvarnar ʀ, krokar ʁ)
 //          node tools/gen-preview.js battlefield 7 5 --guardian=warlord   (lera ʋ, katapultmål ʌ, spöksoldater ʐ i grupper om 3)    /    node tools/gen-preview.js boss:abattoir 3 --boss=butcher    /    node tools/gen-preview.js boss:battlefield 3 --boss=warlord
+//          node tools/gen-preview.js ruins 7 4 --rooms --ras --guardian=mayor   (version 30: puts ʘ, tegel ʗ, rasande tak ʝ, grus ʞ, pelare ʢ, plundrare ʨ)
+//          node tools/gen-preview.js glassworks 7 5 --rooms --guardian=glassmaster   (ugnstegel ʚ, hyllpaneler ʛ, smält glas ʟ, skärvor ʠ, ugnsmunnar ʡ)    /    node tools/gen-preview.js boss:ruins 3 --boss=mayor    /    node tools/gen-preview.js boss:glassworks 3 --boss=glassmaster
 //          node tools/gen-preview.js harbor 7 4 --floor --guardian=tidepriest   (djupt vatten Đ, bryggor i golvmasken, nät Ɏ, fiskmän ɚ)    /    node tools/gen-preview.js boss:prison 3 --boss=executioner    /    node tools/gen-preview.js boss:harbor 3 --boss=tidepriest
 //          node tools/gen-preview.js boss:mine 3 --boss=foreman    /    node tools/gen-preview.js boss:observatory 3 --boss=starseer    /    node tools/gen-preview.js mine 1 --stats --n=100
 const fs = require('fs');
@@ -216,8 +219,14 @@ const LEGEND = [
   'golvrutor: ʀ köttkvarn, ʋ djup lera, ʌ katapultmål (högst 8, aldrig nära start): aldrig enda vägen;  ɿ blodhalt golv',
   'rekvisita: ʁ köttkrok (blockerar inte)  ʂ slaktbänk  ʃ bandsåg  ʍ katapult  ʎ krigsfana  ʏ spjutpålar      föremål: ʖ kulpåse',
   'slakteriet: slakthallen, kylrummet, styckningsrummet, kvarnrummet; slagfältet: skyttegraven, katapultfältet, palissadlägret, ryttarslätten',
+  'version 30: väggar ʗ raserad tegelmur  ʘ sprucken puts  ʙ borgmästarens vägg  ʚ ugnstegel  ʛ glashyllepanel  ʜ glasmästarens vägg',
+  'vapen: ʲ slungan  ʳ glasbössan      nya fiender: ʨ plundrare  ʩ stengolem (djup 4+, högst 2)  ʪ takskytt  ʫ dammvirvel (högst 4)',
+  '  ʮ glasblåsare  ʯ glasgolem (högst 3)  ʰ slaggkrypare (högst 3)  ʱ ugnsande',
+  'golvrutor: ʝ rasande tak (bara under tak), ʟ smält glas, ʠ glasskärvor, ʡ ugnsmun (hettan når 1,5 rutor: inte heller grannrutorna enda vägen): aldrig enda vägen;  ʞ grushög',
+  'rekvisita: ʢ raserad pelare  ʣ takbjälke  ʤ huvudlös staty  ʥ smältugn (ljus)  ʦ glashylla  ʧ glasblåsarbänk      föremål: ʴ stenpåse  ʵ glasbit',
+  'ruinstaden: torget, gränderna, rådhustrappan (gårdarna under himlen), de raserade husen; glasbruket: ugnshallen, verkstaden, lagret, kylugnsgången;  # förslag till RAS (--ras)',
 ];
-const OLD_EN = 'SKVILNORW', NEW_EN = 'UXY!@^+ÅÄÖÉÜÑÆÞÐÝÃÕÊÎÔËÍÏÓÚÛĀĂĳĴĵĶķĸ' + 'ŌōŎŏŐő' + 'ŗŘřŚśŜ' + 'ŲųŴŽžſ' + 'ƄƅƆƇƈƉ' + 'ƑƒƜƘƙƚ' + 'ƫƬƭƮƯư' + 'ǕǖǗǘǙǚǣǤǥǦǧǨ' + 'ǷǸǹǺǻǼȈȉȊȋȌȍ' + 'ȡȢȣȤȥȦȧȨ' + 'ȼȽȾȿɀɁɂɃ' + 'ɕɖɗɘəɚɛɜ' + 'ɩɪɫɬɵɶɷɸ' + 'ʄʅʆʇʐʑʒʓ';
+const OLD_EN = 'SKVILNORW', NEW_EN = 'UXY!@^+ÅÄÖÉÜÑÆÞÐÝÃÕÊÎÔËÍÏÓÚÛĀĂĳĴĵĶķĸ' + 'ŌōŎŏŐő' + 'ŗŘřŚśŜ' + 'ŲųŴŽžſ' + 'ƄƅƆƇƈƉ' + 'ƑƒƜƘƙƚ' + 'ƫƬƭƮƯư' + 'ǕǖǗǘǙǚǣǤǥǦǧǨ' + 'ǷǸǹǺǻǼȈȉȊȋȌȍ' + 'ȡȢȣȤȥȦȧȨ' + 'ȼȽȾȿɀɁɂɃ' + 'ɕɖɗɘəɚɛɜ' + 'ɩɪɫɬɵɶɷɸ' + 'ʄʅʆʇʐʑʒʓ' + 'ʨʩʪʫʮʯʰʱ';
 const FEAT = { anvil: '(', fortune: ')', prisoner: '[', challenge: '?', offering: ';', lever: '/', locked: ']', cracked: '{', arrows: '<', gas: '>', lava: '_', water: '-', ice: ':', webs: '"',
   alchemist: '£', priest: '€', petcage: '©', potions: '¥', icicles: 'Ç',
   campfire: '¶', questboard: '®', runes: 'ª', meat: 'ð', firejets: '°', crumble: '¬', pendulums: '±', plates: '¨', secretstairs: '÷', poisonbarrels: 'µ', frostbarrels: 'ß',
@@ -257,7 +266,10 @@ const FEAT = { anvil: '(', fortune: ')', prisoner: '[', challenge: '?', offering
   attendants: 'ɩ', steamghosts: 'ɪ', gladiators: 'ɫ', moldcrawlers: 'ɬ', fireimps: 'ɵ', lostsouls: 'ɶ', fleshbrutes: 'ɷ', ashwalkers: 'ɸ',
   abattoirtiles: 'ɼ', coldwalls: 'ɽ', palisades: 'ʈ', earthworks: 'ʉ', bloodslick: 'ɿ', grinders: 'ʀ', deepmud: 'ʋ', catapulttargets: 'ʌ', // version 23
   meathooks: 'ʁ', butcherblocks: 'ʂ', bandsaws: 'ʃ', catapults: 'ʍ', warbanners: 'ʎ', stakes: 'ʏ', cannonballs: 'ʖ',
-  butchers: 'ʄ', pigmen: 'ʅ', flies: 'ʆ', crawlers: 'ʇ', ghostsoldiers: 'ʐ', ghostarchers: 'ʑ', ghostriders: 'ʒ', crows: 'ʓ' };
+  butchers: 'ʄ', pigmen: 'ʅ', flies: 'ʆ', crawlers: 'ʇ', ghostsoldiers: 'ʐ', ghostarchers: 'ʑ', ghostriders: 'ʒ', crows: 'ʓ',
+  ruinbricks: 'ʗ', ruinplaster: 'ʘ', kilnbricks: 'ʚ', glassshelves: 'ʛ', crackedroofs: 'ʝ', rubble: 'ʞ', moltenglass: 'ʟ', glassshards: 'ʠ', furnacevents: 'ʡ', // version 30
+  brokencolumns: 'ʢ', fallenbeams: 'ʣ', ruinstatues: 'ʤ', glassfurnaces: 'ʥ', glassracks: 'ʦ', glassbenches: 'ʧ', slingstones: 'ʴ', glassbits: 'ʵ',
+  looters: 'ʨ', rubblegolems: 'ʩ', rooftoppers: 'ʪ', dustdevils: 'ʫ', glassblowers: 'ʮ', glassgolems: 'ʯ', slagcrawlers: 'ʰ', kilnspirits: 'ʱ' };
 const arrow = b => (b.dx > 0 ? '>' : b.dx < 0 ? '<' : b.dy > 0 ? 'v' : '^');
 const makeLevel = (seed, d, shop) => (flag('secret') ? Gen.secret(seed, { biome: biome === 'random' ? undefined : biome, depth: d })
   : flag('maze') ? Gen.maze(seed, { biome: biome === 'random' ? undefined : biome, depth: d })
@@ -301,6 +313,7 @@ for (let k = 0; k < n; k++) {
   if (lv.teleports && lv.teleports.length) console.log('teleporterpar: ' + lv.teleports.map((t, i) => `${i + 1}: ${t.a.x},${t.a.y} <-> ${t.b.x},${t.b.y}`).join('  '));
   if (lv.carts && lv.carts.length) console.log('vagnbanor: ' + lv.carts.map((c, i) => `${i + 1}: ${c.loop ? 'slinga' : 'fram och tillbaka'} ${c.path.length} rutor från ${c.path[0].x},${c.path[0].y}, fart ${c.speed}, fas ${c.ph}`).join('  ')); // (version 19)
   if (lv.streams && lv.streams.length) console.log('eldfloder: ' + lv.streams.length + ' rutor, ' + lv.streams.slice(0, 12).map(q => `${q.x},${q.y}${q.dx > 0 ? '>' : q.dx < 0 ? '<' : q.dy > 0 ? 'v' : '^'}`).join(' ') + (lv.streams.length > 12 ? ' ...' : '')); // (version 22)
+  if (lv.ras30) console.log('förslag till RAS (level.ras30): ' + (lv.ras30.map(q => q.x + ',' + q.y).join(' ') || 'inga')); // (version 30)
   if (lv.sluices && lv.sluices.length) console.log('slussar: ' + lv.sluices.map(q => `${q.x},${q.y}${q.open ? ' (öppen)' : ''}`).join(' '));
   if (lv.starports && lv.starports.length) console.log('stjärnportpar: ' + lv.starports.map((p, i) => `${i + 1}: ${p[0].x},${p[0].y} <-> ${p[1].x},${p[1].y}`).join('  '));
   if (lv.belts && lv.belts.length) { // rullbanden som raka band: start, riktning och längd
@@ -333,6 +346,7 @@ for (let k = 0; k < n; k++) {
   const mark = {}; // --beams: ljusschakt ~ och rullstenens bana = (utlösaren syns som ¹); --winds: vindens riktning
   if (flag('winds')) for (const w of lv.winds || []) mark[w.y * W + w.x] = w.dx > 0 ? '>' : w.dx < 0 ? '<' : w.dy > 0 ? 'v' : '^';
   if (flag('streams')) for (const q of lv.streams || []) mark[q.y * W + q.x] = q.dx > 0 ? '>' : q.dx < 0 ? '<' : q.dy > 0 ? 'v' : '^'; // (version 22: eldflodernas riktning)
+  if (flag('ras')) for (const q of lv.ras30 || []) mark[q.y * W + q.x] = '#'; // (version 30: förslagen till RAS)
   if (flag('belts')) for (const b of lv.belts || []) mark[b.y * W + b.x] = arrow(b);
   if (flag('arenas')) for (const a of lv.arenas || []) { // arenans kant som + (väggarna runt rummet), dörröppningarna som !
     for (let y = a.y0 - 1; y <= a.y1 + 1; y++) for (let x = a.x0 - 1; x <= a.x1 + 1; x++) if (x < a.x0 || x > a.x1 || y < a.y0 || y > a.y1) mark[y * W + x] = '+';
@@ -350,7 +364,7 @@ for (let k = 0; k < n; k++) {
     for (let x = 0; x < W; x++) {
       const c = lv.map[y][x];
       if (show) { s += (c >= '0' && c <= '9') || '#%~&=Ø¦Ò¤ÈÌÙĄĆĈĊČĎĹĺĻļĽľŝŞşŠšŢũŪūŵŶŷƊƋƌƓƔƕƟƠơƢƣƤǒǓǔǠǡǢǮǯǰǿȀȁȐȑȒȓȔȕ'.includes(c) ? '#' : (show[y] ? show[y][x] : '?'); continue; }
-      if (mark[y * W + x] && (c === '.' || mark[y * W + x] === '~' || mark[y * W + x] === '+' || mark[y * W + x] === '!' || c === 'ń' || c === 'ť' || c === 'Ÿ' || c === 'ƣ' || c === 'ɰ')) { s += mark[y * W + x]; continue; }
+      if (mark[y * W + x] && (c === '.' || mark[y * W + x] === '~' || mark[y * W + x] === '+' || mark[y * W + x] === '!' || mark[y * W + x] === '#' || c === 'ń' || c === 'ť' || c === 'Ÿ' || c === 'ƣ' || c === 'ɰ')) { s += mark[y * W + x]; continue; }
       if (c === '-' && deep28.has(y * W + x)) { s += 'Đ'; continue; } // (version 28: djup bassäng)
       if (c !== '.') { s += c; continue; }
       const fi = lv.floorMask ? +lv.floorMask[y][x] : 0;
@@ -360,7 +374,7 @@ for (let k = 0; k < n; k++) {
   }
   if (flag('rooms')) {
     // per rum: typ, rumstyp, ruta, antal fiender och rekvisita (räknat via rumsmasken när den finns)
-    const ENEMY = 'SKVILNORWEQ' + NEW_EN, PROPS = 'ckjquvwyzeiFHJT()[?;/£€©¶®µß÷²³çÿýĖĘĚĞĠŅņŇňŒŦŧŰűŻż' + 'ƎƏƐƗƧƨƩƪ' + 'ǎǐǑǝǞǟ' + 'ǳǴǵǶȄȅȆȇ' + 'țȜȝȞȟ' + 'ȶȸȹȺȻ' + 'ɏɐɑɒɓɔ' + 'ɦɧɨɲɳɴ' + 'ʁʂʃʍʎʏ';
+    const ENEMY = 'SKVILNORWEQ' + NEW_EN, PROPS = 'ckjquvwyzeiFHJT()[?;/£€©¶®µß÷²³çÿýĖĘĚĞĠŅņŇňŒŦŧŰűŻż' + 'ƎƏƐƗƧƨƩƪ' + 'ǎǐǑǝǞǟ' + 'ǳǴǵǶȄȅȆȇ' + 'țȜȝȞȟ' + 'ȶȸȹȺȻ' + 'ɏɐɑɒɓɔ' + 'ɦɧɨɲɳɴ' + 'ʁʂʃʍʎʏ' + 'ʢʣʤʥʦʧ';
     lv.rooms.forEach((r, i) => {
       let en = 0, pr = 0, items = '';
       for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -368,7 +382,7 @@ for (let k = 0; k < n; k++) {
         if (!inside) continue;
         const c = lv.map[y][x];
         if (ENEMY.includes(c)) en++; else if (PROPS.includes(c)) pr++;
-        if ("ZhaA$CMwy,'}¥ªðþ¼½ĢŊŋŨƂƞƳǫǭǾȏȫɆɟɻʖ".includes(c) || (Gen.WEAPONS && Gen.WEAPONS[c])) items += c;
+        if ("ZhaA$CMwy,'}¥ªðþ¼½ĢŊŋŨƂƞƳǫǭǾȏȫɆɟɻʖʴʵ".includes(c) || (Gen.WEAPONS && Gen.WEAPONS[c])) items += c;
       }
       console.log(`  ${String(i).padStart(2)} ${String.fromCharCode(48 + i)} ${r.type.padEnd(9)} ${(r.arch || '').padEnd(12)} ${(r.tag || r.shape || '').padEnd(9)} ${r.x},${r.y} ${r.w}x${r.h}  fiender ${en}  rekvisita ${pr}  ${items}` + (r.guardian ? '  vaktare ' + r.guardian : '') + (r.lock ? '  lås ' + r.lock : ''));
     });

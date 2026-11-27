@@ -106,6 +106,12 @@
 // finnas, taken, djupen (slagfältet bara på djup 4-5 utan opts.biome), köttkvarnar/djup lera/katapultmål aldrig enda vägen och aldrig i dörröppningar,
 // katapultmål aldrig nära start, spöksoldater i grupper om 3, spökryttare med lång fri linje, frekvenser, Gen.secret/Gen.maze, negativa validate-tester
 // och frö-stabilitet mot version 22 (GEN_OLD22 eller GEN_V22_REF): med opts.v23off identiska banor, annars samma bana med kulpåsar ovanpå.
+// Version 30: ruinstaden och glasbruket (150 banor per biom med spelets opts: alla väktare inklusive mayor och glassmaster, alla vapen-id inklusive
+// sling/glassgun), arenorna 'ruins' och 'glassworks' (sist), de nya väktarna och vapnen i alla biomer, tecknen (U+0297-U+02B5) bara där de får finnas,
+// taken, djupen (utan opts.biome: ruinstaden bara på djup 3-5, glasbruket bara på djup 4-5), rasande tak aldrig under bar himmel, ugnsmunnarna med
+// fritt runt om (rutan och grannrutorna aldrig enda vägen), level.ras30 (bara i ruinstaden), frekvenser, Gen.secret/Gen.maze, negativa
+// validate-tester och frö-stabilitet mot version 29 (GEN_OLD29 eller git-objektet GEN_V29_REF = f18e99c): de gamla biomerna, arenorna, hemliga
+// våningarna och labyrinterna exakt som förut; utan opts.biome med opts.v30off identiska banor. De äldre stabilitetsproven körs med de gamla biomerna.
 // --show visar en bana per biom/arena.
 const fs = require('fs');
 const path = require('path');
@@ -251,18 +257,18 @@ const GenV13 = { floor: (s, d, o) => Gen.floor(s, d, Object.assign({}, o, { v14o
 let failures = 0;
 const fail = msg => { failures++; if (failures <= +(process.env.GEN_TEST_SHOW || 25)) console.log('FEL: ' + msg); };
 const count = (map, ch) => map.reduce((n, r) => n + r.split(ch).length - 1, 0);
-const isWall = c => c === 'ǂ' || (c >= '0' && c <= '9') || '#%~&=Ø¦Ò¤ÈÌÙĄĆĈĊČĎĹĺĻļĽľŝŞşŠšŢũŪūŵŶŷ'.includes(c) || 'ƊƋƌƓƔƕƟƠơƢƣƤ'.includes(c) || 'ǒǓǔǠǡǢ'.includes(c) || 'ǮǯǰǿȀȁ'.includes(c) || 'ȐȑȒȓȔȕ'.includes(c) || 'ȬȭȮȯȰȱ'.includes(c) || 'ɇɈɉɊɋɌ'.includes(c) || 'ɠɡɢɭɮɯ'.includes(c) || 'ɼɽɾʈʉʊ'.includes(c); // (version 23: slaktkakel, kylrum, slaktmästarens, palissad, jordvall, krigsherrens) (version 22: mosaikmarmor, pelargång, badmästarens, köttmur, benmur, eldfurstens) (version 21: fängelsesten, cellgaller, bödelns, bodvägg, kajsten, tidvattenprästens) (version 20: valvtegel, rör, råttkungens, ruinsten, klippa, sfinxens) (version 19: timrad stoll, malmåder, förmannens, mässing, stjärnkarta, stjärnskådarens) (version 18: tältduk, bur, direktörens, djungelsten, tät djungel, ormens) (version 17: skrov, mast, kaptenens, kakel, burkhyllor, alkemistens)
+const isWall = c => c === 'ǂ' || (c >= '0' && c <= '9') || '#%~&=Ø¦Ò¤ÈÌÙĄĆĈĊČĎĹĺĻļĽľŝŞşŠšŢũŪūŵŶŷ'.includes(c) || 'ƊƋƌƓƔƕƟƠơƢƣƤ'.includes(c) || 'ǒǓǔǠǡǢ'.includes(c) || 'ǮǯǰǿȀȁ'.includes(c) || 'ȐȑȒȓȔȕ'.includes(c) || 'ȬȭȮȯȰȱ'.includes(c) || 'ɇɈɉɊɋɌ'.includes(c) || 'ɠɡɢɭɮɯ'.includes(c) || 'ɼɽɾʈʉʊ'.includes(c) || 'ʗʘʙʚʛʜ'.includes(c); // (version 30: raserad tegelmur, puts, borgmästarens, ugnstegel, hyllpanel, glasmästarens) (version 23: slaktkakel, kylrum, slaktmästarens, palissad, jordvall, krigsherrens) (version 22: mosaikmarmor, pelargång, badmästarens, köttmur, benmur, eldfurstens) (version 21: fängelsesten, cellgaller, bödelns, bodvägg, kajsten, tidvattenprästens) (version 20: valvtegel, rör, råttkungens, ruinsten, klippa, sfinxens) (version 19: timrad stoll, malmåder, förmannens, mässing, stjärnkarta, stjärnskådarens) (version 18: tältduk, bur, direktörens, djungelsten, tät djungel, ormens) (version 17: skrov, mast, kaptenens, kakel, burkhyllor, alkemistens)
 const edgeC = c => isWall(c) || c === 'Ń'; // vägg eller tomrum (molnborgens ökant)
-const INTERACT = '()[?;/', GATES = '|]{', DOORS = 'DG*|]{', NPCS = '£€©', V6BLOCK = '¶®÷µß', V7BLOCK = '²³çÿý', V8BLOCK = 'ĖĘĚĞĠ', V9BLOCK = 'ŅņŇň', V10BLOCK = 'Œ', V11BLOCK = 'Ŧŧ', V13BLOCK = 'ŰŻż', V15BLOCK = 'ƎƏƐƗ', V16BLOCK = 'ƧƨƩ', V17BLOCK = 'ǎǟǑǝǞ', V18BLOCK = 'ǳǴȄȅȇ', V19BLOCK = 'țȜȞȟ', V20BLOCK = 'ȶȸȹȺȻ', V21BLOCK = 'ɐɑɒɓɔ', V22BLOCK = 'ɦɧɨɲɳɴ', V23BLOCK = 'ʂʃʍʎʏ';
-const isBlock = c => isWall(c) || ('fMtnkquvwyeHJT' + INTERACT + GATES + NPCS + V6BLOCK + V7BLOCK + V8BLOCK + V9BLOCK + V10BLOCK + V11BLOCK + V13BLOCK + V15BLOCK + V16BLOCK + V17BLOCK + V18BLOCK + V19BLOCK + V20BLOCK + V21BLOCK + V22BLOCK + V23BLOCK + 'Ń').includes(c);
+const INTERACT = '()[?;/', GATES = '|]{', DOORS = 'DG*|]{', NPCS = '£€©', V6BLOCK = '¶®÷µß', V7BLOCK = '²³çÿý', V8BLOCK = 'ĖĘĚĞĠ', V9BLOCK = 'ŅņŇň', V10BLOCK = 'Œ', V11BLOCK = 'Ŧŧ', V13BLOCK = 'ŰŻż', V15BLOCK = 'ƎƏƐƗ', V16BLOCK = 'ƧƨƩ', V17BLOCK = 'ǎǟǑǝǞ', V18BLOCK = 'ǳǴȄȅȇ', V19BLOCK = 'țȜȞȟ', V20BLOCK = 'ȶȸȹȺȻ', V21BLOCK = 'ɐɑɒɓɔ', V22BLOCK = 'ɦɧɨɲɳɴ', V23BLOCK = 'ʂʃʍʎʏ', V30BLOCK = 'ʢʣʤʥʦʧ';
+const isBlock = c => isWall(c) || ('fMtnkquvwyeHJT' + INTERACT + GATES + NPCS + V6BLOCK + V7BLOCK + V8BLOCK + V9BLOCK + V10BLOCK + V11BLOCK + V13BLOCK + V15BLOCK + V16BLOCK + V17BLOCK + V18BLOCK + V19BLOCK + V20BLOCK + V21BLOCK + V22BLOCK + V23BLOCK + V30BLOCK + 'Ń').includes(c);
 const V10EN = 'ŌōŎŏŐő'; // version 10: fångvaktare, grävare, likgrävare, rotvätte, armborstskytt, paddjätte
 const V11EN = 'ŗŘřŚśŜ'; // version 11: sporling, mycelbest, svampshaman, spegelriddare, illusionist, glasskärva
 const V13EN = 'ŲųŴŽžſ';
-const V14EN = 'ƄƅƆƇƈƉ', V15EN = 'ƑƒƜƘƙƚ', V16EN = 'ƫƬƭƮƯư', V17EN = 'ǕǖǗǘǙǚǣǤǥǦǧǨ', V18EN = 'ǷǸǹǺǻǼȈȉȊȋȌȍ', V19EN = 'ȡȢȣȤȥȦȧȨ', V20EN = 'ȼȽȾȿɀɁɂɃ', V21EN = 'ɕɖɗɘəɚɛɜ', V22EN = 'ɩɪɫɬɵɶɷɸ', V23EN = 'ʄʅʆʇʐʑʒʓ'; // version 15: korgosse, botgörare, kerub, arbetsbi, gaddkrigare, larv; version 16: stenängel, taggranka, trädgårdsdräng, drömätare, spegling, sömngångare
+const V14EN = 'ƄƅƆƇƈƉ', V15EN = 'ƑƒƜƘƙƚ', V16EN = 'ƫƬƭƮƯư', V17EN = 'ǕǖǗǘǙǚǣǤǥǦǧǨ', V18EN = 'ǷǸǹǺǻǼȈȉȊȋȌȍ', V19EN = 'ȡȢȣȤȥȦȧȨ', V20EN = 'ȼȽȾȿɀɁɂɃ', V21EN = 'ɕɖɗɘəɚɛɜ', V22EN = 'ɩɪɫɬɵɶɷɸ', V23EN = 'ʄʅʆʇʐʑʒʓ', V30EN = 'ʨʩʪʫʮʯʰʱ'; // version 15: korgosse, botgörare, kerub, arbetsbi, gaddkrigare, larv; version 16: stenängel, taggranka, trädgårdsdräng, drömätare, spegling, sömngångare
  // version 14: snöfantom, lavaorm, skarabépräst, kristallspindel, marulk, vindande // version 13: flygande bok, bläckslem, arkivariespöke, smältgolem, ångautomat, gnistdrönare
-const NEW_EN = 'UXY!@^+ÅÄÖÉÜÑÆÞÐÝÃÕÊÎÔËÍÏÓÚÛĀĂĳĴĵĶķĸ' + V10EN + V11EN + V13EN + V14EN + V15EN + V16EN + V17EN + V18EN + V19EN + V20EN + V21EN + V22EN + V23EN, OLD_EN = 'SKVILNORW', ENEMIES = OLD_EN + NEW_EN + 'EQ', PROPS = 'ckjquvwyzeiFHJT' + INTERACT + V6BLOCK + '²³ĖĘĚĠ' + V9BLOCK + V10BLOCK + V11BLOCK + V13BLOCK + 'ű' + V15BLOCK + V16BLOCK + 'ƪ' + V17BLOCK + 'ǐ' + V18BLOCK + 'ǵǶȆ' + V19BLOCK + 'ȝ' + V20BLOCK + V21BLOCK + 'ɏ' + V22BLOCK + V23BLOCK + 'ʁ', LIGHTS = 'cfiFĘŅŦűƪǐǶȇȝȻɒɴ';
-const HAZ = '_-:"z<>Ç°¬±¨¯¹ĐĒĔĜĿŀŃńţŤťŬŸŹźƍƖƥƦǍǏǛǜǱǲȂȃȖȗȘșȚȠȲȳȴȵȷɍɎɣɤɥɰɱɿʀʋʌ', LOOT = 'CAha$,¥ªþ¼½ĢŊŋŨƂƞƳǫǭǾȏȫɆɟɻʖ';
-const SINK = '_z¬¯ĐĒĔĜÓĿŀţŤťŬŹźƖƥǍǏǛǱȂȃȖȗȘȚȠȲȳȷɍɎɚɣɰɱʀʋʌ'; // lava, spikar, smulande golv, kvicksand, djupt vatten, kristallspikar, tidvatten (och ålen i vattnet), sågspår, tidsbubblor, studsplattor, sporpölar, teleportrar, bläckpölar, smält metall, ångventiler: aldrig enda vägen
+const NEW_EN = 'UXY!@^+ÅÄÖÉÜÑÆÞÐÝÃÕÊÎÔËÍÏÓÚÛĀĂĳĴĵĶķĸ' + V10EN + V11EN + V13EN + V14EN + V15EN + V16EN + V17EN + V18EN + V19EN + V20EN + V21EN + V22EN + V23EN + V30EN, OLD_EN = 'SKVILNORW', ENEMIES = OLD_EN + NEW_EN + 'EQ', PROPS = 'ckjquvwyzeiFHJT' + INTERACT + V6BLOCK + '²³ĖĘĚĠ' + V9BLOCK + V10BLOCK + V11BLOCK + V13BLOCK + 'ű' + V15BLOCK + V16BLOCK + 'ƪ' + V17BLOCK + 'ǐ' + V18BLOCK + 'ǵǶȆ' + V19BLOCK + 'ȝ' + V20BLOCK + V21BLOCK + 'ɏ' + V22BLOCK + V23BLOCK + 'ʁ' + V30BLOCK, LIGHTS = 'cfiFĘŅŦűƪǐǶȇȝȻɒɴʥ';
+const HAZ = '_-:"z<>Ç°¬±¨¯¹ĐĒĔĜĿŀŃńţŤťŬŸŹźƍƖƥƦǍǏǛǜǱǲȂȃȖȗȘșȚȠȲȳȴȵȷɍɎɣɤɥɰɱɿʀʋʌʝʞʟʠʡ', LOOT = 'CAha$,¥ªþ¼½ĢŊŋŨƂƞƳǫǭǾȏȫɆɟɻʖʴʵ';
+const SINK = '_z¬¯ĐĒĔĜÓĿŀţŤťŬŹźƖƥǍǏǛǱȂȃȖȗȘȚȠȲȳȷɍɎɚɣɰɱʀʋʌʝʟʠʡ'; // lava, spikar, smulande golv, kvicksand, djupt vatten, kristallspikar, tidvatten (och ålen i vattnet), sågspår, tidsbubblor, studsplattor, sporpölar, teleportrar, bläckpölar, smält metall, ångventiler: aldrig enda vägen
 const WATER_LOOT = '$haĢ¥'; // vattenskatten: får nås bara simmande (även vrakkistan Ě)
 const swimPass = c => !isBlock(c) && !'_z¬¯Ē'.includes(c); // simmande: vatten går bra, lava och spikar inte
 const WCH = Object.keys(Gen.WEAPONS).join(''); // vapentecknen (g r m d b s p å ä ö)
@@ -279,7 +285,7 @@ const NEW_DEPTH = { U: 1, X: 1, Y: 2, '^': 2, '+': 2, '!': 3, '@': 3, 'Å': 1, '
   'ȡ': 1, 'Ȣ': 2, 'ȣ': 1, 'Ȥ': 1, 'ȥ': 1, 'Ȧ': 1, 'ȧ': 1, 'Ȩ': 2, // (version 19)
   'ȼ': 2, 'Ƚ': 1, 'Ⱦ': 1, 'ȿ': 1, 'ɀ': 1, 'Ɂ': 1, 'ɂ': 2, 'Ƀ': 1, // (version 20)
   'ɕ': 1, 'ɖ': 1, 'ɗ': 3, 'ɘ': 1, 'ə': 1, 'ɚ': 1, 'ɛ': 1, 'ɜ': 1, // (version 21)
-  'ɩ': 1, 'ɪ': 3, 'ɫ': 1, 'ɬ': 1, 'ɵ': 1, 'ɶ': 1, 'ɷ': 5, 'ɸ': 1, 'ʄ': 1, 'ʅ': 1, 'ʆ': 1, 'ʇ': 3, 'ʐ': 1, 'ʑ': 1, 'ʒ': 1, 'ʓ': 1 }; // (version 23) (version 22; köttbjässen: kontraktets djup 6+ blir 5, Gen.floor går till djup 5)
+  'ɩ': 1, 'ɪ': 3, 'ɫ': 1, 'ɬ': 1, 'ɵ': 1, 'ɶ': 1, 'ɷ': 5, 'ɸ': 1, 'ʄ': 1, 'ʅ': 1, 'ʆ': 1, 'ʇ': 3, 'ʐ': 1, 'ʑ': 1, 'ʒ': 1, 'ʓ': 1, 'ʨ': 1, 'ʩ': 4, 'ʪ': 1, 'ʫ': 1, 'ʮ': 1, 'ʯ': 1, 'ʰ': 1, 'ʱ': 1 }; // (version 23) (version 22; köttbjässen: kontraktets djup 6+ blir 5, Gen.floor går till djup 5)
 // version 7: tjuven Î och dubbelgångaren Ô i alla biomer, Õ i grottorna, Ã på kyrkogården, Ê på borggården, gravkammarens egna
 // version 8: skuggjägaren Ā och häxan Ă i alla biomer, kristallgrottornas och sjunkna stadens egna
 // version 10: Ō ō Ŏ ŏ Ő ő infödda i sin biom och sällsynta i den närliggande (V10_HOME / V10_NEAR)
@@ -294,7 +300,8 @@ const NEW_BIOME = { caves: 'UXÜÑÆÕÎÔĀĂō', forest: 'YUXÉÑÎÔĀĂŏő�
   sewer: 'ȼȽȾȿǚÑÎÔĀĂ', desert: 'ɀɁɂɃÑÎÔĀĂ', // version 20
   prison: 'ɕɖɗɘÑÎÔĀĂ', harbor: 'əɚɛɜÑÎÔĀĂ', // version 21
   bathhouse: 'ɩɪɫɬÑÎÔĀĂ', purgatory: 'ɵɶɷɸÑÎÔĀĂ', // version 22
-  abattoir: 'ʄʅʆʇÑÎÔĀĂ', battlefield: 'ʐʑʒʓÑÎÔĀĂ' }; // version 23 // version 18 (skeppsråttorna ǚ även i sjunkna staden och fängelsehålan)
+  abattoir: 'ʄʅʆʇÑÎÔĀĂ', battlefield: 'ʐʑʒʓÑÎÔĀĂ', // version 23
+  ruins: 'ʨʩʪʫÑÎÔĀĂ', glassworks: 'ʮʯʰʱÑÎÔĀĂ' }; // version 30 // version 18 (skeppsråttorna ǚ även i sjunkna staden och fängelsehålan)
 const FEAT = { anvil: '(', fortune: ')', prisoner: '[', challenge: '?', offering: ';', lever: '/', locked: ']', cracked: '{', arrows: '<', gas: '>', lava: '_', water: '-', ice: ':', webs: '"',
   alchemist: '£', priest: '€', petcage: '©', potions: '¥', icicles: 'Ç',
   campfire: '¶', questboard: '®', runes: 'ª', meat: 'ð', firejets: '°', crumble: '¬', pendulums: '±', plates: '¨', secretstairs: '÷', poisonbarrels: 'µ', frostbarrels: 'ß',
@@ -333,7 +340,7 @@ const SP_CH = { fortune: ')', challenge: '?', offering: ';', smithy: '(', alchem
 const GUARD = Gen.GUARDIANS, GUARD_IDS = Object.keys(GUARD);
 // version 15/16: de äldre proven växlar mellan väktarna som fanns i version 14 (samma seeds och väktare som förut); de fyra nya väktarna prövas i
 // alla biomer i provet för version 15/16
-const GUARD_NEW = ['cardinal', 'queenbee', 'gardener', 'sandman', 'captain', 'alchemist', 'ringmaster', 'serpent', 'foreman', 'starseer', 'ratking', 'sphinx', 'executioner', 'tidepriest', 'bathmaster', 'pyrelord', 'butcher', 'warlord'], GUARD_OLD = GUARD_IDS.filter(id => !GUARD_NEW.includes(id));
+const GUARD_NEW = ['cardinal', 'queenbee', 'gardener', 'sandman', 'captain', 'alchemist', 'ringmaster', 'serpent', 'foreman', 'starseer', 'ratking', 'sphinx', 'executioner', 'tidepriest', 'bathmaster', 'pyrelord', 'butcher', 'warlord', 'mayor', 'glassmaster'], GUARD_OLD = GUARD_IDS.filter(id => !GUARD_NEW.includes(id));
 const timed = f => { const t0 = process.hrtime.bigint(); const v = f(); return [v, Number(process.hrtime.bigint() - t0) / 1e6]; };
 // flood fill från (sx, sy) med pass(tecken); returnerar avstånd (-1 = nås inte)
 function floodD(m, sx, sy, pass) {
@@ -392,14 +399,14 @@ const NEW20 = ['sewer', 'desert']; // version 20: kloakerna och öknen
 const NEW21 = ['prison', 'harbor']; // version 21: järnfängelset och fiskeläget
 const NEW22 = ['bathhouse', 'purgatory']; // version 22: badhuset och skärselden
 const NEW23 = ['abattoir', 'battlefield']; // version 23: slakteriet och slagfältet
-if (BIOME_IDS.join() !== 'dungeon,caves,graveyard,forest,courtyard,swamp,frost,volcano,tomb,crystal,sunken,clock,sky,fungus,mirror,library,foundry,cathedral,hive,garden,dream,ship,lab,circus,jungle,mine,observatory,sewer,desert,prison,harbor,bathhouse,purgatory,abattoir,battlefield') fail('Gen.BIOMES ' + BIOME_IDS.join());
+if (BIOME_IDS.join() !== 'dungeon,caves,graveyard,forest,courtyard,swamp,frost,volcano,tomb,crystal,sunken,clock,sky,fungus,mirror,library,foundry,cathedral,hive,garden,dream,ship,lab,circus,jungle,mine,observatory,sewer,desert,prison,harbor,bathhouse,purgatory,abattoir,battlefield,ruins,glassworks') fail('Gen.BIOMES ' + BIOME_IDS.join());
 const OUTDOOR = { dungeon: false, caves: false, graveyard: true, forest: true, courtyard: true, swamp: true, frost: true, volcano: true, tomb: true, crystal: false, sunken: true, clock: false, sky: true,
-  fungus: false, mirror: false, library: false, foundry: false, cathedral: false, hive: false, garden: true, dream: false, ship: true, lab: false, circus: false, jungle: true, mine: false, observatory: false, sewer: false, desert: true, prison: false, harbor: true, bathhouse: false, purgatory: true, abattoir: false, battlefield: true };
+  fungus: false, mirror: false, library: false, foundry: false, cathedral: false, hive: false, garden: true, dream: false, ship: true, lab: false, circus: false, jungle: true, mine: false, observatory: false, sewer: false, desert: true, prison: false, harbor: true, bathhouse: false, purgatory: true, abattoir: false, battlefield: true, ruins: true, glassworks: false };
 const AMB = { dungeon: [0.12, 0.22], caves: [0.12, 0.17], graveyard: [0.24, 0.32], forest: [0.24, 0.32], courtyard: [0.24, 0.32], swamp: [0.2, 0.3], frost: [0.2, 0.26], volcano: [0.19, 0.25],
   tomb: [0.22, 0.28], crystal: [0.1, 0.14], sunken: [0.18, 0.24], clock: [0.16, 0.22], sky: [0.26, 0.32], fungus: [0.13, 0.18], mirror: [0.2, 0.26],
-  library: [0.14, 0.2], foundry: [0.17, 0.23], cathedral: [0.14, 0.2], hive: [0.16, 0.22], garden: [0.24, 0.3], dream: [0.15, 0.21], ship: [0.19, 0.25], lab: [0.16, 0.22], circus: [0.16, 0.22], jungle: [0.21, 0.27], mine: [0.13, 0.19], observatory: [0.17, 0.23], sewer: [0.13, 0.19], desert: [0.22, 0.28], prison: [0.13, 0.19], harbor: [0.2, 0.26], bathhouse: [0.15, 0.21], purgatory: [0.2, 0.26], abattoir: [0.14, 0.2], battlefield: [0.2, 0.26] };
-const SKY_MIN = { graveyard: 0.75, forest: 0.85, courtyard: 0.25, swamp: 0.85, frost: 0.2, volcano: 0.2, tomb: 0.2, sunken: 0.2, sky: 1, garden: 1, ship: 0.2, jungle: 0.25, desert: 0.25, harbor: 0.25, purgatory: 0.25, battlefield: 0.25 }; // andel himmel bland gångbara rutor
-const DUNGEONLIKE = ['dungeon', 'frost', 'volcano', 'tomb', 'sunken', 'clock', 'sky', 'mirror', 'library', 'foundry', 'cathedral', 'hive', 'garden', 'dream', 'ship', 'lab', 'circus', 'jungle', 'mine', 'observatory', 'sewer', 'desert', 'prison', 'harbor', 'bathhouse', 'purgatory', 'abattoir', 'battlefield']; // fängelsehålans bygge (salar + korridorer)
+  library: [0.14, 0.2], foundry: [0.17, 0.23], cathedral: [0.14, 0.2], hive: [0.16, 0.22], garden: [0.24, 0.3], dream: [0.15, 0.21], ship: [0.19, 0.25], lab: [0.16, 0.22], circus: [0.16, 0.22], jungle: [0.21, 0.27], mine: [0.13, 0.19], observatory: [0.17, 0.23], sewer: [0.13, 0.19], desert: [0.22, 0.28], prison: [0.13, 0.19], harbor: [0.2, 0.26], bathhouse: [0.15, 0.21], purgatory: [0.2, 0.26], abattoir: [0.14, 0.2], battlefield: [0.2, 0.26], ruins: [0.2, 0.26], glassworks: [0.16, 0.22] };
+const SKY_MIN = { graveyard: 0.75, forest: 0.85, courtyard: 0.25, swamp: 0.85, frost: 0.2, volcano: 0.2, tomb: 0.2, sunken: 0.2, sky: 1, garden: 1, ship: 0.2, jungle: 0.25, desert: 0.25, harbor: 0.25, purgatory: 0.25, battlefield: 0.25, ruins: 0.25 }; // andel himmel bland gångbara rutor
+const DUNGEONLIKE = ['dungeon', 'frost', 'volcano', 'tomb', 'sunken', 'clock', 'sky', 'mirror', 'library', 'foundry', 'cathedral', 'hive', 'garden', 'dream', 'ship', 'lab', 'circus', 'jungle', 'mine', 'observatory', 'sewer', 'desert', 'prison', 'harbor', 'bathhouse', 'purgatory', 'abattoir', 'battlefield', 'ruins', 'glassworks']; // fängelsehålans bygge (salar + korridorer)
 for (const a of ['lava', 'nest', 'frozen', 'flooded', 'smithy', 'trap', 'gas', 'fortune', 'prison', 'challenge', 'offering', 'levervault', 'lockedvault', 'hut', 'sunkenshrine', 'bog',
   'throne', 'frozenlake', 'barracks', 'crystalhall', 'alchemy', 'chapel2', 'forge', 'lavalake', 'ashfield', 'magmachamber', 'camp',
   'burialchamber', 'pillarhall', 'treasury', 'sandtunnel', 'sandcourt', 'geode', 'prismhall', 'shardfield', 'cistern', 'drownedhall', 'wreckhall', 'coralgrotto', 'plaza',
@@ -585,7 +592,7 @@ function checkRooms(lv, tag, s, px, py) {
     for (let y = G.y - 1; y <= G.y + G.h; y++) for (let x = G.x - 1; x <= G.x + G.w; x++) if (m[y] && m[y][x] === gd.wall) wn++;
     if (wn < (lv.biome === 'sky' ? 4 : 2 * (G.w + G.h))) fail(tag + ` vaktarsalen har bara ${wn} väggar ${gd.wall}`); // molnborgen: tomrum runt salen, glesa murar
     if (G.w < 7 || G.h < 7 || G.w > 13 || G.h > 13) fail(tag + ` vaktarsalen ${G.w}x${G.h}`);
-    const lights = [...R[gi].chars].filter(c => c === 'c' || c === 'f' || c === 'Ę' || c === 'Ŧ' || c === 'ű' || c === 'ƪ' || c === 'ǐ' || c === 'Ƕ' || c === 'ȇ' || c === 'ȝ' || c === 'Ȼ' || c === 'ɒ' || c === 'ɴ').length;
+    const lights = [...R[gi].chars].filter(c => c === 'c' || c === 'f' || c === 'Ę' || c === 'Ŧ' || c === 'ű' || c === 'ƪ' || c === 'ǐ' || c === 'Ƕ' || c === 'ȇ' || c === 'ȝ' || c === 'Ȼ' || c === 'ɒ' || c === 'ɴ' || c === 'ʥ').length; // (version 30: smältugnar)
     if (lights < 2 || lights > 4) fail(tag + ' ljuskällor i vaktarsalen ' + lights);
     // vaktaren ligger långt från start: gångavstånd P->Z jämfört med längsta gångavståndet från P
     const d = new Int32Array(W * H).fill(-1), q = [py * W + px]; d[q[0]] = 0; let mx = 0;
@@ -2853,7 +2860,7 @@ for (const biome of BIOME_IDS.slice(1)) {
   for (const [id, wall, floor, light] of [['cardinal', 'ƌ', 'floor_boss_cardinal', 'c'], ['queenbee', 'ƕ', 'floor_boss_queenbee', 'f'], ['gardener', 'ơ', 'floor_boss_gardener', 'f'], ['sandman', 'Ƥ', 'floor_boss_sandman', 'ƪ']]) {
     const g = Gen.GUARDIANS[id]; if (!g || g.wall !== wall || g.floor !== floor || g.light !== light) fail('Gen.GUARDIANS.' + id + ' ' + JSON.stringify(g));
   }
-  if (Gen.ARENAS.slice(-18, -14).join() !== 'cathedral,hive,garden,dream') fail('Gen.ARENAS saknar de nya arenorna (sist) ' + Gen.ARENAS.join());
+  if (Gen.ARENAS.slice(-20, -16).join() !== 'cathedral,hive,garden,dream') fail('Gen.ARENAS saknar de nya arenorna (sist) ' + Gen.ARENAS.join());
   for (const [id, name, out, d] of [['cathedral', 'BLODKATEDRALEN', false, '2,5'], ['hive', 'BIKUPAN', false, '2,5'], ['garden', 'DEN DÖDA TRÄDGÅRDEN', true, '3,5'], ['dream', 'DRÖMRIKET', false, '3,5']]) {
     const b = Gen.BIOMES.find(q => q.id === id); if (!b || b.name !== name || b.outdoor !== out || b.weight !== 12 || b.depth.join() !== d) fail('Gen.BIOMES: ' + id + ' ' + JSON.stringify(b));
   }
@@ -3087,7 +3094,7 @@ for (const biome of BIOME_IDS.slice(1)) {
   for (const [id, wall, floor, light, deco] of [['captain', 'ǔ', 'floor_boss_captain', 'ǐ', 'Ǒ'], ['alchemist', 'Ǣ', 'floor_boss_alchemist', 'c', 'ǝ']]) {
     const g = Gen.GUARDIANS[id]; if (!g || g.wall !== wall || g.floor !== floor || g.light !== light || !g.decor.includes(deco)) fail('Gen.GUARDIANS.' + id + ' ' + JSON.stringify(g));
   }
-  if (Gen.ARENAS.slice(-14, -12).join() !== 'ship,lab') fail('Gen.ARENAS saknar ship/lab (sist) ' + Gen.ARENAS.join());
+  if (Gen.ARENAS.slice(-16, -14).join() !== 'ship,lab') fail('Gen.ARENAS saknar ship/lab (sist) ' + Gen.ARENAS.join());
   for (const [id, name, out, d] of [['ship', 'SPÖKSKEPPET', true, '2,5'], ['lab', 'ALKEMISTENS LABORATORIUM', false, '3,5']]) {
     const b = Gen.BIOMES.find(q => q.id === id); if (!b || b.name !== name || b.outdoor !== out || b.weight !== 12 || b.depth.join() !== d) fail('Gen.BIOMES: ' + id + ' ' + JSON.stringify(b));
   }
@@ -3372,7 +3379,7 @@ for (const biome of BIOME_IDS.slice(1)) {
   for (const [id, wall, floor, light, deco] of [['ringmaster', 'ǰ', 'floor_boss_ringmaster', 'Ƕ', 'ǵ'], ['serpent', 'ȁ', 'floor_boss_serpent', 'ȇ', 'u']]) {
     const g = Gen.GUARDIANS[id]; if (!g || g.wall !== wall || g.floor !== floor || g.light !== light || !g.decor.includes(deco)) fail('Gen.GUARDIANS.' + id + ' ' + JSON.stringify(g));
   }
-  if (Gen.ARENAS.slice(-12, -10).join() !== 'circus,jungle') fail('Gen.ARENAS saknar circus/jungle (sist) ' + Gen.ARENAS.join());
+  if (Gen.ARENAS.slice(-14, -12).join() !== 'circus,jungle') fail('Gen.ARENAS saknar circus/jungle (sist) ' + Gen.ARENAS.join());
   for (const [id, name, out, d] of [['circus', 'DEN ÖVERGIVNA CIRKUSEN', false, '2,5'], ['jungle', 'DJUNGELTEMPLET', true, '3,5']]) {
     const b = Gen.BIOMES.find(q => q.id === id); if (!b || b.name !== name || b.outdoor !== out || b.weight !== 12 || b.depth.join() !== d) fail('Gen.BIOMES: ' + id + ' ' + JSON.stringify(b));
   }
@@ -3612,7 +3619,7 @@ for (const biome of BIOME_IDS.slice(1)) {
   for (const [id, wall, floor, light, deco] of [['foreman', 'Ȓ', 'floor_boss_foreman', 'ȝ', 'Ȝ'], ['starseer', 'ȕ', 'floor_boss_starseer', 'c', 'u']]) {
     const g = Gen.GUARDIANS[id]; if (!g || g.wall !== wall || g.floor !== floor || g.light !== light || !g.decor.includes(deco)) fail('Gen.GUARDIANS.' + id + ' ' + JSON.stringify(g));
   }
-  if (Gen.ARENAS.slice(-10, -8).join() !== 'mine,observatory') fail('Gen.ARENAS saknar mine/observatory (sist) ' + Gen.ARENAS.join());
+  if (Gen.ARENAS.slice(-12, -10).join() !== 'mine,observatory') fail('Gen.ARENAS saknar mine/observatory (sist) ' + Gen.ARENAS.join());
   for (const [id, name, d] of [['mine', 'DEN ÖVERGIVNA GRUVAN', '2,4'], ['observatory', 'STJÄRNOBSERVATORIET', '3,5']]) {
     const b = Gen.BIOMES.find(q => q.id === id); if (!b || b.name !== name || b.outdoor !== false || b.weight !== 12 || b.depth.join() !== d) fail('Gen.BIOMES: ' + id + ' ' + JSON.stringify(b));
   }
@@ -3846,7 +3853,7 @@ for (const biome of BIOME_IDS.slice(1)) {
   for (const [id, wall, floor, light] of [['ratking', 'Ȯ', 'floor_boss_ratking', 'f'], ['sphinx', 'ȱ', 'floor_boss_sphinx', 'Ȼ']]) {
     const g = Gen.GUARDIANS[id]; if (!g || g.wall !== wall || g.floor !== floor || g.light !== light) fail('Gen.GUARDIANS.' + id + ' ' + JSON.stringify(g));
   }
-  if (Gen.ARENAS.slice(-8, -6).join() !== 'sewer,desert') // (version 21: fängelset och fiskeläget sist)
+  if (Gen.ARENAS.slice(-10, -8).join() !== 'sewer,desert') // (version 21: fängelset och fiskeläget sist)
    fail('Gen.ARENAS saknar sewer/desert (sist) ' + Gen.ARENAS.join());
   for (const [id, name, out, d] of [['sewer', 'KLOAKERNA', false, '2,4'], ['desert', 'ÖKNEN', true, '3,5']]) {
     const b = Gen.BIOMES.find(q => q.id === id); if (!b || b.name !== name || b.outdoor !== out || b.weight !== 12 || b.depth.join() !== d) fail('Gen.BIOMES: ' + id + ' ' + JSON.stringify(b));
@@ -4064,7 +4071,7 @@ for (const biome of BIOME_IDS.slice(1)) {
   for (const [id, wall, floor, light] of [['executioner', 'ɉ', 'floor_boss_executioner', 'f'], ['tidepriest', 'Ɍ', 'floor_boss_tidepriest', 'ɒ']]) {
     const g = Gen.GUARDIANS[id]; if (!g || g.wall !== wall || g.floor !== floor || g.light !== light) fail('Gen.GUARDIANS.' + id + ' ' + JSON.stringify(g));
   }
-  if (Gen.ARENAS.slice(-6, -4).join() !== 'prison,harbor') fail('Gen.ARENAS saknar prison/harbor (sist) ' + Gen.ARENAS.join());
+  if (Gen.ARENAS.slice(-8, -6).join() !== 'prison,harbor') fail('Gen.ARENAS saknar prison/harbor (sist) ' + Gen.ARENAS.join());
   for (const [id, name, out, d] of [['prison', 'JÄRNFÄNGELSET', false, '2,4'], ['harbor', 'DET DIMHÖLJDA FISKELÄGET', true, '3,6']]) {
     const b = Gen.BIOMES.find(q => q.id === id); if (!b || b.name !== name || b.outdoor !== out || b.weight !== 12 || b.depth.join() !== d) fail('Gen.BIOMES: ' + id + ' ' + JSON.stringify(b));
   }
@@ -4263,7 +4270,7 @@ for (const biome of BIOME_IDS.slice(1)) {
   for (const [id, wall, floor, light] of [['bathmaster', 'ɢ', 'floor_boss_bathmaster', 'c'], ['pyrelord', 'ɯ', 'floor_boss_pyrelord', 'ɴ']]) {
     const g = Gen.GUARDIANS[id]; if (!g || g.wall !== wall || g.floor !== floor || g.light !== light) fail('Gen.GUARDIANS.' + id + ' ' + JSON.stringify(g));
   }
-  if (Gen.ARENAS.slice(-4, -2).join() !== 'bathhouse,purgatory') fail('Gen.ARENAS saknar bathhouse/purgatory (sist) ' + Gen.ARENAS.join());
+  if (Gen.ARENAS.slice(-6, -4).join() !== 'bathhouse,purgatory') fail('Gen.ARENAS saknar bathhouse/purgatory (sist) ' + Gen.ARENAS.join());
   for (const [id, name, out, d] of [['bathhouse', 'BADHUSET', false, '2,5'], ['purgatory', 'SKÄRSELDEN', true, '5,8']]) {
     const b = Gen.BIOMES.find(q => q.id === id); if (!b || b.name !== name || b.outdoor !== out || b.weight !== 12 || b.depth.join() !== d) fail('Gen.BIOMES: ' + id + ' ' + JSON.stringify(b));
   }
@@ -4466,7 +4473,7 @@ for (const biome of BIOME_IDS.slice(1)) {
   for (const [id, wall, floor, light] of [['butcher', 'ɾ', 'floor_boss_butcher', 'c'], ['warlord', 'ʊ', 'floor_boss_warlord', 'f']]) {
     const g = Gen.GUARDIANS[id]; if (!g || g.wall !== wall || g.floor !== floor || g.light !== light) fail('Gen.GUARDIANS.' + id + ' ' + JSON.stringify(g));
   }
-  if (Gen.ARENAS.slice(-2).join() !== 'abattoir,battlefield') fail('Gen.ARENAS saknar abattoir/battlefield (sist) ' + Gen.ARENAS.join());
+  if (Gen.ARENAS.slice(-4, -2).join() !== 'abattoir,battlefield') fail('Gen.ARENAS saknar abattoir/battlefield (sist) ' + Gen.ARENAS.join());
   for (const [id, name, out, d] of [['abattoir', 'SLAKTERIET', false, '2,5'], ['battlefield', 'DET EVIGA SLAGFÄLTET', true, '4,5']]) {
     const b = Gen.BIOMES.find(q => q.id === id); if (!b || b.name !== name || b.outdoor !== out || b.weight !== 12 || b.depth.join() !== d) fail('Gen.BIOMES: ' + id + ' ' + JSON.stringify(b));
   }
@@ -4635,7 +4642,7 @@ function freeLineT(r, x, y) { let best = 0; const at = (xx, yy) => (r[yy] && r[y
     }
     for (let i = 0; i < 300; i++) { // utan opts.biome (spelets anropsform med seed RNG.hash): bara banor som slår slakteriet eller slagfältet ändras
       const pos = 1 + (i % 5), cyc = Math.floor(i / 5) % 3, depth = Math.min(5, pos + cyc), seed = i % 2 ? 'stabilmix23-' + i : RNG.hash('krypta23s-' + i + ':' + (pos + 6 * cyc));
-      const opts = { shop: pos === 2 || pos === 4, weapon: OW[i % OW.length] }, lv = Gen.floor(seed, depth, Object.assign({ v24off: true }, opts)), old = OldGen22.floor(seed, depth, opts);
+      const opts = { shop: pos === 2 || pos === 4, weapon: OW[i % OW.length], v30off: true }, lv = Gen.floor(seed, depth, Object.assign({ v24off: true }, opts)), old = OldGen22.floor(seed, depth, opts);
       cmp(old, Gen.floor(seed, depth, Object.assign({ v23off: true }, opts)), false, `[stabil23 mix off seed=${seed} d=${depth}]`);
       if (NEW23.includes(lv.biome)) { newB++; continue; }
       cmp(old, lv, true, `[stabil23 mix seed=${seed} d=${depth}]`);
@@ -4711,7 +4718,7 @@ function freeLineT(r, x, y) { let best = 0; const at = (xx, yy) => (r[yy] && r[y
     }
     for (let i = 0; i < 300; i++) { // utan opts.biome (spelets anropsform med seed RNG.hash)
       const pos = 1 + (i % 5), cyc = Math.floor(i / 5) % 3, depth = Math.min(5, pos + cyc), seed = i % 2 ? 'stabilmix24-' + i : RNG.hash('krypta24s-' + i + ':' + (pos + 6 * cyc));
-      const opts = { shop: pos === 2 || pos === 4, weapon: OW[i % OW.length] }, old = OldGen23.floor(seed, depth, opts), tag = `[stabil24 mix seed=${seed} d=${depth}]`;
+      const opts = { shop: pos === 2 || pos === 4, weapon: OW[i % OW.length], v30off: true }, old = OldGen23.floor(seed, depth, opts), tag = `[stabil24 mix seed=${seed} d=${depth}]`;
       if (JSON.stringify(old) !== JSON.stringify(Gen.floor(seed, depth, Object.assign({ v24off: true }, opts)))) fail(tag + ' frö-stabilitet: skiljer sig från version 23 med opts.v24off');
       const lv = Gen.floor(seed, depth, opts);
       cmp24(old, Gen.floor(seed, depth, Object.assign({ v27off: true }, opts)), tag); check24(lv, tag); // (version 27 av i jämförelsen, se provet för version 27)
@@ -4782,7 +4789,7 @@ function freeLineT(r, x, y) { let best = 0; const at = (xx, yy) => (r[yy] && r[y
 {
   const PLANS27 = ['ring', 'cross', 'gauntlet', 'court'], PROPS27 = 'uTcjJHkq';
   const PLAN_B27 = ['dungeon', 'frost', 'volcano', 'tomb', 'sunken', 'clock', 'sky', 'mirror', 'library', 'foundry', 'hive', 'garden', 'dream', 'ship', 'lab',
-    'circus', 'jungle', 'mine', 'observatory', 'sewer', 'desert', 'prison', 'harbor', 'bathhouse', 'purgatory', 'abattoir', 'battlefield'];
+    'circus', 'jungle', 'mine', 'observatory', 'sewer', 'desert', 'prison', 'harbor', 'bathhouse', 'purgatory', 'abattoir', 'battlefield', 'ruins', 'glassworks'];
   const F27 = ['plan27', 'planName27', 'scenes27', 'hub27'];
   const S27 = { n: 0, nB: 0, plans: {}, scenes: {}, nS: 0, moved: 0 };
   stats.v27 = [];
@@ -4820,7 +4827,7 @@ function freeLineT(r, x, y) { let best = 0; const at = (xx, yy) => (r[yy] && r[y
     }
     for (let i = 0; i < 300; i++) { // utan opts.biome (spelets anropsform med seed RNG.hash)
       const pos = 1 + (i % 5), cyc = Math.floor(i / 5) % 3, depth = Math.min(5, pos + cyc), seed = i % 2 ? 'stabilmix27-' + i : RNG.hash('krypta27s-' + i + ':' + (pos + 6 * cyc));
-      const opts = { shop: pos === 2 || pos === 4, weapon: OW[i % OW.length] }, tag = `[stabil27 mix seed=${seed} d=${depth}]`;
+      const opts = { shop: pos === 2 || pos === 4, weapon: OW[i % OW.length], v30off: true }, tag = `[stabil27 mix seed=${seed} d=${depth}]`;
       const old = OldGen26.floor(seed, depth, opts), off = Gen.floor(seed, depth, Object.assign({ v27off: true }, opts));
       total++; if (JSON.stringify(old) !== JSON.stringify(off)) fail(tag + ' frö-stabilitet: skiljer sig från version 26 med opts.v27off');
       const lv = Gen.floor(seed, depth, Object.assign({ v28off: true }, opts)); // (version 28 av i jämförelsen, se provet för version 28)
@@ -4943,7 +4950,7 @@ function freeLineT(r, x, y) { let best = 0; const at = (xx, yy) => (r[yy] && r[y
     }
     for (let i = 0; i < 300; i++) { // utan opts.biome (spelets anropsform med seed RNG.hash)
       const pos = 1 + (i % 5), cyc = Math.floor(i / 5) % 3, depth = Math.min(5, pos + cyc), seed = i % 2 ? 'stabilmix28-' + i : RNG.hash('krypta28s-' + i + ':' + (pos + 6 * cyc));
-      const opts = { shop: pos === 2 || pos === 4, weapon: OW[i % OW.length] }, tag = `[stabil28 mix seed=${seed} d=${depth}]`;
+      const opts = { shop: pos === 2 || pos === 4, weapon: OW[i % OW.length], v30off: true }, tag = `[stabil28 mix seed=${seed} d=${depth}]`;
       const old = OldGen27.floor(seed, depth, opts), off = Gen.floor(seed, depth, Object.assign({ v28off: true }, opts));
       total++; if (JSON.stringify(old) !== JSON.stringify(off)) fail(tag + ' frö-stabilitet: skiljer sig från version 27 med opts.v28off');
       const [lv, ms] = timed(() => Gen.floor(seed, depth, opts)); S28.ms += ms;
@@ -4988,7 +4995,7 @@ function freeLineT(r, x, y) { let best = 0; const at = (xx, yy) => (r[yy] && r[y
     const keep = global.Gen; (0, eval)(src); Old28 = global.Gen; global.Gen = keep; } catch (e) { err = String(e.message || e).split('\n')[0]; }
   if (!Old28) fail('version 29: kunde inte läsa gen.js från version 28 (' + err + '); sätt GEN_OLD28=sökväg till den gamla filen');
   else {
-    const BI29 = BIOME_IDS; let n = 0, blood = 0, altar = 0, boss = 0;
+    const BI29 = BIOME_IDS.filter(id => !['ruins', 'glassworks'].includes(id)) /* (version 30: de nya biomerna finns inte i version 28) */; let n = 0, blood = 0, altar = 0, boss = 0;
     for (let i = 0; i < 240; i++) {
       const seed = 'v29-' + i, d = 3 + (i % 3), opts = Object.assign({ biome: BI29[i % BI29.length] }, i % 4 === 0 ? { v28: { blood: true } } : {}), tag = `[v29 ${opts.biome} ${seed} d=${d}]`;
       const old = JSON.stringify(Old28.floor(seed, d, Object.assign({}, opts))), lv = Gen.floor(seed, d, Object.assign({}, opts)), off = Gen.floor(seed, d, Object.assign({ v29off: true }, opts)); n++;
@@ -5018,6 +5025,176 @@ function freeLineT(r, x, y) { let best = 0; const at = (xx, yy) => (r[yy] && r[y
       if (!msg(lv, l => { l.scenes28[0].room = l.rooms.findIndex(r => r.type === 'guardian'); }, /scen i ett guardian/)) fail('validate: scen (version 28) i vaktarens sal ej upptäckt');
     }
     if (!msg(Gen.boss('neg28b', { arena: 'hall' }), l => { l.blood28 = true; }, /arena\/labyrint/)) fail('validate: blodvåning i en arena ej upptäckt');
+  }
+}
+
+// ---- version 30: ruinstaden och glasbruket precis som spelet anropar dem (alla väktare och vapen), de nya väktarna och vapnen i alla biomer,
+// arenorna, hemliga våningar och labyrinter, tecknen bara där de får finnas, frekvenser, level.ras30, negativa validate-tester och frö-stabilitet
+// mot version 29 (GEN_OLD29 eller git-objektet GEN_V29_REF) ----
+{
+  stats.v30 = [];
+  const NEW30 = ['ruins', 'glassworks'], CH30 = 'ʗʘʙʚʛʜʝʞʟʠʡʢʣʤʥʦʧʴʵ' + V30EN, WALL30 = 'ʗʘʙʚʛʜ', SINK30 = 'ʝʟʠʡ';
+  const VR = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+  // grunddata
+  for (const [id, name, out, d] of [['ruins', 'RUINSTADEN', true, '3,6'], ['glassworks', 'GLASBRUKET', false, '4,7']]) {
+    const b = Gen.BIOMES.find(x => x.id === id);
+    if (!b || b.name !== name || b.outdoor !== out || b.depth.join() !== d || b.weight !== 12) fail('version 30: Gen.BIOMES ' + id + ' ' + JSON.stringify(b));
+  }
+  if (Gen.ARENAS.slice(-2).join() !== 'ruins,glassworks') fail('Gen.ARENAS saknar ruins/glassworks (sist) ' + Gen.ARENAS.join());
+  for (const [id, wall, floor, light] of [['mayor', 'ʙ', 'floor_boss_mayor', 'c'], ['glassmaster', 'ʜ', 'floor_boss_glassmaster', 'ʥ']]) {
+    const gd = Gen.GUARDIANS[id]; if (!gd || gd.wall !== wall || gd.floor !== floor || gd.light !== light) fail('version 30: Gen.GUARDIANS.' + id + ' ' + JSON.stringify(gd));
+  }
+  if (Gen.WEAPONS['ʲ'] !== 'sling' || Gen.WEAPONS['ʳ'] !== 'glassgun') fail('version 30: Gen.WEAPONS saknar ʲ sling / ʳ glassgun');
+  for (const a of ['townsquare', 'ruinhouse', 'alleys', 'townhallsteps', 'furnacehall', 'blowshop', 'glassstore', 'annealgallery']) if (!Gen.ARCHES.includes(a)) fail('version 30: rumstypen ' + a + ' saknas');
+  if (new Set(Gen.ARCHES).size !== Gen.ARCHES.length) fail('Gen.ARCHES har dubbletter');
+  // en bana i de nya biomerna: tecknen, taken, rasande tak under tak, ugnsmunnarna fria runt om, ras30
+  const check30 = (lv, tag, d) => {
+    const e = Gen.validate(lv); if (e.length) { fail(tag + ' ' + e.slice(0, 2).join('; ')); return false; }
+    const m = lv.map, H = m.length, W = m[0].length, bio = lv.biome, n = {};
+    for (const r of m) for (const c of r) if (CH30.includes(c)) n[c] = (n[c] || 0) + 1;
+    if (bio !== 'ruins' && (n['ʝ'] || n['ʞ'] || n['ʗ'] || n['ʘ'] || n['ʨ'] || n['ʩ'] || n['ʪ'] || n['ʫ'] || n['ʣ'])) fail(tag + ' ruinstadens saker i ' + bio);
+    if (bio !== 'glassworks' && (n['ʟ'] || n['ʠ'] || n['ʡ'] || n['ʚ'] || n['ʛ'] || n['ʮ'] || n['ʯ'] || n['ʰ'] || n['ʱ'])) fail(tag + ' glasbrukets saker i ' + bio);
+    if ((n['ʩ'] || 0) > 2 || (n['ʰ'] || 0) > 3 || (n['ʫ'] || 0) > 4 || (n['ʯ'] || 0) > 3 || (n['ʡ'] || 0) > 6 || (n['ʝ'] || 0) > 18) fail(tag + ' över taket ' + JSON.stringify(n));
+    if (n['ʩ'] && d < 4) fail(tag + ' stengolem på djup ' + d);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const c = m[y][x];
+      if (c === 'ʝ' && lv.sky && lv.sky[y][x] === '1') fail(tag + ' rasande tak under himlen vid ' + x + ',' + y);
+      if (SINK30.includes(c) || c === 'ʞ') for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (DOORS.includes(m[y + dy][x + dx])) fail(tag + ' ' + c + ' i dörröppning vid ' + x + ',' + y);
+      if (c === 'ʡ') { // grannrutorna aldrig enda vägen: allt som nås från P utan faror nås också när de nio rutorna är vägg
+        let P = null; for (let yy = 0; yy < H && !P; yy++) { const xx = m[yy].indexOf('P'); if (xx >= 0) P = [xx, yy]; }
+        const pass = ch => !isBlock(ch) && !HAZ.includes(ch);
+        const a = floodD(m, P[0], P[1], pass), m2 = m.map(r => r.split('')); for (const [dx, dy] of VR) m2[y + dy][x + dx] = '1';
+        const b = floodD(m2.map(r => r.join('')), P[0], P[1], pass);
+        for (let i = 0; i < a.length; i++) if (a[i] >= 0 && b[i] < 0 && !VR.some(([dx, dy]) => (y + dy) * W + x + dx === i)) { fail(tag + ' ugnsmunnen vid ' + x + ',' + y + ' är enda vägen'); break; }
+      }
+    }
+    if (lv.biome === 'ruins' && !lv.arena && !lv.maze && !lv.secret && !Array.isArray(lv.ras30)) fail(tag + ' level.ras30 saknas');
+    if (lv.biome !== 'ruins' && lv.ras30 !== undefined) fail(tag + ' level.ras30 utanför ruinstaden');
+    for (const o of lv.ras30 || []) if (!isWall(m[o.y][o.x])) fail(tag + ' ras30 är ingen vägg');
+    return true;
+  };
+  // 150 banor per biom med spelets opts
+  const W30 = Object.values(Gen.WEAPONS), GI = Object.keys(Gen.GUARDIANS), S = {};
+  for (const bio of NEW30) {
+    const s = S[bio] = { n: 0, ms: 0, f: {}, has: {}, arch: {}, ras: 0, d: {} };
+    for (let i = 0; i < 150; i++) {
+      const pos = 1 + (i % 5), depth = Math.min(5, pos + (i % 3)), seed = RNG.hash('v30run' + i + ':' + bio + ':' + depth);
+      const opts = { shop: pos === 2 || pos === 4, weapon: i % 3 ? W30[i % W30.length] : null, biome: bio, guardian: GI[i % GI.length] };
+      const t0 = process.hrtime.bigint(), lv = Gen.floor(seed, depth, opts); s.ms += Number(process.hrtime.bigint() - t0) / 1e6; s.n++;
+      if (lv.biome !== bio || lv.guardian !== opts.guardian) fail(`[v30 ${bio} ${i}] biom/väktare ${lv.biome}/${lv.guardian}`);
+      if (lv.sky ? bio !== 'ruins' : bio === 'ruins') fail(`[v30 ${bio} ${i}] himlen`);
+      if (opts.weapon && !lv.map.some(r => r.includes(wchOf(opts.weapon)))) fail(`[v30 ${bio} ${i}] vapnet ${opts.weapon} saknas`);
+      check30(lv, `[v30 ${bio} seed=${seed} d=${depth}]`, depth);
+      for (const k in lv.features) if (lv.features[k] && /^(ruinbricks|ruinplaster|kilnbricks|glassshelves|crackedroofs|rubble|moltenglass|glassshards|furnacevents|brokencolumns|fallenbeams|ruinstatues|glassfurnaces|glassracks|glassbenches|slingstones|glassbits|looters|rubblegolems|rooftoppers|dustdevils|glassblowers|glassgolems|slagcrawlers|kilnspirits)$/.test(k)) { s.f[k] = (s.f[k] || 0) + lv.features[k]; s.has[k] = (s.has[k] || 0) + 1; }
+      for (const r of lv.rooms) s.arch[r.arch] = (s.arch[r.arch] || 0) + 1;
+      if (lv.ras30) s.ras += lv.ras30.length;
+      if ((lv.features.glassfurnaces || 0) >= 2) s.d.f2 = (s.d.f2 || 0) + 1;
+      if (lv.rooms.some(r => r.arch === 'townsquare')) s.d.sq = (s.d.sq || 0) + 1;
+      if (lv.rooms.some(r => r.arch === 'furnacehall')) s.d.fh = (s.d.fh || 0) + 1;
+    }
+    stats.v30.push(`${bio}: ${s.n} banor, ${(s.ms / s.n).toFixed(1)} ms per bana; ` + Object.keys(s.f).map(k => `${k} ${(s.f[k] / s.n).toFixed(2)} (${Math.round(100 * s.has[k] / s.n)} %)`).join(', ')
+      + (bio === 'ruins' ? `; ras30 ${(s.ras / s.n).toFixed(2)} per bana` : '') + '; rum: ' + Object.entries(s.arch).filter(([k]) => /^(townsquare|ruinhouse|alleys|townhallsteps|furnacehall|blowshop|glassstore|annealgallery)$/.test(k)).map(([k, v]) => k + ' ' + v).join(', '));
+    if (s.ms / s.n > 150) fail(`version 30: ${bio} tar ${(s.ms / s.n).toFixed(1)} ms per bana`);
+  }
+  const sh = (bio, k) => (S[bio].has[k] || 0) / S[bio].n, range = (what, v, lo, hi) => { if (v < lo || v > hi) fail(`version 30: ${what} ${v.toFixed(2)} (väntat ${lo}-${hi})`); };
+  range('ruinstaden: rasande tak', sh('ruins', 'crackedroofs'), 0.6, 1); range('ruinstaden: grus', sh('ruins', 'rubble'), 0.75, 1); range('ruinstaden: raserade pelare', sh('ruins', 'brokencolumns'), 0.7, 1);
+  range('ruinstaden: plundrare', sh('ruins', 'looters'), 0.8, 1); range('ruinstaden: takskyttar', sh('ruins', 'rooftoppers'), 0.25, 1); range('ruinstaden: dammvirvlar', sh('ruins', 'dustdevils'), 0.3, 0.9);
+  range('ruinstaden: stenpåsar', sh('ruins', 'slingstones'), 0.2, 0.7); range('ruinstaden: torg', (S.ruins.d.sq || 0) / S.ruins.n, 0.5, 1); range('ruinstaden: ras30', S.ruins.ras / S.ruins.n, 0.3, 3);
+  range('glasbruket: smält glas', sh('glassworks', 'moltenglass'), 0.6, 1); range('glasbruket: skärvor', sh('glassworks', 'glassshards'), 0.5, 1); range('glasbruket: ugnsmunnar', sh('glassworks', 'furnacevents'), 0.3, 1);
+  range('glasbruket: minst två smältugnar', (S.glassworks.d.f2 || 0) / S.glassworks.n, 0.7, 1); range('glasbruket: glasblåsare', sh('glassworks', 'glassblowers'), 0.8, 1);
+  range('glasbruket: ugnsandar', sh('glassworks', 'kilnspirits'), 0.25, 1); range('glasbruket: glasgolemer', sh('glassworks', 'glassgolems'), 0.3, 0.9); range('glasbruket: slaggkrypare', sh('glassworks', 'slagcrawlers'), 0.3, 0.9);
+  range('glasbruket: glasbitar', sh('glassworks', 'glassbits'), 0.2, 0.7); range('glasbruket: ugnshall', (S.glassworks.d.fh || 0) / S.glassworks.n, 0.7, 1);
+  // de nya väktarna och vapnen i alla biomer
+  for (const id of BIOME_IDS) for (const [gid, w] of [['mayor', 'sling'], ['glassmaster', 'ʳ']]) {
+    const b = Gen.BIOMES.find(x => x.id === id), d = Math.max(b.depth[0], Math.min(b.depth[1], 5, 3)), seed = 'v30g-' + id + '-' + gid, lv = Gen.floor(seed, d, { biome: id, guardian: gid, weapon: w });
+    const e = Gen.validate(lv); if (e.length) fail(`[v30 väktare ${gid} i ${id}] ${e[0]}`);
+    if (lv.guardian !== gid) fail(`[v30 väktare ${gid} i ${id}] väktaren saknas`);
+    if (!lv.map.some(r => r.includes(wchOf(w)))) fail(`[v30 vapen ${w} i ${id}] saknas`);
+    if (!lv.map.some(r => r.includes(Gen.GUARDIANS[gid].wall))) fail(`[v30 väktare ${gid} i ${id}] salens vägg saknas`);
+  }
+  // utan opts.biome: djupen
+  {
+    const seen = { ruins: new Set(), glassworks: new Set() };
+    for (let i = 0; i < 1500; i++) { const d = 1 + (i % 5), lv = Gen.floor('v30mix-' + i, d, {}); if (seen[lv.biome]) { seen[lv.biome].add(d); if (i % 10 === 0) check30(lv, `[v30 mix ${i} d=${d}]`, d); } }
+    if ([...seen.ruins].some(d => d < 3) || [...seen.glassworks].some(d => d < 4)) fail('version 30: biomerna på fel djup ' + JSON.stringify({ r: [...seen.ruins], g: [...seen.glassworks] }));
+    if (!seen.ruins.size || !seen.glassworks.size) fail('version 30: ruinstaden/glasbruket valdes aldrig utan opts.biome');
+    stats.v30.push(`utan opts.biome: ruinstaden på djup ${[...seen.ruins].sort().join(',')}, glasbruket på djup ${[...seen.glassworks].sort().join(',')}`);
+  }
+  // arenorna, hemliga våningar och labyrinter
+  for (const [arena, boss] of [['ruins', 'mayor'], ['glassworks', 'glassmaster']]) {
+    let vents = 0, molten = 0;
+    for (let i = 0; i < 30; i++) for (const bs of [undefined, boss, GI[i % GI.length]]) {
+      const lv = Gen.boss('v30a-' + arena + i, { arena, boss: bs }), tag = `[v30 arena ${arena} ${i} ${bs}]`;
+      check30(lv, tag, 6);
+      if (lv.arena !== arena || lv.biome !== arena || (arena === 'ruins') !== !!lv.sky) fail(tag + ' biom/himmel');
+      if (/[ʝʴʵʨʩʪʫʮʯʰʱ]/.test(lv.map.join(''))) fail(tag + ' rasande tak/ammo/fiender i arenan');
+      vents += count(lv.map, 'ʡ'); molten += count(lv.map, 'ʟ');
+    }
+    if (arena === 'glassworks' && (vents < 60 || molten < 90)) fail(`version 30: glasmästarens arena har för få ugnsmunnar/smält glas (${vents}/${molten})`);
+    if (arena === 'ruins' && count(Gen.boss('v30a-r', { arena }).map, 'ʞ') < 2) fail('version 30: borgmästarens arena saknar grus');
+  }
+  for (const id of NEW30) for (let i = 0; i < 20; i++) {
+    const sc = Gen.secret('v30s' + i, { biome: id, depth: 1 + (i % 5) }), mz = Gen.maze('v30m' + i, { biome: id, depth: 1 + (i % 5) });
+    for (const lv of [sc, mz]) { check30(lv, `[v30 ${lv.secret ? 'hemlig' : 'labyrint'} ${id} ${i}]`, 1 + (i % 5)); if (lv.biome !== id) fail(`[v30 ${id}] biom ${lv.biome}`); }
+    if ((id === 'ruins') !== !!(mz.sky && mz.sky.some(r => r.includes('1')))) fail(`[v30 labyrint ${id}] himlen`);
+  }
+  // negativa validate-tester
+  {
+    const edit = (lv, f) => { const l = JSON.parse(JSON.stringify(lv)), rows = l.map.map(r => r.split('')); f(rows, l); l.map = rows.map(r => r.join('')); return l; };
+    const expect = (l, what, re) => { if (!Gen.validate(l).some(e => re.test(e))) fail('validate (version 30): ' + what + ' ej upptäckt'); };
+    const free = (l, k) => { let n = 0; for (let y = 2; y < l.map.length - 2; y++) for (let x = 2; x < l.map[0].length - 2; x++) if (l.map[y][x] === '.' && [[1, 0], [-1, 0], [0, 1], [0, -1]].every(([dx, dy]) => l.map[y + dy][x + dx] === '.') && n++ === k) return [x, y]; return [2, 2]; };
+    const ru = Gen.floor('neg30', 4, { biome: 'ruins' }), gw = Gen.floor('neg30g', 4, { biome: 'glassworks' }), dg = Gen.floor('neg30d', 3, { biome: 'dungeon' }), ar = Gen.boss('neg30a', { arena: 'ruins' });
+    for (const lv of [ru, gw, dg, ar]) { const e = Gen.validate(lv); if (e.length) fail('validate-test (version 30): grundbanan underkänd ' + e[0]); }
+    expect(edit(dg, r => { const [x, y] = free(dg, 3); r[y][x] = 'ʨ'; }), 'plundrare i fängelsehålan', /hör inte hemma/);
+    expect(edit(gw, r => { const [x, y] = free(gw, 3); r[y][x] = 'ʝ'; }), 'rasande tak i glasbruket', /hör inte hemma/);
+    expect(edit(ru, (r, l) => { l.depth = 3; const [x, y] = free(ru, 5); r[y][x] = 'ʩ'; }), 'stengolem på djup 3', /minst 4/);
+    expect(edit(ar, r => { const [x, y] = free(ar, 13); r[y][x] = 'ʴ'; }), 'stenpåse i arenan', /stenpåse\/glasbit i en arena/);
+    expect(edit(ar, r => { const [x, y] = free(ar, 20); r[y][x] = 'ʝ'; }), 'rasande tak i arenan', /hör inte hemma/);
+    { let done = false; const l = edit(ru, (r, L) => { for (let y = 1; y < r.length - 1 && !done; y++) for (let x = 1; x < r[0].length - 1 && !done; x++) if (r[y][x] === '.' && L.sky[y][x] === '1' && ![[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => DOORS.includes(r[y + dy][x + dx]))) { r[y][x] = 'ʝ'; done = true; } }); if (done) expect(l, 'rasande tak under himlen', /under bar himmel/); else fail('validate-test (version 30): ingen ruta under himlen'); }
+    { let done = false; const l = edit(ru, r => { for (let y = 1; y < r.length - 1 && !done; y++) for (let x = 1; x < r[0].length - 1 && !done; x++) if (r[y][x] === 'D' && r[y + 1][x] === '.') { r[y + 1][x] = 'ʞ'; done = true; } }); if (done) expect(l, 'grus i en dörröppning', /i dörröppning/); }
+    expect(edit(ru, (r, l) => { l.ras30 = [{ x: free(ru, 2)[0], y: free(ru, 2)[1] }]; }), 'ras30 på golv', /ingen vägg/);
+    expect(edit(dg, (r, l) => { l.ras30 = []; }), 'ras30 utanför ruinstaden', /ras30 utanför ruinstaden/);
+    { // en ugnsmun mitt i en gång där grannrutorna är enda vägen
+      let l = null;
+      for (let y = 2; y < gw.map.length - 2 && !l; y++) for (let x = 2; x < gw.map[0].length - 2 && !l; x++) {
+        if (gw.map[y][x] !== '.' || !isWall(gw.map[y - 1][x]) || !isWall(gw.map[y + 1][x]) || gw.map[y][x - 1] !== '.' || gw.map[y][x + 1] !== '.' || gw.map[y][x - 2] !== '.' || gw.map[y][x + 2] !== '.') continue;
+        const c = edit(gw, r => { r[y][x - 1] = 'ʡ'; });
+        const P = (() => { for (let yy = 0; yy < c.map.length; yy++) { const xx = c.map[yy].indexOf('P'); if (xx >= 0) return [xx, yy]; } })();
+        const a = floodD(gw.map, P[0], P[1], ch => !isBlock(ch) && !HAZ.includes(ch));
+        if (a[y * gw.map[0].length + x + 1] >= 0 && a[y * gw.map[0].length + x - 2] >= 0) l = c;
+      }
+      if (l) { const e = Gen.validate(l); if (!e.some(s => /ugnsmun|enda vägen|lava|fara|nås/.test(s))) fail('validate (version 30): ugnsmun i en gång ej upptäckt'); }
+    }
+  }
+  // frö-stabilitet mot version 29: de gamla biomerna, arenorna, hemliga våningarna och labyrinterna exakt som förut (de nya features-nycklarna 0)
+  {
+    const REF = process.env.GEN_V29_REF || 'f18e99c'; let Old29 = null, err = '';
+    try {
+      const src = process.env.GEN_OLD29 ? fs.readFileSync(process.env.GEN_OLD29, 'utf8') : require('child_process').execFileSync('git', ['show', REF + ':js/gen.js'], { cwd: path.join(__dirname, '..'), encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 1 << 26 });
+      const keep = global.Gen; (0, eval)(src); Old29 = global.Gen; global.Gen = keep;
+    } catch (e) { err = String(e.message || e).split('\n')[0]; }
+    if (!Old29) fail('version 30: kunde inte läsa gen.js från version 29 (' + err + '); sätt GEN_OLD29=sökväg till den gamla filen');
+    else {
+      const OLDB = Old29.BIOMES.map(b => b.id), OG = Object.keys(Old29.GUARDIANS), OW = Object.values(Old29.WEAPONS);
+      const NEWK = Object.keys(Gen.floor('st30', 3, { biome: 'dungeon' }).features).filter(k => !(k in Old29.floor('st30', 3, { biome: 'dungeon' }).features));
+      const strip = lv => { const o = JSON.parse(JSON.stringify(lv)); if (o.features) for (const k of NEWK) { if (o.features[k]) return 'ny sak ' + k; delete o.features[k]; } return JSON.stringify(o); };
+      let total = 0, moved = 0;
+      const same = (a, b, tag) => { total++; if (JSON.stringify(a) !== strip(b)) fail(tag + ' frö-stabilitet: skiljer sig från version 29'); };
+      for (let i = 0; i < 280; i++) {
+        const bio = OLDB[i % OLDB.length], pos = 1 + (i % 5), depth = Math.min(5, pos + (i % 2)), seed = RNG.hash('st30-' + i + ':' + depth);
+        const opts = { shop: pos === 2 || pos === 4, weapon: i % 3 ? OW[i % OW.length] : null, biome: bio, guardian: OG[(i * 7) % OG.length] };
+        same(Old29.floor(seed, depth, Object.assign({}, opts)), Gen.floor(seed, depth, Object.assign({}, opts)), `[stabil30 ${bio} seed=${seed} d=${depth}]`);
+      }
+      for (let i = 0; i < 150; i++) {
+        const seed = 'st30m-' + i, depth = 1 + (i % 5), a = Old29.floor(seed, depth, {});
+        same(a, Gen.floor(seed, depth, { v30off: true }), `[stabil30 v30off seed=${seed} d=${depth}]`);
+        const b = Gen.floor(seed, depth, {}); if (NEW30.includes(b.biome)) { moved++; continue; }
+        same(a, b, `[stabil30 utan biom seed=${seed} d=${depth}]`);
+      }
+      for (const arena of Old29.ARENAS) for (let i = 0; i < 2; i++) same(Old29.boss('st30a' + i, { arena, boss: i ? OG[i % OG.length] : undefined }), Gen.boss('st30a' + i, { arena, boss: i ? OG[i % OG.length] : undefined }), `[stabil30 arena ${arena}]`);
+      for (const id of OLDB) { same(Old29.secret('st30s', { biome: id, depth: 3 }), Gen.secret('st30s', { biome: id, depth: 3 }), `[stabil30 hemlig ${id}]`); same(Old29.maze('st30z', { biome: id, depth: 3 }), Gen.maze('st30z', { biome: id, depth: 3 }), `[stabil30 labyrint ${id}]`); }
+      stats.stable30 = `${total} jämförelser mot version 29 (${process.env.GEN_OLD29 ? path.basename(process.env.GEN_OLD29) : REF}): identiska (nya features-nycklar = 0: ${NEWK.length} st); utan opts.biome blev ${moved} av 150 banor ruinstaden/glasbruket (gaffeln v30, djup 3-5)`;
+    }
   }
 }
 
@@ -5071,8 +5248,8 @@ function freeLineT(r, x, y) { let best = 0; const at = (xx, yy) => (r[yy] && r[y
   }
   for (const id of BIOME_IDS) if (!seen[id]) fail('biomen ' + id + ' valdes aldrig slumpmässigt');
   if (seen.dungeon < 100 || seen.dungeon > 500) fail('fängelsehålan valdes ' + seen.dungeon + ' av 1000 gånger');
-  if (seen.volcano < 30 || seen.volcano > 150) fail('vulkanen valdes ' + seen.volcano + ' av 1000 gånger');
-  if (seen.tomb < 30 || seen.tomb > 150) fail('gravkammaren valdes ' + seen.tomb + ' av 1000 gånger');
+  if (seen.volcano < 26 || seen.volcano > 150) fail('vulkanen valdes ' + seen.volcano + ' av 1000 gånger');
+  if (seen.tomb < 26 || seen.tomb > 150) fail('gravkammaren valdes ' + seen.tomb + ' av 1000 gånger');
   if (seen.crystal < 28 || seen.crystal > 140) fail('kristallgrottorna valdes ' + seen.crystal + ' av 1000 gånger');
   if (seen.sunken < 32 || seen.sunken > 140) fail('sjunkna staden valdes ' + seen.sunken + ' av 1000 gånger');
   if (seen.clock < 28 || seen.clock > 130) fail('klocktornet valdes ' + seen.clock + ' av 1000 gånger');
@@ -5845,6 +6022,8 @@ console.log('Frö-stabilitet (version 27): ' + (stats.stable27 || 'EJ KONTROLLER
 console.log('Version 28 (översvämmad sal, vakttorn, balkonger, fönster, blodvåning):\n  ' + (stats.v28 || ['EJ KONTROLLERAD']).join('\n  '));
 console.log('Frö-stabilitet (version 28): ' + (stats.stable28 || 'EJ KONTROLLERAD'));
 console.log('Version 29 (blodaltaret och blodfursten): ' + (stats.v29 || 'EJ KONTROLLERAD'));
+console.log('Version 30 (ruinstaden och glasbruket):\n  ' + (stats.v30 || ['EJ KONTROLLERAD']).join('\n  '));
+console.log('Frö-stabilitet (version 30): ' + (stats.stable30 || 'EJ KONTROLLERAD'));
 console.log('\nFiender per rum (alla rum utom start: antal fiender -> antal rum):');
 for (const id of BIOME_IDS) { const h = B[id].hist; console.log(`  ${id.padEnd(10)} ` + Object.keys(h).sort((a, b) => a - b).map(k => k + ':' + h[k]).join(' ') + `   fiender/budget ${(B[id].enRel / B[id].n).toFixed(2)}  mimics ${B[id].mimic}  P->Z ${(B[id].gdist / B[id].n).toFixed(2)} (min ${B[id].gmin.toFixed(2)}) av längsta vägen`); }
 console.log('Rekvisita per bana:');
