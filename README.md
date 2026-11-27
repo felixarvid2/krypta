@@ -1287,6 +1287,74 @@ Version 7 lägger till 200 förbättringar:
 
 Kombinerade utmaningar multiplicerar själarna. Sparplatsen väljs på startskärmen, och `?fro=XXXX` i adressen fyller i ett delat frö.
 
+## Version 29: Glas och blod – fönster som går sönder, ljus i grafikkortet, nya utmaningar och blodfursten
+
+### Glas och rostiga galler
+- **Glasfönster:**
+  - En del fönster är blyinfattat glas i biomens ram, med en lätt färgton och reflex. Det gäller fönster mot ett rum längre fram och ibland vakttornets fönster.
+  - Glaset stoppar kulor och fiendernas blickar.
+  - Det spricker av ett skott och går sönder av tre. En smäll, en spark eller ett yxhugg krossar det direkt.
+  - Den krossade rutan blir en öppen ram som man ser, skjuter och klättrar igenom, och det kan fienderna också.
+- **Rostiga galler:** vakttornet och balkongens bortre ände kan ha ett rostigt galler märkt med ett kritkryss. En smäll eller tre sparkar böjer upp det till en genväg. Vanliga galler är som förut.
+- **Placering:** glas och rost placeras när våningen laddas, med ett eget slumpflöde.
+  - De sitter bara där vägen runt redan är öppen, så de blir en genväg men aldrig en väg förbi ett lås.
+  - Bangeneratorn är orörd.
+- **Livmätare bakom galler:** en fiende som syns genom ett galler eller fönster visar sin livmätare och sina skadesiffror. Bakom en vägg gör den det inte.
+- **Kartan:** rum man bara har skymtat genom ett galler eller fönster syns svagt och räknas inte som utforskade.
+- **Fängelsets gallerpelare** ritas som hela pelare igen, så bödelns gård ser inte längre ut som en bur.
+- **Tester:** t165–t169.
+
+### Ljus, vatten och luft i grafikkortet
+Med RENDERING WEBGL (eller AUTO) gör grafikkortet nu mer än bloom.
+
+- **LJUS** (under BILD, PÅ/AV):
+  - Eld, glödande partiklar, mynningsflammor, smällar, magi och eldklot lyser upp väggar, golv, tak och fiender runt sig i sin färg, med ett lätt flimmer.
+  - Ljuset läggs på ytans färg och lyfter bara mörka och halvmörka ytor. Ett redan ljust rum blir inte ljusare. Medelljuset ökar med högst cirka 8 % i de ljusaste biomerna.
+  - Facklor, lava och eldkastaren lyser som förut och räknas inte dubbelt.
+- **VATTEN** (PÅ/AV):
+  - Under ytan böljar bilden, blir blågrön och ljuset bryts i kaustik.
+  - Golv med vatten speglar väggarna och ljuset svagt och krusigt.
+- **LUFT** (PÅ/AV): luften dallrar över lava och eld. På kyrkogården, i hamnen, på skeppet och i träsket driver dimbankar sakta över golvet.
+- **Pausen** (med oskärpa), **fotoläget**, **simningen** och **startskärmens kameraflykt** ritas nu också av grafikkortet, så bloom och vinjett finns kvar där.
+  - Döden gråar bilden i grafikkortet.
+  - F9 sparar WebGL-bilden med HUD:en.
+- **Inställningar som påverkar effekterna:**
+  - MINSKADE EFFEKTER (och det automatiska lågeffektläget) stänger av allt det nya.
+  - MINSKADE BLIXTAR dämpar ljuset.
+  - MINSKA RÖRELSE stoppar vågorna och dallret.
+- **Om något inte fungerar på en enhet:** går ett av de nya shaderprogrammen inte att bygga stängs bara den effekten av. Med RENDERING CPU är bilden exakt som förut.
+- **Tester:** t175–t179.
+
+### Utmaningsvåningen: fyra nya regler
+- **ETT VAPEN:** bara vapnet du bär när du kommer in. +25 guld.
+- **GLASKANON:** du och fienderna gör dubbel skada. +30 guld.
+- **MOT KLOCKAN:**
+  - Klara våningen innan tiden tar slut. Tiden räknas i speltid, syns i HUD och varje dödad fiende ger 4 sekunder till.
+  - Hinner du får du 40 + 15 guld per djup extra.
+  - Tar tiden slut kommer en straffvåg, och den extra belöningen försvinner.
+- **HUNGER:** hälsan sjunker en poäng var 1,5 sekund, aldrig under en fjärdedel. Varje dödad fiende ger 6 tillbaka. +25 guld.
+- **Visning:** regeln syns i HUD under meddelandena. De sista tio sekunderna av MOT KLOCKAN blir klockan röd och tickar. Det följer INGA BLIXTAR, MINSKA RÖRELSE, färgblindläget och LJUDSIGNALER.
+- **Portalen** väljer en av de nya reglerna ungefär hälften av gångerna.
+- Alla regler går att kombinera med blodvåningen. Regeln sparas med rundan och släpps på nästa våning.
+
+### Blodvåningen: blodaltaret och blodfursten
+- **Blodaltaret** står på varje blodvåning. Tryck E och offra en fjärdedel av hälsan för en blodpakt.
+  - En pakt ger +10 % skada resten av rundan, högst +60 %.
+  - Pakterna visas på dödsskärmen och i statistiken.
+- **Blodfursten** väntar på varannan blodvåning och på alla från våning 8.
+  - Han är en förstärkt röd elit som läker av blodpölar på golvet.
+  - Skjut, spräng eller sparka sönder pölarna så slutar läkningen.
+  - Fälld ger han en kista och guld.
+- **BLOD AV** fungerar med allt.
+- **Bangeneratorn** väljer altarets plats och furstens sal i ett eget pass. Kartan ändras inte, och `opts.v29off` ger exakt version 28:s bana.
+- **Tester:** t173, t174 och gen-test.
+
+### Rättningar
+- **Balkongskyttarna** och vakttornets skytt stannar på avsatsen, också när de jagar dig.
+- **Under BARA NÄRSTRID** gör sparken, kolvslaget, rusningen, flygsparken och parerade skott full skada. Skott och sprängningar gör fortfarande en fjärdedel.
+- **Utmaningsportalen** är provad i riktiga rundor för varje regel: regeln, belöningen, sparning och laddning samt att regeln släpps på nästa våning (t172).
+- **Tester:** t170–t172.
+
 ## Version 28: Genom gallret – blod i taket, fönster, nya bantyper och WebGL
 
 ### Blod i taket
