@@ -7966,7 +7966,7 @@ function update(dt) {
   updateV24(dt); // version 24: genvägar, bakhåll och ledtrådar
   updateV27(dt); // version 27: scenernas namn när man kliver in
   updateV28(dt); // version 28: scenernas namn och glimten genom fönstren
-  for (const e of ents) if (!e.dead && !e.dying) pushOut(P, e.x, e.y, e.boss ? 1.1 : 0.55);
+  for (const e of ents) if (!e.dead && !e.dying && !e.attached) pushOut(P, e.x, e.y, e.boss ? 1.1 : 0.55); // en fastsatt igel knuffar inte spelaren
   for (const pt of pots) if (!pt.broken) pushOut(P, pt.x, pt.y, 0.45);
   for (const c of chests) pushOut(P, c.x, c.y, 0.5);
   const speed = Math.hypot(P.vx, P.vy);

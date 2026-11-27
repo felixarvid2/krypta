@@ -36,7 +36,11 @@ const bk = await ev(() => { const g = __game, n0 = g.v28.n(); g.v28.render(); co
 ok(bk.backed > 0 && bk.cols === 0, 'galler med vägg direkt bakom ritas ogenomskinligt ' + JSON.stringify(bk));
 await shot('galler_mot_vagg');
 // framför gallret: en hälsoflaska strax framför fönstret ritas utan galler över sig (som framför en vägg)
-const front = {}; for (const win of ['ǂ', '1']) { await ready({ win, en: [['h', 10, 6]], calm: true }); front[win] = await diff(); }
+// version 29: hälsoflaskan är animerad (gfxW: bredden gungar ±5 % och en glimt syns 8 % av tiden), så ett enda prov per scen gav 690–810
+// bildpunkter i båda scenerna och två prov kunde skilja mer än 10 % (t.ex. {"1":701,"ǂ":776}). Animeringen stängs av under provet och
+// medianen av fem prov (0,1 s speltid isär) jämförs; utan animering ligger båda scenerna på 709–737.
+const med5 = async () => { await ev(() => { __game.gfxW.set({ off: true }); }); const v = []; for (let i = 0; i < 5; i++) { v.push(await diff()); await gwait(0.1); } await ev(() => { __game.gfxW.set({ off: false }); }); return v.sort((a, b) => a - b)[2]; };
+const front = {}; for (const win of ['ǂ', '1']) { await ready({ win, en: [['h', 10, 6]], calm: true }); front[win] = await med5(); }
 ok(front['1'] > 50 && Math.abs(front['ǂ'] - front['1']) <= front['1'] * 0.1, 'en sprite framför gallret täcks inte av gallret ' + JSON.stringify(front));
 // bakom och framför samtidigt + statistik
 await ready({ win: 'ǂ', en: [['Ä', 15, 6], ['h', 10, 5]], calm: true }); await gwait(0.2);
