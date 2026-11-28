@@ -3,7 +3,7 @@
 // vägsökningen); en smäll böjer upp det direkt. Placering: på våningar med vakttorn, balkonger och fönster mot rum längre fram blir en
 // del fönster glas eller rostiga galler – bara där båda sidorna redan hänger ihop utan lås (aldrig enda vägen, aldrig förbi ett lås),
 // samma frö ger samma placering, lvl.map (gen.js utdata) ändras inte, F29.on = false ger inga nya tecken, och vanliga galler är kvar.
-// Statistik över 40 frön (naturlig sannolikhet). Väntan i speltid. Port 9867.
+// Statistik över 40 frön (naturlig sannolikhet), fler (högst 120) tills minst 4 våningar har fönster. Väntan i speltid. Port 9867.
 import { setup } from './head.mjs';
 const PORT = 9867;
 const { pg, ev, wait, ok, shot, start, done } = await setup(PORT, 'out/t167');
@@ -37,7 +37,7 @@ const live = (seed, depth, on = true) => ev(([seed, depth, on]) => { const g = _
   g.loadFloor(depth); g.f29.F29.on = true; const L = g.lvl(), n = L.map.reduce((a, r) => a + (r.match(/ǂ/g) || []).length, 0), c = g.f29.cells();
   return { n, cells: c.map(x => x.kind + x.x + ',' + x.y), glass: c.filter(x => x.kind === 'glass').length, rust: c.filter(x => x.kind === 'rust').length, boss: !!g.boss() }; }, [seed, depth, on]);
 const st = { floors: 0, withWin: 0, glassFloors: 0, rustFloors: 0, glass: 0, rust: 0, wins: 0 }; let ex = null;
-for (let s = 1; s <= 40; s++) { const r = await live(5000 + s, 2 + (s % 3)); if (r.boss) continue; st.floors++; if (r.n) st.withWin++; st.wins += r.n; st.glass += r.glass; st.rust += r.rust; if (r.glass) st.glassFloors++; if (r.rust) st.rustFloors++; if (!ex && r.cells.length) ex = [5000 + s, 2 + (s % 3)]; }
+for (let s = 1; s <= 120 && (s <= 40 || st.withWin < 4); s++) { const r = await live(5000 + s, 2 + (s % 3)); if (r.boss) continue; st.floors++; if (r.n) st.withWin++; st.wins += r.n; st.glass += r.glass; st.rust += r.rust; if (r.glass) st.glassFloors++; if (r.rust) st.rustFloors++; if (!ex && r.cells.length) ex = [5000 + s, 2 + (s % 3)]; }
 console.log('STAT ' + JSON.stringify(st));
 ok(st.withWin === 0 || st.glass + st.rust > 0, 'spelets våningar: en del fönster blir glas eller rostiga galler ' + JSON.stringify(st));
 if (ex) { const a1 = await live(ex[0], ex[1]), a2 = await live(ex[0], ex[1]), off = await live(ex[0], ex[1], false);
