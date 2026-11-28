@@ -228,6 +228,7 @@ function pickUp(it, bought) {
   if (it.type === 'legend') { giveLegend(it.legend, 'DU HITTADE'); return true; }
   if (it.type === 'dreamflask') { const n = 4; if (P.ammo.dreams >= AMMO.dreams.max) return false; P.ammo.dreams = Math.min(AMMO.dreams.max, (P.ammo.dreams || 0) + n); say(`+${n} DRÖMMAR`, 1.2); play('dream_pickup', 0.6); return true; }
   if (it.type === 'brimstone') { const n = 3; if (P.ammo.brimstone >= AMMO.brimstone.max) return false; P.ammo.brimstone = Math.min(AMMO.brimstone.max, (P.ammo.brimstone || 0) + n); say(`+${n} SVAVEL`, 1.2); play('brimstone_pickup', 0.8, 1); return true; }
+  { const r = v30Pickup(it); if (r !== undefined) return r; } // version 30 (SPEL): stenpåsen och glasbiten
   if (it.type === 'cannonballs') { const n = 3; if ((P.ammo.cannonballs || 0) >= AMMO.cannonballs.max) return false; P.ammo.cannonballs = Math.min(AMMO.cannonballs.max, (P.ammo.cannonballs || 0) + n); say(`+${n} KANONKULOR`, 1.2); play('cannonball_pickup', 0.8, 1); return true; }
   if (it.type === 'fish') { if (P.hp >= maxHp()) return false; heal(5); say('FISKRENS: +5 HÄLSA', 1.2); play('health', 0.5, 1.3); return true; }
   if (it.type === 'scrap') { const n = 6; if (P.ammo.scrap >= AMMO.scrap.max) return false; P.ammo.scrap = Math.min(AMMO.scrap.max, (P.ammo.scrap || 0) + n); say(`+${n} SKROT`, 1.2); play('scrap_pickup', 0.8, 1); return true; }
@@ -256,7 +257,7 @@ function pickUp(it, bought) {
   else if (it.type === 'shard') { if (P.armor >= 200) return false; P.armor = Math.min(200, P.armor + 10); say('+10 RUSTNING', 1); play('armor', 0.5, 1.4); spawnText(it.x, it.y, '+10', '#9fc4ff'); }
   else if (it.type === 'armor') { if (P.armor >= 200) return false; P.armor = Math.min(200, P.armor + 50); say('+50 RUSTNING', 1.5); play('armor', 0.7); }
   else if (it.type === 'ammo' && run.pact) { // pakten: all ammo blir vapnets egen
-    const k = pactAmmo(), n = Math.round(({ p9: 30, r556: 28, shells: 9, bolts: 8, flares: 5, fuel: 60, lgren: 4, none: 0, nails: 40, arrows: 6, mana: 0, knives: 6, balls: 5, harpoons: 3, crystals: 18, gears: 6, spores: 4, ink: 8, bees: 5, dreams: 3, chainballs: 3, acid: 40, pins: 4, darts: 8, stars: 3, traps: 2, scrap: 4, brimstone: 2, cannonballs: 2 }[k] || 0) * am);
+    const k = pactAmmo(), n = Math.round(({ p9: 30, r556: 28, shells: 9, bolts: 8, flares: 5, fuel: 60, lgren: 4, none: 0, nails: 40, arrows: 6, mana: 0, knives: 6, balls: 5, harpoons: 3, crystals: 18, gears: 6, spores: 4, ink: 8, bees: 5, dreams: 3, chainballs: 3, acid: 40, pins: 4, darts: 8, stars: 3, traps: 2, scrap: 4, brimstone: 2, cannonballs: 2, slingstones: 4, glass: 4 }[k] || 0) * am);
     if (P.ammo[k] >= AMMO[k].max && !bought) return false;
     P.ammo[k] = Math.min(AMMO[k].max, P.ammo[k] + n); say(`AMMO +${n} ${AMMO[k].name}`, 2); play('pickup', 0.7);
   } else if (it.type === 'ammo') {
@@ -266,7 +267,7 @@ function pickUp(it, bought) {
     am *= it.mult || 1;
     const add = { p9: Math.round(18 * am), r556: Math.round((has('rifle') || has('sniper') ? 20 : 8) * am), shells: Math.round((has('shotgun') || has('dbshotgun') ? 6 : 3) * am),
       bolts: Math.round((has('crossbow') ? 5 : 0) * am), flares: Math.round((has('flaregun') ? 3 : 0) * am), fuel: Math.round((has('flamer') ? 40 : 0) * am), lgren: Math.round((has('launcher') ? 3 : 0) * am),
-      nails: Math.round((has('nailgun') ? 30 : 0) * am), arrows: Math.round((has('bow') ? 4 : 0) * am), knives: Math.round((has('knives') ? 4 : 0) * am), balls: Math.round((has('musket') ? 3 : 0) * am), harpoons: Math.round((has('harpoon') ? 2 : 0) * am), crystals: Math.round((has('prism') ? 14 : 0) * am), gears: Math.round((has('sawlauncher') ? 4 : 0) * am), spores: Math.round((has('sporelauncher') ? 2 : 0) * am), ink: Math.round((has('runebook') ? 4 : 0) * am), bees: Math.round((has('hivelauncher') ? 3 : 0) * am), dreams: Math.round((has('dreamstaff') ? 2 : 0) * am), chainballs: Math.round((has('chaincannon') ? 2 : 0) * am), acid: Math.round((has('acidsprayer') ? 25 : 0) * am), pins: Math.round((has('pinthrower') ? 3 : 0) * am), darts: Math.round((has('blowgun') ? 6 : 0) * am), stars: Math.round((has('starlance') ? 3 : 0) * am), traps: Math.round((has('trapthrower') ? 2 : 0) * am), scrap: Math.round((has('blunderbuss') ? 4 : 0) * am), brimstone: Math.round((has('brimstone') ? 2 : 0) * am), cannonballs: Math.round((has('bombard') ? 2 : 0) * am) };
+      nails: Math.round((has('nailgun') ? 30 : 0) * am), arrows: Math.round((has('bow') ? 4 : 0) * am), knives: Math.round((has('knives') ? 4 : 0) * am), balls: Math.round((has('musket') ? 3 : 0) * am), harpoons: Math.round((has('harpoon') ? 2 : 0) * am), crystals: Math.round((has('prism') ? 14 : 0) * am), gears: Math.round((has('sawlauncher') ? 4 : 0) * am), spores: Math.round((has('sporelauncher') ? 2 : 0) * am), ink: Math.round((has('runebook') ? 4 : 0) * am), bees: Math.round((has('hivelauncher') ? 3 : 0) * am), dreams: Math.round((has('dreamstaff') ? 2 : 0) * am), chainballs: Math.round((has('chaincannon') ? 2 : 0) * am), acid: Math.round((has('acidsprayer') ? 25 : 0) * am), pins: Math.round((has('pinthrower') ? 3 : 0) * am), darts: Math.round((has('blowgun') ? 6 : 0) * am), stars: Math.round((has('starlance') ? 3 : 0) * am), traps: Math.round((has('trapthrower') ? 2 : 0) * am), scrap: Math.round((has('blunderbuss') ? 4 : 0) * am), brimstone: Math.round((has('brimstone') ? 2 : 0) * am), cannonballs: Math.round((has('bombard') ? 2 : 0) * am), slingstones: Math.round((has('sling') ? 4 : 0) * am), glass: Math.round((has('glassgun') ? 4 : 0) * am) };
     add[WEAPONS[P.weapon].ammo] = Math.round(add[WEAPONS[P.weapon].ammo] * 1.5); // mer till vapnet du håller
     for (const k in add) P.ammo[k] = Math.min(AMMO[k].max, P.ammo[k] + add[k]);
     say('AMMO ' + Object.keys(add).filter(k => add[k] > 0).map(k => `+${add[k]} ${AMMO[k].name}`).join(' '), 2); play('pickup', 0.7);
@@ -275,13 +276,13 @@ function pickUp(it, bought) {
     const i = weaponIndex(it.type), w = WEAPONS[i];
     if (cmode('pistol') && w.id !== 'pistol') { P.ammo.p9 = Math.min(AMMO.p9.max, P.ammo.p9 + 30); run.gold += 20; say(`BARA PISTOL: ${w.name} BLIR AMMO OCH 20 GULD`, 2.5); play('coin', 0.7); return true; }
     if (run.pact && w.id !== run.pact) { // pakten: andra vapen blir ammo och guld
-      const k = pactAmmo(); P.ammo[k] = Math.min(AMMO[k].max, P.ammo[k] + ({ p9: 30, r556: 30, shells: 8, bolts: 8, flares: 5, fuel: 60, lgren: 4, none: 0, nails: 40, arrows: 6, mana: 0, knives: 6, balls: 5, harpoons: 3, crystals: 18, gears: 6, spores: 4, ink: 8, bees: 5, dreams: 3, chainballs: 3, acid: 40, pins: 4, darts: 8, stars: 3, traps: 2, scrap: 4, brimstone: 2, cannonballs: 2 }[k] || 0)); run.gold += 20;
+      const k = pactAmmo(); P.ammo[k] = Math.min(AMMO[k].max, P.ammo[k] + ({ p9: 30, r556: 30, shells: 8, bolts: 8, flares: 5, fuel: 60, lgren: 4, none: 0, nails: 40, arrows: 6, mana: 0, knives: 6, balls: 5, harpoons: 3, crystals: 18, gears: 6, spores: 4, ink: 8, bees: 5, dreams: 3, chainballs: 3, acid: 40, pins: 4, darts: 8, stars: 3, traps: 2, scrap: 4, brimstone: 2, cannonballs: 2, slingstones: 4, glass: 4 }[k] || 0)); run.gold += 20;
       say(`EDEN: ${w.name} BLIR AMMO OCH 20 GULD`, 2.5); play('coin', 0.7); return true;
     }
     const first = !P.has[i];
     P.has[i] = true;
     if (first) P.mags[i] = effMag(i);
-    P.ammo[w.ammo] = Math.min(AMMO[w.ammo].max, P.ammo[w.ammo] + ({ p9: 30, r556: 30, shells: 8, bolts: 10, flares: 6, fuel: 80, lgren: 8, none: 0, nails: 70, arrows: 12, mana: 0, knives: 10, balls: 8, harpoons: 5, crystals: 30, gears: 10, spores: 6, ink: 12, bees: 8, dreams: 5, chainballs: 3, acid: 50, pins: 6, darts: 12, stars: 6, traps: 3, scrap: 6, brimstone: 3, cannonballs: 3 }[w.ammo] || 0));
+    P.ammo[w.ammo] = Math.min(AMMO[w.ammo].max, P.ammo[w.ammo] + ({ p9: 30, r556: 30, shells: 8, bolts: 10, flares: 6, fuel: 80, lgren: 8, none: 0, nails: 70, arrows: 12, mana: 0, knives: 10, balls: 8, harpoons: 5, crystals: 30, gears: 10, spores: 6, ink: 12, bees: 8, dreams: 5, chainballs: 3, acid: 50, pins: 6, darts: 12, stars: 6, traps: 3, scrap: 6, brimstone: 3, cannonballs: 3, slingstones: 10, glass: 8 }[w.ammo] || 0));
     say('DU HITTADE: ' + w.name, 2.5); play('weapon', 0.8);
     if (first && settings.autoSwitch !== false) switchWeapon(i);
   }
@@ -295,7 +296,7 @@ function updateWeapon(dt) {
   const moving = Math.hypot(P.vx, P.vy) / 3.1;
   WS.spread = Math.max(WS.spread, moving * 0.012 * (1 - WS.aim * 0.7));
   WS.swayX *= Math.pow(0.0001, dt); WS.swayY *= Math.pow(0.0001, dt);
-  const wantAim = aimDown && (WS.state === 'idle') && !WEAPONS[P.weapon].melee && !WEAPONS[P.weapon].scimitar && !WEAPONS[P.weapon].flail && !WEAPONS[P.weapon].blunderbuss && !WEAPONS[P.weapon].trident && !WEAPONS[P.weapon].brimstone && !WEAPONS[P.weapon].hookchain && !WEAPONS[P.weapon].bombard ? 1 : 0;
+  const wantAim = aimDown && (WS.state === 'idle') && !WEAPONS[P.weapon].melee && !WEAPONS[P.weapon].scimitar && !WEAPONS[P.weapon].flail && !WEAPONS[P.weapon].blunderbuss && !WEAPONS[P.weapon].trident && !WEAPONS[P.weapon].brimstone && !WEAPONS[P.weapon].hookchain && !WEAPONS[P.weapon].bombard && !WEAPONS[P.weapon].v30rc ? 1 : 0;
   WS.aim += (wantAim - WS.aim) * Math.min(1, dt * 10);
   if (v26aCoinOn(wp)) WS.aim = 0; // version 26A: med myntkortet kastar pistolens högerklick mynt i stället för att sikta
   WS.punch = Math.max(0, WS.punch - dt * 0.35); WS.kick = Math.max(0, WS.kick - dt); WS.nameT = Math.max(0, WS.nameT - dt); P.kickT = Math.max(0, P.kickT - dt);
@@ -329,6 +330,7 @@ function updateWeapon(dt) {
   if (P.iframe > 0) P.iframe -= dt;
   const trig = mouseDown || touch.tap > 0 || touch.autoFire;
   weaponV9Tick(wp, dt); weaponV11Tick(wp, dt); weaponV13Tick(wp, dt); weaponV15Tick(wp, dt); weaponV16Tick(wp, dt); weaponV17Tick(wp, dt, trig); weaponV18Tick(wp, dt, trig); weaponV19Tick(wp, dt, trig); weaponV20Tick(wp, dt, trig); weaponV21Tick(wp, dt, trig); weaponV22Tick(wp, dt, trig); weaponV23Tick(wp, dt, trig);
+  weaponV30Tick(wp, dt, trig); // version 30 (SPEL): slungans tunga kast och glasbössans glaskula
   v26aWeaponTick(wp, dt); // version 26A: myntet
   if (weaponV7Tick(wp, dt, trig)) return;
   if (wp.melee) { // yxan: håll för laddat slag, högerklick kastar

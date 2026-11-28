@@ -45,7 +45,9 @@ const SOUNDS = ['shot', 'boom', 'pickup', 'health', 'hurt', 'splat', 'weapon', '
   'brimstone_fire', 'brimstone_boom', 'brimstone_pickup', 'bathhouse_hum', 'purgatory_hum',
   'butcher', 'cleaver_throw', 'pigman', 'pig_charge', 'flies', 'crawler', 'ghostsoldier', 'ghost_shield_bash', 'ghostarcher', 'arrow_volley', 'ghostrider', 'hoofbeats', 'crows', 'meatmaster_roar', 'hook_throw', 'chain_pull',
   'grinder', 'grinder_start', 'warlord_roar', 'war_horn', 'catapult_whistle', 'catapult_impact', 'sword_whirl', 'blood_slick', 'deep_mud', 'meathook_creak', 'bandsaw', 'stakes_hit', 'banner_flap', 'hookchain_throw', 'hookchain_hit',
-  'bombard_fire', 'bombard_grape', 'cannonball_bounce', 'cannonball_pickup', 'abattoir_hum', 'battlefield_hum'];
+  'bombard_fire', 'bombard_grape', 'cannonball_bounce', 'cannonball_pickup', 'abattoir_hum', 'battlefield_hum',
+  'looter', 'looter_knife', 'rubblegolem', 'rock_throw', 'rooftopper', 'rooftop_bolt', 'dustdevil', 'glassblower', 'glass_bubble', 'glassgolem', 'glass_crack', 'slagcrawler', 'kilnspirit', 'kilnspirit_boom',
+  'mayor_roar', 'roof_collapse', 'glassmaster_roar', 'glass_dome', 'sling_fire', 'sling_charge', 'glassgun_fire', 'glassgun_burst', 'furnace_blast', 'shards_step', 'glassrack_break', 'wall_crumble', 'pillar_fall', 'ruins_hum', 'glassworks_hum'];
 async function loadSounds() {
   actx = new (window.AudioContext || window.webkitAudioContext)();
   master = actx.createGain(); master.connect(actx.destination); applyVolume();
@@ -140,14 +142,17 @@ const WEAPONS = [
   // version 23: slaktarkroken och bombarden
   { id: 'hookchain', name: 'SLAKTARKROKEN', short: 'KROK', ammo: 'none', mag: 1, dmg: 45, pellets: 1, spread: 0, delay: 1.2, auto: true, sound: ['hookchain_throw', 0.9, 0], flash: 0, kick: 1.0, reload: 0, falloff: [2, 3, 1], recoil: [0], hookchain: true, noShell: true, silent: true },
   { id: 'bombard', name: 'BOMBARDEN', short: 'BOMBARD', ammo: 'cannonballs', mag: 1, dmg: 80, pellets: 1, spread: 0, delay: 0.9, auto: false, sound: ['bombard_fire', 1.0, 0], flash: 1.8, kick: 2.4, reload: 1.5, falloff: [30, 40, 1], recoil: [0.04], bombard: true, noShell: true },
+  // version 30 (SPEL): slungan och glasbössan
+  { id: 'sling', name: 'SLUNGAN', short: 'SLUNGA', ammo: 'slingstones', mag: 1, dmg: 35, pellets: 1, spread: 0, delay: 0.55, auto: false, sound: ['sling_fire', 0.8, 0], flash: 0, kick: 0.6, reload: 0, falloff: [30, 40, 1], recoil: [0.004], sling: true, v30: true, v30rc: true, noShell: true, silent: true },
+  { id: 'glassgun', name: 'GLASBÖSSAN', short: 'GLAS', ammo: 'glass', mag: 4, dmg: 9, pellets: 8, spread: 0.085, delay: 0.6, auto: false, sound: ['glassgun_fire', 1.0, 0], flash: 0.6, kick: 1.6, reload: 1.0, falloff: [3, 8, 0.3], recoil: [0.02, -0.015], glassgun: true, v30: true, v30rc: true, noShell: true },
 ];
 const AMMO = { p9: { name: '9MM', max: 200 }, r556: { name: '5.56', max: 150 }, shells: { name: 'PATRONER', max: 50 }, bolts: { name: 'BULTAR', max: 40 }, flares: { name: 'BLOSS', max: 24 },
   fuel: { name: 'BRÄNSLE', max: 240 }, lgren: { name: 'GRANATER', max: 24 }, none: { name: 'NÄRSTRID', max: 1 },
-  nails: { name: 'SPIKAR', max: 300 }, mana: { name: 'MANA', max: 0 }, arrows: { name: 'PILAR', max: 40 }, knives: { name: 'KNIVAR', max: 30 }, balls: { name: 'KULOR', max: 40 }, harpoons: { name: 'HARPUNER', max: 20 }, crystals: { name: 'KRISTALLER', max: 140 }, gears: { name: 'KUGGHJUL', max: 60 }, spores: { name: 'SPORER', max: 30 }, ink: { name: 'BLÄCK', max: 60 }, bees: { name: 'BIN', max: 40 }, dreams: { name: 'DRÖMMAR', max: 24 }, chainballs: { name: 'KEDJEKULOR', max: 20 }, acid: { name: 'SYRA', max: 200 }, pins: { name: 'KÄGLOR', max: 36 }, darts: { name: 'GIFTPILAR', max: 60 }, stars: { name: 'STJÄRNSTOFT', max: 30 }, traps: { name: 'FÄLLOR', max: 16 }, scrap: { name: 'SKROT', max: 40 }, brimstone: { name: 'SVAVEL', max: 20 }, cannonballs: { name: 'KANONKULOR', max: 20 } };
-const NOAMMO = () => ({ p9: 36, r556: 0, shells: 0, bolts: 0, flares: 0, fuel: 0, lgren: 0, none: 1, nails: 0, mana: 0, arrows: 0, knives: 0, balls: 0, harpoons: 0, crystals: 0, gears: 0, spores: 0, ink: 0, bees: 0, dreams: 0, chainballs: 0, acid: 0, pins: 0, darts: 0, stars: 0, traps: 0, scrap: 0, brimstone: 0, cannonballs: 0 });
+  nails: { name: 'SPIKAR', max: 300 }, mana: { name: 'MANA', max: 0 }, arrows: { name: 'PILAR', max: 40 }, knives: { name: 'KNIVAR', max: 30 }, balls: { name: 'KULOR', max: 40 }, harpoons: { name: 'HARPUNER', max: 20 }, crystals: { name: 'KRISTALLER', max: 140 }, gears: { name: 'KUGGHJUL', max: 60 }, spores: { name: 'SPORER', max: 30 }, ink: { name: 'BLÄCK', max: 60 }, bees: { name: 'BIN', max: 40 }, dreams: { name: 'DRÖMMAR', max: 24 }, chainballs: { name: 'KEDJEKULOR', max: 20 }, acid: { name: 'SYRA', max: 200 }, pins: { name: 'KÄGLOR', max: 36 }, darts: { name: 'GIFTPILAR', max: 60 }, stars: { name: 'STJÄRNSTOFT', max: 30 }, traps: { name: 'FÄLLOR', max: 16 }, scrap: { name: 'SKROT', max: 40 }, brimstone: { name: 'SVAVEL', max: 20 }, cannonballs: { name: 'KANONKULOR', max: 20 }, slingstones: { name: 'STENAR', max: 30 }, glass: { name: 'GLAS', max: 24 } };
+const NOAMMO = () => ({ p9: 36, r556: 0, shells: 0, bolts: 0, flares: 0, fuel: 0, lgren: 0, none: 1, nails: 0, mana: 0, arrows: 0, knives: 0, balls: 0, harpoons: 0, crystals: 0, gears: 0, spores: 0, ink: 0, bees: 0, dreams: 0, chainballs: 0, acid: 0, pins: 0, darts: 0, stars: 0, traps: 0, scrap: 0, brimstone: 0, cannonballs: 0, slingstones: 0, glass: 0 });
 const weaponIndex = id => WEAPONS.findIndex(w => w.id === id);
 // tecknet för vapnet på kartan (gen.js) -> vapnets id
-const WEAPON_CHAR = { g: 'shotgun', r: 'rifle', m: 'smg', d: 'dbshotgun', b: 'crossbow', s: 'flaregun', p: 'sniper', 'å': 'axe', 'ä': 'flamer', 'ö': 'launcher', 'é': 'nailgun', 'ü': 'staff', 'ñ': 'bow', 'ô': 'knives', 'û': 'hammer', 'ï': 'musket', 'À': 'harpoon', 'Á': 'boomerang', 'Â': 'prism', 'Į': 'sawlauncher', 'į': 'windgun', 'Ĳ': 'spear', 'Ŕ': 'sporelauncher', 'ŕ': 'mirrorshield', 'Ŗ': 'whip', 'ƀ': 'runebook', 'Ɓ': 'steamcannon', 'ƛ': 'censer', 'Ɲ': 'hivelauncher', 'Ʊ': 'shears', 'Ʋ': 'dreamstaff', 'Ǫ': 'chaincannon', 'Ǭ': 'acidsprayer', 'ǽ': 'pinthrower', 'Ȏ': 'blowgun', 'ȩ': 'pickaxe', 'Ȫ': 'starlance', 'Ʉ': 'scimitar', 'Ʌ': 'trapthrower', 'ɝ': 'flail', 'ɞ': 'blunderbuss', 'ɹ': 'trident', 'ɺ': 'brimstone', 'ʔ': 'hookchain', 'ʕ': 'bombard' };
+const WEAPON_CHAR = { g: 'shotgun', r: 'rifle', m: 'smg', d: 'dbshotgun', b: 'crossbow', s: 'flaregun', p: 'sniper', 'å': 'axe', 'ä': 'flamer', 'ö': 'launcher', 'é': 'nailgun', 'ü': 'staff', 'ñ': 'bow', 'ô': 'knives', 'û': 'hammer', 'ï': 'musket', 'À': 'harpoon', 'Á': 'boomerang', 'Â': 'prism', 'Į': 'sawlauncher', 'į': 'windgun', 'Ĳ': 'spear', 'Ŕ': 'sporelauncher', 'ŕ': 'mirrorshield', 'Ŗ': 'whip', 'ƀ': 'runebook', 'Ɓ': 'steamcannon', 'ƛ': 'censer', 'Ɲ': 'hivelauncher', 'Ʊ': 'shears', 'Ʋ': 'dreamstaff', 'Ǫ': 'chaincannon', 'Ǭ': 'acidsprayer', 'ǽ': 'pinthrower', 'Ȏ': 'blowgun', 'ȩ': 'pickaxe', 'Ȫ': 'starlance', 'Ʉ': 'scimitar', 'Ʌ': 'trapthrower', 'ɝ': 'flail', 'ɞ': 'blunderbuss', 'ɹ': 'trident', 'ɺ': 'brimstone', 'ʔ': 'hookchain', 'ʕ': 'bombard', 'ʲ': 'sling', 'ʳ': 'glassgun' };
 const WF = window.WEAPON_FRAMES;
 
 // ---------- Spelstate ----------
@@ -246,11 +251,11 @@ function weaponFor(depth) { // ett nytt vapen per våning i slumpad ordning; de 
   return P.has[weaponIndex(WEAPON_CHAR[want])] ? null : want;
 }
 // biomer: varje varv går igenom alla fem i slumpad ordning (?biome=id för test)
-const BIOME_IDS = ['dungeon', 'caves', 'graveyard', 'forest', 'courtyard', 'swamp', 'frost', 'volcano', 'tomb', 'crystal', 'sunken', 'clock', 'sky', 'fungus', 'mirror', 'library', 'foundry', 'cathedral', 'hive', 'garden', 'dream', 'ship', 'lab', 'circus', 'jungle', 'mine', 'observatory', 'sewer', 'desert', 'prison', 'harbor', 'bathhouse', 'purgatory', 'abattoir', 'battlefield'];
+const BIOME_IDS = ['dungeon', 'caves', 'graveyard', 'forest', 'courtyard', 'swamp', 'frost', 'volcano', 'tomb', 'crystal', 'sunken', 'clock', 'sky', 'fungus', 'mirror', 'library', 'foundry', 'cathedral', 'hive', 'garden', 'dream', 'ship', 'lab', 'circus', 'jungle', 'mine', 'observatory', 'sewer', 'desert', 'prison', 'harbor', 'bathhouse', 'purgatory', 'abattoir', 'battlefield', 'ruins', 'glassworks'];
 let practice = null; // övningsläge: { biome } eller { boss }
 const biomeFor = depth => run && run.practice && run.practice.biome ? run.practice.biome : BIOME_IDS.includes(params.get('biome')) ? params.get('biome') : run && run.biomeChoice && run.biomeChoice[depth] ? run.biomeChoice[depth]
-  : lateLast(RNG(run.seed).fork('biom' + cycleOf(depth)).shuffle(BIOME_IDS.slice()))[(cyclePos(depth) - 1) % BIOME_IDS.length];
-const BIOME_LATE = ['garden', 'dream', 'lab', 'circus', 'jungle', 'observatory', 'desert', 'harbor', 'purgatory', 'battlefield']; // sena biomer: aldrig först i en omgång (och aldrig först i avgrundens sexvåningsvarv)
+  : v30Early(lateLast(RNG(run.seed).fork('biom' + cycleOf(depth)).shuffle(BIOME_IDS.slice())), cycleOf(depth))[(cyclePos(depth) - 1) % BIOME_IDS.length]; // version 30: Ruinstaden och Glasbruket inte först i första varvet (v30Early, 0605)
+const BIOME_LATE = ['garden', 'dream', 'lab', 'circus', 'jungle', 'observatory', 'desert', 'harbor', 'purgatory', 'battlefield', 'ruins', 'glassworks']; // sena biomer: aldrig först i en omgång (och aldrig först i avgrundens sexvåningsvarv)
 function lateLast(order) { // trädgården, drömriket, laboratoriet, cirkusen, djungeltemplet och observatoriet är sena biomer: aldrig först i en omgång
   const LATE = BIOME_LATE;
   if (LATE.includes(order[0])) { const i = order.findIndex(b => !LATE.includes(b)); if (i > 0) [order[0], order[i]] = [order[i], order[0]]; }
@@ -303,7 +308,7 @@ function startLevel(level) {
   guardianE = null; kills = 0; totalEnemies = 0; secrets = 0; totalSecrets = 0; itemsTaken = 0; totalItems = 0; levelTime = 0; boss = null; bossBanner = 0;
   light = new Float32Array(mw * mh); lcol = settings.colorLight === false ? null : new Float32Array(mw * mh * 3); seen = new Uint8Array(mw * mh); flow = new Int16Array(mw * mh).fill(-1); flowCell = -1;
   const lrng = RNG(RNG.hash(run.seed + ':spawn:' + run.depth));
-  const itemOf = { h: 'health', a: 'ammo', A: 'armor', $: 'goldpile', ',': 'grenade', '}': 'key', "'": 'scroll', '¥': 'potion', 'ª': 'rune', 'ð': 'meat', 'þ': 'page', '¼': 'battery', '½': 'stones', 'Ģ': 'tome', 'Ŋ': 'gear', 'ŋ': 'feather', 'Ũ': 'sporesack', 'Ƃ': 'inkflask', 'ƞ': 'beehive', 'Ƴ': 'dreamflask', 'ǫ': 'chaincrate', 'ǭ': 'acidflask', 'Ǿ': 'pinbox', 'ȏ': 'dartquiver', 'ȫ': 'stardust', 'Ɇ': 'traps', 'ɟ': 'scrap', 'ɻ': 'brimstone', 'ʖ': 'cannonballs', ...WEAPON_CHAR };
+  const itemOf = { h: 'health', a: 'ammo', A: 'armor', $: 'goldpile', ',': 'grenade', '}': 'key', "'": 'scroll', '¥': 'potion', 'ª': 'rune', 'ð': 'meat', 'þ': 'page', '¼': 'battery', '½': 'stones', 'Ģ': 'tome', 'Ŋ': 'gear', 'ŋ': 'feather', 'Ũ': 'sporesack', 'Ƃ': 'inkflask', 'ƞ': 'beehive', 'Ƴ': 'dreamflask', 'ǫ': 'chaincrate', 'ǭ': 'acidflask', 'Ǿ': 'pinbox', 'ȏ': 'dartquiver', 'ȫ': 'stardust', 'Ɇ': 'traps', 'ɟ': 'scrap', 'ɻ': 'brimstone', 'ʖ': 'cannonballs', 'ʴ': 'slingstones', 'ʵ': 'glass', ...WEAPON_CHAR };
   for (let y = 0; y < mh; y++) for (let x = 0; x < mw; x++) {
     const c = map[y][x], cx = x + 0.5, cy = y + 0.5;
     if (c === 'P') { P.x = cx; P.y = cy; P.a = startAngle(x, y); map[y][x] = '.'; }
@@ -351,6 +356,7 @@ function startLevel(level) {
   prepareTorchLight();
   quests = null; run.inSecret = !!lvl.secret; boulders = []; smokes = []; tornados = [];
   pickFloorEvent(lrng); setupQuests(lrng); addCobwebs(lrng); lockChests(lrng); setupNpcFloor(lrng); setupV8(lrng); setupV9(); setupV11(); setupV13(); setupV14(); setupV15(); setupV16(); setupV17(); setupV18(); setupV19(); setupV20(); setupV21(); setupV22(); setupV23(); setupLoop();
+  setupV30(); // version 30 (SPEL): Ruinstaden och Glasbruket (0605–0607)
   if (dmod('giants')) for (const e of ents) if (!e.boss) { e.hp = e.maxHp = e.maxHp * 1.3; e.d = { ...e.d, size: e.d.size * 1.2, score: e.d.score * 1.5 }; }
   if (run.floorCurse) for (const e of ents) if (!e.boss) { e.hp = e.maxHp = e.maxHp * 1.2; e.d = { ...e.d, dmg: e.d.dmg * 1.3 }; }
   if (!boss && !merchants.length && run.depth >= 2 && lrng.next() < 0.15) { const sp = randomFreeCell(lrng); if (sp) { merchants.push({ x: sp[0], y: sp[1], stock: null, wander: true }); map[sp[1] | 0][sp[0] | 0] = 'M'; logEvent('VANDRANDE KÖPMAN'); } } // vandrande köpman

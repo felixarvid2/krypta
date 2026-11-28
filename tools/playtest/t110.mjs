@@ -41,7 +41,7 @@ ok(await ev(() => ['cannonballs', 'hookchain', 'bombard'].every(t => __game.item
 ok(await ev(() => !__game.solid(5.5, 3.5) && !__game.solid(12.5, 22.5) && !__game.solid(5.5, 8.5) && !__game.solid(22.5, 16.5)), 'blodhalt golv, köttkvarn, lera och katapultmål är golv');
 const idx = await ev(() => Object.fromEntries(['hookchain', 'bombard'].map(id => [id, __game.WEAPONS.findIndex(w => w.id === id)])));
 const nW = await ev(() => __game.WEAPONS.length);
-ok(idx.hookchain === nW - 2 && idx.bombard === nW - 1, 'de två nya vapnen ligger sist i vapenlistan ' + JSON.stringify(idx) + ' av ' + nW);
+ok(idx.hookchain === 44 && idx.bombard === 45, 'de två vapnen har index 44 och 45 (version 30 lade två efter) ' + JSON.stringify(idx) + ' av ' + nW);
 ok(await ev(() => !window.Gen || !Gen.WEAPONS || (Gen.WEAPONS[String.fromCodePoint(0x294)] === 'hookchain' && Gen.WEAPONS[String.fromCodePoint(0x295)] === 'bombard')), 'bangeneratorn och spelet har samma tecken för vapnen');
 ok(await ev(() => __game.v23().targets.length === 8 && __game.mapRef()[16][38] === '.'), 'högst åtta katapultmål per bana');
 await ev(() => { for (const e of __game.ents()) { e.alert = false; e.sleep = true; e.d = { ...e.d, speed: 0, dmg: 0 }; } });

@@ -24,9 +24,9 @@ if (pick) {
   await pg.keyboard.press('Tab'); await gwait(0.3); await shot('karta'); await pg.keyboard.press('Tab'); await gwait(0.2);
   const s0 = await ev(c => { const g = __game; g.f29.updateFlow(); return { flow: g.f29.flow()[c.y * g.r30.map()[0].length + c.x], wall: g.v28.isWall(g.r30.map()[c.y][c.x]) }; }, c);
   await ev(c => { const g = __game; g.explode(g.P.x + Math.cos(g.P.a) * 0.4, g.P.y + Math.sin(g.P.a) * 0.4, 0, 1.4, false); }, c); await gwait(1.2); await shot('raserad');
-  const s1 = await ev(c => { const g = __game, m = g.r30.map(), P = g.P; const vert = !g.v28.isWall(m[c.y - 1][c.x]);
-    const ox = P.x, oy = P.y; for (let i = 0; i < 30; i++) { const dx = Math.cos(P.a) * 0.08, dy = Math.sin(P.a) * 0.08; if (!g.v28.solid(P.x + dx * 4, P.y + dy * 4)) { P.x += dx; P.y += dy; } } // (gå rakt fram så länge det är fritt)
-    return { ch: m[c.y][c.x], wall: g.v28.isWall(m[c.y][c.x]), walk: g.v28.walk(c.x, c.y), crossed: Math.hypot(P.x - ox, P.y - oy), through: vert ? P.y > c.y + 1 : P.x > c.x + 1, done: g.r30.cells()[0].done }; }, c);
+  const s1 = await ev(([c, vert]) => { const g = __game, m = g.r30.map(), P = g.P; /* vert från före smällen (version 30 SPEL) */
+    const ox = P.x, oy = P.y; for (let i = 0; i < 45; i++) { /* 45 steg: smällen knuffar spelaren bakåt först (version 30 SPEL) */ const dx = Math.cos(P.a) * 0.08, dy = Math.sin(P.a) * 0.08; if (!g.v28.solid(P.x + dx * 4, P.y + dy * 4)) { P.x += dx; P.y += dy; } } // (gå rakt fram så länge det är fritt)
+    return { ch: m[c.y][c.x], wall: g.v28.isWall(m[c.y][c.x]), walk: g.v28.walk(c.x, c.y), crossed: Math.hypot(P.x - ox, P.y - oy), through: vert ? P.y > c.y + 1 : P.x > c.x + 1, done: g.r30.cells()[0].done }; }, [c, pose.vert]);
   ok(s0.wall && s1.done && s1.ch === 'ʶ' && !s1.wall && s1.walk, 'en smäll river den spruckna väggen på våningen ' + JSON.stringify({ s0, s1 }));
   ok(s1.through, 'spelaren kommer igenom genvägen ' + JSON.stringify(s1));
   // fienderna i 6 s

@@ -262,6 +262,7 @@ function updateLight() {
   for (const e of ents) if (e.burn > 0 && !e.dead && !e.dormant) flashLight(e.x, e.y, 0.3, 2, [255, 140, 50]); // brinnande fiender lyser
   flameLight(flashLight); // version 25.1: eldkastarens stråle, brinnande mark och brinnande fiender lyser upp omgivningen
   lampLight(flashLight); gfxWLight(flashLight); v21Light(flashLight); v22Light(flashLight); v23Light(flashLight); // ficklampan; blixten lyser upp marken (VÄRLD)
+  v30Light(flashLight); // version 30 (SPEL): ugnsmunnar, smält glas och smältugnar
   if (lvl.beams) for (const b of lvl.beams) flashLight(b.x + 0.5, b.y + 0.5, 0.5, 3, [255, 230, 170]); // ljusstrålar
   for (const p of portals) flashLight(p.x, p.y, 0.7, 4, p.kind === 'gold' ? [255, 220, 90] : (p.biome && portals.length > 1 && BIOME_TINT[p.biome]) || [190, 130, 255]);
   for (let i = 0; i < light.length; i++) { const l = light[i]; if (l > 1.3) light[i] = Math.min(1.8, 1.3 + (l - 1.3) * 0.25); } // mjukt tak: många ljuskällor på samma ställe bränner inte ut bilden

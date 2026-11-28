@@ -37,7 +37,7 @@ ok(await ev(() => [0, 1, 2, 3, 4, 5].every(i => __game.solid(20.5, 5.5 + i))), '
 ok(await ev(() => ['brimstone', 'trident'].every(t => __game.items().some(i => i.type === t))), 'svavelklumpen och de två vapnen ligger ute');
 ok(await ev(() => !__game.solid(5.5, 3.5) && !__game.solid(12.5, 22.5) && !__game.solid(10.5, 24.5) && !__game.solid(26.5, 18.5) && !__game.solid(30.5, 12.5)), 'bassänger, ånggaller, eldflod och runcirkel är golv');
 const idx = await ev(() => Object.fromEntries(['trident', 'brimstone'].map(id => [id, __game.WEAPONS.findIndex(w => w.id === id)])));
-ok(idx.trident === 42 && idx.brimstone === 43 && await ev(() => __game.WEAPONS.length) === 46, 'de två nya vapnen har index 42 och 43 ' + JSON.stringify(idx));
+ok(idx.trident === 42 && idx.brimstone === 43 && await ev(() => __game.WEAPONS.length) === 48, 'de två nya vapnen har index 42 och 43 ' + JSON.stringify(idx));
 ok(await ev(() => __game.v22().runes.length === 3 && __game.mapRef()[12][36] === '.'), 'högst tre runcirklar per bana');
 await ev(() => { for (const e of __game.ents()) { e.alert = false; e.sleep = true; e.d = { ...e.d, speed: 0, dmg: 0 }; } });
 // het bassäng

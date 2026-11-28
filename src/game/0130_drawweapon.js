@@ -49,7 +49,7 @@ const WA_RL = {
   ram: [0, 0, 0, 0, 0.18, -4, 46, -0.12, 0.32, -4, 56, -0.12, 0.38, -4, 47, -0.12, 0.48, -4, 57, -0.12, 0.54, -4, 47, -0.12, 0.74, -2, 38, -0.08, 1, 0, 0, 0],
   insp: [0, 0, 0, 0, 0.18, -28, 14, -0.4, 0.44, -32, 12, -0.36, 0.6, 10, 8, 0.28, 0.82, 14, 10, 0.24, 0.95, 0, -3, 0, 1, 0, 0, 0]
 };
-const WA_PROF = { dbshotgun: 'brk', flaregun: 'brk', musket: 'ram', crossbow: 'crank', bow: 'crank', knives: 'crank', pinthrower: 'crank', launcher: 'heavy', flamer: 'heavy', acidsprayer: 'heavy', steamcannon: 'heavy', chaincannon: 'heavy', sawlauncher: 'heavy', hivelauncher: 'heavy', sporelauncher: 'heavy', trapthrower: 'heavy', blunderbuss: 'brk', brimstone: 'heavy', bombard: 'heavy' };
+const WA_PROF = { dbshotgun: 'brk', flaregun: 'brk', musket: 'ram', crossbow: 'crank', bow: 'crank', knives: 'crank', pinthrower: 'crank', launcher: 'heavy', flamer: 'heavy', acidsprayer: 'heavy', steamcannon: 'heavy', chaincannon: 'heavy', sawlauncher: 'heavy', hivelauncher: 'heavy', sporelauncher: 'heavy', trapthrower: 'heavy', blunderbuss: 'brk', brimstone: 'heavy', bombard: 'heavy', glassgun: 'heavy' };
 const waOut = { dx: 0, dy: 0, rot: 0 };
 function waTrack(tr, k, o) { // jämn interpolation mellan nyckelrutorna (smoothstep)
   let i = 0; while (i + 4 < tr.length - 4 && tr[i + 4] < k) i += 4;

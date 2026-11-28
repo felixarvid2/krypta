@@ -4451,6 +4451,104 @@ def main_v23():
     return n
 
 
+# ---- version 30: Ruinstaden och Glasbruket – motiven är spelets egna pixelbilder (tools/props21), förstorade utan utjämning ----
+GFX30 = os.path.join(ROOT, 'retrofps/assets/gfx')
+WALL30 = os.path.join(ROOT, 'retrofps/assets/wall')
+
+
+def sprite30(name, frame=0, n=1, wall=False):
+    im = Image.open(os.path.join(WALL30 if wall else GFX30, name + '.png')).convert('RGBA')
+    if n > 1:
+        fw = im.width // n
+        im = im.crop((frame * fw, 0, frame * fw + fw, im.height))
+    if wall:  # golv- och väggrutor: en rundad platta
+        m = Image.new('L', im.size, 0)
+        ImageDraw.Draw(m).rounded_rectangle((0, 0, im.width - 1, im.height - 1), radius=max(2, im.width // 8), fill=255)
+        im.putalpha(m)
+    bb = im.getbbox()
+    im = im.crop(bb) if bb else im
+    k = max(1, 360 // max(im.size))
+    return im.resize((im.width * k, im.height * k), Image.NEAREST)
+
+
+def draw_sling30():
+    return sprite30('pick_sling')
+
+
+def draw_glassgun30():
+    return sprite30('pick_glassgun')
+
+
+GUNS.update({'sling': draw_sling30, 'glassgun': draw_glassgun30})
+V30_DRAWN = {  # kort-id: ((bild, ruta, rutor, golv/vägg), storlek, (gloriatyp, färg))
+    'murarhjalmen': (('prop_brokencolumn', 0, 1, False), 0.84, ('ring', (210, 190, 150))),
+    'grussulorna': (('floor_rubble', 0, 1, True), 0.7, ('rays', (180, 160, 130))),
+    'filtsulorna': (('floor_shards', 0, 1, True), 0.7, ('stars', (150, 210, 255))),
+    'ugnshandskarna': (('prop_furnace', 0, 2, False), 0.84, ('ring', (255, 150, 60))),
+    'asbestforkladet': (('floor_moltenglass', 0, 1, True), 0.7, ('rays', (255, 130, 40))),
+    'flodstenen': (('item_slingstones', 0, 1, False), 0.78, ('stars', (200, 190, 170))),
+    'blaspipan': (('prop_glassbench', 0, 1, False), 0.86, ('ring', (255, 170, 80))),
+    'dammduken': (('enemies-dustdevil_idle', 0, 4, False), 0.86, ('rays', (210, 195, 160))),
+    'stadsvaktens_lykta': (('enemies-rooftopper_idle', 0, 4, False), 0.86, ('stars', (230, 200, 120))),
+    'kylugnsluckan': (('floor_furnacevent', 0, 1, True), 0.7, ('ring', (255, 120, 50))),
+    'slungarens_oga': (('enemies-looter_idle', 0, 4, False), 0.86, ('rays', (200, 170, 120))),
+    'glodande_glaset': (('enemies-slagcrawler_idle', 0, 4, False), 0.86, ('ring', (255, 110, 40))),
+    'borgmastarens_kedja': (('boss_mayor_idle', 0, 5, False), 0.92, ('stars', (232, 200, 90))),
+    'glasmastarens_pipa': (('boss_glassmaster_idle', 0, 5, False), 0.92, ('rays', (150, 210, 255))),
+    'raset': (('prop_fallenbeam', 0, 1, False), 0.88, ('ring', (170, 60, 40))),
+    'den_rasade_staden': (('prop_ruinstatue', 0, 1, False), 0.9, ('stars', (220, 210, 180))),
+}
+V30_PACTS = {'pakt_slunga': 'sling', 'pakt_glasbossa': 'glassgun'}
+V30_UPGRADES = {  # kort-id: (vapen, bild, gloriafärg)
+    'studsstenen': ('sling', ('part_rubble30', 0, 3, False), (200, 190, 170)), 'kastremmen': ('sling', ('enemies-rubblegolem_attack', 3, 6, False), (220, 180, 110)),
+    'ullsnoret': ('sling', ('wall_ruinplaster', 0, 1, True), (180, 200, 160)), 'snabbslungan': ('sling', ('floor_ruincobble', 0, 1, True), (150, 220, 255)),
+    'vida_mynningen': ('glassgun', ('part_glassshard', 0, 2, False), (160, 220, 255)), 'hullingglaset': ('glassgun', ('prop_glassrack_broken', 0, 1, False), (220, 60, 60)),
+    'spruckna_kulan': ('glassgun', ('enemies-glassgolem_idle', 0, 4, False), (255, 230, 120)), 'blasarlungan': ('glassgun', ('enemies-glassblower_idle', 0, 4, False), (255, 170, 80)),
+}
+
+
+def drawn_card30(cid, src, size, halo):
+    big = purple_bg()
+    big.alpha_composite(halo19(*halo))
+    g = shade(sprite30(*src))
+    k = S * 4 * size / max(g.size)
+    g = g.resize((max(1, int(g.width * k)), max(1, int(g.height * k))), Image.NEAREST)
+    pos = ((S * 4 - g.width) // 2, (S * 4 - g.height) // 2)
+    add_glow(big, g, pos, (0, 0, 0), 12)
+    big.alpha_composite(g, pos)
+    save(big, cid)
+
+
+def v30_upgrade(cid, w, src, col):
+    big = purple_bg()
+    big.alpha_composite(halo19('ring', col))
+    g = shade(sprite30(*src))
+    k = S * 4 * 0.66 / max(g.size)
+    g = g.resize((max(1, int(g.width * k)), max(1, int(g.height * k))), Image.NEAREST)
+    big.alpha_composite(g, ((S * 4 - g.width) // 2, (S * 4 - g.height) // 2 - 14))
+    b = gun(w, int(S * 4 * 0.42))
+    pos = (S * 4 - b.width - 10, S * 4 - b.height - 12)
+    add_glow(big, b, pos, (0, 0, 0), 10)
+    add_glow(big, b, pos, (255, 200, 90), 4)
+    big.alpha_composite(b, pos)
+    save(big, cid)
+
+
+def main_v30():
+    assert len(V30_DRAWN) == 16 and len(V30_UPGRADES) == 8
+    n = 0
+    for cid, (src, size, halo) in V30_DRAWN.items():
+        drawn_card30(cid, src, size, halo)
+        n += 1
+    for cid, w in V30_PACTS.items():
+        pact(cid, w)
+        n += 1
+    for cid, (w, src, col) in V30_UPGRADES.items():
+        v30_upgrade(cid, w, src, col)
+        n += 1
+    return n
+
+
 def main():
     assert len(CARDS) == len(set(CARDS)) == 50, len(CARDS)
     srcs = list(V5.values()) + [s for _, s in V5_UPGRADES.values()]
@@ -4491,6 +4589,9 @@ def main():
         return
     if ONLY == 'v20':
         print(main_v20(), 'kortbilder ->', OUT)
+        return
+    if ONLY == 'v30':
+        print(main_v30(), 'kortbilder ->', OUT)
         return
     if ONLY == 'v23':
         print(main_v23(), 'kortbilder ->', OUT)

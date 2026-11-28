@@ -1287,6 +1287,70 @@ Version 7 lägger till 200 förbättringar:
 
 Kombinerade utmaningar multiplicerar själarna. Sparplatsen väljs på startskärmen, och `?fro=XXXX` i adressen fyller i ett delat frö.
 
+## Version 30: Ruiner och glas – två nya biomer, väggar som rasar, förbundets altare och ändlöst läge
+
+### Ruinstaden
+- **Banan:** torg, gränder, rasade hus och rådhusets trappor under en gråockra himmel. Ruinstaden kommer aldrig före plats 3 i första varvet.
+- **Faror:**
+  - **Spruckna tak** knastrar och dammar i 0,8 sekunder efter att någon klivit in under dem, och rasar sedan. Raset gör 25 skada i rutan och 12 intill. Larmade fiender utlöser taken också.
+  - **Grus** saktar dig och fienderna med 25 %.
+  - **Dammvirvlar** drar dig till sig och tjocknar dammet.
+- **Fiender:**
+  - **Plundraren** kastar knivar och flyr en gång.
+  - **Stengolemen** kastar block i båge som kan rasa spruckna väggar.
+  - **Takskytten** skjuter med armborst och byter plats efter tre skott.
+  - **Dammvirveln.**
+- **Borgmästaren** väntar i det raserade rådhuset. Han slår med staven, river ned taket över dig, kastar husrester och kallar på plundrare. I andra fasen rasar rådhuset i kanterna.
+
+### Glasbruket
+- **Banan:** ugnshallar, blåsverkstäder, glaslager och kylgallerier, där smältugnar glöder mot kallt blått glas. Glasbruket kommer aldrig före plats 4 i första varvet.
+- **Faror:**
+  - **Smält glas** bränner, också fiender.
+  - **Skärvor** skär den som springer eller landar på dem.
+  - **Ugnsmunnar** glöder i 0,6 sekunder innan de sprutar hetta.
+  - **Glashyllorna** går att skjuta, spränga och sparka sönder, och fönstren är av glas.
+- **Fiender:**
+  - **Glasblåsaren** blåser bubblor som spricker till skärvor.
+  - **Glasgolemen** låter skotten studsa av, men smällar och slag biter dubbelt.
+  - **Slaggkryparen** lämnar smält glas efter sig.
+  - **Ugnsanden** dyker in i en smältugn och ut ur en annan.
+- **Glasmästaren** sveper med pipan, blåser glaskupor runt dig, skickar vågor av smält glas och gör glaskopior. I andra fasen sprutar ugnsmunnarna oftare.
+
+### Två nya vapen
+- **Slungan** är tyst. Stenen studsar en gång och gör dubbel skada mot huvudet. Högerklick laddar ett tungt kast som knuffar och river spruckna väggar.
+- **Glasbössan** skjuter en kon av glasskärvor som får fienden att blöda. Högerklick skjuter en glaskula som spricker i en ring.
+- Stenar och glas finns också i de andra biomerna, i ammolådor, utmaningsrum och pakter.
+
+### Väggar som rasar
+- En del väggar är spruckna, och sprickorna syns tvärs över biomens vägg.
+- En smäll river en sprucken vägg direkt. Annars rasar den efter tre tunga träffar: en spark, stridshammaren, hackan, slagan, ett tungt skott eller slungans tunga kast.
+- Raset lämnar en gångbar grushög, och fiender intill väggen tar skada, också på andra sidan.
+- Spruckna väggar är alltid genvägar mellan delar som redan hänger ihop. De leder aldrig förbi en låst dörr, ett galler eller en hemlig vägg. Ruinstaden har flest.
+- Statyer, benpelare och fristående pelare faller av en smäll, bort från smällen, och krossar fienden som står i vägen.
+
+### Förbundets altare
+- På ungefär var tredje vanlig våning står ett violett altare. Tryck E och välj ett av tre förbund: alltid en förbannelse ihop med en välsignelse, som gäller resten av rundan.
+- Exempel: FIENDERNA EXPLODERAR NÄR DE DÖR – +30 % SKADA, INGEN LÄKNING AV DRYCKER – +50 % GULD och ELITER ÖVERALLT – KISTOR BLIR GULDKISTOR. Det finns 14 olika.
+- Du får bära högst tre. Med tre kan altaret i stället bryta ett, och du kan alltid gå därifrån.
+- Förbunden syns i pausen, i statistiken och på dödsskärmen, och de sparas med rundan.
+
+### ÄNDLÖST
+- Ett nytt läge under LÄGEN: våning efter våning utan slut, med alla biomer i slumpad ordning. Fienderna blir fler och starkare för varje våning.
+- Var femte våning är en bossvåning. Efter bossen på var tionde våning stiger förbundets altare ur golvet.
+- Poängen räknas på djupet, de dödade fienderna och farten. De tio bästa rundorna står på topplistan med datum, djup, biom och frö. Topplistan syns i menyn, i statistiken och på dödsskärmen.
+
+### Mer
+- **Kort:** 16 nya kort, två set (STADSVAKTENS VÄG och GLASBLÅSARENS VÄG) och två pakter med fyra uppgraderingar var.
+- **Prestationer, nyheter och handbok** för allt det nya.
+- **Ljud och musik:** egna spår för båda biomerna och båda bossarna, bakgrundsljud och 27 nya ljudeffekter.
+- **Bilder:** nya väggar, golv, rekvisita, åtta fiender, två bossar och de två vapnen.
+
+### Bra att veta
+- Rundor som startats med samma frö i en tidigare version kan få andra biomer, vapen och bossar, eftersom listorna har blivit längre. Banorna för en given biom är oförändrade.
+- Balansen i de nya biomerna är inte provspelad av människor än.
+- Glasbruket är mörkt med RENDERING CPU. Med WebGL är det lättare att se.
+- **Tester:** t185–t188, t190–t193, t200–t204 och gen-test.
+
 ## Version 29: Glas och blod – fönster som går sönder, ljus i grafikkortet, nya utmaningar och blodfursten
 
 ### Glas och rostiga galler

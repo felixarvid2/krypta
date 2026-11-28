@@ -35,7 +35,7 @@ for (let s = 1; s <= 120; s++) { const depth = 1 + (s % 7), r = await live(9100 
   if (r.merged || r.bad.length) console.log('FEL ' + JSON.stringify({ seed: 9100 + s, depth, r }));
   if (!ex && r.n >= 2) ex = [9100 + s, depth]; }
 console.log('STAT ' + JSON.stringify(st)); console.log('BIOM ' + JSON.stringify(perB));
-ok(st.cracks > 0 && st.withCrack >= st.floors * 0.2, 'spelets våningar får spruckna väggar ' + JSON.stringify({ våningar: st.floors, med: st.withCrack, väggar: st.cracks }));
+ok(st.cracks > 0 && st.withCrack >= st.floors * 0.12, 'spelets våningar får spruckna väggar (version 30 SPEL: två nya biomer i BIOME_IDS flyttar frönas biomer, gränsen 20 % → 12 %; Ruinstaden provas i t193) ' + JSON.stringify({ våningar: st.floors, med: st.withCrack, väggar: st.cracks }));
 ok(st.bad === 0, 'varje sprucken vägg har sina två sidor i samma yta utan lås ' + st.bad);
 ok(st.merged === 0 && st.newOpen === 0, 'river man alla spruckna väggar slås inga ytor ihop: aldrig en väg förbi ett lås ' + JSON.stringify({ ihopslagna: st.merged, nyaÖppna: st.newOpen }));
 ok(st.minDetour >= 10 || st.cracks === 0, 'varje sprucken vägg är en genväg (omvägen minst 10 steg) ' + st.minDetour);

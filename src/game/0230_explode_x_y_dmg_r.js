@@ -31,6 +31,7 @@ function explode(x, y, dmg, r, hurtsPlayer, big) {
   if (v26bj) dmg *= 0.5; // version 26A: spränghoppet halverar egenskadan
   if (hurtsPlayer && Math.hypot(P.x - x, P.y - y) < r && boomSees(x, y, P.x, P.y)) hurtPlayer(dmg, x, y, 'proj');
   r30Boom(x, y, r); // version 30 (RAS): spruckna väggar rasar, pelare faller bort från smällen (sist: väggen skyddar mot just den här smällen)
+  v30BoomRacks(x, y, r); // version 30 (SPEL): glashyllor går sönder av smällen
   P.flash = Math.max(P.flash, 0.05);
 }
 function dropItem(type, x, y) { const a = rnd(0, TAU), it = { type, x, y, taken: false, drop: true, hop: 0.5, hvx: Math.cos(a) * rnd(0.6, 1.4), hvy: Math.sin(a) * rnd(0.6, 1.4) }; if (type === 'potion') it.pot = randomPotion(); if (type === 'rune') it.rune = RUNE_IDS[(Math.random() * RUNE_IDS.length) | 0]; items.push(it); return it; } // studsar ut
@@ -49,6 +50,7 @@ function hitProp(pr, hx, hy, dmg) { // sant om kulan kan fortsätta
   { const r = v21HitProp(pr, hx, hy, dmg); if (r !== undefined) return r; } // hängande burar och fisktunnor
   { const r = v22HitProp(pr, hx, hy, dmg); if (r !== undefined) return r; } // kedjade själar
   { const r = v23HitProp(pr, hx, hy, dmg); if (r !== undefined) return r; }
+  { const r = v30HitProp(pr, hx, hy, dmg); if (r !== undefined) return r; } // version 30 (SPEL): glashyllan
   const d = pr.def;
   if (d.bell && !pr.silenced) { pr.silenced = true; play('parry', 0.6, 0.7, { x: pr.x, y: pr.y }); spawnText(pr.x, pr.y, 'TYSTAD', '#c0c0c0'); return false; } // skjut klockan så kan den inte ringa
   if (d.boom) { // krutfatet smäller efter ett ögonblick, kan sätta igång andra fat
@@ -78,6 +80,7 @@ function breakProps(x, y, r, kicking) { // sparken: lådor går sönder, krutfat
   for (const pr of props) if (pr.def && !pr.broken && (pr.def.crate || (pr.def.boom && !kicking)) && Math.hypot(pr.x - x, pr.y - y) < r + 0.3) { hitProp(pr, x, y); hit = true; }
   if (f29Melee(x, y, r, kicking)) hit = true; // version 29 (FÖNSTER): sparken och närstriden krossar glas och böjer rostiga galler
   if (kicking && r30Melee(x, y, r, true)) hit = true; // version 30 (RAS): sparken är en tung träff mot spruckna väggar och pelare
+  if (v30Melee(x, y, r)) hit = true; // version 30 (SPEL): sparken och närstriden krossar glashyllor
   return hit;
 }
 function useProp() { // brunnen helar en gång, altaret ger ett förbannat kort och guld

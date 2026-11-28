@@ -95,6 +95,7 @@ function drawHUD() {
     fxIcons = []; g.drawImage = function (im, x, y, w, h) { if (arguments.length === 5 && y === VH - 22 && w === 8 && h === 8) { if (im && !fxIcons.includes(im)) fxIcons.push(im); return; } return CanvasRenderingContext2D.prototype.drawImage.apply(this, arguments); };
     try { drawBowAim(g); drawStaffCharge(g); drawAbilityHud(g); drawTutorial(g); drawHammerCharge(g); drawStealthHud(g); drawLampHud(g); drawCues(g); drawMazeTimer(g); drawXpHud(g); drawAirHud(g); drawTimeHud(g); drawDpsHud(g); drawV11Hud(g); drawV13Hud(g); drawV14Hud(g); drawV14Hud2(g); drawV15Hud(g); drawV16Hud(g); drawV17Hud(g); drawV18Hud(g); drawV19Hud(g); drawV20Hud(g); drawV21Hud(g); drawV22Hud(g); drawV23Hud(g); drawLoopHud(g); }
     finally { delete g.drawImage; }
+    drawV30Hud(g); // version 30 (SPEL): hetta, skärvor, grus och glaskupan (före effektraden: lägger sina ikoner i fxIcons)
     drawFxRow(g, L);
     efx2Hud(g, L); // version 25.1: portalen och helningen som skärmeffekter
     fx27DrawHud(g); // version 27: bossens chockvåg och blixt på skärmen
@@ -256,6 +257,7 @@ function drawMapCells(mini, s, ox, oy, x0, y0, x1, y1) {
   for (const a of allies) if (inside(a.x | 0, a.y | 0)) { ctx.fillStyle = '#60ff80'; ctx.fillRect(ox + a.x * s - 1, oy + a.y * s - 1, 2, 2); }
   for (const p of portals) if (inside(p.x | 0, p.y | 0)) { ctx.fillStyle = tmr % 0.6 < 0.3 ? '#c080ff' : '#7040d0'; ctx.fillRect(ox + p.x * s - 2, oy + p.y * s - 2, 4, 4); }
   v19Map(s, ox, oy, inside); v20Map(s, ox, oy, inside); v21Map(s, ox, oy, inside); v22Map(s, ox, oy, inside); v23Map(s, ox, oy, inside);
+  v30Map(s, ox, oy, inside); // version 30 (SPEL)
   v24Map(s, ox, oy, inside); // version 24: stängda enkelriktade dörrar
   v28Map(s, ox, oy, inside); // version 28 (REND): fönster och galler
   r30Map(s, ox, oy, inside); // version 30 (RAS): spruckna väggar och grus
@@ -300,6 +302,7 @@ function fire() {
   if (wp.brimstone) { brimstoneLob(wp); return; } // svavelmortern
   if (wp.hookchain) { hookThrow(wp); return; }
   if (wp.bombard) { bombardFire(wp); return; }
+  if (wp.v30 && v30Fire(wp)) return; // version 30 (SPEL): slungan (glasbössan skjuter som ett hagelgevär nedan)
   if (wp.starlance && P.mags[P.weapon] > 0) return; // stjärnlansen skjuter när den släpps
   if (P.mags[P.weapon] <= 0) {
     if (!fireHeld) play('click', 0.6, 1.2);

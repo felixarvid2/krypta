@@ -3,6 +3,7 @@ function renderSprites(plX, plY) { // sprites bakifrån och fram (egen funktion:
   for (const e of ents) list.push({ x: e.x, y: e.y, k: 'e', o: e });
   drawR25World(list); // version 25: befälhavarens fana, granaterna och deras ringar
   ropePoints(list); drawV9World(list); drawV11World(list); drawV13World(list); drawV14World(list); drawV15World(list); drawV17World(list); drawV18World(list); drawV19World(list); drawV20World(list); drawV21World(list); drawV22World(list); drawV23World(list);
+  drawV30World(list); // version 30 (SPEL)
   drawV24World(list); // version 24: märken vid de enkelriktade dörrarna, landmärkets ljuspelare
   for (const it of items) if (!it.taken) list.push({ x: it.x, y: it.y, k: 'i', o: it });
   for (const p of pots) if (!p.broken) list.push({ x: p.x, y: p.y, k: 'p', o: p });
@@ -130,6 +131,7 @@ function renderSprites(plX, plY) { // sprites bakifrån och fram (egen funktion:
     else if (s.k === 'v21' && drawV21Sprite(s)) { /* version 21 */ }
     else if (s.k === 'v22' && drawV22Sprite(s)) { /* version 22 */ }
     else if (s.k === 'v23' && drawV23Sprite(s)) { /* version 23 */ }
+    else if (s.k === 'v30' && drawV30Sprite(s)) { /* version 30 (SPEL) */ }
     else if (s.k === 'v24' && drawV24Sprite(s)) { /* version 24 */ }
     else if (s.k === 'rp') drawSprite(fx.parts.harpoonrope ? fx.parts.harpoonrope[0] : fx.hit[1], o.x, o.y, 0.02, o.z, false, null, 0, 0.5, false, [150, 110, 70]);
     else if (s.k === 'f' && o.kind === 'knife') drawSprite(fx.parts.knife ? fx.parts.knife[0] : fx.hit[1], o.x, o.y, 0.04, o.z - 0.03, Math.floor(tmr * 16) % 2 === 0, null, 0, 0.6);

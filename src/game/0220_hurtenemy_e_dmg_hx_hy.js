@@ -5,6 +5,7 @@ function hurtEnemy(e, dmg, hx, hy, opt = {}) {
   { const r = v18Defend(e, dmg, opt); if (r === null) return false; dmg = r; } // marionetten som ligger, ormen under jord
   { const r = v19Defend(e, dmg, opt); if (r === null) return false; dmg = r; } // urverksugglan reflekterar
   dmg = v14Defend(e, dmg, opt); dmg = v15Dmg(e, dmg, opt); dmg = v17Dmg(e, dmg, opt); dmg = v18Dmg(e, dmg, opt); dmg = v21Dmg(e, dmg, opt); dmg = v22Dmg(e, dmg, opt); dmg = v23Dmg(e, dmg, opt);
+  dmg = v30Dmg(e, dmg, opt); // version 30 (SPEL): glasgolemen, blödning av glasbössan
   if (opt.melee && !opt.exec && canExec(e)) return execute(e); // närstrid mot en vacklande fiende: avrättning
   if (e.dummy) { dpsLog.push({ t: tmr, d: dmg }); e.flash = 0.1; spawnNumber ? spawnNumber(e.x, e.y, dmg, opt.crit) : 0; return false; } // provdockan tar ingen skada men räknar
   if (Math.random() < mod('clockSlow')) e.slow = Math.max(e.slow || 0, 2);
@@ -93,6 +94,7 @@ function killEnemy(e) {
   if (e.r25cmd) r25CmdDied(e); // version 25: befälhavaren dör – truppens moral faller
   if (lvl && lvl.biome) { const wb = (profile.wkillsBiome = profile.wkillsBiome || {}), bb = (wb[lvl.biome] = wb[lvl.biome] || {}), wid = WEAPONS[P.weapon].id; bb[wid] = (bb[wid] || 0) + 1; }
   abilityKill(); masteryKill(); v11Kill(e); v13Kill(e); v15Kill(e); v16Kill(e); v17Kill(e); v18Kill(e); v19Kill(e); v20Kill(e); v21Kill(e); v22Kill(e); v23Kill(e); loopKill(e); legendDropChance(e); if (legendCtx === 'bloodaxe') P.rageT = Math.max(P.rageT || 0, 2.5); if (e.d.ai === 'clocksoldier' && mod('rewindHeal')) heal(mod('rewindHeal'), true); gainXp(e.boss && !e.guardian ? 150 : e.guardian ? 70 : clamp((e.d.score || 100) / 12, 3, 40) * (e.elite ? 2.5 : 1) * (e.minion ? 0.3 : 1)); // erfarenhet: vanliga fiender efter svårighet, väktare och bossar fast
+  v30Kill(e); // version 30 (SPEL): glasgolemen spricker, bossens faror städas bort
   if (e.elite) run.wanderElite = (run.wanderElite || 0) + 1; if (e.guardian) run.wanderGuard = (run.wanderGuard || 0) + 1;
   if (quests) for (const q of quests) { if (q.kind === 'wkills' && !q.done && WEAPONS[P.weapon].id === q.weapon) q.have++; if (q.kind === 'elite' && e.elite) q.eliteKilled = true; }
   if ('YÉÅ'.includes(e.type) && Math.random() < 0.15) dropItem('meat', e.x, e.y);

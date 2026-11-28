@@ -237,6 +237,14 @@ const MOD_KEYS = {
   formationBreak: 'Andel mer skada genom spöksoldaternas sköldar',
   hookDmg: 'Andel extra skada med slaktarkroken',
   bombardDmg: 'Andel extra skada med bombarden',
+  // version 30: Ruinstaden och Glasbruket – rasande tak, grus, damm, glasskärvor, smält glas (hetta: heatResist ovan), slungan och glasbössan
+  collapseSense: 'Andel längre varning (och mindre skada) när taket rasar',
+  rubbleWalk: 'Andel mindre inbromsning i grus (100 % = ingen)',
+  dustSight: 'Andel bättre sikt i dammet',
+  shardStep: 'Andel mindre skada av glasskärvor',
+  moltenResist: 'Andel mindre skada av smält glas',
+  slingDmg: 'Andel extra skada med slungan',
+  glassgunDmg: 'Andel extra skada med glasbössan',
 };
 const KEYS = Object.keys(MOD_KEYS);
 
@@ -1045,6 +1053,38 @@ const DEFS = [
   ['kvarnstenen', 'KVARNSTENEN', 'sallsynt', { hookDmg: 0.4, grinderResist: -0.3 }, 1, '+40 % SKADA MED\nSLAKTARKROKEN\n-30 % SKYDD MOT KVARNAR', { curse: true, bad: 1 }],
   // legendariska
   ['det_sista_slaget', 'DET SISTA SLAGET', 'legendarisk', { catapultSense: 0.3, mudWalk: 0.3, hookDmg: 0.3, fliesResist: 0.3 }, 1, '30 % LÄNGRE KATAPULTVARNING\n30 % LÄTTARE I LERAN\n+30 % SKADA MED KROKEN\n30 % SKYDD MOT FLUGOR', { unlock: 50 }],
+  // ---- version 30: pakter och uppgraderingar för slungan och glasbössan ----
+  ['pakt_slunga', 'STENKASTARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR STENAR\n4 UNIKA UPPGRADERINGAR\nBARA SLUNGA RESTEN AV RUNDAN', { pact: 'sling', bad: 1 }],
+  ['pakt_glasbossa', 'GLASBLÅSARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR GLAS\n4 UNIKA UPPGRADERINGAR\nBARA GLASBÖSSA RESTEN AV RUNDAN', { pact: 'glassgun', bad: 1 }],
+  ['studsstenen', 'STUDSSTENEN', 'ovanlig', {}, 1, 'STENEN STUDSAR\nTRE GÅNGER', { weapon: 'sling', wup: 'sg_bounce' }],
+  ['kastremmen', 'KASTREMMEN', 'sallsynt', {}, 1, 'SNABBARE TUNGT KAST\n+30 % TUNG SKADA', { weapon: 'sling', wup: 'sg_heavy' }],
+  ['ullsnoret', 'ULLSNÖRET', 'ovanlig', {}, 1, 'HELT TYSTA KAST\n+50 % MOT OVETANDE', { weapon: 'sling', wup: 'sg_quiet' }],
+  ['snabbslungan', 'SNABBSLUNGAN', 'ovanlig', {}, 1, 'SNABBARE KAST', { weapon: 'sling', wup: 'sg_fast' }],
+  ['vida_mynningen', 'VIDA MYNNINGEN', 'ovanlig', {}, 1, 'TOLV SKÄRVOR\nI KONEN', { weapon: 'glassgun', wup: 'gg_spread' }],
+  ['hullingglaset', 'HULLINGGLASET', 'sallsynt', {}, 1, 'LÄNGRE BLÖDNING', { weapon: 'glassgun', wup: 'gg_bleed' }],
+  ['spruckna_kulan', 'SPRUCKNA KULAN', 'legendarisk', {}, 1, 'GLASKULAN SPRICKER\nVIDARE OCH HÅRDARE', { weapon: 'glassgun', wup: 'gg_burst' }],
+  ['blasarlungan', 'BLÅSARLUNGAN', 'ovanlig', {}, 1, 'SNABBARE SKOTT\nOCH OMLADDNING', { weapon: 'glassgun', wup: 'gg_fast' }],
+  // ---- version 30: rasande tak, grus, damm, skärvor, smält glas, hetta, slungan och glasbössan (Ruinstaden och Glasbruket) ----
+  // vanliga
+  ['murarhjalmen', 'MURARHJÄLMEN', 'vanlig', { collapseSense: 0.2 }, 3, '20 % LÄNGRE VARNING\nNÄR TAKET RASAR'],
+  ['grussulorna', 'GRUSSULORNA', 'vanlig', { rubbleWalk: 0.2 }, 3, '20 % LÄTTARE\nI GRUSET'],
+  ['filtsulorna', 'FILTSULORNA', 'vanlig', { shardStep: 0.2 }, 3, '20 % MINDRE SKADA\nAV GLASSKÄRVOR'],
+  ['ugnshandskarna', 'UGNSHANDSKARNA', 'vanlig', { heatResist: 0.2 }, 3, '20 % SKYDD MOT HETTA\nOCH UGNSMUNNAR'],
+  ['asbestforkladet', 'ASBESTFÖRKLÄDET', 'vanlig', { moltenResist: 0.2 }, 3, '20 % MINDRE SKADA\nAV SMÄLT GLAS'],
+  ['flodstenen', 'FLODSTENEN', 'vanlig', { slingDmg: 0.12 }, 3, '+12 % SKADA MED\nSLUNGAN'],
+  ['blaspipan', 'BLÅSPIPAN', 'vanlig', { glassgunDmg: 0.12 }, 3, '+12 % SKADA MED\nGLASBÖSSAN', { unlock: 10 }],
+  // ovanliga
+  ['dammduken', 'DAMMDUKEN', 'ovanlig', { dustSight: 0.3, critChance: 0.02 }, 2, '30 % BÄTTRE SIKT\nI DAMMET\n+2 % KRITCHANS', { unlock: 15 }],
+  ['stadsvaktens_lykta', 'STADSVAKTENS LYKTA', 'ovanlig', { dustSight: 0.25, collapseSense: 0.15 }, 2, '25 % BÄTTRE SIKT\nI DAMMET\n15 % LÄNGRE VARNING\nNÄR TAKET RASAR'],
+  ['kylugnsluckan', 'KYLUGNSLUCKAN', 'ovanlig', { heatResist: 0.25, moltenResist: 0.15 }, 2, '25 % SKYDD MOT HETTA\n15 % MINDRE SKADA\nAV SMÄLT GLAS', { unlock: 15 }],
+  ['slungarens_oga', 'SLUNGARENS ÖGA', 'ovanlig', { slingDmg: 0.2, headshot: 0.1 }, 2, '+20 % SKADA MED\nSLUNGAN\n+10 % VID HUVUDTRÄFF'],
+  ['glodande_glaset', 'GLÖDANDE GLASET', 'ovanlig', { glassgunDmg: 0.4, moltenResist: -0.3 }, 1, '+40 % SKADA MED\nGLASBÖSSAN\n-30 % SKYDD MOT\nSMÄLT GLAS', { curse: true, bad: 1 }],
+  // sällsynta
+  ['borgmastarens_kedja', 'BORGMÄSTARENS KEDJA', 'sallsynt', { collapseSense: 0.3, rubbleWalk: 0.3, dustSight: 0.2 }, 1, '30 % LÄNGRE VARNING\nNÄR TAKET RASAR\n30 % LÄTTARE I GRUSET\n20 % SIKT I DAMMET', { unlock: 25 }],
+  ['glasmastarens_pipa', 'GLASMÄSTARENS PIPA', 'sallsynt', { shardStep: 0.3, heatResist: 0.3, glassgunDmg: 0.2 }, 1, '30 % SKYDD MOT SKÄRVOR\n30 % SKYDD MOT HETTA\n+20 % SKADA MED\nGLASBÖSSAN', { unlock: 25 }],
+  ['raset', 'RASET', 'sallsynt', { slingDmg: 0.4, collapseSense: -0.3 }, 1, '+40 % SKADA MED\nSLUNGAN\n-30 % VARNING\nNÄR TAKET RASAR', { curse: true, bad: 1 }],
+  // legendariska
+  ['den_rasade_staden', 'DEN RASADE STADEN', 'legendarisk', { collapseSense: 0.3, rubbleWalk: 0.3, slingDmg: 0.3, shardStep: 0.3 }, 1, '30 % LÄNGRE RASVARNING\n30 % LÄTTARE I GRUSET\n+30 % SKADA MED SLUNGAN\n30 % SKYDD MOT SKÄRVOR', { unlock: 50 }],
 ];
 
 // ---------- Set och synergier ----------
@@ -1098,6 +1138,8 @@ const SETS = {
   // version 23: SLAKTARENS VÄG (Slakteriet: blodhalt golv, köttkvarnar och flugor) och FÄLTHERRENS VÄG (Slagfältet: lera, katapulter och formationer)
   slakteriet: { name: 'SLAKTARENS VÄG', text: '25 % BÄTTRE GREPP PÅ BLODHALT GOLV\n25 % MINDRE SKADA AV KÖTTKVARNAR\n20 % MINDRE SKADA AV FLUGSVÄRMAR', mods: { slickGrip: 0.25, grinderResist: 0.25, fliesResist: 0.2 } },
   slagfaltet: { name: 'FÄLTHERRENS VÄG', text: '25 % LÄTTARE I DJUP LERA\n25 % LÄNGRE VARNING FÖR KATAPULTSTENAR\n+20 % SKADA GENOM SPÖKSKÖLDAR', mods: { mudWalk: 0.25, catapultSense: 0.25, formationBreak: 0.2 } },
+  stadsvakten: { name: 'STADSVAKTENS VÄG', text: '25 % LÄNGRE VARNING NÄR TAKET RASAR\n25 % LÄTTARE I GRUSET\n20 % BÄTTRE SIKT I DAMMET', mods: { collapseSense: 0.25, rubbleWalk: 0.25, dustSight: 0.2 } },
+  glasblasaren: { name: 'GLASBLÅSARENS VÄG', text: '25 % MINDRE SKADA AV GLASSKÄRVOR\n25 % MINDRE SKADA AV SMÄLT GLAS\n20 % SKYDD MOT HETTA', mods: { shardStep: 0.25, moltenResist: 0.25, heatResist: 0.2 } },
   karavanen: { name: 'KARAVANENS VÄG', text: '25 % MER LÄKNING UR OASER\n25 % BÄTTRE SIKT I SANDSTORMEN\n20 % SKYDD MOT HETTA', mods: { oasisHeal: 0.25, stormSight: 0.25, heatResist: 0.2 } },
   templet: { name: 'TEMPLETS VÄG', text: '25 % MINDRE GIFT\n+25 % TUR MED IDOLER OCH LYCKOHJUL\n25 % MINDRE INBROMSNING I LIANER', mods: { poisonResist: 0.25, idolLuck: 0.25, vineWalk: 0.25 } },
   laboratoriet: { name: 'LABORATORIETS VÄG', text: '25 % MINDRE SKADA AV SYRA\n+25 % TUR MED TRANSMUTATION\n20 % CHANS TILL STARK BRYGD', mods: { acidResist: 0.25, transmuteLuck: 0.25, brewLuck: 0.2 } },
@@ -1120,6 +1162,7 @@ const SYN = { eld: 'ELD', krit: 'KRIT', gift: 'GIFT', frost: 'FROST', blixt: 'BL
   kloak: 'KLOAKERNA', slam: 'SLAM', oken: 'ÖKNEN', sabel: 'SABEL', falla: 'FÄLLOR',
   fangelse: 'FÄNGELSET', hamn: 'FISKELÄGET', morgon: 'MORGONSTJÄRNAN', skrot: 'SKROT',
   slakteri: 'SLAKTERIET', slagfalt: 'SLAGFÄLTET', krok: 'SLAKTARKROKEN', bombard: 'BOMBARDEN',
+  ruin: 'RUINSTADEN', glasbruk: 'GLASBRUKET', slunga: 'SLUNGAN', glasbossa: 'GLASBÖSSAN',
   badhus: 'BADHUSET', skarseld: 'SKÄRSELDEN', treudd: 'TREUDDEN', svavel: 'SVAVEL' };
 // set och syn för alla kort samlas här: id: [set eller '', syn-taggar...]
 const TAGS = {
@@ -1259,6 +1302,10 @@ const TAGS = {
   vaxduksforkladet: ['slakteriet', 'slakteri'], kedjehandskarna: ['slakteriet', 'slakteri'], flugsmallan: ['slakteriet', 'slakteri'], kylrumsnyckeln: ['slakteriet', 'slakteri'], slaktmastarens_forklade: ['slakteriet', 'slakteri', 'krok'],
   lerstovlarna: ['slagfaltet', 'slagfalt'], vaktposten: ['slagfaltet', 'slagfalt'], fanbararen: ['slagfaltet', 'slagfalt', 'krit'], krigsherrens_fana: ['slagfaltet', 'slagfalt', 'bombard'], det_sista_slaget: ['slagfaltet', 'slagfalt', 'krok'],
   slaktarkniven: ['', 'krok'], krutkaggen: ['', 'bombard'], stormstegen: ['', 'slagfalt'], styckaren: ['', 'krok'], kanonmynningen: ['', 'bombard', 'slakteri'], kvarnstenen: ['', 'krok', 'slakteri'],
+  // version 30: STADSVAKTENS VÄG (Ruinstaden) och GLASBLÅSARENS VÄG (Glasbruket); ruinstaden, glasbruket, slungan och glasbössan
+  murarhjalmen: ['stadsvakten', 'ruin'], grussulorna: ['stadsvakten', 'ruin'], dammduken: ['stadsvakten', 'ruin', 'krit'], stadsvaktens_lykta: ['stadsvakten', 'ruin'], borgmastarens_kedja: ['stadsvakten', 'ruin', 'slunga'],
+  filtsulorna: ['glasblasaren', 'glasbruk'], ugnshandskarna: ['glasblasaren', 'glasbruk'], asbestforkladet: ['glasblasaren', 'glasbruk'], kylugnsluckan: ['glasblasaren', 'glasbruk'], glasmastarens_pipa: ['glasblasaren', 'glasbruk', 'glasbossa'],
+  flodstenen: ['', 'slunga'], blaspipan: ['', 'glasbossa'], slungarens_oga: ['', 'slunga', 'krit'], glodande_glaset: ['', 'glasbossa', 'glasbruk'], raset: ['', 'slunga', 'ruin'], den_rasade_staden: ['', 'ruin', 'slunga', 'glasbruk'],
   brynet: ['', 'sabel'], spannfjadern: ['', 'falla'], jagarens_snara: ['', 'falla'], damaskusstalet: ['', 'sabel', 'krit'], igelburken: ['', 'slam', 'oken'], sandens_kniv: ['', 'sabel', 'oken'],
 };
 
@@ -1405,6 +1452,8 @@ const FMT = {
   streamResist: ['p', 'SKYDD MOT ELDFLODER'], runeQuiet: ['p', 'TOMMA RUNCIRKLAR'], tridentDmg: ['p', 'SKADA MED TREUDDEN'], brimstoneDmg: ['p', 'SKADA MED SVAVELMORTERN'],
   slickGrip: ['p', 'GREPP PÅ BLODHALT GOLV'], grinderResist: ['p', 'SKYDD MOT KÖTTKVARNAR'], fliesResist: ['p', 'SKYDD MOT FLUGSVÄRMAR'], mudWalk: ['p', 'LÄTTARE I DJUP LERA'],
   catapultSense: ['p', 'VARNING FÖR KATAPULTSTENAR'], formationBreak: ['p', 'SKADA GENOM SPÖKSKÖLDAR'], hookDmg: ['p', 'SKADA MED SLAKTARKROKEN'], bombardDmg: ['p', 'SKADA MED BOMBARDEN'],
+  collapseSense: ['p', 'VARNING NÄR TAKET RASAR'], rubbleWalk: ['p', 'LÄTTARE I GRUSET'], dustSight: ['p', 'SIKT I DAMMET'], shardStep: ['p', 'SKYDD MOT GLASSKÄRVOR'],
+  moltenResist: ['p', 'SKYDD MOT SMÄLT GLAS'], slingDmg: ['p', 'SKADA MED SLUNGAN'], glassgunDmg: ['p', 'SKADA MED GLASBÖSSAN'],
 };
 const INVERT = { damageTaken: true };
 const num = v => String(Math.round(v * 100) / 100).replace('.', ',');
@@ -1612,7 +1661,7 @@ const WEAPON_NAME = { pistol: 'PISTOL', shotgun: 'HAGELGEVÄR', rifle: 'GEVÄR',
   knives: 'KASTKNIVAR', hammer: 'STRIDSHAMMARE', musket: 'MUSKÖT', harpoon: 'HARPUN', boomerang: 'BUMERANG', prism: 'PRISMA',
   sawlauncher: 'SÅGBLAD', windgun: 'VINDBÖSSA', spear: 'SPJUT', sporelauncher: 'SPORKASTARE', mirrorshield: 'SPEGELSKÖLD', whip: 'PISKA',
   runebook: 'RUNBOK', steamcannon: 'ÅNGKANON', censer: 'RÖKELSEKAR', hivelauncher: 'BIKASTARE',
-  shears: 'TRÄDGÅRDSSAX', dreamstaff: 'DRÖMSTAV', chaincannon: 'KEDJEKANON', acidsprayer: 'SYRASPRUTA', pinthrower: 'KÄGLEKASTARE', blowgun: 'BLÅSRÖR', pickaxe: 'HACKA', starlance: 'STJÄRNLANS', scimitar: 'KROKSABEL', flail: 'MORGONSTJÄRNA', blunderbuss: 'TROMBON', trident: 'TREUDD', brimstone: 'SVAVELMORTER', trapthrower: 'FÄLLKASTARE', hookchain: 'SLAKTARKROK', bombard: 'BOMBARD' };
+  shears: 'TRÄDGÅRDSSAX', dreamstaff: 'DRÖMSTAV', chaincannon: 'KEDJEKANON', acidsprayer: 'SYRASPRUTA', pinthrower: 'KÄGLEKASTARE', blowgun: 'BLÅSRÖR', pickaxe: 'HACKA', starlance: 'STJÄRNLANS', scimitar: 'KROKSABEL', flail: 'MORGONSTJÄRNA', blunderbuss: 'TROMBON', trident: 'TREUDD', brimstone: 'SVAVELMORTER', trapthrower: 'FÄLLKASTARE', hookchain: 'SLAKTARKROK', bombard: 'BOMBARD', sling: 'SLUNGA', glassgun: 'GLASBÖSSA' };
 // etikett ovanför kortets namn: förbannelse, pakt, aktiv förmåga ('AKTIV · 8 S'), vilket vapen uppgraderingen hör till eller sammansmält
 const activeTag = card => 'AKTIV · ' + num(card.cd || 0) + ' S';
 function tag(card) {

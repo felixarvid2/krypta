@@ -23,8 +23,8 @@ function makeRng(seed) {
 const { ALL, RARITY, MOD_KEYS } = Cards;
 const keys = Object.keys(MOD_KEYS);
 const BASE = ALL.filter(c => !c.pact && !c.weapon && !c.active);
-ok(BASE.length === 456, 'antal vanliga kort ' + BASE.length + ' ska vara 456 (1 i version 26 + 16 i version 23 + 16 i version 22 +50 gamla + 50 i version 4 + 30 i version 5 + 25 i version 6 + 20 i version 7 + 24 i version 8 + 24 i version 9 + 24 i version 11 + 24 i version 13 + 24 i version 15 + 24 i version 16 + 24 i version 17 + 24 i version 18 + 24 i version 19 + 16 i version 20 + 16 i version 21)');
-ok(keys.length === 207, 'MOD_KEYS ska ha 207 nycklar (coin i version 26), har ' + keys.length);
+ok(BASE.length === 472, 'antal vanliga kort ' + BASE.length + ' ska vara 472 (16 i version 30 + 1 i version 26 + 16 i version 23 + 16 i version 22 +50 gamla + 50 i version 4 + 30 i version 5 + 25 i version 6 + 20 i version 7 + 24 i version 8 + 24 i version 9 + 24 i version 11 + 24 i version 13 + 24 i version 15 + 24 i version 16 + 24 i version 17 + 24 i version 18 + 24 i version 19 + 16 i version 20 + 16 i version 21)');
+ok(keys.length === 214, 'MOD_KEYS ska ha 214 nycklar (7 i version 30, coin i version 26), har ' + keys.length);
 // de 27 nya mod-nycklarna
 const NEW_KEYS = ['grenades', 'grenadeDmg', 'stamina', 'dashCd', 'airDmg', 'backstab', 'comboGold', 'trapResist', 'freezeChance', 'poisonChance',
   'shockChance', 'interest', 'floorHeal', 'killExplode', 'reloadNova', 'eliteGold', 'trapSense', 'enemySense', 'critHeal', 'dashDmg',
@@ -146,7 +146,7 @@ ok(Cards.price(sp, 2, 0.5) < Cards.price(sp, 2, 0), 'pris ska sjunka med rabatt'
 
 // ---------- set ----------
 const SETS = Cards.SETS;
-ok(SETS && Object.keys(SETS).length === 38, '38 set');
+ok(SETS && Object.keys(SETS).length === 40, '40 set (version 30: stadsvakten och glasblåsaren)');
 for (const sid in SETS) {
   const st = SETS[sid], members = ALL.filter(c => c.set === sid);
   ok(st.name && st.text && st.mods && Object.keys(st.mods).length, sid + ': name/text/mods');
@@ -171,7 +171,7 @@ for (const sid in SETS) {
   const s2 = Cards.synergy(Cards.byId(three[2]), two);
   ok(/^FULLBORDAR /.test(s2), sid + ': synergy ska säga FULLBORDAR: "' + s2 + '"');
 }
-ok(Cards.setProgress([]).length === 38 && Cards.setProgress([]).every(x => x.have === 0 && !x.active), 'setProgress([])');
+ok(Cards.setProgress([]).length === 40 && Cards.setProgress([]).every(x => x.have === 0 && !x.active), 'setProgress([])');
 // synergy: syn-taggar och tomma fall
 ok(Cards.synergy(Cards.byId('grodan'), ['spakvinnan']).includes('GIFT'), 'gift + gift ska vara synergi');
 ok(Cards.synergy(Cards.byId('offerkniven'), ['solkonungen']).includes('KRIT'), 'krit + kritskada ska vara synergi');
@@ -260,10 +260,10 @@ for (const w in PACTS5) {
   }
   // dras bara med vapnets pakt
   const rng = makeRng(11); let hit = 0;
-  for (let i = 0; i < 300; i++) for (const c of Cards.draw(rng, 4, { pact: w, unlocked: unlockedAll })) { ok(!c.pact && (!c.weapon || c.weapon === w), 'draw med pakt ' + w + ' gav ' + c.id); if (c.weapon === w) hit++; }
+  for (let i = 0; i < 400; i++) for (const c of Cards.draw(rng, 4, { pact: w, unlocked: unlockedAll })) { ok(!c.pact && (!c.weapon || c.weapon === w), 'draw med pakt ' + w + ' gav ' + c.id); if (c.weapon === w) hit++; }
   ok(hit > 50, w + ': uppgraderingarna ska dras ofta efter pakten (' + hit + ')');
 }
-ok(Object.keys(Cards.WEAPON_NAME).length === 46 && ALL.filter(c => c.pact).length === 46, '46 vapen och 46 pakter');
+ok(Object.keys(Cards.WEAPON_NAME).length === 48 && ALL.filter(c => c.pact).length === 48, '48 vapen och 48 pakter (version 30: slungan och glasbössan)');
 // set: alkemi och flock
 for (const sid of ['alkemi', 'flock']) {
   const members = ALL.filter(c => c.set === sid);
@@ -539,7 +539,7 @@ for (const w in PACTS7) {
 }
 { // pakterna dras utan pakt men aldrig en andra
   const rng = makeRng(33), hit = new Set();
-  for (let i = 0; i < 8000; i++) for (const c of Cards.draw(rng, 3, { unlocked: unlockedAll })) if (c.pact) hit.add(c.id);
+  for (let i = 0; i < 12000; i++) for (const c of Cards.draw(rng, 3, { unlocked: unlockedAll })) if (c.pact) hit.add(c.id);
   ok(['pakt_kniv', 'pakt_hammare', 'pakt_musköt'].every(id => hit.has(id)), 'nya pakter dras');
 }
 // bilder: 96x96, unika (bland alla kort) och byggda i tools/card-art/make.py
@@ -674,7 +674,7 @@ for (const w in PACTS8) {
 ok(new Set(ALL.filter(c => c.wup).map(c => c.wup)).size === ALL.filter(c => c.wup).length, 'alla wup är unika');
 { // pakterna dras utan pakt men aldrig en andra; pakter sammanlagt ungefär lika ofta som förut
   const rng = makeRng(41), hit = new Set(); let pacts = 0, tot = 0;
-  for (let i = 0; i < 4000; i++) for (const c of Cards.draw(rng, 3, { unlocked: unlockedAll })) { tot++; if (c.pact) { pacts++; hit.add(c.id); } }
+  for (let i = 0; i < 7000; i++) for (const c of Cards.draw(rng, 3, { unlocked: unlockedAll })) { tot++; if (c.pact) { pacts++; hit.add(c.id); } }
   ok(['pakt_harpun', 'pakt_bumerang', 'pakt_prisma'].every(id => hit.has(id)), 'nya pakter dras');
   ok(pacts / tot > 0.01 && pacts / tot < 0.04, 'andel pakter (sjutton pakter med vikt 0,82 gav samma) ' + (pacts / tot).toFixed(3));
 }
@@ -820,7 +820,7 @@ ok(/kugghjul/i.test(Cards.byId('pakt_sagblad').text) && /INGEN AMMO/.test(Cards.
 ok(new Set(ALL.filter(c => c.wup).map(c => c.wup)).size === ALL.filter(c => c.wup).length, 'alla wup är unika');
 { // pakterna dras utan pakt men aldrig en andra; pakter sammanlagt ungefär lika ofta som förut
   const rng = makeRng(47), hit = new Set(); let pacts = 0, tot = 0;
-  for (let i = 0; i < 4000; i++) for (const c of Cards.draw(rng, 3, { unlocked: unlockedAll })) { tot++; if (c.pact) { pacts++; hit.add(c.id); } }
+  for (let i = 0; i < 7000; i++) for (const c of Cards.draw(rng, 3, { unlocked: unlockedAll })) { tot++; if (c.pact) { pacts++; hit.add(c.id); } }
   ok(['pakt_sagblad', 'pakt_vindbossa', 'pakt_spjut'].every(id => hit.has(id)), 'nya pakter dras');
   ok(pacts / tot > 0.01 && pacts / tot < 0.04, 'andel pakter ' + (pacts / tot).toFixed(3));
 }
@@ -965,7 +965,7 @@ ok(/SPORER/.test(Cards.byId('pakt_sporkastare').text) && /INGEN AMMO/.test(Cards
 ok(new Set(ALL.filter(c => c.wup).map(c => c.wup)).size === ALL.filter(c => c.wup).length, 'alla wup är unika');
 { // pakterna dras utan pakt men aldrig en andra; pakter sammanlagt ungefär lika ofta som förut
   const rng = makeRng(57), hit = new Set(); let pacts = 0, tot = 0;
-  for (let i = 0; i < 4000; i++) for (const c of Cards.draw(rng, 3, { unlocked: unlockedAll })) { tot++; if (c.pact) { pacts++; hit.add(c.id); } }
+  for (let i = 0; i < 7000; i++) for (const c of Cards.draw(rng, 3, { unlocked: unlockedAll })) { tot++; if (c.pact) { pacts++; hit.add(c.id); } }
   ok(['pakt_sporkastare', 'pakt_spegelskold', 'pakt_piska'].every(id => hit.has(id)), 'nya pakter dras');
   ok(pacts / tot > 0.01 && pacts / tot < 0.04, 'andel pakter ' + (pacts / tot).toFixed(3));
 }
@@ -1116,7 +1116,7 @@ for (const w of Object.keys(Cards.WEAPON_NAME)) { // alla vapen: en pakt, fyra u
 }
 { // pakterna dras utan pakt men aldrig en andra; pakter sammanlagt ungefär lika ofta som förut
   const rng = makeRng(67), hit = new Set(); let pacts = 0, tot = 0;
-  for (let i = 0; i < 4000; i++) for (const c of Cards.draw(rng, 3, { unlocked: unlockedAll })) { tot++; if (c.pact) { pacts++; hit.add(c.id); } }
+  for (let i = 0; i < 7000; i++) for (const c of Cards.draw(rng, 3, { unlocked: unlockedAll })) { tot++; if (c.pact) { pacts++; hit.add(c.id); } }
   ok(['pakt_runbok', 'pakt_angkanon'].every(id => hit.has(id)), 'nya pakter dras');
   ok(pacts / tot > 0.01 && pacts / tot < 0.04, 'andel pakter ' + (pacts / tot).toFixed(3));
 }
@@ -1267,7 +1267,7 @@ ok(new Set(ALL.filter(c => c.wup).map(c => c.wup)).size === ALL.filter(c => c.wu
 for (const w of V15_WEAPONS) ok(Object.keys(Cards.WEAPON_NAME).includes(w), w + ' finns i WEAPON_NAME');
 { // pakterna dras utan pakt men aldrig en andra; pakter sammanlagt ungefär lika ofta som förut
   const rng = makeRng(69), hit = new Set(); let pacts = 0, tot = 0;
-  for (let i = 0; i < 4000; i++) for (const c of Cards.draw(rng, 3, { unlocked: unlockedAll })) { tot++; if (c.pact) { pacts++; hit.add(c.id); } }
+  for (let i = 0; i < 7000; i++) for (const c of Cards.draw(rng, 3, { unlocked: unlockedAll })) { tot++; if (c.pact) { pacts++; hit.add(c.id); } }
   ok(['pakt_rokelsekar', 'pakt_bikastare'].every(id => hit.has(id)), 'nya pakter dras');
   ok(pacts / tot > 0.01 && pacts / tot < 0.04, 'andel pakter ' + (pacts / tot).toFixed(3));
 }
@@ -1382,7 +1382,7 @@ ok(Cards.byId('valmon+') === null && Cards.refine('mardromsmasken') === null && 
     && m16.shiftSense === 0.2 && Math.abs(m16.sleepResist - 0) < 1e-9 && m16.bleedChance === 0.05 && m16.healMul === 0.1, 'computeMods med version 16-nycklar ' + JSON.stringify([m16.thornResist, m16.angelSight, m16.shearDmg, m16.dreamDmg, m16.mistSight, m16.fountainHeal, m16.shiftSense, m16.sleepResist])); }
 { // nya kort dras (alla upplåsta) och låsta dras inte
   const rng = makeRng(1616), hit = new Set();
-  for (let i = 0; i < 4000; i++) for (const c of Cards.draw(rng, 3, { unlocked: unlockedAll, depth: i % 6 })) hit.add(c.id);
+  for (let i = 0; i < 6000; i++) for (const c of Cards.draw(rng, 3, { unlocked: unlockedAll, depth: i % 6 })) hit.add(c.id);
   ok(V16_IDS.every(id => hit.has(id)), 'alla version 16-kort ska kunna dras: saknas ' + V16_IDS.filter(id => !hit.has(id)).join(','));
   const rng2 = makeRng(1617);
   for (let i = 0; i < 1000; i++) for (const c of Cards.draw(rng2, 3, {})) ok(!c.unlock || !V16_IDS.includes(c.id), 'låst version 16-kort dragen ' + c.id);
@@ -1423,7 +1423,7 @@ ok(new Set(ALL.filter(c => c.wup).map(c => c.wup)).size === ALL.filter(c => c.wu
 for (const w of V16_WEAPONS) ok(Object.keys(Cards.WEAPON_NAME).includes(w), w + ' finns i WEAPON_NAME');
 { // pakterna dras utan pakt men aldrig en andra; pakter sammanlagt ungefär lika ofta som förut
   const rng = makeRng(71), hit = new Set(); let pacts = 0, tot = 0;
-  for (let i = 0; i < 4000; i++) for (const c of Cards.draw(rng, 3, { unlocked: unlockedAll })) { tot++; if (c.pact) { pacts++; hit.add(c.id); } }
+  for (let i = 0; i < 7000; i++) for (const c of Cards.draw(rng, 3, { unlocked: unlockedAll })) { tot++; if (c.pact) { pacts++; hit.add(c.id); } }
   ok(['pakt_tradgardssax', 'pakt_dromstav'].every(id => hit.has(id)), 'nya pakter dras');
   ok(pacts / tot > 0.01 && pacts / tot < 0.04, 'andel pakter ' + (pacts / tot).toFixed(3));
 }
@@ -1562,7 +1562,7 @@ for (const w in PACTS17) {
 }
 { // pakterna dras utan pakt; pakter sammanlagt ungefär lika ofta som förut
   const rng = makeRng(171), hit = new Set(); let pacts = 0, tot = 0;
-  for (let i = 0; i < 4000; i++) for (const c of Cards.draw(rng, 3, { unlocked: unlockedAll })) { tot++; if (c.pact) { pacts++; hit.add(c.id); } }
+  for (let i = 0; i < 7000; i++) for (const c of Cards.draw(rng, 3, { unlocked: unlockedAll })) { tot++; if (c.pact) { pacts++; hit.add(c.id); } }
   ok(['pakt_kedjekanon', 'pakt_syraspruta'].every(id => hit.has(id)), 'nya pakter dras');
   ok(pacts / tot > 0.01 && pacts / tot < 0.04, 'andel pakter ' + (pacts / tot).toFixed(3));
 }
@@ -1682,7 +1682,7 @@ for (const w in PACTS18) {
 }
 { // pakterna dras utan pakt; pakter sammanlagt ungefär lika ofta som förut
   const rng = makeRng(181), hit = new Set(); let pacts = 0, tot = 0;
-  for (let i = 0; i < 4000; i++) for (const c of Cards.draw(rng, 3, { unlocked: unlockedAll })) { tot++; if (c.pact) { pacts++; hit.add(c.id); } }
+  for (let i = 0; i < 7000; i++) for (const c of Cards.draw(rng, 3, { unlocked: unlockedAll })) { tot++; if (c.pact) { pacts++; hit.add(c.id); } }
   ok(['pakt_kaglekastare', 'pakt_blasror'].every(id => hit.has(id)), 'nya pakter dras');
   ok(pacts / tot > 0.01 && pacts / tot < 0.04, 'andel pakter ' + (pacts / tot).toFixed(3));
 }
@@ -1801,7 +1801,7 @@ for (const w in PACTS19) {
 }
 { // pakterna dras utan pakt; pakter sammanlagt ungefär lika ofta som förut
   const rng = makeRng(191), hit = new Set(); let pacts = 0, tot = 0;
-  for (let i = 0; i < 4000; i++) for (const c of Cards.draw(rng, 3, { unlocked: unlockedAll })) { tot++; if (c.pact) { pacts++; hit.add(c.id); } }
+  for (let i = 0; i < 7000; i++) for (const c of Cards.draw(rng, 3, { unlocked: unlockedAll })) { tot++; if (c.pact) { pacts++; hit.add(c.id); } }
   ok(['pakt_hacka', 'pakt_stjarnlans'].every(id => hit.has(id)), 'nya pakter dras');
   ok(pacts / tot > 0.01 && pacts / tot < 0.04, 'andel pakter ' + (pacts / tot).toFixed(3));
 }
@@ -1910,7 +1910,7 @@ for (const w in PACTS20) {
   ok(hit > 50, w + ': uppgraderingarna ska dras ofta efter pakten (' + hit + ')');
 }
 { const rng = makeRng(201), hit = new Set(); let pacts = 0, tot = 0;
-  for (let i = 0; i < 4000; i++) for (const c of Cards.draw(rng, 3, { unlocked: unlockedAll })) { tot++; if (c.pact) { pacts++; hit.add(c.id); } }
+  for (let i = 0; i < 7000; i++) for (const c of Cards.draw(rng, 3, { unlocked: unlockedAll })) { tot++; if (c.pact) { pacts++; hit.add(c.id); } }
   ok(['pakt_kroksabel', 'pakt_fallkastare'].every(id => hit.has(id)), 'nya pakter dras');
   ok(pacts / tot > 0.01 && pacts / tot < 0.04, 'andel pakter ' + (pacts / tot).toFixed(3)); }
 { const byHash = new Map();
@@ -2232,6 +2232,28 @@ for (const [sid, name, need] of [['slakteriet', 'SLAKTARENS VÄG', ['slickGrip',
   ok(Object.keys(SETS).filter(k => k !== sid).every(k => first(SETS[k].name) !== first(SETS[sid].name) && first(SETS[k].name).slice(0, 4) !== first(SETS[sid].name).slice(0, 4)), sid + ': setnamnet liknar ett annat');
 }
 console.log('Version 23: ' + V23.length + ' kort ' + JSON.stringify(v23Rar) + ', pakter ' + Object.values(PACTS23).map(x => x[0]).join(' ') + ', set ' + ['slakteriet', 'slagfaltet'].map(k => k + '(' + ALL.filter(c => c.set === k).map(c => c.id).join(',') + ')').join(' '));
+// ---------- version 30: Ruinstaden och Glasbruket ----------
+{
+  const V30_KEYS = ['collapseSense', 'rubbleWalk', 'dustSight', 'shardStep', 'moltenResist', 'slingDmg', 'glassgunDmg'];
+  for (const k of V30_KEYS) ok(keys.includes(k) && /[a-zåäö]{4}/i.test(MOD_KEYS[k]) && Cards.modLabel(k), 'version 30-nyckel saknas eller saknar beskrivning: ' + k);
+  const V30_IDS = ['murarhjalmen', 'grussulorna', 'filtsulorna', 'ugnshandskarna', 'asbestforkladet', 'flodstenen', 'blaspipan', 'dammduken', 'stadsvaktens_lykta', 'kylugnsluckan', 'slungarens_oga', 'glodande_glaset', 'borgmastarens_kedja', 'glasmastarens_pipa', 'raset', 'den_rasade_staden'];
+  const V30 = V30_IDS.map(id => Cards.byId(id)).filter(Boolean);
+  ok(V30.length === 16, 'version 30-kort saknas: ' + V30_IDS.filter(id => !Cards.byId(id)).join(','));
+  const rar = {}; for (const c of V30) rar[c.rarity] = (rar[c.rarity] || 0) + 1;
+  ok(rar.vanlig === 7 && rar.ovanlig === 5 && rar.sallsynt === 3 && rar.legendarisk === 1, 'version 30 per sällsynthet ' + JSON.stringify(rar));
+  ok(V30.filter(c => c.curse).length === 2, '2 förbannade version 30-kort');
+  for (const c of V30) { ok(fs.existsSync(path.join(root, c.icon)), c.id + ': ikon'); ok(c.syn && c.syn.some(t => ['ruin', 'glasbruk', 'slunga', 'glasbossa'].includes(t)), c.id + ': har en ny synergitagg'); ok(c.text.split('\n').every(l => l.length <= 27), c.id + ': raderna högst 27 tecken'); }
+  for (const [sid, name] of [['stadsvakten', 'STADSVAKTENS VÄG'], ['glasblasaren', 'GLASBLÅSARENS VÄG']]) ok(SETS[sid] && SETS[sid].name === name && ALL.filter(c => c.set === sid).length === 5, 'set ' + sid);
+  for (const [w, pid, wups, wname] of [['sling', 'pakt_slunga', ['sg_bounce', 'sg_heavy', 'sg_quiet', 'sg_fast'], 'SLUNGA'], ['glassgun', 'pakt_glasbossa', ['gg_spread', 'gg_bleed', 'gg_burst', 'gg_fast'], 'GLASBÖSSA']]) {
+    const p = Cards.byId(pid), ups = ALL.filter(c => c.weapon === w);
+    ok(p && p.pact === w && p.text.includes('BARA ' + wname + ' RESTEN AV RUNDAN') && Cards.WEAPON_NAME[w] === wname && fs.existsSync(path.join(root, p.icon)), pid + ': pakt');
+    ok(ups.length === 4 && JSON.stringify(ups.map(c => c.wup).sort()) === JSON.stringify(wups.slice().sort()) && ups.every(u => fs.existsSync(path.join(root, u.icon))), w + ': uppgraderingar');
+  }
+  const rng = makeRng(3030), hit = new Set();
+  for (let i = 0; i < 6000; i++) for (const c of Cards.draw(rng, 3, { unlocked: unlockedAll, depth: i % 6 })) hit.add(c.id);
+  ok(V30_IDS.every(id => hit.has(id)), 'alla version 30-kort ska kunna dras: saknas ' + V30_IDS.filter(id => !hit.has(id)).join(','));
+  console.log('Version 30: ' + V30.length + ' kort ' + JSON.stringify(rar));
+}
 
 console.log('Version 7: ' + V7.length + ' kort ' + JSON.stringify(v7Rar) + ', pakter ' + Object.values(PACTS7).map(x => x[0]).join(' ') + ', set ' + ['skuggor', 'oknen'].map(k => k + '(' + ALL.filter(c => c.set === k).map(c => c.id).join(',') + ')').join(' '));
 

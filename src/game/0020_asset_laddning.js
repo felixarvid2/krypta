@@ -119,6 +119,15 @@ const ENEMY_DEFS = {
   'ʐ': { name: 'SPÖKSOLDAT', sheet: 'ghostsoldier', move: 'movement', hp: 18, speed: 1.0, melee: true, dmg: 11, range: 1.3, cd: 1.3, size: 1.0, growl: 'ghostsoldier', growlVol: 0.7, score: 300, atkFps: 10, hitAt: 0.5, ai: 'ghostsoldier', tip: 'SKÖLDEN TAR SKOTT FRAMIFRÅN – BRYT FORMATIONEN' },
   'ʑ': { name: 'SPÖKBÅGSKYTT', sheet: 'ghostarcher', move: 'movement', hp: 12, speed: 1.0, melee: false, dmg: 6, range: 10, cd: 99, size: 1.0, growl: 'ghostarcher', growlVol: 0.7, score: 280, atkFps: 10, hitAt: 0.5, ai: 'ghostarcher', kite: 5, tip: 'SKJUTER PILSKURAR OM TRE – SPRING I SIDLED' },
   'ʒ': { name: 'SPÖKRYTTARE', sheet: 'ghostrider', move: 'movement', hp: 34, speed: 1.3, melee: true, dmg: 16, range: 1.3, cd: 1.5, size: 1.35, growl: 'ghostrider', growlVol: 0.9, score: 520, atkFps: 10, hitAt: 0.5, ai: 'ghostrider', tip: 'RUSAR I LÅNGA RAKA LINJER – KLIV UR VÄGEN' },
+  // version 30 (SPEL): Ruinstaden och Glasbruket
+  'ʨ': { name: 'PLUNDRARE', sheet: 'looter', move: 'movement', hp: 14, speed: 1.5, melee: true, dmg: 9, range: 1.1, cd: 1.0, size: 1.0, growl: 'looter', growlVol: 0.7, score: 240, atkFps: 11, hitAt: 0.5, ai: 'looter', tip: 'KASTAR KNIVAR OCH FLYR NÄR DEN ÄR SKADAD – SKJUT INNAN DEN SMITER' },
+  'ʩ': { name: 'STENGOLEM', sheet: 'rubblegolem', move: 'movement', hp: 60, speed: 0.6, melee: true, dmg: 20, range: 1.5, cd: 1.8, size: 1.5, growl: 'rubblegolem', growlVol: 0.9, score: 620, atkFps: 8, hitAt: 0.6, ai: 'rubblegolem', tip: 'KASTAR STENBLOCK I BÅGE – GÅ NÄRA OCH HÅLL DIG I RÖRELSE' },
+  'ʪ': { name: 'TAKSKYTT', sheet: 'rooftopper', move: 'movement', hp: 12, speed: 1.0, melee: false, dmg: 9, range: 12, cd: 99, size: 1.0, growl: 'rooftopper', growlVol: 0.7, score: 280, atkFps: 10, hitAt: 0.5, ai: 'rooftopper', kite: 7, tip: 'ARMBORST PÅ AVSTÅND – BYTER PLATS EFTER NÅGRA SKOTT' },
+  'ʫ': { name: 'DAMMVIRVEL', sheet: 'dustdevil', move: 'movement', hp: 8, speed: 1.4, melee: true, dmg: 4, range: 1.0, cd: 0.8, size: 1.0, growl: 'dustdevil', growlVol: 0.5, score: 140, atkFps: 12, hitAt: 0.5, ai: 'dustdevil', float: true, tip: 'DRAR DIG MOT SIG OCH TJOCKNAR DAMMET – SVAG, SKJUT DEN' },
+  'ʮ': { name: 'GLASBLÅSARE', sheet: 'glassblower', move: 'movement', hp: 16, speed: 0.9, melee: false, dmg: 8, range: 9, cd: 99, size: 1.0, growl: 'glassblower', growlVol: 0.7, score: 300, atkFps: 10, hitAt: 0.5, ai: 'glassblower', kite: 5, tip: 'BLÅSER GLASBUBBLOR SOM SPRICKER TILL SKÄRVOR – KLIV UNDAN' },
+  'ʯ': { name: 'GLASGOLEM', sheet: 'glassgolem', move: 'movement', hp: 40, speed: 0.8, melee: true, dmg: 16, range: 1.4, cd: 1.5, size: 1.35, growl: 'glassgolem', growlVol: 0.85, score: 520, atkFps: 9, hitAt: 0.55, ai: 'glassgolem', tip: 'SKOTT STUDSAR AV – SPRÄNG ELLER SLÅ DEN' },
+  'ʰ': { name: 'SLAGGKRYPARE', sheet: 'slagcrawler', move: 'movement', hp: 10, speed: 2.0, melee: true, dmg: 7, range: 0.9, cd: 0.9, size: 0.75, growl: 'slagcrawler', growlVol: 0.6, score: 200, atkFps: 12, hitAt: 0.5, ai: 'slagcrawler', tip: 'LÄMNAR SMÄLT GLAS EFTER SIG – SKJUT DEN INNAN DEN NÅR DIG' },
+  'ʱ': { name: 'UGNSANDE', sheet: 'kilnspirit', move: 'movement', hp: 7, speed: 1.8, melee: true, dmg: 10, range: 0.9, cd: 99, size: 0.7, growl: 'kilnspirit', growlVol: 0.6, score: 200, atkFps: 12, hitAt: 0.5, ai: 'kilnspirit', float: true, tip: 'STÖRTAR MOT DIG OCH EXPLODERAR – SKJUT DEN I LUFTEN' },
   'ʓ': { name: 'KRÅKOR', sheet: 'crows', move: 'movement', hp: 4, speed: 2.4, melee: true, dmg: 4, range: 1.0, cd: 1.0, size: 0.6, growl: 'crows', growlVol: 0.4, score: 90, atkFps: 12, hitAt: 0.5, ai: 'crows', float: true, tip: 'FLOCKEN DYKER – SKJUT DEN NÄR DEN KOMMER' },
   'Ǩ': { name: 'KIMÄR', sheet: 'chimera', move: 'movement', hp: 34, speed: 1.1, melee: true, dmg: 16, range: 1.4, cd: 1.4, size: 1.4, growl: 'chimera', score: 520, atkFps: 10, hitAt: 0.55, ai: 'chimera', tip: 'BETT, ELD OCH GIFT I TUR OCH ORDNING – LÄR DIG RYTMEN' },
   'Ƒ': { name: 'KORGOSSE', sheet: 'choirboy', move: 'movement', hp: 6, speed: 1.0, melee: false, dmg: 5, range: 9, cd: 2.6, size: 0.85, growl: 'choirboy', score: 220, atkFps: 10, hitAt: 0.5, ai: 'choirboy', kite: 6, tip: 'LÄKER OCH SKYDDAR DE ANDRA – DÖDA HONOM FÖRST' },
@@ -193,6 +202,8 @@ const BOSSES = {
   pyrelord: { title: 'SKÄRSELDENS FURSTE', name: 'ELDFURSTEN', hp: 540, speed: 1.0, size: 4.6, dmg: 20, range: 2.4, arena: 'purgatory', phaseMsg: ['ELDFURSTEN SPRÄNGER MARKEN', 'ELDFURSTEN RASAR – ALLT BRINNER!'] },
   butcher: { title: 'KÖTTETS HERRE', name: 'SLAKTMÄSTAREN', hp: 520, speed: 0.9, size: 4.5, dmg: 19, range: 2.4, arena: 'abattoir', phaseMsg: ['SLAKTMÄSTAREN VÄSSAR KÖTTYXAN', 'SLAKTMÄSTAREN RASAR – KVARNARNA GÅR FÖR FULLT!'] },
   warlord: { title: 'DET EVIGA SLAGETS FÄLTHERRE', name: 'KRIGSHERREN', hp: 540, speed: 1.0, size: 4.6, dmg: 20, range: 2.4, arena: 'battlefield', phaseMsg: ['KRIGSHERREN SAMLAR SINA LEDER', 'KRIGSHERREN RASAR – HELA HÄREN ANFALLER!'] },
+  mayor: { title: 'DEN RASADE STADENS HERRE', name: 'BORGMÄSTAREN', hp: 520, speed: 0.85, size: 4.6, dmg: 19, range: 2.4, arena: 'ruins', phaseMsg: ['BORGMÄSTAREN SLÅR STAVEN I MARKEN', 'BORGMÄSTAREN RASAR – STADEN STÖRTAR SAMMAN!'] },
+  glassmaster: { title: 'UGNARNAS MÄSTARE', name: 'GLASMÄSTAREN', hp: 500, speed: 1.0, size: 4.4, dmg: 18, range: 2.4, arena: 'glassworks', phaseMsg: ['GLASMÄSTAREN BLÅSER I PIPAN', 'GLASMÄSTAREN RASAR – UGNARNA FLAMMAR!'] },
   ringmaster: { title: 'MANEGENS HERRE', name: 'CIRKUSDIREKTÖREN', hp: 470, speed: 1.1, size: 4.0, dmg: 17, range: 2.2, arena: 'circus', phaseMsg: ['DIREKTÖREN PRESENTERAR NÄSTA NUMMER', 'DIREKTÖREN RASAR – FÖRESTÄLLNINGEN MÅSTE GÅ VIDARE!'] },
   serpent: { title: 'TEMPLETS GUD', name: 'DEN FJÄDRADE ORMEN', hp: 480, speed: 1.2, size: 4.4, dmg: 18, range: 2.4, arena: 'jungle', phaseMsg: ['ORMEN RESER SINA FJÄDRAR', 'ORMEN RASAR – DJUNGELN VAKNAR!'] },
   cardinal: { title: 'BLODMÄSSANS HERDE', name: 'KARDINALEN', hp: 480, speed: 0.9, size: 4.0, dmg: 18, range: 2.2, arena: 'cathedral', phaseMsg: ['KARDINALEN HÖJER RÖKELSEKARET', 'KARDINALEN RASAR – KATEDRALEN BLÖDER!'] },
@@ -285,6 +296,13 @@ const PROP_DEFS = {
   'ʍ': { img: 'catapult', n: 1, size: 1.1, block: true, fb: 'statue' },
   'ʎ': { img: 'warbanner', n: 2, anim: 3, size: 1.0, block: true, fb: 'statue' },
   'ʏ': { img: 'stakes', n: 1, size: 0.75, block: true, fb: 'statue' },
+  // version 30 (SPEL): Ruinstaden och Glasbruket
+  'ʢ': { img: 'brokencolumn', n: 1, size: 1.0, block: true, fb: 'statue' },
+  'ʣ': { img: 'fallenbeam', n: 1, size: 0.85, block: true, fb: 'crate' },
+  'ʤ': { img: 'ruinstatue', n: 1, size: 1.05, block: true, fb: 'statue' },
+  'ʥ': { img: 'furnace', n: 2, anim: 5, size: 1.1, block: true, light: 1.3, lightR: 6, fb: 'statue' },
+  'ʦ': { img: 'glassrack', n: 1, size: 0.95, block: true, fb: 'crate' },
+  'ʧ': { img: 'glassbench', n: 1, size: 0.7, block: true, fb: 'crate' },
   'ɏ': { img: 'hangcage', n: 2, size: 0.75, block: false, v21hit: true, fb: 'crate' },
   'ɐ': { img: 'rack', n: 1, size: 0.9, block: true, fb: 'statue' },
   'ɑ': { img: 'gallows', n: 2, size: 1.3, block: true, fb: 'statue' },
@@ -361,7 +379,7 @@ const ELITE_MODS = [
   { id: 'prismatic', name: 'PRISMATISK', tint: [255, 160, 230] },
   { id: 'gusty', name: 'STORMVIND', tint: [220, 245, 255] },
 ];
-const NEW_ENEMIES = ['U', 'X', 'Y', '!', '@', '^', '+', 'Å', 'Ä', 'Ö', 'É', 'Ü', 'Ñ', 'Æ', 'Þ', 'Ð', 'Ý', 'Ã', 'Õ', 'Ê', 'Î', 'Ô', 'Ë', 'Í', 'Ï', 'Ó', 'Ú', 'Û', 'Ā', 'Ă', 'ĳ', 'Ĵ', 'ĵ', 'Ķ', 'ķ', 'ĸ', 'Ō', 'ō', 'Ŏ', 'ŏ', 'Ő', 'ő', 'ŗ', 'Ř', 'ř', 'Ś', 'ś', 'Ŝ', 'Ų', 'ų', 'Ŵ', 'Ž', 'ž', 'ſ', 'Ƅ', 'ƅ', 'Ɔ', 'Ƈ', 'ƈ', 'Ɖ', 'Ƒ', 'ƒ', 'Ɯ', 'Ƙ', 'ƙ', 'ƚ', 'ƫ', 'Ƭ', 'ƭ', 'Ʈ', 'Ư', 'ư', 'Ǖ', 'ǖ', 'Ǘ', 'ǘ', 'Ǚ', 'ǚ', 'ǣ', 'Ǥ', 'ǥ', 'Ǧ', 'ǧ', 'Ǩ', 'Ƿ', 'Ǹ', 'ǹ', 'Ǻ', 'ǻ', 'Ǽ', 'Ȉ', 'ȉ', 'Ȋ', 'ȋ', 'Ȍ', 'ȍ', 'ȡ', 'Ȣ', 'ȣ', 'Ȥ', 'ȥ', 'Ȧ', 'ȧ', 'Ȩ', 'ȼ', 'Ƚ', 'Ⱦ', 'ȿ', 'ɀ', 'Ɂ', 'ɂ', 'Ƀ', 'ɕ', 'ɖ', 'ɗ', 'ɘ', 'ə', 'ɚ', 'ɛ', 'ɜ', 'ɩ', 'ɪ', 'ɫ', 'ɬ', 'ɵ', 'ɶ', 'ɷ', 'ɸ', 'ʄ', 'ʅ', 'ʆ', 'ʇ', 'ʐ', 'ʑ', 'ʒ', 'ʓ'];
+const NEW_ENEMIES = ['U', 'X', 'Y', '!', '@', '^', '+', 'Å', 'Ä', 'Ö', 'É', 'Ü', 'Ñ', 'Æ', 'Þ', 'Ð', 'Ý', 'Ã', 'Õ', 'Ê', 'Î', 'Ô', 'Ë', 'Í', 'Ï', 'Ó', 'Ú', 'Û', 'Ā', 'Ă', 'ĳ', 'Ĵ', 'ĵ', 'Ķ', 'ķ', 'ĸ', 'Ō', 'ō', 'Ŏ', 'ŏ', 'Ő', 'ő', 'ŗ', 'Ř', 'ř', 'Ś', 'ś', 'Ŝ', 'Ų', 'ų', 'Ŵ', 'Ž', 'ž', 'ſ', 'Ƅ', 'ƅ', 'Ɔ', 'Ƈ', 'ƈ', 'Ɖ', 'Ƒ', 'ƒ', 'Ɯ', 'Ƙ', 'ƙ', 'ƚ', 'ƫ', 'Ƭ', 'ƭ', 'Ʈ', 'Ư', 'ư', 'Ǖ', 'ǖ', 'Ǘ', 'ǘ', 'Ǚ', 'ǚ', 'ǣ', 'Ǥ', 'ǥ', 'Ǧ', 'ǧ', 'Ǩ', 'Ƿ', 'Ǹ', 'ǹ', 'Ǻ', 'ǻ', 'Ǽ', 'Ȉ', 'ȉ', 'Ȋ', 'ȋ', 'Ȍ', 'ȍ', 'ȡ', 'Ȣ', 'ȣ', 'Ȥ', 'ȥ', 'Ȧ', 'ȧ', 'Ȩ', 'ȼ', 'Ƚ', 'Ⱦ', 'ȿ', 'ɀ', 'Ɂ', 'ɂ', 'Ƀ', 'ɕ', 'ɖ', 'ɗ', 'ɘ', 'ə', 'ɚ', 'ɛ', 'ɜ', 'ɩ', 'ɪ', 'ɫ', 'ɬ', 'ɵ', 'ɶ', 'ɷ', 'ɸ', 'ʄ', 'ʅ', 'ʆ', 'ʇ', 'ʐ', 'ʑ', 'ʒ', 'ʓ', 'ʨ', 'ʩ', 'ʪ', 'ʫ', 'ʮ', 'ʯ', 'ʰ', 'ʱ'];
 async function loadEnemySheet(k, d) {
   const sets = {};
   for (const [st, file] of [['idle', 'idle'], ['move', d.move], ['attack', 'attack'], ['pain', 'take_damage'], ['death', 'death']]) { const img = await load(`${A}gfx/enemies-${d.sheet}_${file}.png`); sets[st] = strip(img, Math.max(1, Math.round(img.width / (d.fw || img.height)))); } // kvadratiska rutor
@@ -446,7 +464,7 @@ async function loadAll(setStatus) {
     ogre: [['idle', 4], ['walk', 6], ['attack', 7]], ghost: [['idle', 7], ['chase', 4], ['shriek', 4], ['vanish', 7], ['appear', 6]] };
   bossFx.frost = {}; // isdraken: valfria bilder, 124 px breda rutor
   for (const a of ['idle', 'attack', 'cast', 'hurt', 'death']) { try { const img = await load(`${A}gfx/boss_frost_${a}.png`); bossFx.frost[a] = strip(img, Math.max(1, Math.round(img.width / (img.height === 59 ? 124 : img.height)))); } catch (e) { /* saknas */ } }
-  for (const id of ['crystalqueen', 'leviathan', 'clockmaker', 'thunderbird', 'mycelmother', 'mirrorking', 'librarian', 'colossus', 'cardinal', 'queenbee', 'gardener', 'sandman', 'captain', 'alchemist', 'ringmaster', 'serpent', 'foreman', 'starseer', 'ratking', 'sphinx', 'executioner', 'tidepriest', 'bathmaster', 'pyrelord', 'butcher', 'warlord']) { bossFx[id] = {}; for (const a of ['idle', 'attack', 'cast', 'hurt', 'death', 'submerge', 'dive']) { try { const img = await load(`${A}gfx/boss_${id}_${a}.png`); bossFx[id][a] = strip(img, Math.max(1, Math.round(img.width / img.height))); } catch (e) { /* valfri */ } }
+  for (const id of ['crystalqueen', 'leviathan', 'clockmaker', 'thunderbird', 'mycelmother', 'mirrorking', 'librarian', 'colossus', 'cardinal', 'queenbee', 'gardener', 'sandman', 'captain', 'alchemist', 'ringmaster', 'serpent', 'foreman', 'starseer', 'ratking', 'sphinx', 'executioner', 'tidepriest', 'bathmaster', 'pyrelord', 'butcher', 'warlord', 'mayor', 'glassmaster']) { bossFx[id] = {}; for (const a of ['idle', 'attack', 'cast', 'hurt', 'death', 'submerge', 'dive']) { try { const img = await load(`${A}gfx/boss_${id}_${a}.png`); bossFx[id][a] = strip(img, Math.max(1, Math.round(img.width / img.height))); } catch (e) { /* valfri */ } }
     if (!bossFx[id].idle) delete bossFx[id]; else for (const a of ['attack', 'cast', 'hurt', 'submerge', 'dive']) bossFx[id][a] = bossFx[id][a] || bossFx[id].idle; }
   bossFx.pharaoh = {}; // faraonen: valfria bilder
   for (const a of ['idle', 'attack', 'cast', 'hurt', 'death']) { try { const img = await load(`${A}gfx/boss_pharaoh_${a}.png`); bossFx.pharaoh[a] = strip(img, Math.max(1, Math.round(img.width / img.height))); } catch (e) { /* saknas */ } }
@@ -514,6 +532,7 @@ async function loadAll(setStatus) {
     ['gib', 4], ['spore', 2], ['webshot', 1], ['scorch', 1], ['hole', 2], ['ash', 2], ['smoke', 4], ['ice', 3], ['gas', 2], ['skull', 2], ['log', 2], ['rock', 1], ['shadow', 1], ['zzz', 1], ['star', 1], ['meteor', 2], ['acid', 2], ['chainball', 2], ['bubble2', 2], ['feather2', 2], ['confetti', 3], ['pin', 2], ['dart', 1], ['leaf2', 2], ['popcorn', 2], ['laser', 1], ['coal', 2], ['stardust', 3], ['meteor2', 2], ['gasbubble', 2], ['sludge', 2], ['sand2', 2], ['steam2', 2], ['steam3', 2], ['ash2', 2], ['brimstone', 2], ['flies', 2], ['ghostwisp', 2], ['mud', 2]]) {
     try { fx.parts[n] = strip(await load(`${A}gfx/part_${n}.png`), k); } catch (e) { /* valfri */ }
   }
+  await v30Load(); // version 30 (SPEL): Ruinstadens och Glasbrukets texturer, partiklar och himmel
   await efxLoad(); // version 25: förrenderade Effekseer-strippar (valfria)
   await efx2Load(); // version 25.1: skärmeffekterna portal och helning (valfria)
   try { await document.fonts.load('8px "PressStart2P"'); } catch (e) { /* reservtypsnitt */ }

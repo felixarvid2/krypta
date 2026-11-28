@@ -217,6 +217,10 @@ const ACH = [
   ['warlord', 'SLAGET ÄR ÖVER', 'BESEGRA KRIGSHERREN', p => !!(p.bossWins || {}).warlord],
   ['hook20', 'KÖTTKROKEN', 'DRA IN 20 FIENDER MED SLAKTARKROKEN', p => (p.hookPulls || 0) >= 20, p => [p.hookPulls || 0, 20]],
   ['formation5', 'FORMATIONSBRYTAREN', 'BRYT FEM FORMATIONER AV SPÖKSOLDATER', p => (p.formations || 0) >= 5, p => [p.formations || 0, 5]],
+  ['mayor', 'RÅDHUSET ÄR TOMT', 'BESEGRA BORGMÄSTAREN', p => !!(p.bossWins || {}).mayor],
+  ['glassmaster', 'UGNARNA SLOCKNAR', 'BESEGRA GLASMÄSTAREN', p => !!(p.bossWins || {}).glassmaster],
+  ['roofs30', 'TAKLÄGGARENS MARDRÖM', 'LÅT 20 TAK RASA I RUINSTADEN', p => (p.roofs30 || 0) >= 20, p => [p.roofs30 || 0, 20]],
+  ['racks30', 'ELEFANTEN I GLASBRUKET', 'SLÅ SÖNDER 20 GLASHYLLOR', p => (p.racks30 || 0) >= 20, p => [p.racks30 || 0, 20]],
   ['trap20', 'PÄLSJÄGAREN', 'FÅNGA 20 FIENDER I BJÖRNSAXAR', p => (p.trapSnaps || 0) >= 20, p => [p.trapSnaps || 0, 20]],
   ['sluice10', 'SLUSSVAKTEN', 'VRID SLUSSRATTEN TIO GÅNGER', p => (p.sluices || 0) >= 10, p => [p.sluices || 0, 10]],
   ['ringmaster', 'FÖRESTÄLLNINGEN ÄR SLUT', 'BESEGRA CIRKUSDIREKTÖREN', p => !!(p.bossWins || {}).ringmaster],
@@ -249,7 +253,12 @@ function checkAch() {
   dqCheck();
 }
 function showNews() {
-  CardUI.list('NYHETER', 'VERSION 23: SLAKTERIET OCH SLAGFÄLTET', [
+  CardUI.list('NYHETER', 'VERSION 30: RUINSTADEN OCH GLASBRUKET', [
+    { label: 'VERSION 30 – RUINSTADEN OCH GLASBRUKET', head: true, color: '#e0a050' },
+    { label: 'TVÅ NYA BIOMER', text: 'RUINSTADEN UNDER GRÅOCKRA HIMMEL: TORG, SMALA GRÄNDER, RÅDHUSTRAPPOR OCH RASERADE HUS DÄR TAKEN RASAR NÄR DU KLIVER IN UNDER DEM, GRUS SOM SAKTAR DIG OCH VIRVLANDE DAMM. GLASBRUKET: SMÄLTUGNAR SOM GLÖDER MOT KALLT BLÅTT GLAS, SMÄLT GLAS PÅ GOLVET, UGNSMUNNAR SOM SPRUTAR HETTA, SKÄRVOR SOM SKÄR DEN SOM SPRINGER OCH GLASHYLLOR SOM GÅR ATT SKJUTA SÖNDER.' },
+    { label: 'TVÅ NYA VAPEN', text: 'SLUNGAN (TYST – STENEN STUDSAR I VÄGGEN OCH GÖR DUBBELT MOT HUVUDET; HÖGERKLICK LADDAR ETT TUNGT KAST SOM KNUFFAR OCH RIVER SPRUCKNA VÄGGAR) OCH GLASBÖSSAN (EN KON AV GLASSKÄRVOR SOM FÅR FIENDEN ATT BLÖDA; HÖGERKLICK SKJUTER EN GLASKULA SOM SPRICKER I EN RING) – MED PAKTER OCH UPPGRADERINGAR.' },
+    { label: 'ÅTTA NYA FIENDER OCH TVÅ BOSSAR', text: 'PLUNDRARE SOM KASTAR KNIVAR OCH FLYR, STENGOLEMER SOM KASTAR BLOCK, TAKSKYTTAR SOM BYTER PLATS OCH DAMMVIRVLAR. GLASBLÅSARE MED GLASBUBBLOR, GENOMSKINLIGA GLASGOLEMER SOM SKOTTEN STUDSAR AV, SLAGGKRYPARE SOM LÄMNAR SMÄLT GLAS OCH UGNSANDAR. BORGMÄSTAREN RIVER NED TAKET ÖVER DIG; GLASMÄSTAREN BLÅSER GLASKUPOR OCH GÖR GLASKOPIOR AV SIG SJÄLV.' },
+    { label: 'MER', text: '16 NYA KORT, TVÅ NYA SET, FYRA PRESTATIONER, VÄGGAR SOM RASAR, FÖRBUNDETS ALTARE, LÄGET ÄNDLÖST OCH NY MUSIK FÖR BÅDA BIOMERNA OCH BOSSARNA.' },
     { label: 'VERSION 23 – SLAKTERIET OCH SLAGFÄLTET', head: true, color: '#d05050' },
     { label: 'TVÅ NYA BIOMER', text: 'SLAKTERIET: KAKLADE SLAKTHALLAR, KYLRUM MED KÖTTKROKAR SOM GUNGAR, BLODHALT GOLV DÄR DU GLIDER OCH KÖTTKVARNAR SOM MAL ALLT – ÄVEN FIENDER DU KNUFFAR IN. DET EVIGA SLAGFÄLTET UNDER GRÅ HIMMEL: LERA, SKYTTEGRAVAR, PALISSADER, DJUP LERA SOM DU INTE KAN HOPPA UR, SPJUTPÅLAR OCH KATAPULTSTENAR SOM SLÅR NED PÅ MARKERADE RUTOR.' },
     { label: 'TVÅ NYA VAPEN', text: 'SLAKTARKROKEN (KASTAS PÅ KEDJA OCH DRAR IN FIENDEN – STORA FIENDER DRAR IN DIG – OCH SLÅR SEDAN) OCH BOMBARDEN (EN TUNG KANONKULA SOM GÅR IGENOM FIENDER OCH STUDSAR I VÄGGEN – HÖGERKLICK SKJUTER DRUVHAGEL) – MED PAKTER.' },
@@ -377,6 +386,9 @@ function showManual() {
     { label: 'VÄRLDEN', head: true, color: '#ffd24a' }, { label: 'LAVA', text: 'BRÄNNER – HOPPA ÖVER.' }, { label: 'VATTEN OCH NÄT', text: 'SAKTAR NED. NÄT BRINNER.' }, { label: 'IS', text: 'HALT.' },
     { label: 'NYCKLAR', text: 'ÖPPNAR LÅSTA DÖRRAR OCH KISTOR.' }, { label: 'SPAKAR', text: 'ÖPPNAR JÄRNGALLER NÅGONSTANS PÅ VÅNINGEN.' }, { label: 'SPRUCKNA VÄGGAR', text: 'SPRÄNG DEM MED GRANATER ELLER KRUTFAT.' },
     { label: 'SMEDJAN', text: 'GER VAPNET +12 % SKADA PER NIVÅ OCH FÄSTER RUNOR.' },
+    { label: 'VERSION 30', head: true, color: '#e0a050' }, { label: 'RUINSTADEN', text: 'SPRUCKNA TAK RASAR 0,8 S EFTER ATT NÅGON KLIVIT IN UNDER DEM (25 SKADA I RUTAN, 12 INTILL) OCH BLIR GRUS. GRUSET SAKTAR DIG 25 %. DAMMVIRVLAR DRAR DIG TILL SIG OCH TJOCKNAR DAMMET. PLUNDRARE FLYR NÄR DE ÄR SKADADE; TAKSKYTTAR BYTER PLATS EFTER TRE SKOTT.' },
+    { label: 'GLASBRUKET', text: 'SMÄLT GLAS BRÄNNER (8 SKADA/S). SKÄRVOR SKÄR BARA DEN SOM SPRINGER ELLER LANDAR – GÅ ELLER SMYG ÖVER DEM. UGNSMUNNAR GLÖDER 0,6 S OCH SPRUTAR SEDAN HETTA I 1,5 S (10 SKADA/S). GLASHYLLOR GÅR SÖNDER AV TVÅ SKOTT. 30 % AV SKOTTEN STUDSAR AV GLASGOLEMEN – SMÄLLAR OCH NÄRSTRID GÖR DUBBELT.' },
+    { label: 'SLUNGAN OCH GLASBÖSSAN', text: 'SLUNGANS STEN STUDSAR EN GÅNG OCH GÖR DUBBELT MOT HUVUDET. HÅLL HÖGER MUSKNAPP I 1 S FÖR ETT TUNGT KAST (2,6 GÅNGER SKADAN) SOM KNUFFAR OCH RIVER SPRUCKNA VÄGGAR. GLASBÖSSAN SKJUTER ÅTTA SKÄRVOR SOM FÅR FIENDEN ATT BLÖDA; HÖGERKLICK SKJUTER EN GLASKULA (TVÅ GLAS) SOM SPRICKER EFTER FYRA RUTOR.' },
     { label: 'VERSION 23', head: true, color: '#d05050' }, { label: 'SLAKTERIET', text: 'PÅ DET BLODHALA GOLVET GLIDER DU OCH BROMSAR SENT – FIENDERNA OCKSÅ. KÖTTKVARNAR MAL (12 SKADA/S); KNUFFADE FIENDER TAR DUBBELT. FLUGSVÄRMAR DRAS TILL LIKEN.' },
     { label: 'SLAGFÄLTET', text: 'DJUP LERA SAKTAR DIG 45 % OCH DU KAN INTE HOPPA UR DEN. VAR SJUNDE SEKUND LANDAR EN KATAPULTSTEN PÅ VARJE MARKERAD RUTA (30 SKADA) – SE SKUGGAN OCH LYSSNA EFTER VISSLANDET. SPJUTPÅLAR STICKER. SPÖKSOLDATERNAS SKÖLDAR TAR SKOTT FRAMIFRÅN – MINDRE NÄR FORMATIONEN ÄR BRUTEN.' },
     { label: 'KROKEN OCH BOMBARDEN', text: 'SLAKTARKROKEN NÅR 6 RUTOR: SMÅ FIENDER DRAS IN, STORA DRAR IN DIG – SEDAN SLÅR KROKEN (45 SKADA). BOMBARDENS KULA GÖR 80 SKADA, GÅR IGENOM FIENDER (25 % MINDRE PER FIENDE) OCH STUDSAR EN GÅNG. HÖGERKLICK: DRUVHAGEL MED 8 KULOR PÅ KORT HÅLL.' },
@@ -615,6 +627,15 @@ const ENEMY_DEFS = {
   'ʐ': { name: 'SPÖKSOLDAT', sheet: 'ghostsoldier', move: 'movement', hp: 18, speed: 1.0, melee: true, dmg: 11, range: 1.3, cd: 1.3, size: 1.0, growl: 'ghostsoldier', growlVol: 0.7, score: 300, atkFps: 10, hitAt: 0.5, ai: 'ghostsoldier', tip: 'SKÖLDEN TAR SKOTT FRAMIFRÅN – BRYT FORMATIONEN' },
   'ʑ': { name: 'SPÖKBÅGSKYTT', sheet: 'ghostarcher', move: 'movement', hp: 12, speed: 1.0, melee: false, dmg: 6, range: 10, cd: 99, size: 1.0, growl: 'ghostarcher', growlVol: 0.7, score: 280, atkFps: 10, hitAt: 0.5, ai: 'ghostarcher', kite: 5, tip: 'SKJUTER PILSKURAR OM TRE – SPRING I SIDLED' },
   'ʒ': { name: 'SPÖKRYTTARE', sheet: 'ghostrider', move: 'movement', hp: 34, speed: 1.3, melee: true, dmg: 16, range: 1.3, cd: 1.5, size: 1.35, growl: 'ghostrider', growlVol: 0.9, score: 520, atkFps: 10, hitAt: 0.5, ai: 'ghostrider', tip: 'RUSAR I LÅNGA RAKA LINJER – KLIV UR VÄGEN' },
+  // version 30 (SPEL): Ruinstaden och Glasbruket
+  'ʨ': { name: 'PLUNDRARE', sheet: 'looter', move: 'movement', hp: 14, speed: 1.5, melee: true, dmg: 9, range: 1.1, cd: 1.0, size: 1.0, growl: 'looter', growlVol: 0.7, score: 240, atkFps: 11, hitAt: 0.5, ai: 'looter', tip: 'KASTAR KNIVAR OCH FLYR NÄR DEN ÄR SKADAD – SKJUT INNAN DEN SMITER' },
+  'ʩ': { name: 'STENGOLEM', sheet: 'rubblegolem', move: 'movement', hp: 60, speed: 0.6, melee: true, dmg: 20, range: 1.5, cd: 1.8, size: 1.5, growl: 'rubblegolem', growlVol: 0.9, score: 620, atkFps: 8, hitAt: 0.6, ai: 'rubblegolem', tip: 'KASTAR STENBLOCK I BÅGE – GÅ NÄRA OCH HÅLL DIG I RÖRELSE' },
+  'ʪ': { name: 'TAKSKYTT', sheet: 'rooftopper', move: 'movement', hp: 12, speed: 1.0, melee: false, dmg: 9, range: 12, cd: 99, size: 1.0, growl: 'rooftopper', growlVol: 0.7, score: 280, atkFps: 10, hitAt: 0.5, ai: 'rooftopper', kite: 7, tip: 'ARMBORST PÅ AVSTÅND – BYTER PLATS EFTER NÅGRA SKOTT' },
+  'ʫ': { name: 'DAMMVIRVEL', sheet: 'dustdevil', move: 'movement', hp: 8, speed: 1.4, melee: true, dmg: 4, range: 1.0, cd: 0.8, size: 1.0, growl: 'dustdevil', growlVol: 0.5, score: 140, atkFps: 12, hitAt: 0.5, ai: 'dustdevil', float: true, tip: 'DRAR DIG MOT SIG OCH TJOCKNAR DAMMET – SVAG, SKJUT DEN' },
+  'ʮ': { name: 'GLASBLÅSARE', sheet: 'glassblower', move: 'movement', hp: 16, speed: 0.9, melee: false, dmg: 8, range: 9, cd: 99, size: 1.0, growl: 'glassblower', growlVol: 0.7, score: 300, atkFps: 10, hitAt: 0.5, ai: 'glassblower', kite: 5, tip: 'BLÅSER GLASBUBBLOR SOM SPRICKER TILL SKÄRVOR – KLIV UNDAN' },
+  'ʯ': { name: 'GLASGOLEM', sheet: 'glassgolem', move: 'movement', hp: 40, speed: 0.8, melee: true, dmg: 16, range: 1.4, cd: 1.5, size: 1.35, growl: 'glassgolem', growlVol: 0.85, score: 520, atkFps: 9, hitAt: 0.55, ai: 'glassgolem', tip: 'SKOTT STUDSAR AV – SPRÄNG ELLER SLÅ DEN' },
+  'ʰ': { name: 'SLAGGKRYPARE', sheet: 'slagcrawler', move: 'movement', hp: 10, speed: 2.0, melee: true, dmg: 7, range: 0.9, cd: 0.9, size: 0.75, growl: 'slagcrawler', growlVol: 0.6, score: 200, atkFps: 12, hitAt: 0.5, ai: 'slagcrawler', tip: 'LÄMNAR SMÄLT GLAS EFTER SIG – SKJUT DEN INNAN DEN NÅR DIG' },
+  'ʱ': { name: 'UGNSANDE', sheet: 'kilnspirit', move: 'movement', hp: 7, speed: 1.8, melee: true, dmg: 10, range: 0.9, cd: 99, size: 0.7, growl: 'kilnspirit', growlVol: 0.6, score: 200, atkFps: 12, hitAt: 0.5, ai: 'kilnspirit', float: true, tip: 'STÖRTAR MOT DIG OCH EXPLODERAR – SKJUT DEN I LUFTEN' },
   'ʓ': { name: 'KRÅKOR', sheet: 'crows', move: 'movement', hp: 4, speed: 2.4, melee: true, dmg: 4, range: 1.0, cd: 1.0, size: 0.6, growl: 'crows', growlVol: 0.4, score: 90, atkFps: 12, hitAt: 0.5, ai: 'crows', float: true, tip: 'FLOCKEN DYKER – SKJUT DEN NÄR DEN KOMMER' },
   'Ǩ': { name: 'KIMÄR', sheet: 'chimera', move: 'movement', hp: 34, speed: 1.1, melee: true, dmg: 16, range: 1.4, cd: 1.4, size: 1.4, growl: 'chimera', score: 520, atkFps: 10, hitAt: 0.55, ai: 'chimera', tip: 'BETT, ELD OCH GIFT I TUR OCH ORDNING – LÄR DIG RYTMEN' },
   'Ƒ': { name: 'KORGOSSE', sheet: 'choirboy', move: 'movement', hp: 6, speed: 1.0, melee: false, dmg: 5, range: 9, cd: 2.6, size: 0.85, growl: 'choirboy', score: 220, atkFps: 10, hitAt: 0.5, ai: 'choirboy', kite: 6, tip: 'LÄKER OCH SKYDDAR DE ANDRA – DÖDA HONOM FÖRST' },
@@ -689,6 +710,8 @@ const BOSSES = {
   pyrelord: { title: 'SKÄRSELDENS FURSTE', name: 'ELDFURSTEN', hp: 540, speed: 1.0, size: 4.6, dmg: 20, range: 2.4, arena: 'purgatory', phaseMsg: ['ELDFURSTEN SPRÄNGER MARKEN', 'ELDFURSTEN RASAR – ALLT BRINNER!'] },
   butcher: { title: 'KÖTTETS HERRE', name: 'SLAKTMÄSTAREN', hp: 520, speed: 0.9, size: 4.5, dmg: 19, range: 2.4, arena: 'abattoir', phaseMsg: ['SLAKTMÄSTAREN VÄSSAR KÖTTYXAN', 'SLAKTMÄSTAREN RASAR – KVARNARNA GÅR FÖR FULLT!'] },
   warlord: { title: 'DET EVIGA SLAGETS FÄLTHERRE', name: 'KRIGSHERREN', hp: 540, speed: 1.0, size: 4.6, dmg: 20, range: 2.4, arena: 'battlefield', phaseMsg: ['KRIGSHERREN SAMLAR SINA LEDER', 'KRIGSHERREN RASAR – HELA HÄREN ANFALLER!'] },
+  mayor: { title: 'DEN RASADE STADENS HERRE', name: 'BORGMÄSTAREN', hp: 520, speed: 0.85, size: 4.6, dmg: 19, range: 2.4, arena: 'ruins', phaseMsg: ['BORGMÄSTAREN SLÅR STAVEN I MARKEN', 'BORGMÄSTAREN RASAR – STADEN STÖRTAR SAMMAN!'] },
+  glassmaster: { title: 'UGNARNAS MÄSTARE', name: 'GLASMÄSTAREN', hp: 500, speed: 1.0, size: 4.4, dmg: 18, range: 2.4, arena: 'glassworks', phaseMsg: ['GLASMÄSTAREN BLÅSER I PIPAN', 'GLASMÄSTAREN RASAR – UGNARNA FLAMMAR!'] },
   ringmaster: { title: 'MANEGENS HERRE', name: 'CIRKUSDIREKTÖREN', hp: 470, speed: 1.1, size: 4.0, dmg: 17, range: 2.2, arena: 'circus', phaseMsg: ['DIREKTÖREN PRESENTERAR NÄSTA NUMMER', 'DIREKTÖREN RASAR – FÖRESTÄLLNINGEN MÅSTE GÅ VIDARE!'] },
   serpent: { title: 'TEMPLETS GUD', name: 'DEN FJÄDRADE ORMEN', hp: 480, speed: 1.2, size: 4.4, dmg: 18, range: 2.4, arena: 'jungle', phaseMsg: ['ORMEN RESER SINA FJÄDRAR', 'ORMEN RASAR – DJUNGELN VAKNAR!'] },
   cardinal: { title: 'BLODMÄSSANS HERDE', name: 'KARDINALEN', hp: 480, speed: 0.9, size: 4.0, dmg: 18, range: 2.2, arena: 'cathedral', phaseMsg: ['KARDINALEN HÖJER RÖKELSEKARET', 'KARDINALEN RASAR – KATEDRALEN BLÖDER!'] },
@@ -781,6 +804,13 @@ const PROP_DEFS = {
   'ʍ': { img: 'catapult', n: 1, size: 1.1, block: true, fb: 'statue' },
   'ʎ': { img: 'warbanner', n: 2, anim: 3, size: 1.0, block: true, fb: 'statue' },
   'ʏ': { img: 'stakes', n: 1, size: 0.75, block: true, fb: 'statue' },
+  // version 30 (SPEL): Ruinstaden och Glasbruket
+  'ʢ': { img: 'brokencolumn', n: 1, size: 1.0, block: true, fb: 'statue' },
+  'ʣ': { img: 'fallenbeam', n: 1, size: 0.85, block: true, fb: 'crate' },
+  'ʤ': { img: 'ruinstatue', n: 1, size: 1.05, block: true, fb: 'statue' },
+  'ʥ': { img: 'furnace', n: 2, anim: 5, size: 1.1, block: true, light: 1.3, lightR: 6, fb: 'statue' },
+  'ʦ': { img: 'glassrack', n: 1, size: 0.95, block: true, fb: 'crate' },
+  'ʧ': { img: 'glassbench', n: 1, size: 0.7, block: true, fb: 'crate' },
   'ɏ': { img: 'hangcage', n: 2, size: 0.75, block: false, v21hit: true, fb: 'crate' },
   'ɐ': { img: 'rack', n: 1, size: 0.9, block: true, fb: 'statue' },
   'ɑ': { img: 'gallows', n: 2, size: 1.3, block: true, fb: 'statue' },
@@ -857,7 +887,7 @@ const ELITE_MODS = [
   { id: 'prismatic', name: 'PRISMATISK', tint: [255, 160, 230] },
   { id: 'gusty', name: 'STORMVIND', tint: [220, 245, 255] },
 ];
-const NEW_ENEMIES = ['U', 'X', 'Y', '!', '@', '^', '+', 'Å', 'Ä', 'Ö', 'É', 'Ü', 'Ñ', 'Æ', 'Þ', 'Ð', 'Ý', 'Ã', 'Õ', 'Ê', 'Î', 'Ô', 'Ë', 'Í', 'Ï', 'Ó', 'Ú', 'Û', 'Ā', 'Ă', 'ĳ', 'Ĵ', 'ĵ', 'Ķ', 'ķ', 'ĸ', 'Ō', 'ō', 'Ŏ', 'ŏ', 'Ő', 'ő', 'ŗ', 'Ř', 'ř', 'Ś', 'ś', 'Ŝ', 'Ų', 'ų', 'Ŵ', 'Ž', 'ž', 'ſ', 'Ƅ', 'ƅ', 'Ɔ', 'Ƈ', 'ƈ', 'Ɖ', 'Ƒ', 'ƒ', 'Ɯ', 'Ƙ', 'ƙ', 'ƚ', 'ƫ', 'Ƭ', 'ƭ', 'Ʈ', 'Ư', 'ư', 'Ǖ', 'ǖ', 'Ǘ', 'ǘ', 'Ǚ', 'ǚ', 'ǣ', 'Ǥ', 'ǥ', 'Ǧ', 'ǧ', 'Ǩ', 'Ƿ', 'Ǹ', 'ǹ', 'Ǻ', 'ǻ', 'Ǽ', 'Ȉ', 'ȉ', 'Ȋ', 'ȋ', 'Ȍ', 'ȍ', 'ȡ', 'Ȣ', 'ȣ', 'Ȥ', 'ȥ', 'Ȧ', 'ȧ', 'Ȩ', 'ȼ', 'Ƚ', 'Ⱦ', 'ȿ', 'ɀ', 'Ɂ', 'ɂ', 'Ƀ', 'ɕ', 'ɖ', 'ɗ', 'ɘ', 'ə', 'ɚ', 'ɛ', 'ɜ', 'ɩ', 'ɪ', 'ɫ', 'ɬ', 'ɵ', 'ɶ', 'ɷ', 'ɸ', 'ʄ', 'ʅ', 'ʆ', 'ʇ', 'ʐ', 'ʑ', 'ʒ', 'ʓ'];
+const NEW_ENEMIES = ['U', 'X', 'Y', '!', '@', '^', '+', 'Å', 'Ä', 'Ö', 'É', 'Ü', 'Ñ', 'Æ', 'Þ', 'Ð', 'Ý', 'Ã', 'Õ', 'Ê', 'Î', 'Ô', 'Ë', 'Í', 'Ï', 'Ó', 'Ú', 'Û', 'Ā', 'Ă', 'ĳ', 'Ĵ', 'ĵ', 'Ķ', 'ķ', 'ĸ', 'Ō', 'ō', 'Ŏ', 'ŏ', 'Ő', 'ő', 'ŗ', 'Ř', 'ř', 'Ś', 'ś', 'Ŝ', 'Ų', 'ų', 'Ŵ', 'Ž', 'ž', 'ſ', 'Ƅ', 'ƅ', 'Ɔ', 'Ƈ', 'ƈ', 'Ɖ', 'Ƒ', 'ƒ', 'Ɯ', 'Ƙ', 'ƙ', 'ƚ', 'ƫ', 'Ƭ', 'ƭ', 'Ʈ', 'Ư', 'ư', 'Ǖ', 'ǖ', 'Ǘ', 'ǘ', 'Ǚ', 'ǚ', 'ǣ', 'Ǥ', 'ǥ', 'Ǧ', 'ǧ', 'Ǩ', 'Ƿ', 'Ǹ', 'ǹ', 'Ǻ', 'ǻ', 'Ǽ', 'Ȉ', 'ȉ', 'Ȋ', 'ȋ', 'Ȍ', 'ȍ', 'ȡ', 'Ȣ', 'ȣ', 'Ȥ', 'ȥ', 'Ȧ', 'ȧ', 'Ȩ', 'ȼ', 'Ƚ', 'Ⱦ', 'ȿ', 'ɀ', 'Ɂ', 'ɂ', 'Ƀ', 'ɕ', 'ɖ', 'ɗ', 'ɘ', 'ə', 'ɚ', 'ɛ', 'ɜ', 'ɩ', 'ɪ', 'ɫ', 'ɬ', 'ɵ', 'ɶ', 'ɷ', 'ɸ', 'ʄ', 'ʅ', 'ʆ', 'ʇ', 'ʐ', 'ʑ', 'ʒ', 'ʓ', 'ʨ', 'ʩ', 'ʪ', 'ʫ', 'ʮ', 'ʯ', 'ʰ', 'ʱ'];
 async function loadEnemySheet(k, d) {
   const sets = {};
   for (const [st, file] of [['idle', 'idle'], ['move', d.move], ['attack', 'attack'], ['pain', 'take_damage'], ['death', 'death']]) { const img = await load(`${A}gfx/enemies-${d.sheet}_${file}.png`); sets[st] = strip(img, Math.max(1, Math.round(img.width / (d.fw || img.height)))); } // kvadratiska rutor
@@ -942,7 +972,7 @@ async function loadAll(setStatus) {
     ogre: [['idle', 4], ['walk', 6], ['attack', 7]], ghost: [['idle', 7], ['chase', 4], ['shriek', 4], ['vanish', 7], ['appear', 6]] };
   bossFx.frost = {}; // isdraken: valfria bilder, 124 px breda rutor
   for (const a of ['idle', 'attack', 'cast', 'hurt', 'death']) { try { const img = await load(`${A}gfx/boss_frost_${a}.png`); bossFx.frost[a] = strip(img, Math.max(1, Math.round(img.width / (img.height === 59 ? 124 : img.height)))); } catch (e) { /* saknas */ } }
-  for (const id of ['crystalqueen', 'leviathan', 'clockmaker', 'thunderbird', 'mycelmother', 'mirrorking', 'librarian', 'colossus', 'cardinal', 'queenbee', 'gardener', 'sandman', 'captain', 'alchemist', 'ringmaster', 'serpent', 'foreman', 'starseer', 'ratking', 'sphinx', 'executioner', 'tidepriest', 'bathmaster', 'pyrelord', 'butcher', 'warlord']) { bossFx[id] = {}; for (const a of ['idle', 'attack', 'cast', 'hurt', 'death', 'submerge', 'dive']) { try { const img = await load(`${A}gfx/boss_${id}_${a}.png`); bossFx[id][a] = strip(img, Math.max(1, Math.round(img.width / img.height))); } catch (e) { /* valfri */ } }
+  for (const id of ['crystalqueen', 'leviathan', 'clockmaker', 'thunderbird', 'mycelmother', 'mirrorking', 'librarian', 'colossus', 'cardinal', 'queenbee', 'gardener', 'sandman', 'captain', 'alchemist', 'ringmaster', 'serpent', 'foreman', 'starseer', 'ratking', 'sphinx', 'executioner', 'tidepriest', 'bathmaster', 'pyrelord', 'butcher', 'warlord', 'mayor', 'glassmaster']) { bossFx[id] = {}; for (const a of ['idle', 'attack', 'cast', 'hurt', 'death', 'submerge', 'dive']) { try { const img = await load(`${A}gfx/boss_${id}_${a}.png`); bossFx[id][a] = strip(img, Math.max(1, Math.round(img.width / img.height))); } catch (e) { /* valfri */ } }
     if (!bossFx[id].idle) delete bossFx[id]; else for (const a of ['attack', 'cast', 'hurt', 'submerge', 'dive']) bossFx[id][a] = bossFx[id][a] || bossFx[id].idle; }
   bossFx.pharaoh = {}; // faraonen: valfria bilder
   for (const a of ['idle', 'attack', 'cast', 'hurt', 'death']) { try { const img = await load(`${A}gfx/boss_pharaoh_${a}.png`); bossFx.pharaoh[a] = strip(img, Math.max(1, Math.round(img.width / img.height))); } catch (e) { /* saknas */ } }
@@ -1010,6 +1040,7 @@ async function loadAll(setStatus) {
     ['gib', 4], ['spore', 2], ['webshot', 1], ['scorch', 1], ['hole', 2], ['ash', 2], ['smoke', 4], ['ice', 3], ['gas', 2], ['skull', 2], ['log', 2], ['rock', 1], ['shadow', 1], ['zzz', 1], ['star', 1], ['meteor', 2], ['acid', 2], ['chainball', 2], ['bubble2', 2], ['feather2', 2], ['confetti', 3], ['pin', 2], ['dart', 1], ['leaf2', 2], ['popcorn', 2], ['laser', 1], ['coal', 2], ['stardust', 3], ['meteor2', 2], ['gasbubble', 2], ['sludge', 2], ['sand2', 2], ['steam2', 2], ['steam3', 2], ['ash2', 2], ['brimstone', 2], ['flies', 2], ['ghostwisp', 2], ['mud', 2]]) {
     try { fx.parts[n] = strip(await load(`${A}gfx/part_${n}.png`), k); } catch (e) { /* valfri */ }
   }
+  await v30Load(); // version 30 (SPEL): Ruinstadens och Glasbrukets texturer, partiklar och himmel
   await efxLoad(); // version 25: förrenderade Effekseer-strippar (valfria)
   await efx2Load(); // version 25.1: skärmeffekterna portal och helning (valfria)
   try { await document.fonts.load('8px "PressStart2P"'); } catch (e) { /* reservtypsnitt */ }
@@ -1062,7 +1093,9 @@ const SOUNDS = ['shot', 'boom', 'pickup', 'health', 'hurt', 'splat', 'weapon', '
   'brimstone_fire', 'brimstone_boom', 'brimstone_pickup', 'bathhouse_hum', 'purgatory_hum',
   'butcher', 'cleaver_throw', 'pigman', 'pig_charge', 'flies', 'crawler', 'ghostsoldier', 'ghost_shield_bash', 'ghostarcher', 'arrow_volley', 'ghostrider', 'hoofbeats', 'crows', 'meatmaster_roar', 'hook_throw', 'chain_pull',
   'grinder', 'grinder_start', 'warlord_roar', 'war_horn', 'catapult_whistle', 'catapult_impact', 'sword_whirl', 'blood_slick', 'deep_mud', 'meathook_creak', 'bandsaw', 'stakes_hit', 'banner_flap', 'hookchain_throw', 'hookchain_hit',
-  'bombard_fire', 'bombard_grape', 'cannonball_bounce', 'cannonball_pickup', 'abattoir_hum', 'battlefield_hum'];
+  'bombard_fire', 'bombard_grape', 'cannonball_bounce', 'cannonball_pickup', 'abattoir_hum', 'battlefield_hum',
+  'looter', 'looter_knife', 'rubblegolem', 'rock_throw', 'rooftopper', 'rooftop_bolt', 'dustdevil', 'glassblower', 'glass_bubble', 'glassgolem', 'glass_crack', 'slagcrawler', 'kilnspirit', 'kilnspirit_boom',
+  'mayor_roar', 'roof_collapse', 'glassmaster_roar', 'glass_dome', 'sling_fire', 'sling_charge', 'glassgun_fire', 'glassgun_burst', 'furnace_blast', 'shards_step', 'glassrack_break', 'wall_crumble', 'pillar_fall', 'ruins_hum', 'glassworks_hum'];
 async function loadSounds() {
   actx = new (window.AudioContext || window.webkitAudioContext)();
   master = actx.createGain(); master.connect(actx.destination); applyVolume();
@@ -1157,14 +1190,17 @@ const WEAPONS = [
   // version 23: slaktarkroken och bombarden
   { id: 'hookchain', name: 'SLAKTARKROKEN', short: 'KROK', ammo: 'none', mag: 1, dmg: 45, pellets: 1, spread: 0, delay: 1.2, auto: true, sound: ['hookchain_throw', 0.9, 0], flash: 0, kick: 1.0, reload: 0, falloff: [2, 3, 1], recoil: [0], hookchain: true, noShell: true, silent: true },
   { id: 'bombard', name: 'BOMBARDEN', short: 'BOMBARD', ammo: 'cannonballs', mag: 1, dmg: 80, pellets: 1, spread: 0, delay: 0.9, auto: false, sound: ['bombard_fire', 1.0, 0], flash: 1.8, kick: 2.4, reload: 1.5, falloff: [30, 40, 1], recoil: [0.04], bombard: true, noShell: true },
+  // version 30 (SPEL): slungan och glasbössan
+  { id: 'sling', name: 'SLUNGAN', short: 'SLUNGA', ammo: 'slingstones', mag: 1, dmg: 35, pellets: 1, spread: 0, delay: 0.55, auto: false, sound: ['sling_fire', 0.8, 0], flash: 0, kick: 0.6, reload: 0, falloff: [30, 40, 1], recoil: [0.004], sling: true, v30: true, v30rc: true, noShell: true, silent: true },
+  { id: 'glassgun', name: 'GLASBÖSSAN', short: 'GLAS', ammo: 'glass', mag: 4, dmg: 9, pellets: 8, spread: 0.085, delay: 0.6, auto: false, sound: ['glassgun_fire', 1.0, 0], flash: 0.6, kick: 1.6, reload: 1.0, falloff: [3, 8, 0.3], recoil: [0.02, -0.015], glassgun: true, v30: true, v30rc: true, noShell: true },
 ];
 const AMMO = { p9: { name: '9MM', max: 200 }, r556: { name: '5.56', max: 150 }, shells: { name: 'PATRONER', max: 50 }, bolts: { name: 'BULTAR', max: 40 }, flares: { name: 'BLOSS', max: 24 },
   fuel: { name: 'BRÄNSLE', max: 240 }, lgren: { name: 'GRANATER', max: 24 }, none: { name: 'NÄRSTRID', max: 1 },
-  nails: { name: 'SPIKAR', max: 300 }, mana: { name: 'MANA', max: 0 }, arrows: { name: 'PILAR', max: 40 }, knives: { name: 'KNIVAR', max: 30 }, balls: { name: 'KULOR', max: 40 }, harpoons: { name: 'HARPUNER', max: 20 }, crystals: { name: 'KRISTALLER', max: 140 }, gears: { name: 'KUGGHJUL', max: 60 }, spores: { name: 'SPORER', max: 30 }, ink: { name: 'BLÄCK', max: 60 }, bees: { name: 'BIN', max: 40 }, dreams: { name: 'DRÖMMAR', max: 24 }, chainballs: { name: 'KEDJEKULOR', max: 20 }, acid: { name: 'SYRA', max: 200 }, pins: { name: 'KÄGLOR', max: 36 }, darts: { name: 'GIFTPILAR', max: 60 }, stars: { name: 'STJÄRNSTOFT', max: 30 }, traps: { name: 'FÄLLOR', max: 16 }, scrap: { name: 'SKROT', max: 40 }, brimstone: { name: 'SVAVEL', max: 20 }, cannonballs: { name: 'KANONKULOR', max: 20 } };
-const NOAMMO = () => ({ p9: 36, r556: 0, shells: 0, bolts: 0, flares: 0, fuel: 0, lgren: 0, none: 1, nails: 0, mana: 0, arrows: 0, knives: 0, balls: 0, harpoons: 0, crystals: 0, gears: 0, spores: 0, ink: 0, bees: 0, dreams: 0, chainballs: 0, acid: 0, pins: 0, darts: 0, stars: 0, traps: 0, scrap: 0, brimstone: 0, cannonballs: 0 });
+  nails: { name: 'SPIKAR', max: 300 }, mana: { name: 'MANA', max: 0 }, arrows: { name: 'PILAR', max: 40 }, knives: { name: 'KNIVAR', max: 30 }, balls: { name: 'KULOR', max: 40 }, harpoons: { name: 'HARPUNER', max: 20 }, crystals: { name: 'KRISTALLER', max: 140 }, gears: { name: 'KUGGHJUL', max: 60 }, spores: { name: 'SPORER', max: 30 }, ink: { name: 'BLÄCK', max: 60 }, bees: { name: 'BIN', max: 40 }, dreams: { name: 'DRÖMMAR', max: 24 }, chainballs: { name: 'KEDJEKULOR', max: 20 }, acid: { name: 'SYRA', max: 200 }, pins: { name: 'KÄGLOR', max: 36 }, darts: { name: 'GIFTPILAR', max: 60 }, stars: { name: 'STJÄRNSTOFT', max: 30 }, traps: { name: 'FÄLLOR', max: 16 }, scrap: { name: 'SKROT', max: 40 }, brimstone: { name: 'SVAVEL', max: 20 }, cannonballs: { name: 'KANONKULOR', max: 20 }, slingstones: { name: 'STENAR', max: 30 }, glass: { name: 'GLAS', max: 24 } };
+const NOAMMO = () => ({ p9: 36, r556: 0, shells: 0, bolts: 0, flares: 0, fuel: 0, lgren: 0, none: 1, nails: 0, mana: 0, arrows: 0, knives: 0, balls: 0, harpoons: 0, crystals: 0, gears: 0, spores: 0, ink: 0, bees: 0, dreams: 0, chainballs: 0, acid: 0, pins: 0, darts: 0, stars: 0, traps: 0, scrap: 0, brimstone: 0, cannonballs: 0, slingstones: 0, glass: 0 });
 const weaponIndex = id => WEAPONS.findIndex(w => w.id === id);
 // tecknet för vapnet på kartan (gen.js) -> vapnets id
-const WEAPON_CHAR = { g: 'shotgun', r: 'rifle', m: 'smg', d: 'dbshotgun', b: 'crossbow', s: 'flaregun', p: 'sniper', 'å': 'axe', 'ä': 'flamer', 'ö': 'launcher', 'é': 'nailgun', 'ü': 'staff', 'ñ': 'bow', 'ô': 'knives', 'û': 'hammer', 'ï': 'musket', 'À': 'harpoon', 'Á': 'boomerang', 'Â': 'prism', 'Į': 'sawlauncher', 'į': 'windgun', 'Ĳ': 'spear', 'Ŕ': 'sporelauncher', 'ŕ': 'mirrorshield', 'Ŗ': 'whip', 'ƀ': 'runebook', 'Ɓ': 'steamcannon', 'ƛ': 'censer', 'Ɲ': 'hivelauncher', 'Ʊ': 'shears', 'Ʋ': 'dreamstaff', 'Ǫ': 'chaincannon', 'Ǭ': 'acidsprayer', 'ǽ': 'pinthrower', 'Ȏ': 'blowgun', 'ȩ': 'pickaxe', 'Ȫ': 'starlance', 'Ʉ': 'scimitar', 'Ʌ': 'trapthrower', 'ɝ': 'flail', 'ɞ': 'blunderbuss', 'ɹ': 'trident', 'ɺ': 'brimstone', 'ʔ': 'hookchain', 'ʕ': 'bombard' };
+const WEAPON_CHAR = { g: 'shotgun', r: 'rifle', m: 'smg', d: 'dbshotgun', b: 'crossbow', s: 'flaregun', p: 'sniper', 'å': 'axe', 'ä': 'flamer', 'ö': 'launcher', 'é': 'nailgun', 'ü': 'staff', 'ñ': 'bow', 'ô': 'knives', 'û': 'hammer', 'ï': 'musket', 'À': 'harpoon', 'Á': 'boomerang', 'Â': 'prism', 'Į': 'sawlauncher', 'į': 'windgun', 'Ĳ': 'spear', 'Ŕ': 'sporelauncher', 'ŕ': 'mirrorshield', 'Ŗ': 'whip', 'ƀ': 'runebook', 'Ɓ': 'steamcannon', 'ƛ': 'censer', 'Ɲ': 'hivelauncher', 'Ʊ': 'shears', 'Ʋ': 'dreamstaff', 'Ǫ': 'chaincannon', 'Ǭ': 'acidsprayer', 'ǽ': 'pinthrower', 'Ȏ': 'blowgun', 'ȩ': 'pickaxe', 'Ȫ': 'starlance', 'Ʉ': 'scimitar', 'Ʌ': 'trapthrower', 'ɝ': 'flail', 'ɞ': 'blunderbuss', 'ɹ': 'trident', 'ɺ': 'brimstone', 'ʔ': 'hookchain', 'ʕ': 'bombard', 'ʲ': 'sling', 'ʳ': 'glassgun' };
 const WF = window.WEAPON_FRAMES;
 
 // ---------- Spelstate ----------
@@ -1263,11 +1299,11 @@ function weaponFor(depth) { // ett nytt vapen per våning i slumpad ordning; de 
   return P.has[weaponIndex(WEAPON_CHAR[want])] ? null : want;
 }
 // biomer: varje varv går igenom alla fem i slumpad ordning (?biome=id för test)
-const BIOME_IDS = ['dungeon', 'caves', 'graveyard', 'forest', 'courtyard', 'swamp', 'frost', 'volcano', 'tomb', 'crystal', 'sunken', 'clock', 'sky', 'fungus', 'mirror', 'library', 'foundry', 'cathedral', 'hive', 'garden', 'dream', 'ship', 'lab', 'circus', 'jungle', 'mine', 'observatory', 'sewer', 'desert', 'prison', 'harbor', 'bathhouse', 'purgatory', 'abattoir', 'battlefield'];
+const BIOME_IDS = ['dungeon', 'caves', 'graveyard', 'forest', 'courtyard', 'swamp', 'frost', 'volcano', 'tomb', 'crystal', 'sunken', 'clock', 'sky', 'fungus', 'mirror', 'library', 'foundry', 'cathedral', 'hive', 'garden', 'dream', 'ship', 'lab', 'circus', 'jungle', 'mine', 'observatory', 'sewer', 'desert', 'prison', 'harbor', 'bathhouse', 'purgatory', 'abattoir', 'battlefield', 'ruins', 'glassworks'];
 let practice = null; // övningsläge: { biome } eller { boss }
 const biomeFor = depth => run && run.practice && run.practice.biome ? run.practice.biome : BIOME_IDS.includes(params.get('biome')) ? params.get('biome') : run && run.biomeChoice && run.biomeChoice[depth] ? run.biomeChoice[depth]
-  : lateLast(RNG(run.seed).fork('biom' + cycleOf(depth)).shuffle(BIOME_IDS.slice()))[(cyclePos(depth) - 1) % BIOME_IDS.length];
-const BIOME_LATE = ['garden', 'dream', 'lab', 'circus', 'jungle', 'observatory', 'desert', 'harbor', 'purgatory', 'battlefield']; // sena biomer: aldrig först i en omgång (och aldrig först i avgrundens sexvåningsvarv)
+  : v30Early(lateLast(RNG(run.seed).fork('biom' + cycleOf(depth)).shuffle(BIOME_IDS.slice())), cycleOf(depth))[(cyclePos(depth) - 1) % BIOME_IDS.length]; // version 30: Ruinstaden och Glasbruket inte först i första varvet (v30Early, 0605)
+const BIOME_LATE = ['garden', 'dream', 'lab', 'circus', 'jungle', 'observatory', 'desert', 'harbor', 'purgatory', 'battlefield', 'ruins', 'glassworks']; // sena biomer: aldrig först i en omgång (och aldrig först i avgrundens sexvåningsvarv)
 function lateLast(order) { // trädgården, drömriket, laboratoriet, cirkusen, djungeltemplet och observatoriet är sena biomer: aldrig först i en omgång
   const LATE = BIOME_LATE;
   if (LATE.includes(order[0])) { const i = order.findIndex(b => !LATE.includes(b)); if (i > 0) [order[0], order[i]] = [order[i], order[0]]; }
@@ -1320,7 +1356,7 @@ function startLevel(level) {
   guardianE = null; kills = 0; totalEnemies = 0; secrets = 0; totalSecrets = 0; itemsTaken = 0; totalItems = 0; levelTime = 0; boss = null; bossBanner = 0;
   light = new Float32Array(mw * mh); lcol = settings.colorLight === false ? null : new Float32Array(mw * mh * 3); seen = new Uint8Array(mw * mh); flow = new Int16Array(mw * mh).fill(-1); flowCell = -1;
   const lrng = RNG(RNG.hash(run.seed + ':spawn:' + run.depth));
-  const itemOf = { h: 'health', a: 'ammo', A: 'armor', $: 'goldpile', ',': 'grenade', '}': 'key', "'": 'scroll', '¥': 'potion', 'ª': 'rune', 'ð': 'meat', 'þ': 'page', '¼': 'battery', '½': 'stones', 'Ģ': 'tome', 'Ŋ': 'gear', 'ŋ': 'feather', 'Ũ': 'sporesack', 'Ƃ': 'inkflask', 'ƞ': 'beehive', 'Ƴ': 'dreamflask', 'ǫ': 'chaincrate', 'ǭ': 'acidflask', 'Ǿ': 'pinbox', 'ȏ': 'dartquiver', 'ȫ': 'stardust', 'Ɇ': 'traps', 'ɟ': 'scrap', 'ɻ': 'brimstone', 'ʖ': 'cannonballs', ...WEAPON_CHAR };
+  const itemOf = { h: 'health', a: 'ammo', A: 'armor', $: 'goldpile', ',': 'grenade', '}': 'key', "'": 'scroll', '¥': 'potion', 'ª': 'rune', 'ð': 'meat', 'þ': 'page', '¼': 'battery', '½': 'stones', 'Ģ': 'tome', 'Ŋ': 'gear', 'ŋ': 'feather', 'Ũ': 'sporesack', 'Ƃ': 'inkflask', 'ƞ': 'beehive', 'Ƴ': 'dreamflask', 'ǫ': 'chaincrate', 'ǭ': 'acidflask', 'Ǿ': 'pinbox', 'ȏ': 'dartquiver', 'ȫ': 'stardust', 'Ɇ': 'traps', 'ɟ': 'scrap', 'ɻ': 'brimstone', 'ʖ': 'cannonballs', 'ʴ': 'slingstones', 'ʵ': 'glass', ...WEAPON_CHAR };
   for (let y = 0; y < mh; y++) for (let x = 0; x < mw; x++) {
     const c = map[y][x], cx = x + 0.5, cy = y + 0.5;
     if (c === 'P') { P.x = cx; P.y = cy; P.a = startAngle(x, y); map[y][x] = '.'; }
@@ -1368,6 +1404,7 @@ function startLevel(level) {
   prepareTorchLight();
   quests = null; run.inSecret = !!lvl.secret; boulders = []; smokes = []; tornados = [];
   pickFloorEvent(lrng); setupQuests(lrng); addCobwebs(lrng); lockChests(lrng); setupNpcFloor(lrng); setupV8(lrng); setupV9(); setupV11(); setupV13(); setupV14(); setupV15(); setupV16(); setupV17(); setupV18(); setupV19(); setupV20(); setupV21(); setupV22(); setupV23(); setupLoop();
+  setupV30(); // version 30 (SPEL): Ruinstaden och Glasbruket (0605–0607)
   if (dmod('giants')) for (const e of ents) if (!e.boss) { e.hp = e.maxHp = e.maxHp * 1.3; e.d = { ...e.d, size: e.d.size * 1.2, score: e.d.score * 1.5 }; }
   if (run.floorCurse) for (const e of ents) if (!e.boss) { e.hp = e.maxHp = e.maxHp * 1.2; e.d = { ...e.d, dmg: e.d.dmg * 1.3 }; }
   if (!boss && !merchants.length && run.depth >= 2 && lrng.next() < 0.15) { const sp = randomFreeCell(lrng); if (sp) { merchants.push({ x: sp[0], y: sp[1], stock: null, wander: true }); map[sp[1] | 0][sp[0] | 0] = 'M'; logEvent('VANDRANDE KÖPMAN'); } } // vandrande köpman
@@ -1652,6 +1689,7 @@ function updateLight() {
   for (const e of ents) if (e.burn > 0 && !e.dead && !e.dormant) flashLight(e.x, e.y, 0.3, 2, [255, 140, 50]); // brinnande fiender lyser
   flameLight(flashLight); // version 25.1: eldkastarens stråle, brinnande mark och brinnande fiender lyser upp omgivningen
   lampLight(flashLight); gfxWLight(flashLight); v21Light(flashLight); v22Light(flashLight); v23Light(flashLight); // ficklampan; blixten lyser upp marken (VÄRLD)
+  v30Light(flashLight); // version 30 (SPEL): ugnsmunnar, smält glas och smältugnar
   if (lvl.beams) for (const b of lvl.beams) flashLight(b.x + 0.5, b.y + 0.5, 0.5, 3, [255, 230, 170]); // ljusstrålar
   for (const p of portals) flashLight(p.x, p.y, 0.7, 4, p.kind === 'gold' ? [255, 220, 90] : (p.biome && portals.length > 1 && BIOME_TINT[p.biome]) || [190, 130, 255]);
   for (let i = 0; i < light.length; i++) { const l = light[i]; if (l > 1.3) light[i] = Math.min(1.8, 1.3 + (l - 1.3) * 0.25); } // mjukt tak: många ljuskällor på samma ställe bränner inte ut bilden
@@ -1782,7 +1820,7 @@ function stopAmbient() { for (const a of ambLoops) try { a.s.stop(); } catch (e)
 function startAmbient() {
   stopAmbient();
   ambLoops = biomeFx().amb.map(([n, v, r]) => play(n, v, r, { loop: true, amb: true })).filter(Boolean);
-  if (window.Music) { Music.reverb(boss ? 'boss' : { dungeon: 'crypt', caves: 'cave', courtyard: 'crypt', lab: 'crypt', circus: 'crypt', mine: 'cave', observatory: 'crypt', sewer: 'cave', prison: 'crypt', bathhouse: 'cave', abattoir: 'crypt' }[lvl.biome] || 'outdoor'); playMusic(); }
+  if (window.Music) { Music.reverb(boss ? 'boss' : { dungeon: 'crypt', caves: 'cave', courtyard: 'crypt', lab: 'crypt', circus: 'crypt', mine: 'cave', observatory: 'crypt', sewer: 'cave', prison: 'crypt', bathhouse: 'cave', abattoir: 'crypt', glassworks: 'crypt' }[lvl.biome] || 'outdoor'); playMusic(); }
   ambient = ambLoops[0] || null;
 }
 function setMusic(on) { // bossmusik under bosstrider, annars biomens musik
@@ -1792,7 +1830,7 @@ function setMusic(on) { // bossmusik under bosstrider, annars biomens musik
   if (!on && musicLoop) { try { musicLoop.s.stop(); } catch (e) { /* redan stoppad */ } musicLoop = null; }
 }
 let musicLoop = null;
-function playMusic() { if (!window.Music) return; if (settings.music === false) { Music.stop(1); return; } const b = boss || guardianE; Music.play(state === 'title' || !lvl ? 'title' : lvl.hub ? 'hub' : lvl.secret && !musicSnd ? 'secret' : musicSnd ? (b && b.id === 'frost' ? 'boss2' : b && b.id === 'flame' ? 'boss3' : b && b.id === 'pharaoh' ? 'boss4' : b && b.id === 'crystalqueen' ? 'boss5' : b && b.id === 'leviathan' ? 'boss6' : b && b.id === 'monk' ? 'boss8' : b && b.id === 'clockmaker' ? 'boss7' : b && b.id === 'thunderbird' ? 'boss8' : b && b.id === 'mycelmother' ? 'boss9' : b && b.id === 'mirrorking' ? 'boss10' : b && b.id === 'librarian' ? 'boss11' : b && b.id === 'colossus' ? 'boss12' : b && b.id === 'cardinal' ? 'boss13' : b && b.id === 'queenbee' ? 'boss14' : b && b.id === 'gardener' ? 'boss15' : b && b.id === 'sandman' ? 'boss16' : b && b.id === 'captain' ? 'boss17' : b && b.id === 'alchemist' ? 'boss18' : b && b.id === 'ringmaster' ? 'boss19' : b && b.id === 'serpent' ? 'boss20' : b && b.id === 'foreman' ? 'boss21' : b && b.id === 'starseer' ? 'boss22' : b && b.id === 'ratking' ? 'boss23' : b && b.id === 'sphinx' ? 'boss24' : b && b.id === 'executioner' ? 'boss25' : b && b.id === 'tidepriest' ? 'boss26' : b && b.id === 'bathmaster' ? 'boss27' : b && b.id === 'pyrelord' ? 'boss28' : b && b.id === 'butcher' ? 'boss29' : b && b.id === 'warlord' ? 'boss30' : 'boss') : lvl.biome || 'dungeon'); }
+function playMusic() { if (!window.Music) return; if (settings.music === false) { Music.stop(1); return; } const b = boss || guardianE; Music.play(state === 'title' || !lvl ? 'title' : lvl.hub ? 'hub' : lvl.secret && !musicSnd ? 'secret' : musicSnd ? (b && b.id === 'frost' ? 'boss2' : b && b.id === 'flame' ? 'boss3' : b && b.id === 'pharaoh' ? 'boss4' : b && b.id === 'crystalqueen' ? 'boss5' : b && b.id === 'leviathan' ? 'boss6' : b && b.id === 'monk' ? 'boss8' : b && b.id === 'clockmaker' ? 'boss7' : b && b.id === 'thunderbird' ? 'boss8' : b && b.id === 'mycelmother' ? 'boss9' : b && b.id === 'mirrorking' ? 'boss10' : b && b.id === 'librarian' ? 'boss11' : b && b.id === 'colossus' ? 'boss12' : b && b.id === 'cardinal' ? 'boss13' : b && b.id === 'queenbee' ? 'boss14' : b && b.id === 'gardener' ? 'boss15' : b && b.id === 'sandman' ? 'boss16' : b && b.id === 'captain' ? 'boss17' : b && b.id === 'alchemist' ? 'boss18' : b && b.id === 'ringmaster' ? 'boss19' : b && b.id === 'serpent' ? 'boss20' : b && b.id === 'foreman' ? 'boss21' : b && b.id === 'starseer' ? 'boss22' : b && b.id === 'ratking' ? 'boss23' : b && b.id === 'sphinx' ? 'boss24' : b && b.id === 'executioner' ? 'boss25' : b && b.id === 'tidepriest' ? 'boss26' : b && b.id === 'bathmaster' ? 'boss27' : b && b.id === 'pyrelord' ? 'boss28' : b && b.id === 'butcher' ? 'boss29' : b && b.id === 'warlord' ? 'boss30' : b && b.id === 'mayor' ? 'boss31' : b && b.id === 'glassmaster' ? 'boss32' : 'boss') : lvl.biome || 'dungeon'); }
 function applyMixer() { if (window.Music) Music.setVolumes({ music: settings.music === false ? 0 : settings.musicVol ?? 0.6, sfx: settings.sfxVol ?? 1, amb: settings.ambVol ?? 0.8 }); }
 let intensity = 0;
 function updateAudioMood(dt) { // musiken intensivare i strid, dov ljudbild vid låg hälsa
@@ -2793,6 +2831,7 @@ function renderSprites(plX, plY) { // sprites bakifrån och fram (egen funktion:
   for (const e of ents) list.push({ x: e.x, y: e.y, k: 'e', o: e });
   drawR25World(list); // version 25: befälhavarens fana, granaterna och deras ringar
   ropePoints(list); drawV9World(list); drawV11World(list); drawV13World(list); drawV14World(list); drawV15World(list); drawV17World(list); drawV18World(list); drawV19World(list); drawV20World(list); drawV21World(list); drawV22World(list); drawV23World(list);
+  drawV30World(list); // version 30 (SPEL)
   drawV24World(list); // version 24: märken vid de enkelriktade dörrarna, landmärkets ljuspelare
   for (const it of items) if (!it.taken) list.push({ x: it.x, y: it.y, k: 'i', o: it });
   for (const p of pots) if (!p.broken) list.push({ x: p.x, y: p.y, k: 'p', o: p });
@@ -2920,6 +2959,7 @@ function renderSprites(plX, plY) { // sprites bakifrån och fram (egen funktion:
     else if (s.k === 'v21' && drawV21Sprite(s)) { /* version 21 */ }
     else if (s.k === 'v22' && drawV22Sprite(s)) { /* version 22 */ }
     else if (s.k === 'v23' && drawV23Sprite(s)) { /* version 23 */ }
+    else if (s.k === 'v30' && drawV30Sprite(s)) { /* version 30 (SPEL) */ }
     else if (s.k === 'v24' && drawV24Sprite(s)) { /* version 24 */ }
     else if (s.k === 'rp') drawSprite(fx.parts.harpoonrope ? fx.parts.harpoonrope[0] : fx.hit[1], o.x, o.y, 0.02, o.z, false, null, 0, 0.5, false, [150, 110, 70]);
     else if (s.k === 'f' && o.kind === 'knife') drawSprite(fx.parts.knife ? fx.parts.knife[0] : fx.hit[1], o.x, o.y, 0.04, o.z - 0.03, Math.floor(tmr * 16) % 2 === 0, null, 0, 0.6);
@@ -3102,6 +3142,8 @@ function bossFrame(b) {
     case 'pyrelord': return b.dying && f.death ? at(f.death, b.dying * 6) : b.flash > 0.06 && f.hurt && b.state === 'idle' ? loop(f.hurt, 12) : b.state === 'claw' || b.state === 'pillar' ? loop(f.attack, 10) : b.state === 'rain' || b.state === 'special' ? loop(f.cast, 9) : loop(f.idle, 6);
     case 'butcher': return b.dying && f.death ? at(f.death, b.dying * 6) : b.flash > 0.06 && f.hurt && b.state === 'idle' ? loop(f.hurt, 12) : b.state === 'cleave' ? loop(f.attack, 10) : b.state === 'hook' || b.state === 'meat' || b.state === 'special' ? loop(f.cast, 9) : loop(f.idle, 6);
     case 'warlord': return b.dying && f.death ? at(f.death, b.dying * 6) : b.flash > 0.06 && f.hurt && b.state === 'idle' ? loop(f.hurt, 12) : b.state === 'sword' || b.state === 'whirl' || b.state === 'ride' ? loop(f.attack, 10) : b.state === 'special' ? loop(f.cast, 9) : loop(f.idle, 6);
+    case 'mayor': return b.dying && f.death ? at(f.death, b.dying * 7) : b.flash > 0.06 && f.hurt && b.state === 'idle' ? loop(f.hurt, 12) : b.state === 'staff' || b.state === 'debris' ? loop(f.attack, 10) : b.state === 'roof' || b.state === 'special' ? loop(f.cast, 9) : loop(f.idle, 6);
+    case 'glassmaster': return b.dying && f.death ? at(f.death, b.dying * 7) : b.flash > 0.06 && f.hurt && b.state === 'idle' ? loop(f.hurt, 12) : b.state === 'sweep' || b.state === 'wave' ? loop(f.attack, 10) : b.state === 'dome' || b.state === 'clones' || b.state === 'special' ? loop(f.cast, 9) : loop(f.idle, 6);
     case 'executioner': return b.dying && f.death ? at(f.death, b.dying * 6) : b.flash > 0.06 && f.hurt && b.state === 'idle' ? loop(f.hurt, 12) : b.state === 'chop' || b.state === 'hook' ? loop(f.attack, 10) : b.state === 'special' ? loop(f.cast, 9) : loop(f.idle, 6);
     case 'tidepriest': return b.dying && f.death ? at(f.death, b.dying * 6) : b.flash > 0.06 && f.hurt && b.state === 'idle' ? loop(f.hurt, 12) : b.state === 'staff' || b.state === 'wave' ? loop(f.attack, 10) : b.state === 'tentacles' || b.state === 'special' ? loop(f.cast, 9) : loop(f.idle, 6);
     case 'sphinx': return b.dying && f.death ? at(f.death, b.dying * 6) : b.flash > 0.06 && f.hurt && b.state === 'idle' ? loop(f.hurt, 12) : b.state === 'paw' || b.state === 'eyes' ? loop(f.attack, 10) : b.state === 'special' ? loop(f.cast, 9) : loop(f.idle, 6);
@@ -3215,7 +3257,7 @@ const WA_RL = {
   ram: [0, 0, 0, 0, 0.18, -4, 46, -0.12, 0.32, -4, 56, -0.12, 0.38, -4, 47, -0.12, 0.48, -4, 57, -0.12, 0.54, -4, 47, -0.12, 0.74, -2, 38, -0.08, 1, 0, 0, 0],
   insp: [0, 0, 0, 0, 0.18, -28, 14, -0.4, 0.44, -32, 12, -0.36, 0.6, 10, 8, 0.28, 0.82, 14, 10, 0.24, 0.95, 0, -3, 0, 1, 0, 0, 0]
 };
-const WA_PROF = { dbshotgun: 'brk', flaregun: 'brk', musket: 'ram', crossbow: 'crank', bow: 'crank', knives: 'crank', pinthrower: 'crank', launcher: 'heavy', flamer: 'heavy', acidsprayer: 'heavy', steamcannon: 'heavy', chaincannon: 'heavy', sawlauncher: 'heavy', hivelauncher: 'heavy', sporelauncher: 'heavy', trapthrower: 'heavy', blunderbuss: 'brk', brimstone: 'heavy', bombard: 'heavy' };
+const WA_PROF = { dbshotgun: 'brk', flaregun: 'brk', musket: 'ram', crossbow: 'crank', bow: 'crank', knives: 'crank', pinthrower: 'crank', launcher: 'heavy', flamer: 'heavy', acidsprayer: 'heavy', steamcannon: 'heavy', chaincannon: 'heavy', sawlauncher: 'heavy', hivelauncher: 'heavy', sporelauncher: 'heavy', trapthrower: 'heavy', blunderbuss: 'brk', brimstone: 'heavy', bombard: 'heavy', glassgun: 'heavy' };
 const waOut = { dx: 0, dy: 0, rot: 0 };
 function waTrack(tr, k, o) { // jämn interpolation mellan nyckelrutorna (smoothstep)
   let i = 0; while (i + 4 < tr.length - 4 && tr[i + 4] < k) i += 4;
@@ -5205,6 +5247,7 @@ function drawHUD() {
     fxIcons = []; g.drawImage = function (im, x, y, w, h) { if (arguments.length === 5 && y === VH - 22 && w === 8 && h === 8) { if (im && !fxIcons.includes(im)) fxIcons.push(im); return; } return CanvasRenderingContext2D.prototype.drawImage.apply(this, arguments); };
     try { drawBowAim(g); drawStaffCharge(g); drawAbilityHud(g); drawTutorial(g); drawHammerCharge(g); drawStealthHud(g); drawLampHud(g); drawCues(g); drawMazeTimer(g); drawXpHud(g); drawAirHud(g); drawTimeHud(g); drawDpsHud(g); drawV11Hud(g); drawV13Hud(g); drawV14Hud(g); drawV14Hud2(g); drawV15Hud(g); drawV16Hud(g); drawV17Hud(g); drawV18Hud(g); drawV19Hud(g); drawV20Hud(g); drawV21Hud(g); drawV22Hud(g); drawV23Hud(g); drawLoopHud(g); }
     finally { delete g.drawImage; }
+    drawV30Hud(g); // version 30 (SPEL): hetta, skärvor, grus och glaskupan (före effektraden: lägger sina ikoner i fxIcons)
     drawFxRow(g, L);
     efx2Hud(g, L); // version 25.1: portalen och helningen som skärmeffekter
     fx27DrawHud(g); // version 27: bossens chockvåg och blixt på skärmen
@@ -5366,6 +5409,7 @@ function drawMapCells(mini, s, ox, oy, x0, y0, x1, y1) {
   for (const a of allies) if (inside(a.x | 0, a.y | 0)) { ctx.fillStyle = '#60ff80'; ctx.fillRect(ox + a.x * s - 1, oy + a.y * s - 1, 2, 2); }
   for (const p of portals) if (inside(p.x | 0, p.y | 0)) { ctx.fillStyle = tmr % 0.6 < 0.3 ? '#c080ff' : '#7040d0'; ctx.fillRect(ox + p.x * s - 2, oy + p.y * s - 2, 4, 4); }
   v19Map(s, ox, oy, inside); v20Map(s, ox, oy, inside); v21Map(s, ox, oy, inside); v22Map(s, ox, oy, inside); v23Map(s, ox, oy, inside);
+  v30Map(s, ox, oy, inside); // version 30 (SPEL)
   v24Map(s, ox, oy, inside); // version 24: stängda enkelriktade dörrar
   v28Map(s, ox, oy, inside); // version 28 (REND): fönster och galler
   r30Map(s, ox, oy, inside); // version 30 (RAS): spruckna väggar och grus
@@ -5410,6 +5454,7 @@ function fire() {
   if (wp.brimstone) { brimstoneLob(wp); return; } // svavelmortern
   if (wp.hookchain) { hookThrow(wp); return; }
   if (wp.bombard) { bombardFire(wp); return; }
+  if (wp.v30 && v30Fire(wp)) return; // version 30 (SPEL): slungan (glasbössan skjuter som ett hagelgevär nedan)
   if (wp.starlance && P.mags[P.weapon] > 0) return; // stjärnlansen skjuter när den släpps
   if (P.mags[P.weapon] <= 0) {
     if (!fireHeld) play('click', 0.6, 1.2);
@@ -5867,6 +5912,7 @@ function hurtEnemy(e, dmg, hx, hy, opt = {}) {
   { const r = v18Defend(e, dmg, opt); if (r === null) return false; dmg = r; } // marionetten som ligger, ormen under jord
   { const r = v19Defend(e, dmg, opt); if (r === null) return false; dmg = r; } // urverksugglan reflekterar
   dmg = v14Defend(e, dmg, opt); dmg = v15Dmg(e, dmg, opt); dmg = v17Dmg(e, dmg, opt); dmg = v18Dmg(e, dmg, opt); dmg = v21Dmg(e, dmg, opt); dmg = v22Dmg(e, dmg, opt); dmg = v23Dmg(e, dmg, opt);
+  dmg = v30Dmg(e, dmg, opt); // version 30 (SPEL): glasgolemen, blödning av glasbössan
   if (opt.melee && !opt.exec && canExec(e)) return execute(e); // närstrid mot en vacklande fiende: avrättning
   if (e.dummy) { dpsLog.push({ t: tmr, d: dmg }); e.flash = 0.1; spawnNumber ? spawnNumber(e.x, e.y, dmg, opt.crit) : 0; return false; } // provdockan tar ingen skada men räknar
   if (Math.random() < mod('clockSlow')) e.slow = Math.max(e.slow || 0, 2);
@@ -5955,6 +6001,7 @@ function killEnemy(e) {
   if (e.r25cmd) r25CmdDied(e); // version 25: befälhavaren dör – truppens moral faller
   if (lvl && lvl.biome) { const wb = (profile.wkillsBiome = profile.wkillsBiome || {}), bb = (wb[lvl.biome] = wb[lvl.biome] || {}), wid = WEAPONS[P.weapon].id; bb[wid] = (bb[wid] || 0) + 1; }
   abilityKill(); masteryKill(); v11Kill(e); v13Kill(e); v15Kill(e); v16Kill(e); v17Kill(e); v18Kill(e); v19Kill(e); v20Kill(e); v21Kill(e); v22Kill(e); v23Kill(e); loopKill(e); legendDropChance(e); if (legendCtx === 'bloodaxe') P.rageT = Math.max(P.rageT || 0, 2.5); if (e.d.ai === 'clocksoldier' && mod('rewindHeal')) heal(mod('rewindHeal'), true); gainXp(e.boss && !e.guardian ? 150 : e.guardian ? 70 : clamp((e.d.score || 100) / 12, 3, 40) * (e.elite ? 2.5 : 1) * (e.minion ? 0.3 : 1)); // erfarenhet: vanliga fiender efter svårighet, väktare och bossar fast
+  v30Kill(e); // version 30 (SPEL): glasgolemen spricker, bossens faror städas bort
   if (e.elite) run.wanderElite = (run.wanderElite || 0) + 1; if (e.guardian) run.wanderGuard = (run.wanderGuard || 0) + 1;
   if (quests) for (const q of quests) { if (q.kind === 'wkills' && !q.done && WEAPONS[P.weapon].id === q.weapon) q.have++; if (q.kind === 'elite' && e.elite) q.eliteKilled = true; }
   if ('YÉÅ'.includes(e.type) && Math.random() < 0.15) dropItem('meat', e.x, e.y);
@@ -6039,6 +6086,7 @@ function explode(x, y, dmg, r, hurtsPlayer, big) {
   if (v26bj) dmg *= 0.5; // version 26A: spränghoppet halverar egenskadan
   if (hurtsPlayer && Math.hypot(P.x - x, P.y - y) < r && boomSees(x, y, P.x, P.y)) hurtPlayer(dmg, x, y, 'proj');
   r30Boom(x, y, r); // version 30 (RAS): spruckna väggar rasar, pelare faller bort från smällen (sist: väggen skyddar mot just den här smällen)
+  v30BoomRacks(x, y, r); // version 30 (SPEL): glashyllor går sönder av smällen
   P.flash = Math.max(P.flash, 0.05);
 }
 function dropItem(type, x, y) { const a = rnd(0, TAU), it = { type, x, y, taken: false, drop: true, hop: 0.5, hvx: Math.cos(a) * rnd(0.6, 1.4), hvy: Math.sin(a) * rnd(0.6, 1.4) }; if (type === 'potion') it.pot = randomPotion(); if (type === 'rune') it.rune = RUNE_IDS[(Math.random() * RUNE_IDS.length) | 0]; items.push(it); return it; } // studsar ut
@@ -6057,6 +6105,7 @@ function hitProp(pr, hx, hy, dmg) { // sant om kulan kan fortsätta
   { const r = v21HitProp(pr, hx, hy, dmg); if (r !== undefined) return r; } // hängande burar och fisktunnor
   { const r = v22HitProp(pr, hx, hy, dmg); if (r !== undefined) return r; } // kedjade själar
   { const r = v23HitProp(pr, hx, hy, dmg); if (r !== undefined) return r; }
+  { const r = v30HitProp(pr, hx, hy, dmg); if (r !== undefined) return r; } // version 30 (SPEL): glashyllan
   const d = pr.def;
   if (d.bell && !pr.silenced) { pr.silenced = true; play('parry', 0.6, 0.7, { x: pr.x, y: pr.y }); spawnText(pr.x, pr.y, 'TYSTAD', '#c0c0c0'); return false; } // skjut klockan så kan den inte ringa
   if (d.boom) { // krutfatet smäller efter ett ögonblick, kan sätta igång andra fat
@@ -6086,6 +6135,7 @@ function breakProps(x, y, r, kicking) { // sparken: lådor går sönder, krutfat
   for (const pr of props) if (pr.def && !pr.broken && (pr.def.crate || (pr.def.boom && !kicking)) && Math.hypot(pr.x - x, pr.y - y) < r + 0.3) { hitProp(pr, x, y); hit = true; }
   if (f29Melee(x, y, r, kicking)) hit = true; // version 29 (FÖNSTER): sparken och närstriden krossar glas och böjer rostiga galler
   if (kicking && r30Melee(x, y, r, true)) hit = true; // version 30 (RAS): sparken är en tung träff mot spruckna väggar och pelare
+  if (v30Melee(x, y, r)) hit = true; // version 30 (SPEL): sparken och närstriden krossar glashyllor
   return hit;
 }
 function useProp() { // brunnen helar en gång, altaret ger ett förbannat kort och guld
@@ -8397,7 +8447,7 @@ function swearPact(id) { // vapenpakt: bara ett vapen resten av rundan, men det 
   run.pact = id;
   const i = WEAPONS.findIndex(w => w.id === id), wp = WEAPONS[i];
   if (!P.has[i]) { P.has[i] = true; P.mags[i] = effMag(i); }
-  P.ammo[wp.ammo] = Math.min(AMMO[wp.ammo].max, P.ammo[wp.ammo] + ({ p9: 40, r556: 40, shells: 12, bolts: 14, flares: 8, fuel: 120, lgren: 10, nails: 100, arrows: 15, knives: 14, balls: 12, harpoons: 6, crystals: 40, gears: 12, spores: 8, ink: 16, bees: 10, dreams: 6, chainballs: 4, acid: 60, pins: 8, darts: 16, stars: 6, traps: 4, scrap: 8, brimstone: 4, cannonballs: 4 }[wp.ammo] || 0));
+  P.ammo[wp.ammo] = Math.min(AMMO[wp.ammo].max, P.ammo[wp.ammo] + ({ p9: 40, r556: 40, shells: 12, bolts: 14, flares: 8, fuel: 120, lgren: 10, nails: 100, arrows: 15, knives: 14, balls: 12, harpoons: 6, crystals: 40, gears: 12, spores: 8, ink: 16, bees: 10, dreams: 6, chainballs: 4, acid: 60, pins: 8, darts: 16, stars: 6, traps: 4, scrap: 8, brimstone: 4, cannonballs: 4, slingstones: 6, glass: 6 }[wp.ammo] || 0));
   for (let k = 0; k < WEAPONS.length; k++) if (k !== i) P.has[k] = false;
   if (P.weapon !== i) { P.weapon = i; WS.state = 'draw'; WS.t = 0; WS.next = -1; }
   say('DU HAR SVURIT DIG TILL ' + wp.name, 3); play('secret', 0.7, 0.7);
@@ -8602,6 +8652,7 @@ function update(dt) {
   try { gfxETick(dt); } catch (err) { spriteError(err, null); } // FIENDER: spawn, blodpölar, bossfaser och bossdöd (bara visning)
   updateProjectiles(edt); updateFuses(dt); updatePortals(dt); updateHazards(dt); updateProps(dt); updateGroundFires(dt); updateBossFx(dt); updateWorldEvents(dt); updateSpores(dt); updateIcicles(dt);
   updateV20(dt); updateV21(dt); updateV22(dt); updateV23(dt); updatePet(dt); updateAllies(dt); updatePotions(dt); updateNpcTalk(dt); updateTorchFx(dt); updateHeat(dt); updateAbility(dt); questTick(); updateSmokes(dt); updateTomb(dt); updateTornados(dt); beamDust(dt); updateLamp(dt); updateMaze(dt); practiceTick(dt); sneakMusicTick(dt); updateWater(dt); updateCrystal(dt); harpoonTick(dt); talentTick(); updateV9(dt); rootsTick(dt); updateV11(dt); updateV13(dt); updateV14(dt); updateV15(dt); updateV16(dt); updateV17(dt); updateV18(dt); updateV19(dt); loopTick(dt); P.vanishT = Math.max(0, (P.vanishT || 0) - dt);
+  updateV30(dt); // version 30 (SPEL): faror, rekvisita, fiender och vapen i Ruinstaden och Glasbruket
   if (secrets > (P.secLast || 0)) { run.wanderSecret = (run.wanderSecret || 0) + 1; } P.secLast = secrets; updateSurvival(dt); ghostTick(dt); tutTick(dt); feelTick(dt);
   if (cmode('onehit')) P.armor = 0;
   for (let i = decals.length - 1; i >= 0; i--) if (decals[i].life !== undefined && (decals[i].life -= dt) <= 0) decals.splice(i, 1);
@@ -8690,7 +8741,7 @@ function updateMovement(dt, fwd, str) {
   let terrain = 1;
   if (!immune && ground) { if (c === '-') terrain = 0.62; else if (c === '"') terrain = 0.42; else if (/mud|swamp/.test(fl) && !/battlemud|deepmud/.test(fl)) terrain = 0.85; }
   if (c === '"' && !immune) { P.webT = (P.webT || 0) + dt; if (P.webT > 0.4) { P.webT = 0; play('web', 0.35, rnd(0.9, 1.1)); } }
-  const maxSp = (running ? 4.7 : 3.1) * (1 - WS.aim * 0.4) * (1 + mod('moveSpeed') + (dmod('light') ? 0.25 : 0)) * (P.haste > 0 ? 1.35 : 1) * (P.speedT > 0 ? 1.4 : 1) * (P.slowT > 0 ? 0.55 : 1) * (P.crouch > 0.5 && P.slide <= 0 ? 0.55 : 1) * terrain * (P.swim ? 0.6 * (1 + mod('swimSpeed')) : 1) * (P.timeSlow || 1) * (P.rootT > 0 ? 0.08 : 1) * (WS.block ? 0.55 : 1) * v13Slow() * v15Slow() * v16Slow() * v17Slow() * v18Slow() * v19Slow() * v20Slow() * v21Slow() * v22Slow() * v23Slow();
+  const maxSp = (running ? 4.7 : 3.1) * (1 - WS.aim * 0.4) * (1 + mod('moveSpeed') + (dmod('light') ? 0.25 : 0)) * (P.haste > 0 ? 1.35 : 1) * (P.speedT > 0 ? 1.4 : 1) * (P.slowT > 0 ? 0.55 : 1) * (P.crouch > 0.5 && P.slide <= 0 ? 0.55 : 1) * terrain * (P.swim ? 0.6 * (1 + mod('swimSpeed')) : 1) * (P.timeSlow || 1) * (P.rootT > 0 ? 0.08 : 1) * (WS.block ? 0.55 : 1) * v13Slow() * v15Slow() * v16Slow() * v17Slow() * v18Slow() * v19Slow() * v20Slow() * v21Slow() * v22Slow() * v23Slow() * v30Slow();
   let tx = 0, ty = 0;
   if (Math.abs(fwd) + Math.abs(str) > 0.05) { const l = Math.hypot(fwd, str), sp = Math.min(1, l) / l * maxSp; tx = (Math.cos(P.a) * fwd - Math.sin(P.a) * str) * sp; ty = (Math.sin(P.a) * fwd + Math.cos(P.a) * str) * sp; }
   let k = Math.min(1, dt * (tx || ty ? 10 : 12));
@@ -8975,6 +9026,7 @@ function pickUp(it, bought) {
   if (it.type === 'legend') { giveLegend(it.legend, 'DU HITTADE'); return true; }
   if (it.type === 'dreamflask') { const n = 4; if (P.ammo.dreams >= AMMO.dreams.max) return false; P.ammo.dreams = Math.min(AMMO.dreams.max, (P.ammo.dreams || 0) + n); say(`+${n} DRÖMMAR`, 1.2); play('dream_pickup', 0.6); return true; }
   if (it.type === 'brimstone') { const n = 3; if (P.ammo.brimstone >= AMMO.brimstone.max) return false; P.ammo.brimstone = Math.min(AMMO.brimstone.max, (P.ammo.brimstone || 0) + n); say(`+${n} SVAVEL`, 1.2); play('brimstone_pickup', 0.8, 1); return true; }
+  { const r = v30Pickup(it); if (r !== undefined) return r; } // version 30 (SPEL): stenpåsen och glasbiten
   if (it.type === 'cannonballs') { const n = 3; if ((P.ammo.cannonballs || 0) >= AMMO.cannonballs.max) return false; P.ammo.cannonballs = Math.min(AMMO.cannonballs.max, (P.ammo.cannonballs || 0) + n); say(`+${n} KANONKULOR`, 1.2); play('cannonball_pickup', 0.8, 1); return true; }
   if (it.type === 'fish') { if (P.hp >= maxHp()) return false; heal(5); say('FISKRENS: +5 HÄLSA', 1.2); play('health', 0.5, 1.3); return true; }
   if (it.type === 'scrap') { const n = 6; if (P.ammo.scrap >= AMMO.scrap.max) return false; P.ammo.scrap = Math.min(AMMO.scrap.max, (P.ammo.scrap || 0) + n); say(`+${n} SKROT`, 1.2); play('scrap_pickup', 0.8, 1); return true; }
@@ -9003,7 +9055,7 @@ function pickUp(it, bought) {
   else if (it.type === 'shard') { if (P.armor >= 200) return false; P.armor = Math.min(200, P.armor + 10); say('+10 RUSTNING', 1); play('armor', 0.5, 1.4); spawnText(it.x, it.y, '+10', '#9fc4ff'); }
   else if (it.type === 'armor') { if (P.armor >= 200) return false; P.armor = Math.min(200, P.armor + 50); say('+50 RUSTNING', 1.5); play('armor', 0.7); }
   else if (it.type === 'ammo' && run.pact) { // pakten: all ammo blir vapnets egen
-    const k = pactAmmo(), n = Math.round(({ p9: 30, r556: 28, shells: 9, bolts: 8, flares: 5, fuel: 60, lgren: 4, none: 0, nails: 40, arrows: 6, mana: 0, knives: 6, balls: 5, harpoons: 3, crystals: 18, gears: 6, spores: 4, ink: 8, bees: 5, dreams: 3, chainballs: 3, acid: 40, pins: 4, darts: 8, stars: 3, traps: 2, scrap: 4, brimstone: 2, cannonballs: 2 }[k] || 0) * am);
+    const k = pactAmmo(), n = Math.round(({ p9: 30, r556: 28, shells: 9, bolts: 8, flares: 5, fuel: 60, lgren: 4, none: 0, nails: 40, arrows: 6, mana: 0, knives: 6, balls: 5, harpoons: 3, crystals: 18, gears: 6, spores: 4, ink: 8, bees: 5, dreams: 3, chainballs: 3, acid: 40, pins: 4, darts: 8, stars: 3, traps: 2, scrap: 4, brimstone: 2, cannonballs: 2, slingstones: 4, glass: 4 }[k] || 0) * am);
     if (P.ammo[k] >= AMMO[k].max && !bought) return false;
     P.ammo[k] = Math.min(AMMO[k].max, P.ammo[k] + n); say(`AMMO +${n} ${AMMO[k].name}`, 2); play('pickup', 0.7);
   } else if (it.type === 'ammo') {
@@ -9013,7 +9065,7 @@ function pickUp(it, bought) {
     am *= it.mult || 1;
     const add = { p9: Math.round(18 * am), r556: Math.round((has('rifle') || has('sniper') ? 20 : 8) * am), shells: Math.round((has('shotgun') || has('dbshotgun') ? 6 : 3) * am),
       bolts: Math.round((has('crossbow') ? 5 : 0) * am), flares: Math.round((has('flaregun') ? 3 : 0) * am), fuel: Math.round((has('flamer') ? 40 : 0) * am), lgren: Math.round((has('launcher') ? 3 : 0) * am),
-      nails: Math.round((has('nailgun') ? 30 : 0) * am), arrows: Math.round((has('bow') ? 4 : 0) * am), knives: Math.round((has('knives') ? 4 : 0) * am), balls: Math.round((has('musket') ? 3 : 0) * am), harpoons: Math.round((has('harpoon') ? 2 : 0) * am), crystals: Math.round((has('prism') ? 14 : 0) * am), gears: Math.round((has('sawlauncher') ? 4 : 0) * am), spores: Math.round((has('sporelauncher') ? 2 : 0) * am), ink: Math.round((has('runebook') ? 4 : 0) * am), bees: Math.round((has('hivelauncher') ? 3 : 0) * am), dreams: Math.round((has('dreamstaff') ? 2 : 0) * am), chainballs: Math.round((has('chaincannon') ? 2 : 0) * am), acid: Math.round((has('acidsprayer') ? 25 : 0) * am), pins: Math.round((has('pinthrower') ? 3 : 0) * am), darts: Math.round((has('blowgun') ? 6 : 0) * am), stars: Math.round((has('starlance') ? 3 : 0) * am), traps: Math.round((has('trapthrower') ? 2 : 0) * am), scrap: Math.round((has('blunderbuss') ? 4 : 0) * am), brimstone: Math.round((has('brimstone') ? 2 : 0) * am), cannonballs: Math.round((has('bombard') ? 2 : 0) * am) };
+      nails: Math.round((has('nailgun') ? 30 : 0) * am), arrows: Math.round((has('bow') ? 4 : 0) * am), knives: Math.round((has('knives') ? 4 : 0) * am), balls: Math.round((has('musket') ? 3 : 0) * am), harpoons: Math.round((has('harpoon') ? 2 : 0) * am), crystals: Math.round((has('prism') ? 14 : 0) * am), gears: Math.round((has('sawlauncher') ? 4 : 0) * am), spores: Math.round((has('sporelauncher') ? 2 : 0) * am), ink: Math.round((has('runebook') ? 4 : 0) * am), bees: Math.round((has('hivelauncher') ? 3 : 0) * am), dreams: Math.round((has('dreamstaff') ? 2 : 0) * am), chainballs: Math.round((has('chaincannon') ? 2 : 0) * am), acid: Math.round((has('acidsprayer') ? 25 : 0) * am), pins: Math.round((has('pinthrower') ? 3 : 0) * am), darts: Math.round((has('blowgun') ? 6 : 0) * am), stars: Math.round((has('starlance') ? 3 : 0) * am), traps: Math.round((has('trapthrower') ? 2 : 0) * am), scrap: Math.round((has('blunderbuss') ? 4 : 0) * am), brimstone: Math.round((has('brimstone') ? 2 : 0) * am), cannonballs: Math.round((has('bombard') ? 2 : 0) * am), slingstones: Math.round((has('sling') ? 4 : 0) * am), glass: Math.round((has('glassgun') ? 4 : 0) * am) };
     add[WEAPONS[P.weapon].ammo] = Math.round(add[WEAPONS[P.weapon].ammo] * 1.5); // mer till vapnet du håller
     for (const k in add) P.ammo[k] = Math.min(AMMO[k].max, P.ammo[k] + add[k]);
     say('AMMO ' + Object.keys(add).filter(k => add[k] > 0).map(k => `+${add[k]} ${AMMO[k].name}`).join(' '), 2); play('pickup', 0.7);
@@ -9022,13 +9074,13 @@ function pickUp(it, bought) {
     const i = weaponIndex(it.type), w = WEAPONS[i];
     if (cmode('pistol') && w.id !== 'pistol') { P.ammo.p9 = Math.min(AMMO.p9.max, P.ammo.p9 + 30); run.gold += 20; say(`BARA PISTOL: ${w.name} BLIR AMMO OCH 20 GULD`, 2.5); play('coin', 0.7); return true; }
     if (run.pact && w.id !== run.pact) { // pakten: andra vapen blir ammo och guld
-      const k = pactAmmo(); P.ammo[k] = Math.min(AMMO[k].max, P.ammo[k] + ({ p9: 30, r556: 30, shells: 8, bolts: 8, flares: 5, fuel: 60, lgren: 4, none: 0, nails: 40, arrows: 6, mana: 0, knives: 6, balls: 5, harpoons: 3, crystals: 18, gears: 6, spores: 4, ink: 8, bees: 5, dreams: 3, chainballs: 3, acid: 40, pins: 4, darts: 8, stars: 3, traps: 2, scrap: 4, brimstone: 2, cannonballs: 2 }[k] || 0)); run.gold += 20;
+      const k = pactAmmo(); P.ammo[k] = Math.min(AMMO[k].max, P.ammo[k] + ({ p9: 30, r556: 30, shells: 8, bolts: 8, flares: 5, fuel: 60, lgren: 4, none: 0, nails: 40, arrows: 6, mana: 0, knives: 6, balls: 5, harpoons: 3, crystals: 18, gears: 6, spores: 4, ink: 8, bees: 5, dreams: 3, chainballs: 3, acid: 40, pins: 4, darts: 8, stars: 3, traps: 2, scrap: 4, brimstone: 2, cannonballs: 2, slingstones: 4, glass: 4 }[k] || 0)); run.gold += 20;
       say(`EDEN: ${w.name} BLIR AMMO OCH 20 GULD`, 2.5); play('coin', 0.7); return true;
     }
     const first = !P.has[i];
     P.has[i] = true;
     if (first) P.mags[i] = effMag(i);
-    P.ammo[w.ammo] = Math.min(AMMO[w.ammo].max, P.ammo[w.ammo] + ({ p9: 30, r556: 30, shells: 8, bolts: 10, flares: 6, fuel: 80, lgren: 8, none: 0, nails: 70, arrows: 12, mana: 0, knives: 10, balls: 8, harpoons: 5, crystals: 30, gears: 10, spores: 6, ink: 12, bees: 8, dreams: 5, chainballs: 3, acid: 50, pins: 6, darts: 12, stars: 6, traps: 3, scrap: 6, brimstone: 3, cannonballs: 3 }[w.ammo] || 0));
+    P.ammo[w.ammo] = Math.min(AMMO[w.ammo].max, P.ammo[w.ammo] + ({ p9: 30, r556: 30, shells: 8, bolts: 10, flares: 6, fuel: 80, lgren: 8, none: 0, nails: 70, arrows: 12, mana: 0, knives: 10, balls: 8, harpoons: 5, crystals: 30, gears: 10, spores: 6, ink: 12, bees: 8, dreams: 5, chainballs: 3, acid: 50, pins: 6, darts: 12, stars: 6, traps: 3, scrap: 6, brimstone: 3, cannonballs: 3, slingstones: 10, glass: 8 }[w.ammo] || 0));
     say('DU HITTADE: ' + w.name, 2.5); play('weapon', 0.8);
     if (first && settings.autoSwitch !== false) switchWeapon(i);
   }
@@ -9042,7 +9094,7 @@ function updateWeapon(dt) {
   const moving = Math.hypot(P.vx, P.vy) / 3.1;
   WS.spread = Math.max(WS.spread, moving * 0.012 * (1 - WS.aim * 0.7));
   WS.swayX *= Math.pow(0.0001, dt); WS.swayY *= Math.pow(0.0001, dt);
-  const wantAim = aimDown && (WS.state === 'idle') && !WEAPONS[P.weapon].melee && !WEAPONS[P.weapon].scimitar && !WEAPONS[P.weapon].flail && !WEAPONS[P.weapon].blunderbuss && !WEAPONS[P.weapon].trident && !WEAPONS[P.weapon].brimstone && !WEAPONS[P.weapon].hookchain && !WEAPONS[P.weapon].bombard ? 1 : 0;
+  const wantAim = aimDown && (WS.state === 'idle') && !WEAPONS[P.weapon].melee && !WEAPONS[P.weapon].scimitar && !WEAPONS[P.weapon].flail && !WEAPONS[P.weapon].blunderbuss && !WEAPONS[P.weapon].trident && !WEAPONS[P.weapon].brimstone && !WEAPONS[P.weapon].hookchain && !WEAPONS[P.weapon].bombard && !WEAPONS[P.weapon].v30rc ? 1 : 0;
   WS.aim += (wantAim - WS.aim) * Math.min(1, dt * 10);
   if (v26aCoinOn(wp)) WS.aim = 0; // version 26A: med myntkortet kastar pistolens högerklick mynt i stället för att sikta
   WS.punch = Math.max(0, WS.punch - dt * 0.35); WS.kick = Math.max(0, WS.kick - dt); WS.nameT = Math.max(0, WS.nameT - dt); P.kickT = Math.max(0, P.kickT - dt);
@@ -9076,6 +9128,7 @@ function updateWeapon(dt) {
   if (P.iframe > 0) P.iframe -= dt;
   const trig = mouseDown || touch.tap > 0 || touch.autoFire;
   weaponV9Tick(wp, dt); weaponV11Tick(wp, dt); weaponV13Tick(wp, dt); weaponV15Tick(wp, dt); weaponV16Tick(wp, dt); weaponV17Tick(wp, dt, trig); weaponV18Tick(wp, dt, trig); weaponV19Tick(wp, dt, trig); weaponV20Tick(wp, dt, trig); weaponV21Tick(wp, dt, trig); weaponV22Tick(wp, dt, trig); weaponV23Tick(wp, dt, trig);
+  weaponV30Tick(wp, dt, trig); // version 30 (SPEL): slungans tunga kast och glasbössans glaskula
   v26aWeaponTick(wp, dt); // version 26A: myntet
   if (weaponV7Tick(wp, dt, trig)) return;
   if (wp.melee) { // yxan: håll för laddat slag, högerklick kastar
@@ -18483,6 +18536,632 @@ function v26cTouchUse() { // ANVÄND-knappen på pekskärmen: krok för version 
   return false;
 }
 
+// ---------- Version 30 (SPEL): Ruinstaden och Glasbruket – gemensamt, Ruinstaden och Borgmästaren ----------
+// Kartecken från bangeneratorn (js/gen.js, GEN v30): väggar ʗ ʘ ʙ (Ruinstaden) och ʚ ʛ ʜ (Glasbruket); faror ʝ rasande tak, ʞ grus,
+// ʟ smält glas, ʠ glasskärvor, ʡ ugnsmun; rekvisita ʢ–ʧ (PROP_DEFS i 0020); fiender ʨ–ʱ (ENEMY_DEFS i 0020); vapen ʲ ʳ och ammo ʴ ʵ (0030).
+// Allt nytt händer bara när banan har tecknen (gamla banor och frön är orörda: inga nya slumpdrag, inga nya golvtexturer).
+// Gemensamt här: laddning (v30Load), tabeller, setupV30, updateV30, ljus, karta, HUD, världssprites och fallande bråte.
+// Ruinstaden: rasande tak, grus, damm, plundraren, stengolemen, takskytten, dammvirveln och Borgmästaren. Glasbruket: 0606. Vapnen: 0607.
+const V30 = { on: true, roofWarn: 0.8, roofDmg: 25, roofNear: 12, rubbleSlow: 0.75, maxGolems: 2, maxCrawlers: 3, maxDevils: 4, fogDust: 0.35, log: [] };
+const V30_C = { roof: 'ʝ', rubble: 'ʞ', molten: 'ʟ', shards: 'ʠ', vent: 'ʡ', column: 'ʢ', beam: 'ʣ', statue: 'ʤ', furnace: 'ʥ', rack: 'ʦ', bench: 'ʧ',
+  looter: 'ʨ', golem: 'ʩ', roofer: 'ʪ', devil: 'ʫ', blower: 'ʮ', ggolem: 'ʯ', crawler: 'ʰ', spirit: 'ʱ', sling: 'ʲ', glassgun: 'ʳ', stones: 'ʴ', glass: 'ʵ' };
+const V30_HAZ = { 'ʝ': 'floor_cracked30', 'ʞ': 'floor_rubble', 'ʟ': 'floor_moltenglass', 'ʠ': 'floor_shards', 'ʡ': 'floor_furnacevent' };
+const V30_ALL = new Set([...'ʗʘʙʚʛʜʝʞʟʠʡʢʣʤʥʦʧʨʩʪʫʮʯʰʱʲʳʴʵ']);
+Object.assign(wallTexFor, { 'ʗ': 'wall_ruinbrick', 'ʘ': 'wall_ruinplaster', 'ʙ': 'wall_boss_mayor', 'ʚ': 'wall_kilnbrick', 'ʛ': 'wall_glassshelf', 'ʜ': 'wall_boss_glassmaster' });
+for (const c of 'ʗʘʙʚʛʜ') IWC[c] = true;
+for (const c of 'ʝʞʟʠʡ') IWC[c] = false;
+// biomernas särdrag (färgton, dimma, ljud, väder), namn, risk, berättarrad, svagheter och bossarnas glåpord
+Object.assign(BIOME_FX, {
+  ruins: { grade: [1.03, 0.99, 0.9], fogK: 0.07, amb: [['ruins_hum', 0.34, 1], ['amb_wind', 0.16, 0.85]], weather: 'dust' },
+  glassworks: { grade: [1.08, 0.97, 0.9], fogK: 0.075, amb: [['glassworks_hum', 0.34, 1]], weather: 'ash' },
+});
+Object.assign(BIOME_TINT, { ruins: [205, 185, 145], glassworks: [255, 160, 90] });
+Object.assign(BIOME_NAME, { ruins: 'RUINSTADEN', glassworks: 'GLASBRUKET' });
+Object.assign(BIOME_RISK, { ruins: 2, glassworks: 3 });
+Object.assign(NARRATOR, { ruins: 'RUINSTADEN. TAKEN HÅLLER INTE LÄNGRE – OCH DAMMET MINNS ALLA SOM BODDE HÄR.', glassworks: 'GLASBRUKET. UGNARNA HAR INTE SLOCKNAT PÅ HUNDRA ÅR. NÅGON MATAR DEM FORTFARANDE.' });
+Object.assign(WEAK, { 'ʨ': 'SKJUT INNAN DEN FLYR', 'ʩ': 'GÅ NÄRA', 'ʪ': 'TA SKYDD OCH VÄNTA', 'ʫ': 'SKJUT DEN', 'ʮ': 'KLIV UNDAN BUBBLAN', 'ʯ': 'SPRÄNG ELLER SLÅ', 'ʰ': 'SKJUT DEN TIDIGT', 'ʱ': 'SKJUT DEN I LUFTEN' });
+Object.assign(V26B_BOSS, { mayor: { staff: [0.6, 1.05] }, glassmaster: { sweep: [0.55, 1] } }); // version 26B: parerbara slag
+Object.assign(SUBS, { roof_collapse: 'RAS', wall_crumble: 'MUR SOM RASAR', pillar_fall: 'PELARE SOM FALLER', furnace_blast: 'HETTA', glass_crack: 'GLAS SOM SPRICKER', glassrack_break: 'GLAS SOM KROSSAS', rock_throw: 'STENBLOCK', rooftop_bolt: 'ARMBORST', looter_knife: 'KASTKNIV', glass_dome: 'GLASKUPA', mayor_roar: 'BORGMÄSTARENS VRÅL', glassmaster_roar: 'GLASMÄSTARENS VRÅL', kilnspirit_boom: 'EXPLOSION', dustdevil: 'VIRVELVIND' }); // undertexter
+TAUNTS.mayor = ['STADEN ÄR MIN', 'TAKET FALLER ÖVER DIG', 'INGEN BETALAR SKATT HÄR LÄNGRE'];
+TAUNTS.glassmaster = ['DU ÄR BARA GLAS', 'IN I UGNEN', 'JAG BLÅSER EN KUPA ÅT DIG'];
+function v30Early(order, cyc) { // första varvet: Ruinstaden aldrig före plats 3 och Glasbruket aldrig före plats 4 (kontraktets djup [3, 6] och [4, 7])
+  if (cyc > 0) return order;
+  for (const [b, min] of [['ruins', 2], ['glassworks', 3]]) { const i = order.indexOf(b); if (i < 0 || i >= min) continue;
+    let j = min; while (j < order.length && (order[j] === 'ruins' || order[j] === 'glassworks')) j++; if (j < order.length) [order[i], order[j]] = [order[j], order[i]]; }
+  return order;
+}
+
+// ---- laddning (från loadAll, krokrad i 0020) ----
+async function v30Load() {
+  const opt = async (n, dir = 'wall/') => { try { return pixels(await load(A + dir + n + '.png')); } catch (e) { return null; } };
+  for (const n of ['wall_ruinbrick', 'wall_ruinplaster', 'wall_kilnbrick', 'wall_glassshelf', 'floor_ruincobble', 'floor_ruinplaza', 'floor_glassworks', 'floor_slag', ...Object.values(V30_HAZ)]) tex[n] = tex[n] || await opt(n);
+  tex.wall_ruinbrick = tex.wall_ruinbrick || tex.wall_brick_stone_center; tex.wall_ruinplaster = tex.wall_ruinplaster || tex.wall_house || tex.wall_stone;
+  tex.wall_kilnbrick = tex.wall_kilnbrick || tex.wall_brick_small_stone || tex.wall_stone; tex.wall_glassshelf = tex.wall_glassshelf || tex.wall_bookshelf || tex.wall_kilnbrick;
+  tex.floor_ruincobble = tex.floor_ruincobble || tex.floor_stone_pattern || tex.floor_stone; tex.floor_ruinplaza = tex.floor_ruinplaza || tex.floor_stone; tex.floor_glassworks = tex.floor_glassworks || tex.floor_stone; tex.floor_slag = tex.floor_slag || tex.floor_basalt || tex.floor_stone;
+  tex.floor_cracked30 = tex.floor_cracked30 || tex.floor_crack || tex.floor_stone; tex.floor_rubble = tex.floor_rubble || tex.floor_gravel || tex.floor_stone; tex.floor_moltenglass = tex.floor_moltenglass || tex.floor_molten || tex.floor_lava;
+  tex.floor_shards = tex.floor_shards || tex.floor_crystal || tex.floor_stone; tex.floor_furnacevent = tex.floor_furnacevent || tex.floor_vent || tex.floor_stone;
+  for (const [n, k] of [['ruindust', 3], ['kilnember', 2], ['rubble30', 3], ['moltenglass', 2]]) { try { fx.parts[n] = strip(await load(`${A}gfx/part_${n}.png`), k); } catch (e) { /* valfri */ } }
+  try { fx.props.glassrack_broken = strip(await load(`${A}gfx/prop_glassrack_broken.png`), 1); } catch (e) { /* valfri: hyllan står kvar */ }
+  for (const [k, f] of [['slingstones', 'item_slingstones'], ['glass', 'item_glass']]) { try { spr[k] = pixels(await load(`${A}gfx/${f}.png`)); } catch (e) { spr[k] = spr.ammo; } }
+  for (const k of ['icon_heat', 'icon_shards']) { try { const im = await load(`${A}gfx/${k}.png`); spr[k] = pixels(im); hudImg[k] = im; } catch (e) { /* valfri */ } }
+  if (!spr.sky_ruins) spr.sky_ruins = v30Sky();
+}
+function v30Sky() { // Ruinstadens gråockra himmel (512×96, 360° vågrätt), samma färger som murkrönet i wall_ruinbrick, med dammslöjor
+  const w = 512, h = 96, d = new Uint32Array(w * h), top = [118, 110, 92], mid = [146, 136, 112], low = [174, 164, 136];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const k = y / (h - 1), a = k < 0.6 ? top : mid, b = k < 0.6 ? mid : low, t = k < 0.6 ? k / 0.6 : (k - 0.6) / 0.4;
+    const veil = 0.5 + 0.5 * Math.sin(x / w * TAU * 3 + Math.sin(x / w * TAU * 7) * 0.8 + y * 0.09), dith = ((x * 7 + y * 13) & 3) * 1.2;
+    const c = i => clamp(Math.round(a[i] + (b[i] - a[i]) * t + (veil - 0.5) * 9 * (1 - Math.abs(k - 0.55)) + dith), 0, 255);
+    d[y * w + x] = 0xff000000 | (c(2) << 16) | (c(1) << 8) | c(0);
+  }
+  return { w, h, data: d };
+}
+
+// ---- banans tillstånd ----
+let V30L = { live: false, ti: {}, roofs: new Map(), vents: [], furnaces: [], temp: [], falls: [], stones: [], orbs: [], domes: [], waves: [], hint: {}, dustK: 0, fog0: undefined, ventFast: 0, acc: {}, sndT: 0 };
+const v30api = () => ({ V30, V30L: () => V30L, C: V30_C, setup: setupV30, slow: v30Slow, temp: v30Temp, fall: v30Fall, crackRoof: v30RoofTrigger, rack: v30BreakRack, lum: (x, y) => lightAt(x, y), early: v30Early });
+function v30FloorIdx(n) { if (V30L.ti[n] === undefined) { V30L.ti[n] = floorTexs.length; floorTexs.push(tex[n] || tex.floor_stone); } return V30L.ti[n]; }
+function setupV30() {
+  V30L = { live: false, ti: {}, roofs: new Map(), vents: [], furnaces: [], temp: [], falls: [], stones: [], orbs: [], domes: [], waves: [], hint: {}, dustK: 0, fog0: undefined, ventFast: 0, acc: {}, sndT: 0, rackHp: new Map() };
+  P.v30heat = 0; P.v30shard = 0; P.v30molten = 0; P.v30dome = null; WS.v30rc = false; WS.v30ch = 0;
+  if (window.__game && !window.__game.v30) window.__game.v30 = v30api;
+  if (!map || !lvl) return;
+  const mine = lvl.biome === 'ruins' || lvl.biome === 'glassworks';
+  let any = mine;
+  if (!any) for (let y = 0; y < mh && !any; y++) for (let x = 0; x < mw; x++) if (V30_ALL.has(map[y][x])) { any = true; break; }
+  for (const pr of props) if (V30_ALL.has(pr.ch)) any = true;
+  for (const e of ents) if (V30_ALL.has(e.type)) any = true;
+  if (['mayor', 'glassmaster'].includes(lvl.guardian) || ['mayor', 'glassmaster'].includes(lvl.bossId)) any = true; // väktare och bossar i andra biomer: deras ras, kupor och vågor
+  if (!any) return; // en gammal bana: ingenting nytt (inga golvtexturer, inga slumpdrag)
+  V30L.live = true;
+  for (let y = 0; y < mh; y++) for (let x = 0; x < mw; x++) {
+    const c = map[y][x], i = y * mw + x;
+    if (V30_HAZ[c] && cellFloor) cellFloor[i] = v30FloorIdx(V30_HAZ[c]);
+    if (c === 'ʝ') V30L.roofs.set(i, { x, y, t: -1 });
+    else if (c === 'ʡ') V30L.vents.push({ x, y, ph: ((x * 37 + y * 101) % 50) / 10, state: 0, acc: 0, sndT: 0 });
+  }
+  for (const pr of props) if (pr.ch === 'ʥ') V30L.furnaces.push(pr);
+  // tak: högst två stengolemer, tre slaggkrypare och fyra dammvirvlar per bana
+  for (const [t, max] of [['ʩ', V30.maxGolems], ['ʰ', V30.maxCrawlers], ['ʫ', V30.maxDevils]]) {
+    const rm = new Set(ents.filter(o => o.type === t && !o.minion).slice(max)); if (rm.size) { ents = ents.filter(e => !rm.has(e)); totalEnemies -= rm.size; } }
+  if (lvl.biome === 'glassworks') v30GlassWindows();
+  for (const e of ents) v30Blood(e);
+}
+function v30Blood(e) { // BLOOD (0580): dammvirveln dammar, slaggkryparen och den spöklika borgmästaren blöder inte
+  if (typeof V27_COL !== 'object') return;
+  if (e.d && e.d.ai === 'dustdevil') e.v27c = V27_COL.dust; else if (e.d && e.d.ai === 'slagcrawler') e.v27c = null; else if (e.boss && e.id === 'mayor') e.v27c = null;
+}
+function v30Temp(x, y, ch, t) { // tillfälligt smält glas eller skärvor på en fri golvruta (glasblåsaren, slaggkryparen, glasmästaren)
+  if (!map[y] || map[y][x] !== '.' || (x === (P.x | 0) && y === (P.y | 0) && ch === 'ʟ')) return false;
+  if (V30L.temp.length > 90) return false;
+  const i = y * mw + x; V30L.temp.push({ x, y, t, ch, f: cellFloor ? cellFloor[i] : 0 }); map[y][x] = ch;
+  if (cellFloor) cellFloor[i] = v30FloorIdx(V30_HAZ[ch]); return true;
+}
+function v30TempTick(dt) {
+  if (!V30L.temp.length) return;
+  for (const o of V30L.temp) { o.t -= dt; if (o.t <= 0 && map[o.y] && map[o.y][o.x] === o.ch) { map[o.y][o.x] = '.'; if (cellFloor) cellFloor[o.y * mw + o.x] = o.f; } }
+  V30L.temp = V30L.temp.filter(o => o.t > 0);
+}
+function v30ClearTemp() { for (const o of V30L.temp) if (map[o.y] && map[o.y][o.x] === o.ch) { map[o.y][o.x] = '.'; if (cellFloor) cellFloor[o.y * mw + o.x] = o.f; } V30L.temp = []; }
+function v30Rubble(x, y) { // en golvruta blir grus (rasat tak, borgmästarens ras i kanterna); gångbar, bara på fritt golv
+  if (!map[y] || (map[y][x] !== '.' && map[y][x] !== 'ʝ')) return false;
+  map[y][x] = 'ʞ'; if (cellFloor) cellFloor[y * mw + x] = v30FloorIdx('floor_rubble'); return true;
+}
+const v30Slow = () => { if (!V30L.live || P.jz > 0.15 || mod('hazardImmune') > 0) return 1; const c = cellUnder(); return c === 'ʞ' ? V30.rubbleSlow + (1 - V30.rubbleSlow) * clamp(mod('rubbleWalk'), 0, 1) : 1; };
+function v30Hint(id, text) { firstHint('v30' + id, text); }
+
+// ---- fallande bråte: rasande tak, borgmästarens tak och kanter (skugga först, sedan ras) ----
+function v30Fall(x, y, o = {}) {
+  if (solid(x, y)) return null;
+  const f = { x, y, t: 0, T: o.T || 1, dmg: o.dmg || 20, r: o.r || 0.9, cause: o.cause || 'RASET', boss: !!o.boss, rub: !!o.rub, big: !!o.big };
+  V30L.falls.push(f); return f;
+}
+function v30FallLand(f) {
+  const d = Math.hypot(P.x - f.x, P.y - f.y);
+  play('roof_collapse', f.big ? 1 : 0.75, rnd(0.9, 1.1), { x: f.x, y: f.y }); v30Dust(f.x, f.y, f.big ? 12 : 7); v30Rocks(f.x, f.y, f.big ? 8 : 4);
+  if (d < 9) P.shake = Math.max(P.shake, (f.big ? 1.2 : 0.8) * (1 - d / 9));
+  if (d < f.r && P.jz < 0.6) { run.cause = f.cause; hurtPlayer(f.dmg * (f.boss ? 1 : trapMul()) * clamp(1 - 0.5 * mod('collapseSense'), 0.3, 1), f.x, f.y, 'proj'); }
+  for (const e of ents) if (!e.dead && !e.dying && !e.boss && !e.hidden && !e.dormant && Math.hypot(e.x - f.x, e.y - f.y) < f.r) hurtEnemy(e, f.dmg, f.x, f.y, { boom: true, noProc: true });
+  if (f.rub) v30Rubble(f.x | 0, f.y | 0);
+}
+function v30Dust(x, y, n) { const img = fx.parts.ruindust || fx.parts.smoke; if (!img) return; const m = settings.lowfx ? Math.ceil(n / 3) : n;
+  for (let i = 0; i < m; i++) { const a = rnd(0, TAU), s = rnd(0.2, 0.9); if (!wpPart({ x: x + rnd(-0.4, 0.4), y: y + rnd(-0.4, 0.4), z: rnd(0.05, 0.7), vx: Math.cos(a) * s, vy: Math.sin(a) * s, vz: rnd(0.05, 0.3), life: rnd(1, 2), frames: img, img: img[0], size: rnd(0.1, 0.2), tint: fx.parts.ruindust ? null : [200, 185, 150], fade: true })) break; } }
+function v30Rocks(x, y, n) { const img = fx.parts.rubble30 || fx.parts.rock; if (!img) return; const m = settings.lowfx ? Math.ceil(n / 2) : n;
+  for (let i = 0; i < m; i++) { const a = rnd(0, TAU), s = rnd(0.5, 2); if (!wpPart({ x, y, z: rnd(0.4, 1.0), vx: Math.cos(a) * s, vy: Math.sin(a) * s, vz: rnd(0.5, 1.6), life: rnd(0.8, 1.3), img: img[i % img.length], size: rnd(0.04, 0.07), grav: true })) break; } }
+
+// ---- Ruinstaden: rasande tak (ʝ), grus (ʞ) och damm ----
+function v30RoofTrigger(x, y) { const g = V30L.roofs.get(y * mw + x); if (!g || g.t >= 0) return false; g.t = 0; g.T = V30.roofWarn * (1 + clamp(mod('collapseSense'), 0, 2));
+  play('crumble', 0.55, rnd(1.1, 1.3), { x: x + 0.5, y: y + 0.5 }); v30Hint('roof', 'TAKET KNASTRAR – KLIV UNDAN INNAN DET RASAR!'); return true; }
+function v30RoofTick(dt) {
+  if (!V30L.roofs.size) return;
+  const pc = (P.y | 0) * mw + (P.x | 0);
+  if (P.jz < 0.3 && V30L.roofs.has(pc)) v30RoofTrigger(P.x | 0, P.y | 0);
+  for (const e of ents) { if (e.dead || e.dying || e.boss || e.d.float || e.hidden || e.dormant || !e.alert) continue; const i = (e.y | 0) * mw + (e.x | 0); if (V30L.roofs.has(i)) v30RoofTrigger(e.x | 0, e.y | 0); } // (bara larmade fiender: taken ska finnas kvar när spelaren kommer)
+  for (const [i, g] of V30L.roofs) {
+    if (g.t < 0) continue; g.t += dt; const cx = g.x + 0.5, cy = g.y + 0.5;
+    if (!settings.lowfx && Math.random() < dt * 14) wpPart({ x: cx + rnd(-0.45, 0.45), y: cy + rnd(-0.45, 0.45), z: 0.95, vx: 0, vy: 0, vz: -rnd(0.2, 0.6), life: 0.9, img: (fx.parts.ruindust || fx.hit)[0], size: 0.05, tint: fx.parts.ruindust ? null : [210, 195, 160], grav: true });
+    if (g.t < g.T) continue;
+    V30L.roofs.delete(i); map[g.y][g.x] = '.';
+    v30Rubble(g.x, g.y); play('roof_collapse', 1, rnd(0.9, 1.1), { x: cx, y: cy }); v30Dust(cx, cy, 14); v30Rocks(cx, cy, 9);
+    flashes.push({ x: cx, y: cy, t: 0.12, r: 2, col: [255, 220, 170] });
+    const dp = Math.hypot(P.x - cx, P.y - cy); if (dp < 8) P.shake = Math.max(P.shake, 1.1 * (1 - dp / 8));
+    const k = clamp(1 - 0.5 * mod('collapseSense'), 0.3, 1);
+    const near = (ox, oy) => Math.max(Math.abs((ox | 0) - g.x), Math.abs((oy | 0) - g.y));
+    if (P.jz < 0.6) { const n = near(P.x, P.y); if (n <= 1) { run.cause = 'TAKET SOM RASADE'; hurtPlayer((n === 0 ? V30.roofDmg : V30.roofNear) * trapMul() * k, cx, cy, 'proj'); } }
+    for (const e of ents) if (!e.dead && !e.dying && !e.hidden && !e.dormant && !e.d.float) { const n = near(e.x, e.y); if (n <= 1) hurtEnemy(e, (n === 0 ? V30.roofDmg : V30.roofNear) * (e.boss ? 0.4 : 1), cx, cy, { boom: true, noProc: true }); }
+    stat('roofs30'); V30.log.push('tak@' + g.x + ',' + g.y);
+  }
+}
+function v30RuinsTick(dt) {
+  // grus: fiender saktas (inte flygande)
+  for (const e of ents) { if (e.dead || e.dying || e.boss || e.d.float) { e.v30px = undefined; continue; } const c = map[e.y | 0] && map[e.y | 0][e.x | 0];
+    if (c === 'ʞ' && e.v30px !== undefined && !e.knock) { const nx = e.x - (e.x - e.v30px) * (1 - V30.rubbleSlow), ny = e.y - (e.y - e.v30py) * (1 - V30.rubbleSlow); if (Math.hypot(e.x - e.v30px, e.y - e.v30py) < 0.5 && !solid(nx, ny)) { e.x = nx; e.y = ny; } }
+    e.v30px = e.x; e.v30py = e.y; }
+  if (cellUnder() === 'ʞ' && P.jz < 0.15 && Math.hypot(P.vx, P.vy) > 1) v30Hint('rubble', 'GRUSET SAKTAR DIG – OCH FIENDERNA SOM GÅR PÅ DET.');
+  // dammet: virvlar runt dig under bar himmel; dammvirvlarna gör det tjockare
+  let devil = 0; for (const e of ents) if (e.d.ai === 'dustdevil' && !e.dead && !e.dying) { const d = Math.hypot(e.x - P.x, e.y - P.y); if (d < 6) devil = Math.max(devil, 1 - d / 6); }
+  V30L.dustK += ((lvl.biome === 'ruins' ? 0.1 : 0) + devil * 0.9 - V30L.dustK) * Math.min(1, dt * 1.5);
+  if (lvl.biome === 'ruins' && !settings.lowfx && Math.random() < dt * 6) { const a = rnd(0, TAU), r = rnd(1, 6), x = P.x + Math.cos(a) * r, y = P.y + Math.sin(a) * r;
+    if (!solid(x, y) && (!cellSky || cellSky[(y | 0) * mw + (x | 0)])) { const img = fx.parts.ruindust || fx.parts.smoke || fx.hit; wpPart({ x, y, z: rnd(0.2, 1.1), vx: Math.cos(a + 1.6) * 0.6, vy: Math.sin(a + 1.6) * 0.6, vz: rnd(-0.05, 0.1), life: 2.6, frames: img, img: img[0], size: rnd(0.12, 0.22), fade: true, tint: fx.parts.ruindust ? null : [200, 185, 150] }); } }
+}
+function v30FogTick() { // dammet tjocknar dimman (dammsynen tunnar ut den); bara i Ruinstaden eller nära en dammvirvel
+  if (V30L.fog0 === undefined) V30L.fog0 = fogK;
+  if (lvl.biome !== 'ruins' && V30L.dustK < 0.01) { if (V30L.fogSet) { fogK = V30L.fog0; V30L.fogSet = false; } return; }
+  fogK = V30L.fog0 * (1 + V30.fogDust * V30L.dustK * 3 * clamp(1 - mod('dustSight'), 0, 1)); V30L.fogSet = true;
+}
+
+// ---- Ruinstadens fiender ----
+const AI_V30R = {
+  looter(e, dt, dist, los) {
+    // kastar knivar på avstånd och flyr en gång när hälsan är låg
+    if (!e.v30fled && e.hp < e.maxHp * 0.35 && !e.minion) { e.v30fled = true; e.fleeT = 3; spawnText(e.x, e.y, 'FLYR', '#c9a87a'); play('looter', 0.7, 1.2, { x: e.x, y: e.y }); return true; }
+    e.knifeT = (e.knifeT ?? rnd(1, 2.5)) - dt;
+    if (e.knifeT <= 0 && los && e.alert && dist > 2.4 && dist < 9 && e.state !== 'pain') { e.knifeT = rnd(2.2, 3.4); e.state = 'attack'; e.t = 0; e.didHit = true;
+      const a = Math.atan2(P.y + P.vy * 0.25 - e.y, P.x + P.vx * 0.25 - e.x); v18Shoot(e, a, 8, e.d.dmg * 0.8, 'v30knife', { life: 1.6, t0: tmr, arcT: dist / 8, arcH: 0.15 });
+      play('looter_knife', 0.8, rnd(0.95, 1.08), { x: e.x, y: e.y }); v30Hint('looter', 'PLUNDRAREN KASTAR KNIVAR OCH FLYR NÄR DEN ÄR SKADAD.'); return true; }
+    return false;
+  },
+  rubblegolem(e, dt, dist, los) {
+    // kastar stenblock i båge; blocket kan rasa spruckna väggar (RAS: r30Crack)
+    e.rockT = (e.rockT ?? rnd(2, 3.5)) - dt;
+    if (e.state === 'attack' && e.v30throw) { if (e.t > 0.55 && !e.v30thrown) { e.v30thrown = true; const tx = P.x + P.vx * 0.5, ty = P.y + P.vy * 0.5, d = Math.hypot(tx - e.x, ty - e.y), a = Math.atan2(ty - e.y, tx - e.x);
+        v18Shoot(e, a, 6, e.d.dmg * 0.9, 'v30rock', { life: d / 6 + 0.3, t0: tmr, arcT: d / 6, arcH: 1.1, tx, ty, r: 0.5 }); play('rock_throw', 0.9, rnd(0.9, 1.05), { x: e.x, y: e.y }); }
+      if (e.t > 1.0) { e.state = 'move'; e.t = 0; e.v30throw = false; } return true; }
+    if (e.rockT <= 0 && los && e.alert && dist > 3 && dist < 11 && e.state !== 'pain') { e.rockT = rnd(3.5, 5); e.state = 'attack'; e.t = 0; e.didHit = true; e.v30throw = true; e.v30thrown = false;
+      v30Hint('golem', 'STENGOLEMEN KASTAR BLOCK I BÅGE – GÅ NÄRA ELLER HÅLL DIG I RÖRELSE.'); return true; }
+    return false;
+  },
+  rooftopper(e, dt, dist, los) {
+    // armborst på avstånd; byter plats efter några skott (gärna intill en mur)
+    if (e.v30go) { const g = e.v30go; g.t -= dt; const a = Math.atan2(g.y - e.y, g.x - e.x), sp = e.d.speed * 1.6 * dt, ox = e.x, oy = e.y; tryMove(e, Math.cos(a) * sp, Math.sin(a) * sp, 0.3); e.state = 'move';
+      if (g.t <= 0 || Math.hypot(g.x - e.x, g.y - e.y) < 0.4 || Math.hypot(e.x - ox, e.y - oy) < sp * 0.2) e.v30go = null; return true; }
+    e.boltT = (e.boltT ?? rnd(1.2, 2.5)) - dt;
+    if (e.boltT <= 0 && los && e.alert && dist > 2 && dist < 13 && e.state !== 'pain') { e.boltT = rnd(2, 2.8); e.state = 'attack'; e.t = 0; e.didHit = true;
+      const a = Math.atan2(P.y - e.y, P.x - e.x); v18Shoot(e, a, 11, e.d.dmg, 'v30bolt', { life: 1.6 }); play('rooftop_bolt', 0.85, rnd(0.95, 1.05), { x: e.x, y: e.y });
+      e.v30shots = (e.v30shots || 0) + 1;
+      if (e.v30shots >= 3) { e.v30shots = 0; let best = null;
+        for (let k = 0; k < 14; k++) { const aa = rnd(0, TAU), r = rnd(3, 6), x = e.x + Math.cos(aa) * r, y = e.y + Math.sin(aa) * r; if (!freeSpot(x, y, 0.3)) continue;
+          const wall = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => isWallChar(cellAt(x + dx, y + dy))), score = (wall ? 2 : 0) + (hasLOS(x, y, P.x, P.y) ? 1 : 0) + Math.min(1, Math.hypot(x - P.x, y - P.y) / 8);
+          if (!best || score > best.s) best = { x, y, s: score }; }
+        if (best) e.v30go = { x: best.x, y: best.y, t: 2.5 }; }
+      v30Hint('roofer', 'TAKSKYTTEN BYTER PLATS EFTER NÅGRA SKOTT – VÄNTA BAKOM SKYDD.'); return true; }
+    return false;
+  },
+  dustdevil(e, dt, dist, los) {
+    // drar spelaren lite mot sig (dammet tjocknar runt den, v30RuinsTick)
+    if (e.alert && dist < 4 && dist > 0.6 && los && P.jz < 0.5) { const k = (1 - dist / 4) * 0.9 * dt * clamp(1 - mod('hazardImmune'), 0, 1), a = Math.atan2(e.y - P.y, e.x - P.x); tryMove(P, Math.cos(a) * k, Math.sin(a) * k, 0.24);
+      if ((e.v30snd || 0) < tmr) { e.v30snd = tmr + 2.2; play('dustdevil', 0.5, rnd(0.9, 1.1), { x: e.x, y: e.y }); } v30Hint('devil', 'DAMMVIRVELN DRAR DIG TILL SIG – OCH DAMMET SKYMMER SIKTEN.'); }
+    return false;
+  },
+};
+Object.assign(ENEMY_AI, { looter: (...a) => AI_V30R.looter(...a), rubblegolem: (...a) => AI_V30R.rubblegolem(...a), rooftopper: (...a) => AI_V30R.rooftopper(...a), dustdevil: (...a) => AI_V30R.dustdevil(...a) });
+function v30RockProj(p, dt) { // stengolemens block och borgmästarens husrester: i båge, smäller där de landar
+  const k = clamp((tmr - (p.t0 || tmr)) / (p.arcT || 1), 0, 1); p.z = 0.45 + Math.sin(k * Math.PI) * (p.arcH || 0.8);
+  const wall = solid(p.x, p.y);
+  if (k >= 1 || wall || p.life <= 0) { p.dead = true; const x = wall ? p.x - p.vx * 0.03 : p.x, y = wall ? p.y - p.vy * 0.03 : p.y;
+    play('wall_crumble', 0.45, rnd(1.2, 1.4), { x, y }); v30Dust(x, y, 5); v30Rocks(x, y, 5);
+    if (wall && typeof r30Crack === 'function') try { r30Crack(p.x, p.y, 20); } catch (e) { /* RAS saknas */ }
+    const d = Math.hypot(P.x - x, P.y - y); if (d < (p.r || 0.6) + 0.3 && P.jz < 0.6) { run.cause = p.cause || run.cause; hurtPlayer(p.dmg, p.src.x, p.src.y, 'proj'); }
+    if (d < 6) P.shake = Math.max(P.shake, 0.4 * (1 - d / 6)); return; }
+  if (infightHit(p)) return;
+}
+Object.assign(PROJ_UPD_V8, { v30knife: v23ArcProj, v30bolt: v23ArcProj, v30rock: v30RockProj });
+Object.assign(PROJ_DRAW_V8, {
+  v30knife: o => drawSprite(fx.parts.knife ? fx.parts.knife[Math.floor(tmr * 14) % fx.parts.knife.length] : fx.hit[0], o.x, o.y, 0.2, o.z - 0.1, Math.floor(tmr * 10) % 2 === 0, null, 0, 0.3, false, fx.parts.knife ? null : [200, 200, 210]),
+  v30bolt: o => drawSprite(fx.parts.arrow ? fx.parts.arrow[0] : fx.hit[1], o.x, o.y, 0.16, (o.z || 0.5) - 0.08, false, 1.2, 0, 0.5, false, fx.parts.arrow ? null : [200, 180, 140]),
+  v30rock: o => drawSprite((fx.parts.rubble30 || fx.parts.rock || fx.hit)[0], o.x, o.y, o.big ? 0.42 : 0.3, o.z - 0.12, false, null, 0, 0.3, false, (fx.parts.rubble30 || fx.parts.rock) ? null : [140, 120, 100]),
+});
+
+// ---- Borgmästaren (arena 'ruins'): river tak över dig, kallar på plundrare, kastar husrester; fas 2: arenan rasar i kanterna ----
+function v30Looters(n) { for (let i = 0; i < n; i++) { if (ents.filter(e => e.minion && !e.dead && e.d.ai === 'looter').length >= 5) break; const s = freeSpotFar(3, 7); if (!s) continue;
+  const e = makeEnemy(V30_C.looter, s[0], s[1]); e.alert = true; e.minion = true; ents.push(e); totalEnemies++; spawnPuff(s[0], s[1], 8); } }
+function v30EdgeCollapse(b, n) { // rutor intill väggar nära bossen rasar (skugga först); blir gångbart grus
+  const cand = []; const cx = b.x | 0, cy = b.y | 0;
+  for (let y = Math.max(1, cy - 12); y < Math.min(mh - 1, cy + 13); y++) for (let x = Math.max(1, cx - 12); x < Math.min(mw - 1, cx + 13); x++) {
+    if (map[y][x] !== '.') continue; if (![[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => isWallChar(map[y + dy][x + dx]))) continue;
+    if (Math.hypot(x + 0.5 - P.x, y + 0.5 - P.y) < 1.2) continue; cand.push([x, y]); }
+  for (let i = 0; i < n && cand.length; i++) { const [x, y] = cand.splice((Math.random() * cand.length) | 0, 1)[0]; v30Fall(x + 0.5, y + 0.5, { T: 1.1 + i * 0.08, dmg: b.d.dmg * 0.7, r: 0.9, cause: b.d.name, boss: true, rub: true }); }
+}
+function v30RoofOver(b, n) { // borgmästaren river ned taket över spelaren: skuggor, sedan ras
+  for (let i = 0; i < n; i++) for (let k = 0; k < 8; k++) { const a = rnd(0, TAU), r = i ? rnd(0.8, 3) / (1 + k * 0.3) : 0; if (v30Fall(P.x + Math.cos(a) * r, P.y + Math.sin(a) * r, { T: 1.0 + i * 0.12, dmg: b.d.dmg * 0.85, r: 1.0, cause: b.d.name, boss: true, big: i === 0 })) break; } // (en ny plats om den första hamnar i en vägg)
+  play('roof_collapse', 0.5, 1.4); }
+Object.assign(BOSS_AI, {
+  mayor(b, dt, dist, ang, ph) {
+    const fast = ph === 3 ? 1.25 : 1;
+    if (b.state === 'idle') b.once30 = false;
+    if (ph >= 2 && !b.guardian) { b.v30edge = (b.v30edge ?? 4) - dt; if (b.v30edge <= 0) { b.v30edge = ph === 3 ? 5 : 7; v30EdgeCollapse(b, ph === 3 ? 6 : 4); if (!b.v30edgeMsg) { b.v30edgeMsg = true; say('RÅDHUSET RASAR I KANTERNA!', 1.5); } } }
+    if (b.state === 'staff') { if (!b.didHit && b.t > 0.6) { b.didHit = true; P.shake = Math.max(P.shake, 1); play('roof_collapse', 0.4, 1.5, { x: b.x, y: b.y }); if (dist < (b.d.range || 2.4) + 1.1 && P.jz < 0.4) { run.cause = b.d.name; hurtPlayer(b.d.dmg, b.x, b.y, 'melee'); } }
+      if (b.t > 1.05) { b.state = 'idle'; b.t = 0; b.cd = rnd(0.8, 1.2) / fast; } return; }
+    if (b.state === 'roof') { if (!b.once30 && b.t > 0.45) { b.once30 = true; play('mayor_roar', 0.7, 1.1); v30RoofOver(b, ph >= 2 ? 5 : 3); }
+      if (b.t > 1.2) { b.state = 'idle'; b.t = 0; b.cd = 0.7 / fast; } return; }
+    if (b.state === 'debris') { if (!b.once30 && b.t > 0.5) { b.once30 = true; play('rock_throw', 1, 0.8);
+        for (let i = 0; i < (ph >= 2 ? 3 : 2); i++) { const tx = P.x + rnd(-1.5, 1.5), ty = P.y + rnd(-1.5, 1.5), d = Math.hypot(tx - b.x, ty - b.y), a = Math.atan2(ty - b.y, tx - b.x);
+          v18Shoot(b, a, 6.5, b.d.dmg * 0.7, 'v30rock', { life: d / 6.5 + 0.3, t0: tmr, arcT: d / 6.5, arcH: 1.4, r: 0.8, big: true, cause: b.d.name }); } }
+      if (b.t > 1.1) { b.state = 'idle'; b.t = 0; b.cd = 0.8 / fast; } return; }
+    b.cd -= dt;
+    if (b.cd <= 0) { b.t = 0; b.didHit = false; b.once30 = false; const los = hasLOS(b.x, b.y, P.x, P.y);
+      if (los && dist < 4) { b.state = 'staff'; bossWarn(b, 'BORGMÄSTAREN HÖJER ÄMBETSSTAVEN!'); }
+      else if (los) { b.state = Math.random() < 0.55 ? 'roof' : 'debris'; bossWarn(b, b.state === 'roof' ? 'BORGMÄSTAREN RIVER NED TAKET – SE SKUGGORNA!' : 'BORGMÄSTAREN KASTAR HUSRESTER!'); } else b.cd = 0.4;
+      return; }
+    if (dist > 3.5) bossMove(b, ang, b.d.speed * fast * dt); else bossMove(b, ang + Math.PI / 2, b.d.speed * dt * 0.5);
+  },
+});
+Object.assign(BOSS_SPECIAL, {
+  mayor(b, dt, dist, ang, ph) {
+    if (b.spK) {
+      if (!b.once30) { b.once30 = true; bossWarn(b, 'STADEN STÖRTAR SAMMAN!'); play('mayor_roar', 1, 0.9); v30RoofOver(b, 3 + ph); if (!b.guardian) v30EdgeCollapse(b, 2 + ph * 2); }
+      if (b.t > 1.2) { b.state = 'idle'; b.t = 0; b.cd = 0.8; } return; }
+    if (!b.once30) { b.once30 = true; say('BORGMÄSTAREN KALLAR PÅ PLUNDRARNA', 1.5); play('mayor_roar', 0.9, 1.1); v30Looters(1 + ph); }
+    if (b.t > 0.9) { b.state = 'idle'; b.t = 0; b.cd = 0.6; }
+  },
+});
+
+// ---- uppdatering, ljus, karta, HUD och världssprites (gemensamt för båda biomerna) ----
+function updateV30(dt) {
+  v30WeaponTick(dt); // slungans stenar och glasbössans kulor (alla banor)
+  if (!V30L.live || !lvl) return;
+  v30TempTick(dt);
+  for (const f of V30L.falls) { f.t += dt; if (f.t >= f.T) { f.done = true; v30FallLand(f); } }
+  if (V30L.falls.length) V30L.falls = V30L.falls.filter(f => !f.done);
+  v30RoofTick(dt); v30RuinsTick(dt); v30FogTick();
+  v30GlassTick(dt);
+}
+function v30Light(fl) {
+  if (!V30L.live) return;
+  for (const v of V30L.vents) { if (v.state === 1) fl(v.x + 0.5, v.y + 0.5, 0.3 + 0.4 * v.k, 2, [255, 140, 50]); else if (v.state === 2) fl(v.x + 0.5, v.y + 0.5, 1.1, 3.5, [255, 150, 60]); }
+  for (const o of V30L.temp) if (o.ch === 'ʟ') fl(o.x + 0.5, o.y + 0.5, 0.45, 2, [255, 130, 40]);
+  for (const f of V30L.falls) fl(f.x, f.y, 0.1 + 0.3 * f.t / f.T, 1.5, [255, 200, 140]);
+  for (const e of ents) if (e.d.ai === 'glassgolem' && !e.dead) fl(e.x, e.y, 0.35, 2, [150, 200, 255]); // glasgolemen syns i mörka rum (kall toning)
+  else if (e.d.ai === 'slagcrawler' && !e.dead) fl(e.x, e.y, 0.3, 1.5, [255, 130, 40]);
+  else if (e.d.ai === 'kilnspirit' && !e.dead && !e.v30hide) fl(e.x, e.y, 0.5, 2, [255, 150, 60]);
+}
+function v30Map(s, ox, oy, inside) {
+  if (!V30L.live) return;
+  for (const v of V30L.vents) if (inside(v.x, v.y) && seen[v.y * mw + v.x]) { ctx.fillStyle = v.state === 2 ? '#ffb040' : '#a05020'; ctx.fillRect(ox + v.x * s, oy + v.y * s, s, s); }
+  for (const [, g] of V30L.roofs) if (inside(g.x, g.y) && seen[g.y * mw + g.x]) { ctx.fillStyle = g.t >= 0 ? '#ffd080' : '#8a7458'; ctx.fillRect(ox + g.x * s, oy + g.y * s, s, s); }
+}
+function drawV30Hud(g) {
+  if (WS.v30ch > 0 && WEAPONS[P.weapon].sling) { const w = 40, x = Math.round((W - w) / 2), y = HORIZON + 18; g.fillStyle = 'rgba(0,0,0,0.5)'; g.fillRect(x - 1, y - 1, w + 2, 4); g.fillStyle = WS.v30ch >= 1 ? '#ffe070' : '#c0a070'; g.fillRect(x, y, Math.round(w * Math.min(1, WS.v30ch)), 2); }
+  if (!V30L.live) return;
+  if (P.v30heat > 0) { g.fillStyle = `rgba(255,110,30,${0.1 + (settings.noFlash ? 0 : 0.06 * Math.sin(tmr * 10))})`; g.fillRect(0, 0, W, VH); if (hudImg.icon_heat && !fxIcons.includes(hudImg.icon_heat)) fxIcons.push(hudImg.icon_heat); }
+  if (P.v30shard > 0 && hudImg.icon_shards && !fxIcons.includes(hudImg.icon_shards)) fxIcons.push(hudImg.icon_shards);
+  if (V30L.dustK > 0.3) { g.fillStyle = `rgba(190,170,130,${Math.min(0.22, (V30L.dustK - 0.3) * 0.3 * clamp(1 - mod('dustSight'), 0, 1))})`; g.fillRect(0, 0, W, VH); }
+  if (P.v30dome) { const t = 'GLASKUPAN – SKJUT SÖNDER DEN'; txt(t, Math.round((W - textW(t)) / 2), HORIZON + 26, '#a0e0ff', 1, true, 0.8); }
+}
+function drawV30World(list) {
+  for (const s of V30L.stones) list.push({ x: s.x, y: s.y, k: 'v30', t: 'stone', o: s });
+  for (const o of V30L.orbs) list.push({ x: o.x, y: o.y, k: 'v30', t: 'orb', o });
+  if (!V30L.live) return;
+  for (const f of V30L.falls) { list.push({ x: f.x, y: f.y, k: 'v30', t: 'shadow', o: f }); list.push({ x: f.x, y: f.y, k: 'v30', t: 'debris', o: f }); }
+  for (const d of V30L.domes) list.push({ x: d.x, y: d.y, k: 'v30', t: 'dome', o: d });
+  for (const v of V30L.vents) if (v.state) list.push({ x: v.x + 0.5, y: v.y + 0.5, k: 'v30', t: 'vent', o: v });
+}
+function drawV30Sprite(s) {
+  const o = s.o;
+  if (s.t === 'shadow') { const k = o.t / o.T, n = 8; for (let i = 0; i < n; i++) { const a = i / n * TAU + tmr * 0.6; drawSprite(fx.hit[1], o.x + Math.cos(a) * o.r * 0.9, o.y + Math.sin(a) * o.r * 0.9, 0.05, 0.01, false, 1.3, 0, 0, true, k > 0.6 ? [255, 170, 90] : [230, 210, 160]); }
+    drawSprite(fx.hit[1], o.x, o.y, 0.22 + 0.45 * k, 0.005, false, 0.2, 0, 0, false, [10, 8, 6]); return true; }
+  if (s.t === 'debris') { const k = o.t / o.T; drawSprite((fx.parts.rubble30 || fx.parts.rock || fx.hit)[0], o.x, o.y, o.big ? 0.45 : 0.32, 0.2 + 3.4 * (1 - k), false, null, 0, 0.3, false, (fx.parts.rubble30 || fx.parts.rock) ? null : [140, 120, 100]); return true; }
+  if (s.t === 'stone') { drawSprite((fx.parts.rubble30 || fx.parts.rock || fx.hit)[0], s.x, s.y, o.heavy ? 0.14 : 0.1, 0.45, false, null, 0, 0.3, false, (fx.parts.rubble30 || fx.parts.rock) ? null : [150, 140, 120]); return true; }
+  if (s.t === 'orb') { drawSprite((fx.parts.glassshard || fx.hit)[0], s.x, s.y, 0.2, 0.45, false, 1, 0, 0.6, true, [170, 230, 255]); return true; }
+  if (s.t === 'dome') { const n = 10, k = o.t / o.T; for (let i = 0; i < n; i++) { const a = i / n * TAU; drawSprite((fx.parts.glassshard || fx.hit)[i % 2], o.x + Math.cos(a) * 0.75, o.y + Math.sin(a) * 0.75, 0.32, 0.1 + 0.25 * (i % 3), false, 0.5 + 0.3 * k, 0, 0.4, true, [150, 220, 255]); } return true; }
+  if (s.t === 'vent') { const img = fx.parts.kilnember || fx.parts.ember || fx.hit; if (o.state === 1) drawSprite(img[Math.floor(tmr * 10) % img.length], s.x, s.y, 0.2 + 0.3 * o.k, 0.05, false, 0.8, 0, 0.5, true, [255, 150, 60]);
+    else { for (let i = 0; i < 3; i++) drawSprite((fx.parts.fire || fx.fire || img)[Math.floor(tmr * 14 + i * 3) % (fx.parts.fire || fx.fire || img).length], s.x + Math.sin(i * 2.1 + tmr * 3) * 0.2, s.y + Math.cos(i * 1.7 + tmr * 3) * 0.2, 0.7 + 0.2 * i, 0.05 + 0.3 * i, false, 0.9, 0, 0.5, true, [255, 170, 80]); } return true; }
+  return false;
+}
+// ---------- Version 30 (SPEL): Glasbruket och Glasmästaren ----------
+// Smält glas ʟ (8 skada/s, fiender också), glasskärvor ʠ (3/s när man springer eller landar, fiender 2/s), ugnsmunnar ʡ (var 5:e s:
+// glöd 0,6 s, sedan hetta 1,5 s, 10/s inom 1,5 rutor), smältugnar ʥ (lyser, glöd), glashyllor ʦ (skjuts sönder: skärvor), fönstren blir glas.
+// Fiender: glasblåsaren, glasgolemen, slaggkryparen och ugnsanden. Boss: Glasmästaren (glaskupor, vågor av smält glas, glaskopior; fas 2: ugnarna oftare).
+function v30GlassWindows() { // Glasbrukets fönster ǂ blir glas ǁ (FÖNSTER, 0086) – bara där båda sidorna redan hänger ihop utan lås (f29Labels/f29Sides)
+  if (typeof F29 !== 'object' || !F29.on || !F29.glass || typeof f29Labels !== 'function') return;
+  if (run && (run.custom || run.practice) && !params.get('v30win')) return;
+  try { const lab = f29Labels(); let n = 0;
+    for (let y = 1; y < mh - 1; y++) for (let x = 1; x < mw - 1; x++) { if (map[y][x] !== 'ǂ') continue; const sd = f29Sides(x, y); if (!sd) continue;
+      const a = lab[sd[0][1] * mw + sd[0][0]], b = lab[sd[1][1] * mw + sd[1][0]]; if (a >= 0 && a === b) { map[y][x] = 'ǁ'; n++; } }
+    V30.log.push('fönster→glas ' + n);
+  } catch (e) { V30.log.push('fönster: ' + e.message); }
+}
+function v30Pain(kind, amt) { // spelarens skada av glasbrukets faror (motstånd från korten)
+  const res = kind === 'molten' ? mod('moltenResist') : kind === 'shards' ? mod('shardStep') : mod('heatResist');
+  return amt * trapMul() * clamp(1 - res, 0, 2);
+}
+function v30GlassTick(dt) {
+  const ground = P.jz < 0.15, c = cellUnder(), immune = mod('hazardImmune') > 0, A = V30L.acc;
+  // smält glas: 8 skada/s
+  P.v30molten = Math.max(0, P.v30molten - dt);
+  if (c === 'ʟ' && ground && !immune) { P.v30molten = 0.25; A.m = (A.m || 0) + dt;
+    if (A.m >= 0.25) { A.m = 0; run.cause = 'SMÄLT GLAS'; hurtPlayer(v30Pain('molten', 2), P.x, P.y, 'fire'); v30Hint('molten', 'SMÄLT GLAS BRÄNNER – GÅ RUNT DET.'); } } else A.m = 0.2;
+  // glasskärvor: 3 skada/s när man springer eller landar (inte när man går eller smyger)
+  P.v30shard = Math.max(0, P.v30shard - dt);
+  if (c === 'ʠ' && !immune) {
+    const sp = Math.hypot(P.vx, P.vy), land = ground && (A.air || 0) > 0.25;
+    if (land) { run.cause = 'GLASSKÄRVORNA'; hurtPlayer(v30Pain('shards', 3), P.x, P.y, 'melee'); play('shards_step', 0.8, rnd(0.9, 1.1)); P.v30shard = 0.6; }
+    else if (ground && sp > 1.2 && wantRun() && P.stam > 0.02 && P.crouch < 0.5) { A.s = (A.s || 0) + dt; P.v30shard = 0.3; // springer (inte bara snabb: kort, potion och modifierare gör gången snabbare)
+      if (A.s >= 0.33) { A.s = 0; run.cause = 'GLASSKÄRVORNA'; hurtPlayer(v30Pain('shards', 1), P.x, P.y, 'melee'); } v30Hint('shards', 'SKÄRVORNA SKÄR DEN SOM SPRINGER – GÅ ELLER SMYG ÖVER DEM.'); }
+    if (ground && sp > 0.8 && (A.st || 0) < tmr) { const rn = wantRun() && P.crouch < 0.5; A.st = tmr + (rn ? 0.25 : 0.45); play('shards_step', rn ? 0.55 : 0.3, rnd(0.9, 1.15)); }
+  }
+  A.air = ground ? 0 : (A.air || 0) + dt;
+  // ugnsmunnar: fas per ruta; glasmästarens fas 2 gör dem tätare
+  const per = V30L.ventFast > 0 ? 3 : 5; V30L.ventFast = Math.max(0, V30L.ventFast - dt); P.v30heat = Math.max(0, P.v30heat - dt);
+  for (const v of V30L.vents) {
+    v.ph = (v.ph + dt) % per; const t = v.ph, warn = per - 2.1, cx = v.x + 0.5, cy = v.y + 0.5;
+    v.state = t >= per - 1.5 ? 2 : t >= warn ? 1 : 0; v.k = v.state === 1 ? (t - warn) / 0.6 : 0;
+    if (v.state === 1 && !settings.lowfx && Math.random() < dt * 10) wpPart({ x: cx + rnd(-0.3, 0.3), y: cy + rnd(-0.3, 0.3), z: 0.05, vx: rnd(-0.2, 0.2), vy: rnd(-0.2, 0.2), vz: rnd(0.4, 1), life: 0.8, img: (fx.parts.kilnember || fx.parts.ember || fx.hit)[0], size: 0.03, add: true, tint: [255, 160, 60], fade: true });
+    if (v.state === 2) {
+      if (!v.on) { v.on = true; const d = Math.hypot(P.x - cx, P.y - cy); if (d < 12 && V30L.sndT < tmr) { V30L.sndT = tmr + 0.4; play('furnace_blast', 0.75 * (1 - d / 13), rnd(0.92, 1.08), { x: cx, y: cy }); } }
+      if (!settings.lowfx && Math.random() < dt * 16) wpPart({ x: cx + rnd(-0.4, 0.4), y: cy + rnd(-0.4, 0.4), z: 0.1, vx: rnd(-0.6, 0.6), vy: rnd(-0.6, 0.6), vz: rnd(1, 2), life: 0.6, img: (fx.parts.kilnember || fx.parts.ember || fx.hit)[0], size: 0.04, add: true, tint: [255, 170, 70], fade: true });
+      v.acc += dt; const tick = v.acc >= 0.25; if (tick) v.acc = 0;
+      if (tick) { if (Math.hypot(P.x - cx, P.y - cy) < 1.5 && P.jz < 0.8 && !immune) { run.cause = 'UGNSMUNNEN'; hurtPlayer(v30Pain('heat', 2.5), cx, cy, 'fire'); P.v30heat = 0.4; v30Hint('vent', 'UGNSMUNNEN GLÖDER INNAN DEN SPRUTAR – HÅLL AVSTÅND.'); }
+        for (const e of ents) if (!e.dead && !e.dying && !e.boss && !e.hidden && e.d.ai !== 'kilnspirit' && e.d.ai !== 'slagcrawler' && Math.hypot(e.x - cx, e.y - cy) < 1.5) hurtEnemy(e, 2.5, cx, cy, { noProc: true, quiet: true }); }
+    } else { v.on = false; v.acc = 0.2; }
+  }
+  // fienderna: smält glas och skärvor (inte flygande; slaggkryparen och ugnsanden tål hettan)
+  for (const e of ents) { if (e.dead || e.dying || e.boss || e.d.float || e.hidden || e.dormant) continue; const ec = map[e.y | 0] && map[e.y | 0][e.x | 0];
+    if (ec === 'ʟ' && e.d.ai !== 'slagcrawler') { e.v30acc = (e.v30acc || 0) + dt; if (e.v30acc >= 0.5) { e.v30acc = 0; hurtEnemy(e, 4, e.x, e.y, { noProc: true, quiet: true }); } }
+    else if (ec === 'ʠ' && e.d.ai !== 'glassgolem') { e.v30acc = (e.v30acc || 0) + dt; if (e.v30acc >= 0.5) { e.v30acc = 0; hurtEnemy(e, 1, e.x, e.y, { noProc: true, quiet: true }); } } }
+  // smältugnarna fladdrar och glöder
+  if (!settings.lowfx) for (const pr of V30L.furnaces) { const d = Math.hypot(pr.x - P.x, pr.y - P.y); if (d > 9) continue;
+    if (Math.random() < dt * 3) wpPart({ x: pr.x + rnd(-0.2, 0.2), y: pr.y + rnd(-0.2, 0.2), z: rnd(0.4, 0.8), vx: rnd(-0.2, 0.2), vy: rnd(-0.2, 0.2), vz: rnd(0.3, 0.8), life: 1.1, img: (fx.parts.kilnember || fx.parts.ember || fx.hit)[0], size: 0.03, add: true, tint: [255, 170, 70], fade: true }); }
+  // ugnsandar som gömt sig i en ugn kommer ut ur en annan (oberoende av AI:n, som inte körs när anden inte är larmad)
+  for (const e of ents) if (e.v30hide && !e.dead) { e.v30hide.t -= dt; if (e.v30hide.t <= 0) v30SpiritOut(e); }
+  // glaskupor runt spelaren
+  for (const d of V30L.domes) { d.t -= dt; const dd = Math.hypot(P.x - d.x, P.y - d.y);
+    if (dd > 0.55 && dd < 1.4) { const a = Math.atan2(P.y - d.y, P.x - d.x), nx = d.x + Math.cos(a) * 0.55, ny = d.y + Math.sin(a) * 0.55; if (!solid(nx, ny)) { P.x = nx; P.y = ny; } else { P.x = d.x; P.y = d.y; } P.vx *= 0.3; P.vy *= 0.3; }
+    if (lvlStat.shots - d.shots >= 3 || d.t <= 0 || P.dead) { d.done = true; play('glass_crack', 0.9, rnd(0.9, 1.1), { x: d.x, y: d.y }); if (typeof f29Shards === 'function') f29Shards(d.x, d.y, settings.lowfx ? 5 : 12, true); } }
+  if (V30L.domes.length) { V30L.domes = V30L.domes.filter(d => !d.done); P.v30dome = V30L.domes[0] || null; }
+  // vågor av smält glas längs golvet
+  for (const w of V30L.waves) { w.t -= dt; if (w.t > 0) continue; w.t = 0.11; w.n++; const x = (w.x + w.dx * w.n) | 0, y = (w.y + w.dy * w.n) | 0;
+    if (w.n > w.len || !map[y] || isWallChar(map[y][x])) { w.done = true; continue; } v30Temp(x, y, 'ʟ', 2.6);
+    if ((x === (P.x | 0) && y === (P.y | 0)) && P.jz < 0.4) { run.cause = w.cause; hurtPlayer(w.dmg, x + 0.5, y + 0.5, 'fire'); }
+    if (!settings.lowfx) for (let i = 0; i < 3; i++) wpPart({ x: x + 0.5 + rnd(-0.3, 0.3), y: y + 0.5 + rnd(-0.3, 0.3), z: 0.05, vx: 0, vy: 0, vz: rnd(0.6, 1.4), life: 0.6, img: (fx.parts.moltenglass || fx.parts.ember || fx.hit)[0], size: 0.05, grav: true, add: true }); }
+  if (V30L.waves.length) V30L.waves = V30L.waves.filter(w => !w.done);
+}
+
+// ---- glashyllan ʦ: går att skjuta sönder (två skott, direkt av smäll eller närstrid) och lämnar skärvor ----
+function v30BreakRack(pr) {
+  if (pr.v30broken) return; pr.v30broken = true;
+  const x = pr.cx, y = pr.cy; play('glassrack_break', 0.9, rnd(0.92, 1.08), { x: pr.x, y: pr.y });
+  if (fx.props.glassrack_broken) { pr.frames = fx.props.glassrack_broken; pr.img = pr.frames[0]; }
+  pr.def = { ...pr.def, block: false, anim: 0 }; // skotten går igenom den trasiga hyllan
+  if (map[y] && map[y][x] === 'ʦ') { map[y][x] = 'ʠ'; if (cellFloor) cellFloor[y * mw + x] = v30FloorIdx('floor_shards'); flowCell = -1; if (typeof ai24Covers === 'function' && typeof AI24 === 'object' && AI24.cov) try { ai24Covers(); } catch (e) { /* nästa bana */ } }
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (Math.random() < 0.5) v30Temp(x + dx, y + dy, 'ʠ', 8);
+  if (typeof f29Shards === 'function') f29Shards(pr.x, pr.y, settings.lowfx ? 6 : 14, true);
+  stat('racks30'); v30Hint('rack', 'GLASHYLLORNA GÅR SÖNDER – SKÄRVORNA BLIR KVAR PÅ GOLVET.');
+}
+function v30HitProp(pr, hx, hy, dmg) {
+  if (pr.ch !== 'ʦ' || pr.v30broken) return undefined;
+  const hp = (V30L.rackHp.get(pr) ?? 2) - 1; V30L.rackHp.set(pr, hp);
+  if (hp <= 0 || (dmg || 0) >= 20) { v30BreakRack(pr); return true; }
+  play('glass_crack', 0.5, rnd(1.2, 1.4), { x: pr.x, y: pr.y }); if (typeof f29Shards === 'function') f29Shards(hx ?? pr.x, hy ?? pr.y, 3, false); return false;
+}
+function v30Melee(x, y, r) { let hit = false; for (const pr of props) if (pr.ch === 'ʦ' && !pr.v30broken && Math.hypot(pr.x - x, pr.y - y) < r + 0.3) { v30BreakRack(pr); hit = true; } return hit; } // sparken och närstriden (breakProps)
+function v30BoomRacks(x, y, r) { for (const pr of props) if (pr.ch === 'ʦ' && !pr.v30broken && Math.hypot(pr.x - x, pr.y - y) < r + 0.4) v30BreakRack(pr); }
+
+// ---- Glasbrukets fiender ----
+const AI_V30G = {
+  glassblower(e, dt, dist, los) {
+    // blåser glasbubblor (långsamma) som spricker till skärvor där de landar
+    e.bubT = (e.bubT ?? rnd(1.5, 3)) - dt;
+    if (e.bubT <= 0 && los && e.alert && dist > 2.2 && dist < 9 && e.state !== 'pain') { e.bubT = rnd(3, 4.4); e.state = 'attack'; e.t = 0; e.didHit = true;
+      const a = Math.atan2(P.y - e.y, P.x - e.x); v18Shoot(e, a, 3.4, e.d.dmg, 'v30bubble', { life: 3.5, z: 0.55 }); play('glass_bubble', 0.8, rnd(0.95, 1.1), { x: e.x, y: e.y });
+      v30Hint('blower', 'GLASBLÅSARENS BUBBLOR SPRICKER TILL SKÄRVOR – KLIV UNDAN ELLER SKJUT DEM.'); return true; }
+    return false;
+  },
+  glassgolem() { return false; }, // skotten studsar (v30Dmg); spricker i skärvor (v30Kill)
+  slagcrawler(e) {
+    // lämnar smält glas efter sig var tredje ruta
+    const cx = e.x | 0, cy = e.y | 0, k = cy * mw + cx;
+    if (e.v30cell !== k) { e.v30cell = k; e.v30n = (e.v30n || 0) + 1; if (e.v30n % 3 === 0) v30Temp(cx, cy, 'ʟ', 3); }
+    if (e.alert && (e.v30snd || 0) < tmr) { e.v30snd = tmr + rnd(3, 5); v30Hint('crawler', 'SLAGGKRYPAREN LÄMNAR SMÄLT GLAS EFTER SIG.'); }
+    return false;
+  },
+  kilnspirit(e, dt, dist, los) {
+    // störtar mot spelaren och exploderar svagt; dyker in i en smältugn och kommer ut ur en annan
+    if (e.v30hide) { e.state = 'idle'; return true; } // gömd i en ugn (v30SpiritTick släpper ut den)
+    if (e.v30dive) { const v = e.v30dive; v.t -= dt; tryMove(e, Math.cos(v.a) * 5.5 * dt, Math.sin(v.a) * 5.5 * dt, 0.2); e.state = 'attack';
+      if (dist < 0.8) { v30SpiritBoom(e); return true; }
+      if (v.t <= 0) e.v30dive = null; return true; }
+    e.diveT = (e.diveT ?? rnd(1.2, 2.5)) - dt;
+    if (e.alert && los && dist < 6.5 && dist > 1.2 && e.diveT <= 0) { e.diveT = rnd(2.5, 3.5); e.v30dive = { t: 0.9, a: Math.atan2(P.y - e.y, P.x - e.x) }; play('kilnspirit', 0.8, rnd(1, 1.2), { x: e.x, y: e.y }); v30Hint('spirit', 'UGNSANDEN STÖRTAR MOT DIG OCH EXPLODERAR – SKJUT DEN I LUFTEN.'); return true; }
+    e.tpT = (e.tpT ?? rnd(5, 9)) - dt;
+    if (e.tpT <= 0 && V30L.furnaces.length >= 2) { e.tpT = rnd(8, 12); let near = null, nd = 2.2; for (const f of V30L.furnaces) { const d = Math.hypot(f.x - e.x, f.y - e.y); if (d < nd) { nd = d; near = f; } }
+      if (near) { const others = V30L.furnaces.filter(f => f !== near); const to = others[(Math.random() * others.length) | 0]; e.v30hide = { t: 1.2, to, from: near, x0: e.x, y0: e.y }; e.hidden = true; e.x = near.x; e.y = near.y; spawnPuff(near.x, near.y, 5); play('furnace_blast', 0.35, 1.4, { x: near.x, y: near.y }); return true; } }
+    return false;
+  },
+  v30clone(e, dt, dist) { // glasmästarens glaskopia: går mot dig och slår svagt; spricker av en träff
+    e.state = dist < 1.6 ? 'attack' : 'move';
+    if (dist < 1.6) { e.v30hitT = (e.v30hitT ?? 0.6) - dt; if (e.v30hitT <= 0) { e.v30hitT = 1.1; run.cause = 'GLASKOPIAN'; hurtPlayer(e.d.dmg, e.x, e.y, 'melee'); } return true; }
+    return false;
+  },
+};
+Object.assign(ENEMY_AI, { glassblower: (...a) => AI_V30G.glassblower(...a), glassgolem: (...a) => AI_V30G.glassgolem(...a), slagcrawler: (...a) => AI_V30G.slagcrawler(...a), kilnspirit: (...a) => AI_V30G.kilnspirit(...a), v30clone: (...a) => AI_V30G.v30clone(...a) });
+function v30SpiritOut(e) { // ut ur målugnen på en fri ruta bredvid den (annars tillbaka där den gick in)
+  const h = e.v30hide; e.v30hide = null; e.hidden = false; let s = null;
+  for (const f of [h.to, h.from]) { if (!f || s) continue; for (let k = 0; k < 12 && !s; k++) { const a = k / 12 * TAU, x = f.x + Math.cos(a) * 0.9, y = f.y + Math.sin(a) * 0.9; if (freeSpot(x, y, 0.25)) s = [x, y]; } }
+  if (s) { e.x = s[0]; e.y = s[1]; } else { e.x = h.x0; e.y = h.y0; }
+  spawnPuff(e.x, e.y, 6); play('kilnspirit', 0.7, 1.2, { x: e.x, y: e.y });
+}
+function v30SpiritBoom(e) {
+  if (e.dead) return; play('kilnspirit_boom', 0.9, rnd(0.95, 1.05), { x: e.x, y: e.y }); explodeFx(e.x, e.y, 0.4);
+  if (Math.hypot(P.x - e.x, P.y - e.y) < 1.5 && P.jz < 0.8) { run.cause = e.d.name; hurtPlayer(e.d.dmg, e.x, e.y, 'fire'); }
+  hurtEnemy(e, e.hp + 10, e.x, e.y, { noProc: true, quiet: true });
+}
+function v30BubbleProj(p) { // glasbubblan: långsam; spricker till skärvor (ʠ i 4 s) där den landar
+  if (infightHit(p)) return;
+  p.z = 0.55 + Math.sin(tmr * 5 + p.x) * 0.05;
+  const hitP = Math.hypot(p.x - P.x, p.y - P.y) < 0.45 && P.jz < 0.7;
+  if (hitP || solid(p.x, p.y) || p.life <= 0) { p.dead = true; const x = solid(p.x, p.y) ? p.x - p.vx * 0.08 : p.x, y = solid(p.x, p.y) ? p.y - p.vy * 0.08 : p.y;
+    if (hitP) { run.cause = p.cause || 'GLASBUBBLAN'; hurtPlayer(p.dmg, p.src.x, p.src.y, 'proj'); }
+    play('glass_crack', 0.7, rnd(1.0, 1.2), { x, y }); if (typeof f29Shards === 'function') f29Shards(x, y, settings.lowfx ? 3 : 7, false);
+    v30Temp(x | 0, y | 0, 'ʠ', 4); }
+}
+Object.assign(PROJ_UPD_V8, { v30bubble: v30BubbleProj });
+Object.assign(PROJ_DRAW_V8, { v30bubble: o => drawSprite((fx.parts.bubble2 || fx.parts.bubble || fx.hit)[0], o.x, o.y, 0.3, o.z - 0.15, false, 1, 0, 0.6, false, [170, 225, 255]) });
+function v30Dmg(e, dmg, opt) {
+  // glasgolemen: 30 % av skotten studsar av, smällar och närstrid gör dubbel skada
+  if (V30L.live && e.d.ai === 'glassgolem') {
+    if (opt.boom || opt.melee) return dmg * 2;
+    if (!opt.noProc && !opt.fall && !opt.infight && Math.random() < 0.3) { if ((e.v30msg || 0) < tmr) { e.v30msg = tmr + 0.6; spawnText(e.x, e.y, 'STUDSAR', '#a0e0ff'); play('glass_crack', 0.35, 1.6, { x: e.x, y: e.y }); v30Hint('ggolem', 'SKOTTEN STUDSAR AV GLASGOLEMEN – SPRÄNG ELLER SLÅ DEN.'); } sparks(e.x, e.y, 0.5, 2); return 0; }
+  }
+  // glasbössans skärvor: blödning (2 skada/s i 3 s; längre och starkare med pakten)
+  const wp = WEAPONS[P.weapon];
+  if (wp && wp.glassgun && !opt.boom && !opt.melee && !opt.noProc && !opt.infight && !e.d.stone) e.bleed = Math.max(e.bleed || 0, up('gg_bleed') ? 5 : 3);
+  return dmg;
+}
+function v30Kill(e) {
+  if (!V30L.live) return;
+  if (e.boss) { v30ClearTemp(); V30L.falls = []; V30L.domes = []; V30L.waves = []; P.v30dome = null; V30L.ventFast = 0; for (const o of ents) if (o.d.ai === 'v30clone' && !o.dead) hurtEnemy(o, 99, o.x, o.y, { noProc: true, quiet: true }); }
+  if (e.d.ai === 'glassgolem' || e.d.ai === 'v30clone') { play('glass_crack', 0.9, rnd(0.85, 1), { x: e.x, y: e.y }); if (typeof f29Shards === 'function') f29Shards(e.x, e.y, settings.lowfx ? 6 : 16, true);
+    if (e.d.ai === 'glassgolem') { for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) v30Temp((e.x | 0) + dx, (e.y | 0) + dy, 'ʠ', 6); stat('glassgolems30'); } }
+  if (e.d.ai === 'kilnspirit' && !e.v30boomed) { e.v30boomed = true; }
+}
+
+// ---- Glasmästaren (arena 'glassworks') ----
+function v30Dome(b) { if (V30L.domes.length) return; V30L.domes.push({ x: P.x, y: P.y, t: 2, T: 2, shots: lvlStat.shots }); P.v30dome = V30L.domes[0]; play('glass_dome', 1, 1, { x: P.x, y: P.y }); v30Hint('dome', 'GLASKUPAN HÅLLER DIG FAST – SKJUT TRE GÅNGER ELLER VÄNTA.'); }
+function v30Wave(b, a, len) { V30L.waves.push({ x: b.x + 0.5 * Math.cos(a), y: b.y + 0.5 * Math.sin(a), dx: Math.cos(a), dy: Math.sin(a), n: 0, len, t: 0.05, dmg: b.d.dmg * 0.5, cause: b.d.name }); }
+function v30Clones(b, n) { for (let i = 0; i < n; i++) { if (ents.filter(o => o.d.ai === 'v30clone' && !o.dead).length >= 4) break; const s = freeSpotFar(2.5, 6); if (!s) continue;
+  const e = makeEnemy('ʯ', s[0], s[1]); e.d = { ...e.d, name: 'GLASKOPIA', ai: 'v30clone', size: e.d.size * 1.7, dmg: b.d.dmg * 0.4, score: 50 }; e.v30clone = true; e.alert = true; e.minion = true; e.hp = e.maxHp = 1; ents.push(e); totalEnemies++; spawnPuff(s[0], s[1], 8); } }
+Object.assign(BOSS_AI, {
+  glassmaster(b, dt, dist, ang, ph) {
+    const fast = ph === 3 ? 1.25 : 1;
+    if (b.state === 'idle') b.once30 = false;
+    if (ph >= 2 && !b.guardian) V30L.ventFast = 1; // fas 2: ugnsmunnarna i arenan sprutar oftare
+    if (b.state === 'sweep') { if (!b.didHit && b.t > 0.55) { b.didHit = true; play('furnace_blast', 0.4, 1.3, { x: b.x, y: b.y }); if (dist < (b.d.range || 2.4) + 1.1 && P.jz < 0.4) { run.cause = b.d.name; hurtPlayer(b.d.dmg, b.x, b.y, 'melee'); } }
+      if (b.t > 1.0) { b.state = 'idle'; b.t = 0; b.cd = rnd(0.8, 1.2) / fast; } return; }
+    if (b.state === 'dome') { if (!b.once30 && b.t > 0.5) { b.once30 = true; v30Dome(b); }
+      if (b.t > 1.1) { b.state = 'idle'; b.t = 0; b.cd = 0.6 / fast; } return; }
+    if (b.state === 'wave') { if (!b.once30 && b.t > 0.45) { b.once30 = true; play('glassmaster_roar', 0.6, 1.2); const n = ph >= 2 ? 3 : 1; for (let i = 0; i < n; i++) v30Wave(b, ang + (i - (n - 1) / 2) * 0.35, 12); }
+      if (b.t > 1.1) { b.state = 'idle'; b.t = 0; b.cd = 0.8 / fast; } return; }
+    b.cd -= dt;
+    if (b.cd <= 0) { b.t = 0; b.didHit = false; b.once30 = false; const los = hasLOS(b.x, b.y, P.x, P.y);
+      if (los && dist < 3.8) { b.state = 'sweep'; bossWarn(b, 'GLASMÄSTAREN SVEPER MED PIPAN!'); }
+      else if (los) { b.state = Math.random() < 0.45 && !V30L.domes.length ? 'dome' : 'wave'; bossWarn(b, b.state === 'dome' ? 'GLASMÄSTAREN BLÅSER EN GLASKUPA!' : 'EN VÅG AV SMÄLT GLAS!'); } else b.cd = 0.4;
+      return; }
+    if (dist > 4) bossMove(b, ang, b.d.speed * fast * dt); else bossMove(b, ang + Math.PI / 2, b.d.speed * dt * 0.5);
+  },
+});
+Object.assign(BOSS_SPECIAL, {
+  glassmaster(b, dt, dist, ang, ph) {
+    if (b.spK) {
+      if (!b.once30) { b.once30 = true; bossWarn(b, 'GLASMÄSTAREN GÖR GLASKOPIOR AV SIG SJÄLV!'); play('glassmaster_roar', 1, 1); play('glass_dome', 0.6, 0.8); v30Clones(b, ph === 3 ? 3 : 2); }
+      if (b.t > 1.2) { b.state = 'idle'; b.t = 0; b.cd = 0.8; } return; }
+    if (!b.once30) { b.once30 = true; say('GLASMÄSTAREN TÄNDER UGNARNA', 1.5); play('glassmaster_roar', 0.9, 1.1); V30L.ventFast = Math.max(V30L.ventFast, 6); for (let i = 0; i < 4; i++) v30Wave(b, i * Math.PI / 2 + rnd(-0.2, 0.2), 9); }
+    if (b.t > 0.9) { b.state = 'idle'; b.t = 0; b.cd = 0.6; }
+  },
+});
+// ---------- Version 30 (SPEL): slungan och glasbössan, stenpåsen och glasbiten ----------
+// SLUNGAN (ʲ, ammo STENAR ʴ): tyst; stenen studsar en gång i väggar, dubbel skada mot huvudet; högerklick laddar ett tungt kast i 1 s
+// (2,6× skada, knuffar, är en tung träff mot spruckna väggar: RAS r30Crack). Pakter: sg_bounce, sg_heavy, sg_quiet, sg_fast.
+// GLASBÖSSAN (ʳ, ammo GLAS ʵ): en kon av åtta glasskärvor (hagelvägen i fire(); blödning i v30Dmg); högerklick: en glaskula som spricker
+// efter fyra rutor i en ring av skärvor. Pakter: gg_spread, gg_bleed, gg_burst, gg_fast.
+// Skadan som i kontraktet (samma familj som morgonstjärnan 35, treudden 40, kroken 45, bombarden 80): stenen 35, tungt kast 90, skärvan 9.
+const V30W = { slingDmg: 35, heavyK: 90 / 35, chargeT: 1.0, stoneSpeed: 16, orbCells: 4, orbDmg: 30, orbR: 1.8 };
+function v30Pickup(it) {
+  if (it.type === 'slingstones') { const n = 6; if ((P.ammo.slingstones || 0) >= AMMO.slingstones.max) return false; P.ammo.slingstones = Math.min(AMMO.slingstones.max, (P.ammo.slingstones || 0) + n); say(`+${n} STENAR`, 1.2); play('pickup', 0.7, 0.8); return true; }
+  if (it.type === 'glass') { const n = 4; if ((P.ammo.glass || 0) >= AMMO.glass.max) return false; P.ammo.glass = Math.min(AMMO.glass.max, (P.ammo.glass || 0) + n); say(`+${n} GLAS`, 1.2); play('glass_crack', 0.4, 1.5); return true; }
+  return undefined;
+}
+const v30SlingMul = () => (1 + mod('dmg') + mod('slingDmg')) * masteryMul() * (1 + 0.12 * wlvl('sling')) * (P.rageT > 0 ? 1.5 : 1) * (P.hp < maxHp() * 0.35 ? 1 + mod('lowHpDmg') : 1);
+function v30SlingRefill() { if (P.mags[P.weapon] <= 0 && (P.ammo.slingstones || 0) > 0) { P.ammo.slingstones--; P.mags[P.weapon] = 1; } }
+function v30Throw(wp, heavy) { // en sten ur slungan (heavy = det tunga kastet)
+  v30SlingRefill();
+  if (P.mags[P.weapon] <= 0) { play('click', 0.5, 0.9); WS.cd = 0.3; if (!WEAPONS.some((w, i) => P.has[i] && i !== P.weapon && (P.mags[i] > 0 || P.ammo[w.ammo] > 0))) return true; say('SLUT PÅ STENAR', 1.2); autoSwitch(); return true; }
+  if (Math.random() >= mod('ammoSave')) P.mags[P.weapon]--;
+  v30SlingRefill();
+  WS.shot = 0; WS.cd = effDelay(wp) * (up('sg_fast') ? 0.65 : 1) * (heavy ? 1.3 : 1); WS.kick = heavy ? 1.2 : 0.6; lvlStat.shots++; run.shots = (run.shots || 0) + 1;
+  play('sling_fire', heavy ? 1 : 0.8, rnd(0.95, 1.05) * (heavy ? 0.85 : 1));
+  if (!up('sg_quiet')) noise(heavy ? 1.5 : 0.8);
+  const a = P.a, sp = V30W.stoneSpeed * (heavy ? 1.15 : 1);
+  V30L.stones.push({ x: P.x + Math.cos(a) * 0.35, y: P.y + Math.sin(a) * 0.35, x0: P.x, y0: P.y, dx: Math.cos(a), dy: Math.sin(a), sp, life: 1.4, heavy: !!heavy,
+    dmg: V30W.slingDmg * v30SlingMul() * (heavy ? V30W.heavyK * (up('sg_heavy') ? 1.3 : 1) : 1), bounces: up('sg_bounce') ? 3 : 1, hit: new Set(), sneak: up('sg_quiet') });
+  stat('slingThrows');
+  return true;
+}
+function v30Fire(wp) { // från fire(): slungan kastar själv; glasbössan skjuter som ett hagelgevär (false = fortsätt i fire())
+  if (wp.sling) { if (WS.cd > 0 || WS.state !== 'idle' || WS.v30ch > 0) return true; v30Throw(wp, false); return true; }
+  return false;
+}
+function v30Orb(wp) { // glasbössans högerklick: en glaskula (två glas) som spricker efter fyra rutor
+  if (P.mags[P.weapon] < 2) { if ((P.ammo.glass || 0) > 0) startReload(); else play('click', 0.5, 0.8); return; }
+  P.mags[P.weapon] -= 2; WS.shot = 0; WS.cd = effDelay(wp) * 1.4 * (up('gg_fast') ? 0.7 : 1); WS.kick = 1.4; lvlStat.shots++; noise(3);
+  play('glassgun_fire', 0.8, 0.8); V30L.orbs.push({ x: P.x + Math.cos(P.a) * 0.4, y: P.y + Math.sin(P.a) * 0.4, dx: Math.cos(P.a), dy: Math.sin(P.a), d: 0, max: V30W.orbCells });
+}
+function v30Burst(x, y) { // glaskulan spricker: en ring av skärvor
+  const r = V30W.orbR * (up('gg_burst') ? 1.4 : 1), dmg = V30W.orbDmg * (1 + mod('dmg') + mod('glassgunDmg')) * (1 + 0.12 * wlvl('glassgun')) * (up('gg_burst') ? 1.5 : 1);
+  play('glassgun_burst', 1, rnd(0.95, 1.05), { x, y }); if (typeof f29Shards === 'function') f29Shards(x, y, settings.lowfx ? 8 : 20, true);
+  if (fx.parts.glassshard && !settings.lowfx) for (let i = 0; i < 16; i++) { const a = i / 16 * TAU; wpPart({ x, y, z: 0.45, vx: Math.cos(a) * 4, vy: Math.sin(a) * 4, vz: rnd(-0.2, 0.4), life: 0.35, img: fx.parts.glassshard[i % 2], size: 0.05 }); }
+  for (const e of ents) if (!e.dead && !e.dying && !e.hidden && !e.dormant && Math.hypot(e.x - x, e.y - y) < r + e.d.size * 0.2 && hasLOS(x, y, e.x, e.y)) { const k = hurtEnemy(e, dmg, x, y, {}); hitKill = hitKill || k; hitMark = 0.12; if (!k && !e.d.stone) e.bleed = Math.max(e.bleed || 0, up('gg_bleed') ? 5 : 3); }
+  for (const pr of props) if (pr.ch === 'ʦ' && !pr.v30broken && Math.hypot(pr.x - x, pr.y - y) < r) v30BreakRack(pr);
+  if (typeof f29Boom === 'function') try { f29Boom(x, y, Math.min(1.2, r)); } catch (e) { /* glaset */ }
+}
+function v30WallHit(x, y, dmg, heavy) { // stenen eller kulan i en vägg: glas (FÖNSTER 0086), spruckna väggar (RAS 0087), glashyllor
+  const cx = x | 0, cy = y | 0, ci = cy * mw + cx;
+  if (typeof F29L === 'object' && F29L.cells && F29L.cells.has(ci) && typeof f29Hit === 'function') try { f29Hit(ci, dmg, heavy ? 'boom' : 'proj', x, y); } catch (e) { /* glaset */ }
+  if (heavy && typeof r30Crack === 'function') try { r30Crack(x, y, dmg); } catch (e) { /* RAS */ }
+  if (map[cy] && map[cy][cx] === 'ʦ') { const pr = props.find(o => o.cx === cx && o.cy === cy); if (pr) v30HitProp(pr, x, y, dmg); }
+}
+function weaponV30Tick(wp, dt, trig) {
+  if (wp.glassgun) { wp.pellets = up('gg_spread') ? 12 : 8; wp.spread = up('gg_spread') ? 0.12 : 0.085; wp.delay = up('gg_fast') ? 0.42 : 0.6; wp.reload = up('gg_fast') ? 0.75 : 1.0; } // pakterna
+  // slungan: högerklick laddar upp i 1 s och kastar tungt när man släpper (en kort tryckning kastar vanligt)
+  if (wp.sling && state === 'play' && WS.state === 'idle') {
+    if (aimDown && WS.cd <= 0) { if (!WS.v30ch) play('sling_charge', 0.7, 1); WS.v30ch = Math.min(1.2, (WS.v30ch || 0) + dt / (V30W.chargeT * (up('sg_heavy') ? 0.6 : 1))); WS.hcharge = Math.min(1, WS.v30ch) * 0.999 + 0.001; }
+    else if (!aimDown && WS.v30ch > 0) { const k = WS.v30ch; WS.v30ch = 0; WS.hcharge = 0; if (canFire()) v30Throw(wp, k >= 1); }
+  } else if (WS.v30ch > 0 && !wp.sling) { WS.v30ch = 0; WS.hcharge = 0; }
+  // glasbössan: högerklick skjuter glaskulan
+  if (wp.glassgun && aimDown && !WS.v30rc && state === 'play' && WS.state === 'idle' && WS.cd <= 0) v30Orb(wp);
+  WS.v30rc = aimDown;
+}
+function v30WeaponTick(dt) {
+  // slungans stenar: en studs i väggar (tre med pakten), träffar fiender, dubbelt mot huvudet
+  for (const s of V30L.stones) {
+    s.life -= dt; const steps = 3, st = s.sp * dt / steps;
+    for (let k = 0; k < steps && !s.done; k++) {
+      const nx = s.x + s.dx * st, ny = s.y + s.dy * st;
+      if (solid(nx, ny)) { v30WallHit(nx, ny, s.dmg, s.heavy);
+        if (s.bounces > 0) { s.bounces--; const sx = solid(nx, s.y), sy = solid(s.x, ny); if (sx) s.dx = -s.dx; if (sy) s.dy = -s.dy; if (!sx && !sy) { s.dx = -s.dx; s.dy = -s.dy; } s.dmg *= 0.8; s.x0 = s.x; s.y0 = s.y; s.hit.clear(); play('ricochet', 0.4, 1.3, { x: s.x, y: s.y }); sparks(s.x, s.y, 0.45, 2); }
+        else { s.done = true; sparks(s.x, s.y, 0.45, 2); }
+        continue; }
+      s.x = nx; s.y = ny;
+      for (const e of ents) { if (e.dead || e.dying || e.hidden || e.dormant || s.hit.has(e)) continue; const rr = 0.25 + e.d.size * 0.25 * (e.boss ? 1.8 : 1); if (Math.hypot(e.x - s.x, e.y - s.y) > rr) continue;
+        s.hit.add(e); const perp = Math.abs((e.x - s.x0) * s.dy - (e.y - s.y0) * s.dx); let dmg = s.dmg;
+        const hs = headshotCheck(e, perp, { pellets: 1 }); if (hs > 1) { dmg *= hs + 0.5; hitCrit = true; }
+        if (s.sneak && !e.alert && !e.boss) dmg *= 1.5;
+        const crit = Math.random() < mod('critChance'); if (crit) { dmg *= 2 + mod('critDmg'); hitCrit = true; }
+        const k = hurtEnemy(e, dmg, s.x, s.y, { crit }); hitKill = hitKill || k; hitMark = 0.12; lvlStat.hits++;
+        if (s.heavy && !k && !e.boss) { for (let i = 0; i < 4; i++) tryMove(e, s.dx * 0.12, s.dy * 0.12, 0.3); e.stun = Math.max(e.stun || 0, 0.4); }
+        if (k) stat('slingKills');
+        s.done = true; break; }
+    }
+    if (s.life <= 0) s.done = true;
+  }
+  if (V30L.stones.length) V30L.stones = V30L.stones.filter(s => !s.done);
+  // glasbössans kula: spricker efter fyra rutor, i en vägg eller vid en fiende
+  for (const o of V30L.orbs) { const st = 12 * dt, nx = o.x + o.dx * st, ny = o.y + o.dy * st; o.d += st;
+    const hitE = ents.some(e => !e.dead && !e.dying && !e.hidden && !e.dormant && Math.hypot(e.x - nx, e.y - ny) < 0.3 + e.d.size * 0.25 * (e.boss ? 1.8 : 1));
+    if (solid(nx, ny)) { v30WallHit(nx, ny, 6, false); o.done = true; v30Burst(o.x, o.y); continue; }
+    o.x = nx; o.y = ny; if (hitE || o.d >= o.max) { o.done = true; v30Burst(o.x, o.y); } }
+  if (V30L.orbs.length) V30L.orbs = V30L.orbs.filter(o => !o.done);
+}
 (async () => {
   const st = document.getElementById('status');
   try {
