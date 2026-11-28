@@ -1,8 +1,11 @@
 'use strict';
-// Procedurell bangenerator för KRYPTA: nio biomer som delar ett rutnäts-API, en flood fill-pass (connectRegions)
+// Procedurell bangenerator för KRYPTA (version 19): tjugosju biomer som delar ett rutnäts-API, en flood fill-pass (connectRegions)
 // och en gemensam innehållspass (content: rumstyper, rekvisita, föremål, fiendegrupper, vaktarens sal).
 //   Gen.floor(seed, depth, opts)  -> banobjekt (kartsträngar + tema) för djup 1-5
-//   Gen.boss(seed, opts)          -> bossarena (opts.arena: 'hall' | 'graveyard' | 'cave' | 'forest' | 'swamp' | 'frost' | 'volcano' | 'tomb',
+//   Gen.boss(seed, opts)          -> bossarena (opts.arena: 'hall' | 'graveyard' | 'cave' | 'forest' | 'swamp' | 'frost' | 'volcano' | 'tomb'
+//                                    | 'crystal' | 'sunken' | 'clock' | 'sky' | 'fungus' | 'mirror' | 'library' | 'foundry' | 'cathedral' | 'hive'
+//                                    | 'garden' | 'dream' | 'ship' | 'lab' | 'circus' | 'jungle' | 'mine' | 'observatory' | 'sewer' | 'desert'
+//                                    | 'prison' | 'harbor' | 'bathhouse' | 'purgatory' | 'abattoir' | 'battlefield' | 'ruins' | 'glassworks',
 //                                    opts.boss: vaktar-id)
 //   Gen.secret(seed, opts)        -> hemlig skattvåning (opts.biome: utseende, standard dungeon; opts.depth)
 //   Gen.maze(seed, opts)          -> en stor labyrint (version 7; opts.biome: utseende, standard dungeon; opts.depth, standard 3)
@@ -11,15 +14,31 @@
 //   Gen.BIOMES                    -> biomer (id, namn, utomhus, vikt, djup)
 //   Gen.GUARDIANS                 -> bossar/vaktare (id -> väggtecken, golvtextur, ljus, dekor)
 //   Gen.ARCHES                    -> rumstypernas id
-//   Gen.WEAPONS                   -> vapentecken -> vapen-id (g shotgun ... å axe, ä flamer, ö launcher, ô knives, û hammer, ï musket);
+//   Gen.WEAPONS                   -> vapentecken -> vapen-id (g shotgun ... å axe, ä flamer, ö launcher, ô knives, û hammer, ï musket,
+//                                    À harpoon, Á boomerang, Â prism, Į sawlauncher, į windgun, Ĳ spear, Ŕ sporelauncher,
+//                                    ŕ mirrorshield, Ŗ whip, ƀ runebook, Ɓ steamcannon, ƛ censer, Ɲ hivelauncher, Ʊ shears, Ʋ dreamstaff,
+//                                    Ǫ chaincannon, Ǭ acidsprayer, ǽ pinthrower, Ȏ blowgun, ȩ pickaxe, Ȫ starlance);
 //   Gen.ARENAS                    -> arenornas id
 // opts för floor: { biome: id, shop: bool, weapon: ett tecken ur WEAPONS (eller vapnets id), theme: id|index (bara dungeon),
-//   guardian: 'demon' | 'beast' | 'nightmare' | 'ogre' | 'ghost' | 'frost' | 'flame' | 'pharaoh' (annars väljs den ur seeden) }
+//   guardian: 'demon' | 'beast' | 'nightmare' | 'ogre' | 'ghost' | 'frost' | 'flame' | 'pharaoh' | 'crystalqueen' | 'leviathan'
+//   | 'clockmaker' | 'thunderbird' | 'mycelmother' | 'mirrorking' | 'librarian' | 'colossus' | 'cardinal' | 'queenbee' | 'gardener' | 'sandman'
+//   | 'captain' | 'alchemist' | 'ringmaster' | 'serpent' | 'foreman' | 'starseer' (annars väljs den ur seeden), v14off / v15off / v16off / v17off /
+//   v18off / v19off (stänger av version 14 / 15-19 / 16-19 / 17-19 / 18-19 / 19 i de gamla biomerna, se nedan) }
 //
 // Biomer: dungeon (rum i olika former + korridorer), caves (cellautomat), graveyard (öppet fält med prefabs),
 //   forest (brusmask + slingrande stig), courtyard (borggård omgiven av byggnadslängor), swamp (vatten, mossöar, spänger, pålhyddor),
 //   frost (fängelsehålans salar och korridorer i frusen sten kring 1-3 snögårdar under himlen, rummen där har tag 'yard'),
-//   volcano (samma bygge i obsidian med askfält), tomb (samma bygge i sandsten med ökengårdar, version 7)
+//   volcano (samma bygge i obsidian med askfält), tomb (samma bygge i sandsten med ökengårdar, version 7),
+//   crystal (grottans bygge i kristall, version 8), sunken (fängelsehålans bygge i ruinmur med översvämmade torg, version 8),
+//   clock (fängelsehålans bygge i mässing, inomhus, version 9), sky (fängelsehålans bygge som öar och broar över tomrummet, version 9),
+//   fungus (grottans bygge i svampvägg, version 11), mirror (fängelsehålans bygge i marmor med spegelväggar, inomhus, version 11),
+//   library (fängelsehålans bygge i träpanel med hyllrader, inomhus, version 13), foundry (fängelsehålans bygge i järnplåt, inomhus, version 13),
+//   cathedral (fängelsehålans bygge i katedralsten med ett långhus, inomhus, version 15), hive (fängelsehålans bygge i vax med sexkantiga celler,
+//   inomhus, version 15), garden (molnborgens bygge med häckar under himlen, version 16), dream (fängelsehålans bygge i drömvägg med glidande väggar,
+//   inomhus, version 16), ship (frostfästets bygge: däck under himlen, kajutor och lastrum under däck, version 17), lab (fängelsehålans bygge i
+//   laboratoriekakel, inomhus, version 17), circus (fängelsehålans bygge i tältduk, inomhus, version 18), jungle (frostfästets bygge: gläntor och
+//   stigar under himlen, templets salar under tak, version 18), mine (fängelsehålans bygge i timrade stollar, inomhus, version 19), observatory
+//   (fängelsehålans bygge i mässing, inomhus, version 19)
 // Varje vanlig våning har en vaktares sal (rumstyp 'guardian') med Z i mitten, väggar i vaktarens väggtecken och
 //   golv i vaktarens golvtextur. Fält utöver kartan: biome, guardian (vaktar-id), sky (null inomhus, annars '1' öppen
 //   himmel / '0' tak per ruta), floors (golvtexturer, [0] = floor, högst 10) + floorMask ('0'-'9' per ruta = index i floors),
@@ -143,11 +162,679 @@
 //    (slingor), gångar 1-2 breda (breda zoner efter brus), 2-4 små rum (5x5) med kistor C, guld och föremål, P i ett startrum i
 //    ett hörn, x i änden av den längsta vägen, 8-14 utspridda fiender långt från P, 2-4 lampoljor ¼ (helst i återvändsgränder),
 //    en krönikesida þ, hälsa, ammo och guld
+// Version 8 (enskilda tecken utanför ASCII; allt nytt i alla biomer har egna slumpflöden ur gaffeln 'v8'):
+//  Väggar: Ą kristallvägg  Ć kristallåder (lyser; glesa sträckor i kristallgrottornas väggar, aldrig vid den hemliga/spruckna väggen)
+//    Ĉ kristalldrottningens vägg (vaktar-/bosstema 'crystalqueen')  Ċ sjunken ruinmur  Č korallvägg (växer där vattnet når muren och i
+//    glesa fläckar)  Ď leviatans vägg (vaktar-/bosstema 'leviathan')
+//  Vapen (föremål, ett per våning via opts.weapon): À harpun (harpoon)  Á bumerang (boomerang)  Â prisma (prism)
+//  Nya fiender (gångbara, räknas som fiender i alla rumsregler):
+//    Ë kristallgolem och Í skärvirrbloss (kristallgrottornas egna, djup 1+)   Ï drunknad sjöman och Û krabba (sjunkna stadens egna,
+//    djup 1+)   Ú siren (sjunkna staden, djup 2+)   Ó ål (sjunkna staden ~70 % av banorna, 1-3: står ALLTID på en ruta med djupt vatten
+//    (golv floor_deepwater, minst en vattenruta intill), i ett stridsrum; en fiende i samma rum flyttas ut i vattnet så att gruppernas
+//    storlek står kvar)   Ā skuggjägare (alla biomer, djup 2+, ~20 %, högst 1)   Ă häxa (alla biomer, djup 3+, ~20 %, högst 1);
+//    Ā och Ă byts in mot redan utplacerade fiender i stridsrummen
+//  Farliga golv (gångbara, aldrig på/intill P och x, aldrig enda vägen: med dem som vägg nås fortfarande allt, validate räknar dem som lava;
+//    undantag: vattenskatter, se nedan):
+//    Đ djupt vatten (simning, luftmätare; golv floor_deepwater): sjunkna staden: bassänger (cisterner, torg), kanaler tvärs genom salar och
+//      i breda korridorer, minst 12 rutor per bana; även bassängen i leviatans sal (alla biomer) och arenan 'sunken'
+//    Ē kristallspikar (kristallgrottorna: 2-4 fläckar om 2-6 rutor, högst 24 rutor, aldrig vid dörrar)
+//    Ĕ tidvattenruta (sjunkna staden: grunt vatten längs stränderna, golv floor_shallow, högst 48 rutor; blir periodvis djupt:
+//      level.tide = { period: s } med period 24-40 sekunder i sjunkna staden och arenan 'sunken', annars level.tide = null)
+//  Rekvisita (blockerar, aldrig i dörröppningar/flaskhalsar):
+//    Ė brytande kristall (kristallgrottorna 1-4, högst 4, fritt i stora rum (minst 36 rutor); skott som träffar den delas i tre)
+//    Ę glödkristall (ljuskälla, färgad; ersätter eldfaten f i kristallgrottorna utanför vaktarens sal, även i geoder och prismasalar;
+//      kristalldrottningens ljus). Kandelabrarna c blir glödande kristaller i i kristallgrottorna.
+//    Ě vrakkista (sjunkna staden 1-3, högst 3, fri framsida; öppnas med E, kan vara mimic)
+//  NPC/interaktiva (blockerar, högst 1 av varje, fri framsida, nås med grindarna stängda):
+//    Ğ kartografen (~15 %, i ett rum utan fiender eller startrummet)   Ġ talangaltare (~25 %, i ett rum utan fiender, helgedomen eller
+//    startrummet)
+//  Föremål (gångbara): Ģ kunskapsbok (0-2, ~35 % av banorna, helst i hemliga rum, valv och skattrum)
+//  Luftbubblor: Ĝ (sjunkna staden: i de flesta bassänger/kanaler om minst 8 rutor, högst 4 per bana; validate tillåter 6): en ruta i
+//    vattnet (räknas som djupt vatten, golv floor_deepwater, minst en vattenruta intill) som fyller luften
+//  Vattenskatt (sjunkna staden, ~60 % av banorna med en tillräckligt stor bassäng): en holme i en bassäng (alla fyra grannar och minst sex
+//    av de åtta runt om djupt vatten) med en vrakkista Ě (eller guld $) som bara nås genom att simma; det är den enda saken som får nås
+//    bara över vatten (validate godtar Ě och $ h a Ģ ¥ som nås simmande, med grindarna stängda och utan lava/spikar)
+//  Biom crystal (KRISTALLGROTTORNA; inomhus, vikt 12, djup 1-5, i ett eget slag så att övriga seeds behåller sin biom): grottans bygge
+//    (cellautomat, vaktarens lya) i kristallvägg Ą med ådror Ć; floors [0] floor_crystal, [1] floor_cave (fläckar), [2] vaktarens;
+//    tak ceil_cave; kall blåviolett dimma, lågt ljus. Namn: KRISTALLGROTTORNA, GLITTERSALEN, PRISMAGRUVAN, AMETISTDJUPET,
+//    DE SJUNGANDE KRISTALLERNA, SKÄRVGÅNGARNA. Rumstyper: geode (kristallkluster, glödkristall), prismhall (stor sal, brytande
+//    kristaller), shardfield (skärvfält med spikfläckar) och grottans grotto, mushroom, boneden, camp. Vaktaren är kristalldrottningen
+//    varannan gång (utan opts.guardian).
+//  Biom sunken (DEN SJUNKNA STADEN; utomhus, vikt 12, djup 1-5, eget slag): fängelsehålans bygge (salar + korridorer) i ruinmur Ċ med
+//    korall Č och 1-3 översvämmade torg under himlen (rummen med tag 'yard'); floors [0] floor_sunken_tiles, [1] vaktarens,
+//    sedan floor_deepwater (under Đ Ĝ Ó) och floor_shallow (under Ĕ); tak floor_stone; grönblå dimma. Namn: DEN SJUNKNA STADEN,
+//    DE DRUNKNADES GATOR, KORALLTEMPLET, TIDVATTENSHAMNEN, DEN ÖVERSVÄMMADE KATEDRALEN, DJUPETS KVARTER. Rumstyper: cistern (bassäng
+//    med en bro), drownedhall (pelarsal med kanal), wreckhall (vraksal), coralgrotto (korall, lysande alger F, göl), plaza (torgen:
+//    bassäng eller kanal, brutna statyer). Vaktaren är leviatan varannan gång (utan opts.guardian).
+//  Vaktar-/bosstema 'crystalqueen': väggar Ĉ, golv floor_boss_crystalqueen, ljus Ę, dekor i och u.
+//  Vaktar-/bosstema 'leviathan': väggar Ď, golv floor_boss_leviathan, ljus c, dekor j och u; i alla biomer har leviatans sal en bassäng
+//    Đ (5-13 rutor, golv floor_deepwater) minst tre rutor från Z.
+//  Bossarena 'crystal' (KRISTALLTRONEN): grottarenans form i Ą (berget växer in, kristallpelare i speglade par), en ring av 6-8 brytande
+//    kristaller Ė runt den fria mitten, glödkristaller Ę i stället för eldfat, ådror Ć; floors [0] floor_crystal, [1] floor_cave; inomhus.
+//  Bossarena 'sunken' (LEVIATANS BASSÄNG): raka ruinmurar Ċ, en stor bassäng Đ (ojämn ellips, x ca 6-18, y 8-20) som fyller den fria
+//    mitten och når fram till bossen B (vattnet ligger precis söder om B), gångar runt om (norr, väster, öster, söder) med pelare Ċ,
+//    korall Č och statyer, tidvatten Ĕ längs stranden, 2-3 luftbubblor Ĝ; floors [0] floor_sunken_tiles, [1] floor_deepwater,
+//    [2] floor_shallow; utomhus; level.tide. Båda arenorna har samma P/B/G/x-kontrakt och fria 9x9-mitt (inga hinder; vatten är gångbart).
+//  level.features utökas med { deepwater, crystalspikes, tide, breakcrystals, glowcrystals, wrecks, bubbles, cartographer, talentaltar,
+//    books, stalker, witch, eels } (antal tecken på kartan)
+//  Gen.secret och Gen.maze har även utseendena crystal och sunken.
+//  Frön: vanliga våningar med en gammal biom ger samma karta som i version 7 med de nya sakerna ovanpå (underkänns en bana med dem tas de
+//    bort igen och banan blir exakt som i version 7); utan opts.biome ändras bara banorna som slår de nya biomerna.
+// Version 9 (enskilda tecken utanför ASCII; allt nytt har egna slumpflöden ur gaffeln 'v9', content9 körs sist av allt):
+//  Väggar: Ĺ mässingsvägg  ĺ kuggvägg (glesa sträckor i klocktornets synliga väggar, aldrig vid den hemliga/spruckna väggen)
+//    Ļ urmakarens vägg (vaktar-/bosstema 'clockmaker')  ļ molnsten  Ľ stormmur (molnborgens kant och en del av de låga murarna)
+//    ľ stormfågelns vägg (vaktar-/bosstema 'thunderbird')
+//  Vapen (föremål, ett per våning via opts.weapon): Į sågbladskastare (sawlauncher)  į vindbössa (windgun)  Ĳ spjut (spear)
+//  Nya fiender (gångbara, räknas som fiender i alla rumsregler):
+//    ĳ urverkssoldat (klocktornet, djup 1+)  ĵ tidsväktare (klocktornet, djup 2+)  Ĵ kuggspindel (klocktornet ~80 % av banorna: alltid en
+//    hel grupp om 3-5 i ett stridsrum, djup 3+ ibland två grupper; byts in mot en grupp så att storleken står kvar)
+//    Ķ harpya (molnborgen, djup 1+)  ķ stormkallare (molnborgen, djup 2+)  ĸ molnjätte (molnborgen, djup 3+, ~55 %, 1-2, högst 2; byts in i
+//    stridsrum om minst 30 rutor)
+//  Faror (gångbara, aldrig på/intill P och x, aldrig intill dörrar; validate räknar Ŀ och ŀ som lava: aldrig enda vägen):
+//    Ŀ sågspår (klocktornet: 2-5 raka spår om 3-7 rutor, först längs väggarna i strids- och skattrummen och i breda korridorer, annars
+//      tvärs över rummen; ~97 % av banorna har minst ett). level.saws = [{ x0, y0, x1, y1 }]: ett spår per post (raka, 3-7 rutor, ändarna
+//      ingår); varje Ŀ på kartan tillhör exakt ett spår. Alla banor har level.saws (tom lista när det saknas)
+//    ŀ tidsbubbla (klocktornet 1-3, högst 3: bubblans mittruta, radie ~2, i stora strids-/skattrum, minst 4 från P, 6 från varandra; alltid i
+//      ett rum)
+//    Ń tomrum/avgrund (molnborgen: allt utom öarna, broarna, murarna och kanten; golv floor_void). Ń blockerar i nåbarheten: allt nås till
+//      fots utan att gå på tomrummet; aldrig intill P och x (validate räknar Ń som fara)
+//    ń vindruta (molnborgen: 2-4 vindbyar om 2-4 rutor i rad på broarna; golv floor_wind). level.winds = [{ x, y, dx, dy }] (en post per ń,
+//      (dx, dy) en av (1,0) (-1,0) (0,1) (0,-1)): vinden blåser längs bron, rutan i vindens riktning är aldrig tomrum eller hinder.
+//      Alla banor har level.winds (tom lista när det saknas)
+//  Rekvisita (blockerar, aldrig i dörröppningar/flaskhalsar):
+//    Ņ urverk (dekor och ljuskälla: ersätter ungefär vartannat eldfat f i klocktornet utom i vaktarens sal, 2-3 i urverkshallar, ett i
+//      pendelsalar och verkstäder; urmakarens dekor)   ņ blixtstång (molnborgen 2-4 vid öarnas kanter + stormspirornas; stormfågelns dekor)
+//    Ň klockspel (klocktornet ~60 %, högst 1: i ett rum utan fiender, annars startrummet eller ett stridsrum; fri framsida, nås med
+//      grindarna stängda)   ň molnkista (molnborgen 1-3, högst 3: skattrummen först; fri framsida mot öns kant)
+//  Föremål (gångbara, alla biomer, med ångra-lista): Ŋ kugghjul (~30 % av banorna, klocktornet ~50 %, 1-3, högst 3; helst i hemliga rum,
+//    valv och skattrum)   ŋ fjäder (~15 %, molnborgen ~25 %, högst 1; helst i hemliga rum, valv och skattrum)
+//  Biom clock (KLOCKTORNET; inomhus, vikt 12, djup 1-5, i ett eget slag ur gaffeln 'v9' så att övriga seeds behåller sin biom):
+//    fängelsehålans bygge (salar + korridorer) i mässingsvägg Ĺ med kuggväggar ĺ; floors [0] floor_brass, [1] vaktarens (verkstäder,
+//    förråd och bibliotek får trägolv); tak floor_brass; varm mässingsdimma. Namn: KLOCKTORNET, URVERKET, PENDELSALEN, KUGGARNAS GÅNGAR,
+//    TIDENS VALV, URMAKARENS VERKSTAD. Rumstyper: gearworks (urverkshall), pendulumhall (pendelsal: pelarrader av Ĺ), workshop
+//    (urmakarens verkstad: bord, vapenställ, lådor) och storeroom, armory, library, prison, crypt. Vaktaren är urmakaren varannan gång.
+//  Biom sky (MOLNBORGEN; utomhus, sky '1' överallt, vikt 12, djup 1-5, eget slag): fängelsehålans bygge där salarna är öar (golv
+//    floor_cloud; 1-3 stora öar med tag 'yard') och korridorerna broar (1-2 breda). Alla väggar blir tomrum Ń utom: kanten (stormmur Ľ),
+//    karmarna runt grindar, låsta dörrar och hemliga/spruckna väggar, murarna runt valven och de hemliga rummen (små stenhus), 3x3 runt P
+//    och x, fristående pelare (väggklungor om högst 4 rutor) och glesa låga murar om 1-3 rutor vid öarnas kanter (ļ eller Ľ). Vanliga
+//    dörrar D blir golv. Öarnas hörn faller bort (hörnrutor med två sidor mot tomrummet, localOK). Vaktarens sal: ungefär hälften av
+//    väggringen står kvar och rutor längs salens kanter blir tomrum, men aldrig i den fria mitten (5x5 runt Z) eller vid ingångarna.
+//    floors [0] floor_cloud, [1] vaktarens, sedan floor_void och floor_wind; ljus blåvit dimma. Namn: MOLNBORGEN, STORMENS TINNAR,
+//    DE SVÄVANDE ÖARNA, VINDARNAS RIKE, ÅSKANS TRAPPOR, HIMMELSBORGEN. Rumstyper: cloudisle (molnö), harpynest (harpyrede), stormspire
+//    (stormspira med blixtstång), storeroom, statues; de stora öarna cloudcourt (molngård) och statues. Vaktaren är stormfågeln varannan gång.
+//  Vaktar-/bosstema 'clockmaker': väggar Ļ, golv floor_boss_clockmaker, ljus f, dekor Ņ och u.
+//  Vaktar-/bosstema 'thunderbird': väggar ľ, golv floor_boss_thunderbird, ljus f, dekor ņ och u (i molnborgen med tomrum runt kanterna).
+//  Bossarena 'clock' (URVERKSHALLEN): raka mässingsväggar Ĺ med kuggväggar ĺ; sågspår (level.saws, 3-7 rutor) längs väster- och östväggen
+//    (två par), längs södra väggen på var sida om P och ibland längs norra väggen en bit från bossen; två tidsbubblor ŀ speglade på var sin
+//    sida om den fria mitten (x 4-6 resp. 18-20, y 12-16); mässingspelare, urverk Ņ och kuggväggar i speglade par; floors [0] floor_brass; inomhus.
+//  Bossarena 'sky' (STORMFÅGELNS NÄSTE): allt inne i arenan är tomrum Ń utom en stor ö (ojämn ellips kring mitten, x ca 5-19, y 9-20) som
+//    täcker den fria mitten, en terrass vid bossen och grinden (x 9-15, y 4-9), startön i söder (x 9-15, y 23-25) via en bro (1-2 bred)
+//    och 2-3 speglade par små öar (nordväst/nordost, sydväst/sydost, väster/öster) med broar (1-2 breda); vindbyar ń (level.winds) på ett
+//    par broar som blåser in mot den stora ön, blixtstänger ņ vid kanten, eldfat runt den stora ön; kanten stormmur Ľ; floors [0]
+//    floor_cloud, [1] floor_void, [2] floor_wind; utomhus. Båda arenorna har samma P/B/G/x-kontrakt och fria 9x9-mitt som de andra.
+//  level.features utökas med { saws, timebubbles, void, winds, clockworks, lightningrods, chimes, cloudchests, gears, feathers, gearspiders,
+//    cloudgiants } (antal tecken på kartan: Ŀ ŀ Ń ń Ņ ņ Ň ň Ŋ ŋ Ĵ ĸ). Alla banor (även arenor, hemliga våningar och labyrinter) har
+//    level.saws och level.winds.
+//  Gen.secret och Gen.maze har även utseendena clock och sky (molnlabyrinten: murar av molnsten under öppen himmel, inget tomrum).
+//  Frön: vanliga våningar med en gammal biom ger samma karta som i version 8 med kugghjul och fjädrar ovanpå (underkänns en bana med dem
+//    tas de bort igen och banan blir exakt som i version 8); utan opts.biome ändras bara banorna som slår klocktornet eller molnborgen.
+// Version 10 – "Nya invånare" (enskilda tecken utanför ASCII; allt nytt har egna slumpflöden ur gaffeln 'v10', content10 körs sist av allt):
+//  Nya fiender i de gamla biomerna (gångbara, räknas som fiender i alla rumsregler). De byts in mot redan utplacerade fiender i stridsrummen
+//    (samma ruta i samma grupp, aldrig i spindelboet, aldrig E/Q/Z/vilande statyer): gruppernas storlek, antal fiender och avstånd till P
+//    står kvar. Varje sort är infödd i en biom (~50-55 % av banorna där på tillåtna djup, några per bana) och sällsynt (~8 %, en, rotvättar
+//    en grupp om 2) i en närliggande biom; se FOES10:
+//    Ō fångvaktare (jailer): kryptan/fängelsehålan (dungeon), djup 1+, 1-3, högst 4; sällsynt på borggården
+//    ō grävare (burrower): grottorna (caves), djup 2+, 1-3, högst 4, aldrig i/intill vatten (ingen av de fyra grannarna är - eller djupt
+//      vatten); sällsynt på kyrkogården
+//    Ŏ likgrävare (gravedigger): kyrkogården (graveyard), djup 1+, 1-2, högst 2; sällsynt i kryptan
+//    ŏ rotvätte (rootling): skogen (forest), djup 1+, alltid en hel grupp om 2-3 i samma stridsrum, högst 3; sällsynt i träsket
+//    Ő armborstskytt (crossbowman): borggården (courtyard), djup 1+, 1-3, högst 4; helst i rum med skydd (lådor T, tunnor, bord, ställ,
+//      statyer, fristående pelare) och på en ruta intill skyddet; sällsynt i kryptan
+//    ő paddjätte (toad): träsket (swamp), djup 2+, 1-2, högst 2; helst nära vatten -; sällsynt i skogen
+//  Rekvisita (blockerar, fri framsida, nås med grindarna stängda, aldrig i dörröppningar/flaskhalsar):
+//    Œ legendaltaret (legendaltar; use: byter själar/guld mot att ett vapen blir legendariskt): högst 1, ~12 % av de vanliga banorna på
+//      djup 2+ (alla biomer), i ett lugnt rum (helgedomen, skattrummet eller ett specialrum utom utmaningen; annars startrummet), aldrig i ett
+//      stridsrum, vaktarens sal, en bossarena, en hemlig våning eller en labyrint
+//  level.features utökas med { jailers, burrowers, gravediggers, rootlings, crossbowmen, toads, legendaltar } (antal tecken: Ō ō Ŏ ŏ Ő ő Œ)
+//  Frön: alla vanliga våningar ger samma karta som i version 9 (samma biom, rum, golv, himmel, sågspår, vind ...) med de nya fienderna
+//    inbytta och legendaltaret ovanpå; underkänns en bana med dem tas de bort igen (opts.v10.undo) och banan blir exakt som i version 9.
+//    Arenor, hemliga våningar och labyrinter är oförändrade.
+// Version 11 – "Svampriket och Spegelpalatset" (enskilda tecken utanför ASCII; allt nytt har egna slumpflöden ur gaffeln 'v11', content11
+//   körs sist av allt):
+//  Väggar: ŝ svampvägg (mycel; svamprikets väggar)  Ş glödande svamphatt (glesa sträckor om 1-3 rutor i de synliga svampväggarna, aldrig vid den
+//    hemliga/spruckna väggen; även fristående stjälkar i jättesvampssalarna)  ş mycelmoderns vägg (vaktar-/bosstema 'mycelmother')
+//    Š marmor (spegelpalatsets väggar)  š spegelvägg (studsar skott; hela väggsegment i salarna, se nedan)  Ţ spegelkungens vägg (vaktar-/bosstema
+//    'mirrorking')
+//  Vapen (föremål, ett per våning via opts.weapon): Ŕ sporkastare (sporelauncher)  ŕ spegelsköld (mirrorshield)  Ŗ piska (whip)
+//  Nya fiender (gångbara, räknas som fiender i alla rumsregler, alltid i stridsrum):
+//    ř svampshaman (myconid; svamprikets egen, djup 2+)  ŗ sporling (svampriket ~85 % av banorna: alltid en hel grupp om 3-5 i ett stridsrum,
+//    djup 3+ ibland två grupper; byts in mot gruppens fiender)  Ř mycelbest (mycelbrute; svampriket, djup 2+, ~55 %, 1-2, högst 2; byts in i
+//    stridsrum om minst 30 gångbara rutor)
+//    Ś spegelriddare (mirrorknight; spegelpalatsets egen, djup 1+)  ś illusionist (spegelpalatset, djup 2+, ~55 %, 1-2, högst 2; byts in)
+//    Ŝ glasskärva (shardling; spegelpalatset ~75 %: alltid en hel grupp om 2-4 i ett stridsrum, djup 3+ ibland två grupper)
+//  Golvrutor (gångbara, aldrig på/intill P och x, aldrig i en dörröppning; validate räknar dem som lava: med dem som vägg nås allt ändå):
+//    ţ studsplatta (svampriket 1-4 per bana, högst 4: i strids- och skattrummen (annars startrummet/helgedomen), på öppet golv, aldrig intill en
+//      dörr (de åtta grannarna), en per rum först)
+//    Ť sporpöl (svampriket: 2-4 fläckar om 2-6 rutor i strids- och skattrummen, högst 24 rutor; aldrig intill en dörr)
+//    ť teleporter (spegelpalatset: 1-3 par per bana, varje par i två olika rum (ett rum har högst en teleporter), aldrig intill en dörr,
+//      minst 2 rutor från P och x, minst två fria grannar). level.teleports = [{ a: { x, y }, b: { x, y } }]: varje ť på kartan ingår i exakt ett
+//      par. Alla banor (även arenor, hemliga våningar och labyrinter) har level.teleports (tom lista när det saknas)
+//  Rekvisita (blockerar, aldrig i dörröppningar/flaskhalsar): Ŧ glödsvamp (ljuskälla; ersätter alla eldfat f i svampriket utom i vaktarens
+//    sal (kandelabrarna c blir lysande svamp F), 1-2 klungor i sporgrottorna, en i mycelnästena; mycelmoderns ljus)
+//    ŧ spegelstaty (dekor; spegelsalar 1-2, balsalar 0-1, gallerier 1 och 1-3 till i andra rum; spegelkungens dekor)
+//  Föremål (gångbara, alla biomer, med ångra-lista): Ũ sporsäck (ammo till sporkastaren; ~25 % av banorna, svampriket ~45 %, 1-2, högst 2; helst
+//    i hemliga rum, valv och skattrum; aldrig i arenor, hemliga våningar eller labyrinter)
+//  Biom fungus (SVAMPRIKET; inomhus, vikt 12, djup 1-5, i ett eget slag ur gaffeln 'v11' så att övriga seeds behåller sin biom): grottans bygge
+//    (cellautomat, vaktarens lya) i svampvägg ŝ med svamphattar Ş; floors [0] floor_moss, [1] floor_cave (fläckar), [2] vaktarens; tak ceil_cave;
+//    grön-lila sporrök (grönast, lila skimmer). Namn: SVAMPRIKET, MYCELDJUPET, SPORGROTTORNA, DE GLÖDANDE HATTARNA, RÖTANS RIKE,
+//    JÄTTESVAMPARNAS SKOG. Rumstyper: sporegrotto (sporgrotta), giantcaps (jättesvampar), myceliumden (mycelnäste) och grottans mushroom,
+//    boneden, camp, nest. Infödda fiender: ř, ^ och U (vikt x2 utom U); ŗ och Ř byts in. Vaktaren är mycelmodern varannan gång.
+//  Biom mirror (SPEGELPALATSET; inomhus, vikt 12, djup 1-5, eget slag ur 'v11'): fängelsehålans bygge (salar + korridorer, inga gårdar) i marmor Š;
+//    floors [0] floor_marble, [1] vaktarens (gallerier, bibliotek och matsalar får trägolv, kapell blå plattor); tak floor_marble; blek
+//    silverviolett dimma. Namn: SPEGELPALATSET, DE TUSEN SPEGLARNA, MARMORSALARNA, GLASKUNGENS HOV, ILLUSIONERNAS SAL, DEN BRUTNA SPEGELN.
+//    Rumstyper: mirrorhall (spegelsal), ballroom (balsal: pelarrader av Š), gallery (konstgalleri) och library, dining, chapel, storeroom, armory.
+//    Spegelväggar: salarnas väggar = ringen runt rummets ruta utan hörnen (alla rum utom vaktarens sal, valv och hemliga rum, rutor Š eller š);
+//    hela raka segment (minst 2 rutor, synliga från salen, avbrutna vid dörrkarmarna) blir š tills 24-31 % av salarnas väggar är speglar (alltid
+//    20-35 %, annars byggs banan om); aldrig på en dörrkarm (ingen dörr/grind/hemlig vägg bland de åtta grannarna) eller vid den hemliga väggen.
+//    Infödda fiender: Ś och @ (Ś vikt x2); ś och Ŝ byts in. Vaktaren är spegelkungen varannan gång.
+//  Vaktar-/bosstema 'mycelmother' (MYCELMODERN): väggar ş, golv floor_boss_mycelmother, ljus Ŧ, dekor F och j.
+//  Vaktar-/bosstema 'mirrorking' (SPEGELKUNGEN): väggar Ţ, golv floor_boss_mirrorking, ljus c, dekor ŧ och u.
+//  Bossarena 'fungus' (MYCELMODERNS LYA): grottarenans form i ŝ (berget växer in), svampstjälkar, svamphattar Ş och glödsvampar Ŧ i speglade par,
+//    2-4 studsplattor ţ i speglade par (x 3-6 resp. 18-21, y 11-13 och 19-21, fritt runt om), 2-3 speglade sporpölsfläckar Ť om 2-5 rutor
+//    (x 1-8 resp. 16-23, aldrig nära P, B eller grinden), glödsvampar i stället för eldfat, ådror av Ş; floors [0] floor_moss, [1] floor_cave; inomhus.
+//  Bossarena 'mirror' (SPEGELKUNGENS SAL): raka marmorväggar Š; spegelväggar š i hela segment längs väster- och östväggen (två speglade par,
+//    y ca 5-22) och södra väggen på var sida om P; ett teleporterpar ť (level.teleports) speglat på var sida om den fria mitten (x 3-5 resp.
+//    19-21, y 12-16, fritt runt om); marmorpelare, spegelpelare š och spegelstatyer ŧ i speglade par; floors [0] floor_marble; inomhus.
+//    Båda arenorna har samma P/B/G/x-kontrakt och fria 9x9-mitt som de andra (inga hinder och inga nya golvrutor där).
+//  level.features utökas med { bouncepads, sporepools, teleporters, glowshrooms, mirrorstatues, mirrorwalls, capwalls, sporesacks, sporelings,
+//    mycelbrutes, shamans, mirrorknights, illusionists, shardlings } (antal tecken på kartan: ţ Ť ť Ŧ ŧ š Ş Ũ ŗ Ř ř Ś ś Ŝ)
+//  Gen.secret och Gen.maze har även utseendena fungus (myceltrasslet: svamphattar Ş runt rummen) och mirror (spegellabyrinten: spegelväggar š
+//    runt rummen).
+//  Frön: vanliga våningar med en gammal biom ger samma bana som i version 10 med sporsäckar ovanpå (underkänns en bana med dem tas de bort igen,
+//    opts.v11.undo, och banan blir exakt som i version 10); utan opts.biome ändras bara banorna som slår svampriket eller spegelpalatset.
+//    Arenor, hemliga våningar och labyrinter med de gamla utseendena är oförändrade (utom level.teleports och de nya nycklarna i features).
+// Version 13 – "Biblioteket och Gjuteriet" (enskilda tecken utanför ASCII; allt nytt har egna slumpflöden ur gaffeln 'v13', content13 körs sist
+//   av allt; hyllraderna och kanalerna läggs av rumstyperna, bara i de nya biomerna):
+//  Väggar: ũ bokhylla (bibliotekets hyllrader och sträckor om 1-4 rutor i de synliga panelväggarna, aldrig vid den hemliga/spruckna väggen)
+//    Ū träpanel (bibliotekets väggar)  ū bibliotekariens vägg (vaktar-/bosstema 'librarian')  ŵ järnplåt (gjuteriets väggar)  Ŷ smältugn (glödande;
+//    glesa enstaka rutor i de synliga plåtväggarna, minst 3 rutor isär)  ŷ smideskolossens vägg (vaktar-/bosstema 'colossus')
+//  Vapen (föremål, ett per våning via opts.weapon): ƀ runboken (runebook)  Ɓ ångkanonen (steamcannon)
+//  Nya fiender (gångbara, räknas som fiender i alla rumsregler, alltid i stridsrum):
+//    ų bläckslem (inkslime; bibliotekets egen, djup 1+)  Ų flygande bok (grimoire; biblioteket ~85 % av banorna: alltid en hel grupp om 3-5 i ett
+//    stridsrum, djup 3+ ibland två grupper; byts in mot gruppens fiender)  Ŵ arkivariespöke (archivist; biblioteket, djup 2+, ~55 %, 1-2, högst 2;
+//    byts in)   ž ångautomat (steambot; gjuteriets egen, djup 1+)  Ž smältgolem (moltengolem; gjuteriet, djup 2+, ~55 %, 1-2, högst 2; byts in i
+//    stridsrum om minst 30 gångbara rutor)  ſ gnistdrönare (sparkdrone; gjuteriet ~75 %: alltid en hel grupp om 2-4 i ett stridsrum)
+//  Golvrutor (gångbara, aldrig på/intill P och x, aldrig i en dörröppning):
+//    Ŭ bläckpöl (biblioteket: 2-4 fläckar om 2-6 rutor i strids- och skattrummen, högst 24 rutor; aldrig intill en dörr)
+//    Ź smält metall (gjuteriet: raka kanaler 1-2 rutor breda tvärs över gjuthallarna (alltid) och smältverken (~40 %), med en spång om 1-2 rutor
+//      och en lucka där kanalen annars skulle stänga av; saknas de läggs en kanal i en stor sal; ~70 % av banorna har kanaler)
+//    ź ångventil (gjuteriet 2-5: på öppet golv i salarna, annars i korridorerna, minst 3 rutor isär, aldrig intill en dörr)
+//    Ÿ rullband (gjuteriet 1-4 band: raka sträckor om 4-9 rutor i salarna (rullbandshallarna först) och korridorerna, samma riktning längs bandet,
+//      aldrig intill en dörr eller ett annat band; rutan efter bandets slut är fritt golv, aldrig vägg, hinder eller fara). level.belts =
+//      [{ x, y, dx, dy }]: en post per Ÿ, (dx, dy) en av (1,0) (-1,0) (0,1) (0,-1). Alla banor (även arenor, hemliga våningar och labyrinter)
+//      har level.belts (tom lista när det saknas)
+//    validate räknar Ŭ, Ź och ź som lava (aldrig enda vägen: med dem som vägg nås allt ändå); rullbanden är vanligt golv (de går att gå på)
+//  Rekvisita: Ű pulpet (lectern; blockerar, use: läs boken; biblioteket 1-3 per bana, högst en per rum, helst i läsesalar och skrivarsalar, aldrig i
+//    vaktarens sal, valv eller hemliga rum; fri framsida, nås med grindarna stängda)   ű ljuskrona (chandelier; ljus, blockerar inte: ersätter
+//    eldfaten f i biblioteket utom i vaktarens sal; bibliotekariens ljus)   Ż stans/press (press; blockerar, fälla: 1-4 i gjuteriet, först i
+//    korridorerna där det finns plats runt om (localOK: aldrig enda vägen), annars i salarna (presshallarna först), minst 4 rutor isär)
+//    ż städ/gjutform (anvil; blockerar, dekor: gjuthallar, smältverk, presshallar och 1-3 till mot väggarna; smideskolossens dekor)
+//  Föremål (gångbara, alla biomer, med ångra-lista): Ƃ bläckflaska (ammo till runboken; ~20 % av banorna, biblioteket ~40 %, 1-2, högst 2; helst
+//    i hemliga rum, valv och skattrum; aldrig i arenor, hemliga våningar eller labyrinter)
+//  Biom library (DET FÖRBJUDNA BIBLIOTEKET; inomhus, vikt 12, djup 1-5, i ett eget slag ur gaffeln 'v13' så att övriga seeds behåller sin biom):
+//    fängelsehålans bygge (salar + korridorer, inga gårdar) i träpanel Ū med bokhyllor ũ; floors [0] floor_carpet, [1] vaktarens (skrivarsalar,
+//    bibliotek och förråd får trägolv, kapell blå plattor); tak floor_wood_planks; dammig brun dimma. Namn: DET FÖRBJUDNA BIBLIOTEKET, LÄSESALEN,
+//    DE DAMMIGA GÅNGARNA, ARKIVETS DJUP, DE TYSTA HYLLORNA, BLÄCKETS KAMMARE. Rumstyper: readingroom (läsesal: hyllrader, läsbord, ljus), stacks
+//    (hyllgångar: täta hyllrader), scriptorium (skrivarsal: bord i rader, hyllor q), archive (arkiv: hyllor, lådor) och library, storeroom, chapel,
+//    crypt. Hyllrader (F.stacks): rader av fristående bokhyllor ũ (1 ruta tjocka) längs salens långsida, varannan rad med en gång emellan, två
+//    rutor från långväggarna och en från kortväggarna, i sträckor om 2-4 rutor med luckor om 1-2 rutor; varje sträcka sätts bara om allt som nåddes
+//    förut nås ändå (flood fill från P). Infödda fiender: ų och X (ų vikt x2); Ų och Ŵ byts in. Vaktaren är bibliotekarien varannan gång.
+//  Biom foundry (GJUTERIET; inomhus, vikt 12, djup 1-5, eget slag ur 'v13'): samma bygge i järnplåt ŵ med smältugnar Ŷ; floors [0]
+//    floor_irongrate, [1] vaktarens; tak floor_irongrate; orangeröd rök. Namn: GJUTERIET, SMÄLTVERKET, DE GLÖDANDE HALLARNA, STANSARNAS GÅNGAR,
+//    JÄRNETS HJÄRTA, ÅNGANS VERKSTAD. Rumstyper: smeltery (smältverk: eldgropar, gjutformar, ibland en kanal), beltworks (rullbandshall), casting
+//    (gjuthall: kanal, gjutformar), pressroom (presshall) och storeroom, armory, prison. Infödda fiender: ž och Æ (ž vikt x2); Ž och ſ byts in.
+//    Vaktaren är smideskolossen varannan gång.
+//  Vaktar-/bosstema 'librarian' (BIBLIOTEKARIEN): väggar ū, golv floor_boss_librarian, ljus ű, dekor q och u.
+//  Vaktar-/bosstema 'colossus' (SMIDESKOLOSSEN): väggar ŷ, golv floor_boss_colossus, ljus f, dekor ż och u.
+//  Bossarena 'library' (BIBLIOTEKARIENS LÄSESAL): raka panelväggar Ū med bokhyllor ũ (30 % av de synliga väggrutorna); 3-4 speglade par
+//    hyllrader (ũ, 3-4 rutor ut från väster- och östväggen, y 6-22) och korta hyllor som skydd, två pulpeter Ű speglade utanför mitten
+//    (x 4-6 resp. 18-20, y 19-22, fri framsida), bokhyllor q, statyer, ljuskronor ű i stället för eldfat; floors [0] floor_carpet, [1]
+//    floor_wood_planks (två rutor längs väggarna); inomhus.
+//  Bossarena 'foundry' (SMIDESKOLOSSENS GJUTERIHALL): raka plåtväggar ŵ med smältugnar Ŷ; två lodräta rullband (level.belts, 5-6 rutor, x 2-3
+//    resp. 20-21, y 6-12: det västra söderut, det östra norrut, rutan efter slutet fri), speglade kanaler med smält metall Ź (y 19-22, x 1-6 resp.
+//    18-23, 1-2 breda, en spång), ett speglat par stansar Ż (x 5-7, y 6-9), 1-2 speglade par ångventiler ź (x 4-7, y 12-17), plåtpelare, städ ż
+//    och smältugnspelare Ŷ som skydd; floors [0] floor_irongrate; inomhus. Båda arenorna har samma P/B/G/x-kontrakt och fria 9x9-mitt som de
+//    andra (inga hinder och inga nya golvrutor där).
+//  level.features utökas med { bookshelves, lecterns, chandeliers, inkpools, belts, molten, vents, presses, molds, furnaces, inkflasks, grimoires,
+//    inkslimes, archivists, moltengolems, steambots, sparkdrones } (antal tecken på kartan: ũ Ű ű Ŭ Ÿ Ź ź Ż ż Ŷ Ƃ Ų ų Ŵ Ž ž ſ)
+//  Gen.secret och Gen.maze har även utseendena library (hyllabyrinten: bokhyllor ũ runt rummen) och foundry (gjuterilabyrinten: smältugnar Ŷ
+//    runt rummen).
+//  Frön: vanliga våningar med en gammal biom ger samma bana som i version 11 med bläckflaskor ovanpå (underkänns en bana med dem tas de bort igen,
+//    opts.v13.undo, och banan blir exakt som i version 11); utan opts.biome ändras bara banorna som slår biblioteket eller gjuteriet.
+//    Arenor, hemliga våningar och labyrinter med de gamla utseendena är oförändrade (utom level.belts och de nya nycklarna i features).
+// Version 14 – "Arenorna och de gamla biomernas nya invånare" (allt nytt har egna slumpflöden ur gaffeln 'v14', content14 körs sist av allt, allt med
+//   ångra-lista: opts.v14.undo (rutan och tecknet som stod där förut) och opts.v14.arch (rummets index och gamla rumstyp); underkänns banan tas allt
+//   bort igen, level.arenas töms och banan blir exakt som i version 13, se build7; opts.v14off stänger av version 14 helt):
+//  Nya fiender (gångbara, räknas som fiender i alla rumsregler; byts in mot redan utplacerade fiender i stridsrummen, utom spindelbon, så att
+//    gruppernas storlek står kvar; FOE_FROM och biomens egna kan bytas):
+//    Ƅ snöfantom (frost, djup 1+, ~60 %, 1-3, högst 3)   ƅ lavaorm (vulkanen, djup 2+, ~60 %, 1-2, högst 2; helst inom 2 rutor från lava _)
+//    Ɔ skarabépräst (gravkammaren, djup 2+, ~55 %, 1-2, högst 2)   Ƈ kristallspindel (kristallgrottorna, djup 1+, ~60 %, 1-3, högst 3)
+//    ƈ marulk (sjunkna staden, djup 1+, ~65 %, 1-2, högst 3; bara på en ruta med djupt vatten Đ, tidvatten Ĕ, luftbubbla Ĝ eller ål Ó bland de åtta
+//      grannarna: en fiende där byts in, annars flyttas en fiende i rummet till en golvruta vid vattnet)   Ɖ vindande (molnborgen, djup 2+, ~55 %, 1-2,
+//      högst 2). validate: bara i sin biom, på tillåtna djup, högst taket, marulken vid vattnet.
+//  Arenarum: level.arenas = [{ x0, y0, x1, y1, doors: [{ x, y }], waves }] (alla banor har fältet, tom lista när det saknas: även arenor, hemliga
+//    våningar och labyrinter). x0..x1, y0..y1 är rummets inre rutor (inklusive, rummets rutor och väggar som pelare/runda hörn, minst 5x5), kanten runt
+//    om är vägg utom dörröppningarna ('D', 'G' eller golvöppningar, 1-4 st, aldrig hörnen, aldrig grindar | ] { eller hemliga väggar *), som alla står i
+//    doors; dörröppningen och rutan innanför är fria (inga hinder eller rekvisita); mitten (belöningen) är fritt golv. waves 2 (3 från djup 4). 0-1 per
+//    vanlig bana från djup 2 (~60 % av banorna försöker; ~45 % av banorna på djup 2+ i biomerna med raka rum, nästan aldrig i grottans, skogens,
+//    träskets och kyrkogårdens organiska områden), bara i stridsrum av typ normal/elite: aldrig startrummet, vaktarens sal, utgångens rum,
+//    valv, hemliga rum, specialrum, butiken; aldrig P, x, Z, nyckel }, teleporter ť eller hemlig trappa ÷ i arenan. validate: rektangeln inom kartan och
+//    minst 5x5, 2-3 vågor, dörrarna i kanten och öppna, inga P/x/Z/} i arenan, och med dörrarna som vägg når en flood fill aldrig utanför rektangeln.
+//  Nya rumstyper (bara befintliga tecken; ~40 % av banorna försöker, högst en per bana): ett stridsrum (normal/elite, ingen farlig rumstyp, inget spindelbo,
+//    inga tecken som rumstypen licensierar: ( ) ? ; > ũ Ź ż Ű ² ¯, lava/is/vatten bara där biomen tillåter dem i alla rum) byggs om: mönstret stämplas
+//    på fria golvrutor (aldrig vid dörrar, P eller x; hinder bara på olåsta rutor där de inte stänger av något) och rummets arch blir rumstypens id;
+//    allt som nåddes från P förut (hinder och faror: en granne) nås ändå, annars ångras rummet. Valet görs i content14 (inte i ARCH_BY), så att
+//    huvudslumpen är orörd. Rumstyper: pillargallery (dungeon: pelarsal med galleri, pelare i salens väggtecken)  stalagmites (caves: droppstenar)
+//    gravevault (graveyard: kistrader och gravstenar)  stonecircle (forest: stencirkel)  colonnade (courtyard: pelargång av statyer)
+//    drownedcrypt (swamp: översvämmad krypta med vatten - och kistor)  icehall (frost: isbelagd sal med frusna statyer)  lavabridge (volcano: bro över en
+//    lavaström)  obeliskhall (tomb: obelisker och likkistor)  crystalnave (crystal: kristallkatedral, ring av kristaller i)  drownedgallery (sunken: statyer)
+//    assemblyhall (clock: bordsrader och lådor)  windshrine (sky: statyring)  capgarden (fungus: svampträdgård F)  statuegallery (mirror: statyrader)
+//    readingnook (library: bordsrader och bokhyllor q)  crateyard (foundry: lådrader och ställ). Gen.ARCHES har även de nya id:na.
+//  level.features utökas med { snowwraiths, lavaworms, scarabpriests, crystalspiders, anglerfish, windspirits } (antal tecken Ƅ ƅ Ɔ Ƈ ƈ Ɖ), arenas
+//    (antal arenor) och setpieces (antal rum med en ny rumstyp).
+//  Frön: samma bana som i version 13 med de nya sakerna ovanpå (opts.v14off: exakt version 13). Arenor, hemliga våningar och labyrinter är
+//    oförändrade (utom level.arenas = [] och de nya nycklarna i features).
+// Version 15 och 16 – "Katedralen och Bikupan", "Trädgården och Drömriket" (fyra nya biomer; allt nytt i de gamla biomerna har egna slumpflöden ur
+//   gafflarna 'v15' (katedralen, bikupan, bikupor ƞ, korgossar/keruber/arbetsbin i andra biomer) och 'v16' (trädgården, drömriket, drömflaskor Ƴ,
+//   taggrankor/drömätare/sömngångare i andra biomer); content15 och content16 körs efter content14, allt i de gamla biomerna och föremålen med
+//   ångra-listor (opts.v15.undo, opts.v16.undo: underkänns banan tas det bort igen, först version 16, sedan 15, se build7). Två gafflar i stället för
+//   en: version 16 är en egen utgåva, så opts.v16off ger exakt version 15 och opts.v15off (som också stänger av version 16) exakt version 14.
+//  Biomer (alla i egna slag i biomvalet, gafflarna 'v15'/'v16'; utan opts.biome ändras bara banorna som slår någon av dem; opts.biome går alltid):
+//    cathedral BLODKATEDRALEN (inomhus, vikt 12, djup 2-5): fängelsehålans bygge i katedralsten Ɗ med ett avlångt långhus (10-13 x 7-8, aldrig start-,
+//      special-, skatt-, butiks- eller helgedomsrum); floors [0] floor_cathedral, [1] vaktarens; tak floor_stone_pattern; mörkröd dimma.
+//      Rumstyper: nave (långhus: mittgång med röd matta floor_carpet, bänkar Ǝ i par tvärs över salen var annan rad, kor med altare/staty och ljus;
+//      varje bänkhalva bara om allt nås ändå), baptistery (dopkapell: blodfunt Ə i mitten, ljus, bänk), belltower (klocktorn i små salar: klocka Ɛ,
+//      högst två per bana), chapel, crypt, ossuary, library, storeroom. content15: blyinfattade fönster Ƌ i katedralstenen runt salarna (långhuset
+//      tätt) och ljusstråk ƍ (1-3 rutor) på golvet framför många av dem, bänkar i kapellen, ibland en blodfunt till (högst 3) och en klocka (högst 2),
+//      korgossar Ƒ (~70 %, 1-2, alltid i en grupp om minst 3). Infödda: ƒ botgörare (x2) och Ɯ kerub. Väktaren: kardinalen varannan gång.
+//    hive BIKUPAN (inomhus, vikt 12, djup 2-5): samma bygge i vax Ɠ med sexkantiga celler (rumsformen 'hex': spetsiga kortsidor); floors [0]
+//      floor_hivefloor; tak floor_hivefloor; bärnstensdimma. Rumstyper: hexcell (vaxcell: larvsäckar Ɨ, ben), nursery (larvkammare: rader av
+//      larvsäckar), honeyhall (honungssal: krukor, lådor; flest honungspölar), storeroom. content15: honungskakor Ɣ i vaxväggarna, honung Ɩ (3-5
+//      fläckar om 2-6 rutor, högst 36, aldrig enda vägen), 1-3 larvsäckar till (högst 10), arbetsbin Ƙ i svärmar om 3-6 (en hel grupp byts mot bin,
+//      en grupp om 2 får ett bi till; ~90 %, djup 3+ ibland två svärmar), gaddkrigare ƙ (djup 2+, ~60 %, 1-2, högst 2). Infödd: ƚ larv (x2).
+//      Väktaren: bidrottningen varannan gång.
+//    garden DEN DÖDA TRÄDGÅRDEN (utomhus, vikt 12, djup 3-5): molnborgens bygge under öppen himmel (salar = trädgårdsrum, gårdar = gräsmattor med
+//      klippta häckar och träd, korridorer = häckgångar) med häckar Ɵ som väggar; floors [0] floor_garden, [1] vaktarens, [2] floor_ground_grass
+//      (gräsmattorna). Rumstyper: walledgarden (murad trädgård: häcken runt rummet blir trädgårdsmur Ơ, träd, stenstaty ƨ), hedgewalk (häckgångar:
+//      rader av häckar med luckor), statuewalk (statygång: stenstatyer i rader), fountaincourt (fontängård: fontän Ƨ i mitten, högst två per bana,
+//      statyer och ljus runt om), statues. content16: taggrankor ƥ (2-4 fläckar om 2-6 rutor, högst 30, aldrig enda vägen: de skadar och saktar men
+//      brinner bort), 1-2 statyer till, ofta en fontän, taggrankor Ƭ (fienden, ~75 %, 1-3, högst 4, helst vid en vägg), stenänglar ƫ (djup 2+, ~55 %,
+//      1-2, högst 2). Infödd: ƭ trädgårdsdräng (x2). Väktaren: trädgårdsmästaren varannan gång.
+//    dream DRÖMRIKET (inomhus, vikt 12, djup 3-5): fängelsehålans bygge i drömvägg Ƣ; floors [0] floor_dream, [1] vaktarens; tak floor_dream; lila.
+//      Rumstyper: chessboard (schackbrädesal: varannan ruta floor_marble, statyer i ett rutnät, drömlyktor ƪ), shifthall (de glidande väggarnas sal,
+//      alltid en om någon sal passar), falsedoors (falska dörrar Ʃ mot väggarna, högst 4 per bana), statues, library, chapel. content16: drömlyktor ƪ i
+//      stället för eldfaten (utom i vaktarens sal), glidande väggar i korridorerna (1-3 sträckor om 1-2 rutor; färre än två på banan: i stridsrummen),
+//      sömnens dimma Ʀ (2-4 fläckar, högst 30), ibland en falsk dörr till, speglingar Ư (djup 2+, ~50 %, 1-2, högst 2) och sömngångare ư (djup 2+,
+//      ~60 %, 1-2, högst 3). Infödd: Ʈ drömätare (x2). Väktaren: Jon Blund varannan gång.
+//  Glidande väggar ƣ (bara i drömriket och Jon Blunds arena): en vägg (WALLS) som spelet sänker och höjer (uppe 2 s, nere 2 s). level.shifts =
+//    [{ x, y, ph }] (ph 0-3.9 s, en fas per sträcka) stämmer exakt med ƣ på kartan; alla banor har fältet (tom lista när det saknas). Läggs bara på
+//    olåsta, oreserverade golvrutor i rummen/korridorerna, aldrig intill (åtta grannar) en dörr/grind/hemlig vägg, aldrig inom 2 rutor från P och x,
+//    aldrig i eller kring ett arenarum, och varje sträcka bara om allt som nåddes förut nås med väggen uppe (flood fill med ƣ som vägg): nere är rutan
+//    vanligt golv, så ingenting kan stängas in, och ingen glidande vägg ligger på enda vägen till något (utgång, nyckel, väktare, rum).
+//  Vapen: ƛ rökelsekaret (censer)  Ɲ bikastaren (hivelauncher)  Ʊ trädgårdssaxen (shears)  Ʋ drömstaven (dreamstaff). Föremål (alla biomer, ångra-lista,
+//    aldrig i arenor/hemliga våningar/labyrinter): ƞ bikupa (ammo bees; ~20 %, bikupan ~40 %, 1-2, högst 2), Ƴ drömflaska (ammo dreams; ~20 %,
+//    drömriket ~40 %, 1-2, högst 2), helst i hemliga rum, valv och skattrum.
+//  Nya fiender i de närliggande gamla biomerna (ångra-lista, inbytta i stridsrummen): Ƒ korgosse (fängelsehålan ~10 %, i en grupp om 3+), Ɯ kerub
+//    (kyrkogården ~10 %), Ƙ arbetsbin (en hel svärm om 3-6 i skogen/träsket ~8 %), Ƭ taggranka (skogen/borggården ~12 %, 1-2), Ʈ drömätare
+//    (spegelpalatset/biblioteket ~10 %), ư sömngångare (kyrkogården, djup 2+, ~8 %).
+//  Väktare/bosstema: cardinal KARDINALEN (väggar ƌ, golv floor_boss_cardinal, ljus c, dekor kyrkbänkar Ǝ och statyer), queenbee BIDROTTNINGEN (ƕ,
+//    floor_boss_queenbee, f, ben/statyer/lådor), gardener TRÄDGÅRDSMÄSTAREN (ơ, floor_boss_gardener, f, stenstatyer ƨ och ben), sandman JON BLUND (Ƥ,
+//    floor_boss_sandman, drömlyktor ƪ, statyer och kistor). Alla fyra kan vakta i alla biomer (spelet drar väktaren ur hela bosspoolen).
+//  Bossarenor (Gen.ARENAS; spelets bossPool tar med kardinalen, bidrottningen, trädgårdsmästaren och Jon Blund): 'cathedral' KARDINALENS KOR,
+//    'hive' BIDROTTNINGENS KAMMARE, 'garden' TRÄDGÅRDSMÄSTARENS RABATTER, 'dream' JON BLUNDS SOVKAMMARE (se ARENAS); samma P/B/G/x-kontrakt och fria
+//    9x9-mitt som de andra, byggs även utan boss.
+//  Arenarum (version 14) och de handgjorda rumstyperna fungerar i de nya biomerna: cloister (katedralen: korsgång), waxpillars (bikupan: vaxpelare),
+//    topiary (trädgården: klippta häckar och statyer), dreamgallery (drömriket: statyring och lyktor). Aldrig glidande väggar i en arena.
+//  Gen.secret och Gen.maze har utseendena cathedral (fönster runt rummen), hive (honungskakor), garden (häcklabyrint under himlen med trädgårdsmur
+//    runt rummen) och dream.
+//  level.features utökas med { stainedglass, lightbeams, pews, bloodfonts, churchbells, honeycomb, honey, larvasacs, beehives, choirboys, flagellants,
+//    cherubs, workerbees, stingerknights, larvae, hedges, gardenwalls, shiftwalls, thorns, dreammist, fountains, statues2, falsedoors, dreamlamps,
+//    dreamflasks, weepingangels, thornvines, gardeners, dreameaters, doppelgangers, sleepwalkers } (antal tecken på kartan).
+//  validate: tecknen bara där de får finnas (även arenor, hemliga våningar, labyrinter; väktarnas väggar/ljus/dekor i alla biomer), fienderna i sina
+//    biomer på tillåtna djup under taken (aldrig i arenor), tak för klockor/funtar/larvsäckar/honung/ljusstråk/bikupor/fontäner/falska dörrar/
+//    taggrankor/dimma/drömflaskor/glidande väggar, golvrutorna ƍ Ɩ ƥ Ʀ aldrig i dörröppningar, Ɩ och ƥ aldrig enda vägen (som lava), ƣ aldrig i
+//    kanten eller intill en dörr, level.shifts exakt som kartan, ingen ƣ i en arenas kant; nåbarheten räknar ƣ som vägg.
+//  Frön: vanliga våningar med en gammal biom ger samma bana som i version 14 med de nya fienderna inbytta och bikupor/drömflaskor ovanpå (opts.v15off:
+//    exakt version 14, opts.v16off: bara version 15-sakerna); utan opts.biome ändras dessutom banorna som slår de nya biomerna. Arenor, hemliga
+//    våningar och labyrinter med de gamla utseendena är oförändrade (utom level.shifts = [] och de nya nycklarna i features). Väktarna med de gamla
+//    id:na ger samma banor; vapnen ƛ Ɲ Ʊ Ʋ och väktarna cardinal/queenbee/gardener/sandman används nu (förut ignorerades de, så de banorna ändras).
+// Version 17 – "Spökskeppet och Laboratoriet" (allt nytt har egna slumpflöden ur gaffeln 'v17'; content17 körs efter content16, allt i de gamla biomerna
+//   och föremålen med ångra-listor: opts.v17.undo (rutan och tecknet som stod där förut), opts.v17.arch (rummets index och gamla rumstyp) och
+//   opts.v17.arenas (antal arenor som lades till): underkänns banan tas allt bort igen och banan blir exakt som i version 16, se build7. opts.v17off ger
+//   exakt version 16; v15off och v16off stänger också av version 17):
+//  Biomer (egna slag i biomvalet ur gaffeln 'v17'; utan opts.biome ändras bara banorna som slår någon av dem; opts.biome går alltid):
+//    ship SPÖKSKEPPET (utomhus, vikt 12, djup 2-5): frostfästets bygge i skeppsskrov ǒ där gårdarna är däck under natthimlen (sky '1', floors[2]
+//      floor_deck, master och rigg Ǔ i en rad som pelare, relingen = skrovet runt däcket, rumstaggen 'yard') och salarna kajutor, lastrum och kanondäck
+//      under däck (tak floor_deck); floors [0] floor_hold, [1] vaktarens, [2] floor_deck; kall nattdimma. Rumstyper: deck (däck: kanoner ǎ längs
+//      relingen, lyktor ǐ, lådor; alltid ett om en gård blev ett stridsrum), quarterdeck (akterdäck: rorkult, kanon, lyktor), cabin (kajuta, floor_deck:
+//      bord, sjökista, bokhylla, lykta), hold (lastrum: lådrader, krutkaggar Ǒ), gundeck (kanondäck: kanoner längs skrovet), storeroom, prison.
+//      content17: skeppslyktor ǐ i stället för eldfaten (utom i vaktarens sal), ruttna plankor Ǎ (2-4 fläckar om 2-6 rutor, högst 24, aldrig enda vägen:
+//      lastrum och kanondäck först), sköljt däck Ǐ (2-4 fläckar, högst 30, bara ute på däcken, aldrig enda vägen), fler kanoner vid relingen (högst 8)
+//      och krutkaggar, papegojspöken ǘ (~70 %, 1-3, högst 4), kanonjärer ǖ (djup 2+, ~60 %, 1-2, högst 3, helst på däck), tentakler Ǚ (djup 2+, ~50 %,
+//      1-3, högst 3), skeppsråttor ǚ (~65 %: en hel fiendegrupp blir en svärm om 4-7, djup 3+ ibland två; högst 14). Infödda: Ǖ spökpirat (x2) och
+//      Ǘ drunknad matros. Väktaren: spökkaptenen varannan gång.
+//    lab ALKEMISTENS LABORATORIUM (inomhus, vikt 12, djup 3-5): fängelsehålans bygge i laboratoriekakel Ǡ med hyllor med burkar ǡ; floors [0]
+//      floor_labtile, [1] vaktarens; tak floor_labtile; grön ånga. Rumstyper: stillroom (alkemistens verkstad: en alembik ǟ mot väggen med fri framsida,
+//      flaskhyllor ǝ, bord; alltid en), jarhall (burkhall: rader av fristående hyllor ǡ, varje sträcka bara om allt nås ändå), teslachamber
+//      (teslakammare: en teslaspole Ǟ i mitten), transmutation (transmutationssal: en cirkel ǜ, 3x3 rutor kring mitten), library, storeroom.
+//      content17: burkhyllor ǡ i kakelväggarna, syrakar Ǜ (2-4 fläckar om 2-6 rutor, högst 24, verkstäderna först, aldrig enda vägen), ofta en
+//      transmutationscirkel till (högst 20 rutor), 0-2 teslaspolar till (högst 3 per bana, aldrig intill en dörr/grind/hemlig vägg i de åtta grannarna,
+//      aldrig i en korridor, aldrig inom 3 rutor från P och x), en alembik om ingen finns (högst 2), flaskhyllor, slem Ǥ (~65 %, 1-2, högst 4),
+//      flaskgaster ǧ (~60 %, 1-3, högst 5), kvicksilvergolem Ǧ (djup 2+, ~50 %, högst 2), kimärer Ǩ (djup 2+, ~45 %, 1-2, högst 2). Infödda:
+//      ǣ homunkulus (x2) och ǥ lärling. Väktaren: alkemisten varannan gång.
+//  Tecken: väggar ǒ skrov/plankvägg, Ǔ mast och rigg, ǔ kaptenens vägg, Ǡ laboratoriekakel, ǡ hyllor med burkar, Ǣ alkemistens vägg; golvrutor
+//    Ǎ ruttna plankor, Ǐ sköljt däck, Ǜ syrakar (alla tre aldrig enda vägen: generatorn och validate räknar dem som lava), ǜ transmutationscirkel
+//    (gångbar); rekvisita ǎ kanon och ǟ alembik (blockerar, fri framsida, måste nås), Ǒ krutkagge, ǝ flaskhylla, Ǟ teslaspole (blockerar), ǐ skeppslykta
+//    (ljus, blockerar inte); fiender Ǖ ǖ Ǘ ǘ Ǚ ǚ ǣ Ǥ ǥ Ǧ ǧ Ǩ; vapen Ǫ kedjekulekanonen, Ǭ syrasprutan; föremål ǫ kulkista (ammo chainballs) och ǭ syraflaska
+//    (ammo acid): alla biomer, ~20 % (skeppet resp. laboratoriet ~40 %), 1-2, högst 2, helst i hemliga rum, valv och skattrum, aldrig i arenor,
+//    hemliga våningar eller labyrinter. Skeppsråttor ǚ även i sjunkna staden och fängelsehålan (~8 %, en svärm om 4-7, ångra-lista).
+//  Väktare/bosstema: captain SPÖKKAPTENEN (väggar ǔ, golv floor_boss_captain, ljus ǐ, dekor krutkaggar Ǒ, kistor, lådor), alchemist ALKEMISTEN (Ǣ,
+//    floor_boss_alchemist, c, flaskhyllor ǝ, bord, staty). Båda kan vakta i alla biomer.
+//  Bossarenor (Gen.ARENAS): 'ship' SPÖKKAPTENENS DÄCK (utomhus: skrovväggar ǒ, 2-3 speglade par kanoner ǎ vid väster- och östrelingen med fri
+//    framsida, speglade fläckar sköljt däck Ǐ och ruttna plankor Ǎ, master Ǔ, lådor och krutkaggar som skydd, skeppslyktor i stället för eldfat; floors
+//    [0] floor_deck, [1] floor_hold) och 'lab' ALKEMISTENS LABORATORIUM (inomhus: kakel Ǡ med burkhyllor ǡ, speglade fläckar syrakar Ǜ och
+//    transmutationscirklar ǜ, två teslaspolar Ǟ och två alembiker ǟ vid norrväggen, flaskhyllor, bord och kakelpelare som skydd; floors [0]
+//    floor_labtile); samma P/B/G/x-kontrakt och fria 9x9-mitt som de andra, byggs även utan boss.
+//  Gen.secret och Gen.maze har utseendena ship (lastrummens irrgång) och lab (glasgångar med burkhyllor runt rummen).
+//  Den andra nya rumstypen i de gamla biomerna (version 14:s mekanism och mönster, egen tabell SET17, ~35 % av banorna försöker, högst en, aldrig i ett
+//    rum med en rumstyp ur SET14, i en arena eller med kött ð): guardroom (dungeon: vapenställ i rader), bonepit (caves: ring av klippelare), mausoleum
+//    (graveyard: pelarrader), deadgrove (forest: träd i rader), tiltyard (courtyard: vapenställ längs banan), mangrove (swamp: träd i rader), frostring
+//    (frost: ring av iskristaller), basaltcolumns (volcano: basaltpelare), embalmery (tomb: bordsrader), crystalgarden (crystal: kristaller i rader),
+//    sunkencolonnade (sunken: pelargång), gearhall (clock: bänkar i en ring), skycolonnade (sky: statyrader), fairyring (fungus: älvring av svampar),
+//    mirrorgrid (mirror: spegelstatyer i ett rutnät), mapchamber (library: bokhyllor i rader), boilerhall (foundry: plåtpelare i rader). Gen.ARCHES har
+//    även dessa id.
+//  Arenarum i de organiska biomerna (caves, forest, swamp, crystal, fungus, sky, courtyard; djup 2+, när banan inte redan har ett; ~30 % av banorna):
+//    en sluten glänta/grotta i ett stort stridsområde. Rektangeln (5-8 x 5-8 inre rutor) ligger i områdets rutor, väggar och hinder (träd, gravstenar,
+//    lådor), minst 55 % golv, fri mitt, inga P/x/Z/}/portaler; kanten blir vägg (biomens väggtecken, molnborgens tomrum blir stormmur Ľ) utom 2-3
+//    öppningar (en per sträcka av golv i kanten, aldrig hörnen, fria på båda sidor, leder till gångbart golv). Bara golv, träd, gravstenar, vatten,
+//    spindelväv, kristallspikar och rekvisita (om rummet behåller annan rekvisita) muras igen, aldrig intill en dörr, P, x, Z, nyckel eller fri
+//    framsida, och allt som nåddes från P förut nås ändå. Samma arenakontrakt som version 14 (level.arenas, validate).
+//  level.features utökas med { masts, jarshelves, rotplanks, wetdeck, acidvats, transmutes, cannons, shiplanterns, powderkegs, flaskshelves, teslacoils,
+//    alembics, chainballs, acidflasks, ghostpirates, gunners, drownedsailors, ghostparrots, tentacles, rats, homunculi, oozes, apprentices, mercurygolems,
+//    vialwisps, chimeras } (antal tecken på kartan) och setpieces17 (antal rum med den andra nya rumstypen).
+//  validate: tecknen bara där de får finnas (även arenor, hemliga våningar, labyrinter; väktarnas väggar/ljus/dekor i alla biomer), fienderna i sina
+//    biomer på tillåtna djup under taken (aldrig i arenor), tak för kanoner (8), alembiker (2), teslaspolar (3), krutkaggar, flaskhyllor, farorna och
+//    föremålen, teslaspolen aldrig intill en dörr eller i en korridor, kanonen vid relingen (skrov ǒ eller kaptenens vägg ǔ bredvid), Ǎ Ǐ Ǜ ǜ aldrig i
+//    dörröppningar, kulkistor/syraflaskor aldrig i arenor/labyrinter/hemliga våningar; nåbarheten räknar Ǎ Ǐ Ǜ som lava.
+//  Frön: vanliga våningar med en gammal biom ger samma bana som i version 16 med version 17-sakerna ovanpå (opts.v17off: exakt version 16); utan
+//    opts.biome ändras dessutom banorna som slår skeppet eller laboratoriet. Arenor, hemliga våningar och labyrinter med de gamla utseendena är
+//    oförändrade (utom de nya nycklarna i features). Väktarna med de gamla id:na ger samma banor; vapnen Ǫ Ǭ och väktarna captain/alchemist används nu.
+// Version 18 – "Cirkusen och Djungeltemplet" (allt nytt har egna slumpflöden ur gaffeln 'v18'; content18 körs efter content17, föremålen i de gamla
+//   biomerna med ångra-lista opts.v18.undo (rutan och tecknet som stod där förut): underkänns banan tas de bort igen och banan blir exakt som i version
+//   17, se build7. opts.v18off ger exakt version 17; v15off, v16off och v17off stänger också av version 18 i de gamla biomerna):
+//  Biomer (egna slag i biomvalet ur gaffeln 'v18'; utan opts.biome ändras bara banorna som slår någon av dem; opts.biome går alltid):
+//    circus DEN ÖVERGIVNA CIRKUSEN (inomhus, vikt 12, djup 2-5): fängelsehålans bygge i tältduk Ǯ med djurburar ǯ i duken; floors [0] floor_sawdust,
+//      [1] vaktarens, manegen lägger till floor_ring; taket floor_ring; dammigt tältdunkel. Rumstyper: bigtop (manegen: röd matta, girlanger, ballonger;
+//      alltid en om någon sal är stor nog), cagerow (burgången: rader av fristående burar ǯ, varje sträcka bara om allt nås ändå), dressingroom
+//      (artistlogen: sminkbord, kistor), midway (nöjesfältet: lyckohjul Ǵ med fri framsida, ibland ett knivkastarhjul ǳ, ballonger, girlanger),
+//      storeroom, prison. content18: glödlampsgirlanger Ƕ i stället för eldfaten (utom i vaktarens sal), burar i duken, fallluckor Ǳ (2-4 fläckar om 2-6
+//      rutor, högst 16, manegen och nöjesfältet först, aldrig enda vägen), strålkastare ǲ (1-3 fläckar, högst 12, manegen först), knivkastarhjul (högst
+//      3, aldrig i korridorer, aldrig vid dörrar/P/x), lyckohjul (högst 2), ballonger (högst 10), styltgångare ǹ (djup 2+, ~55 %, 1-2, högst 3),
+//      knivkastare Ǻ (~60 %, 1-2, högst 3), lejon ǻ (djup 2+, ~45 %, 1-2, högst 2, helst i burgången), marionetter Ǽ (~60 %, 1-3, högst 4).
+//      Infödda: Ƿ clown (x2) och Ǹ jonglör. Väktaren: cirkusdirektören varannan gång.
+//    jungle DJUNGELTEMPLET (utomhus, vikt 12, djup 3-5): frostfästets bygge i djungelsten ǿ där gårdarna är gläntor under lövkronan (sky '1', floors[2]
+//      floor_jungle, snår av tät djungel Ȁ och träd, rumstaggen 'yard') och stigarna mellan salarna också går under himlen; väggar som bara gränsar mot
+//      himmel blir tät djungel Ȁ; templets salar har tak (floors[0] floor_templestone). Rumstyper: templehall (tempelsalen: pelarrader av sten,
+//      tikifacklor, en pilidol; alltid en tempelsal eller ett altare om någon sal är stor nog), altar (offeraltaret: guldidolen Ȅ i mitten, facklor),
+//      collapsedstair (den rasade trappan: nedfallna stenblock, ben), clearing (gläntan: träd, giftblommor), riverbed (flodbädden: en kanal med
+//      pirayavatten och ett vadställe), storeroom, prison. content18: tikifacklor ȇ i stället för eldfaten, ruinstenar i snåren, pirayavatten Ȃ (1-3
+//      fläckar, högst 30, bara i gläntorna, aldrig enda vägen), lianer ȃ (2-4 fläckar, högst 30, aldrig enda vägen), pilidoler ȅ (högst 4, aldrig med
+//      en dörr/grind/hemlig vägg inom 3 rutor i fri rak linje, aldrig nära P/x), guldidol (högst 1), giftblommor Ȇ (högst 6, i gläntorna, aldrig vid
+//      dörrar/P/x), blåsrörsjägare ȉ (~65 %, 1-3, högst 4), jaguarer ȋ (djup 2+, ~45 %, högst 2), myggsvärmar Ȍ (~60 %, svärmar om 3-5, högst 10),
+//      tempelväktare ȍ (djup 2+, ~50 %, högst 2, helst inomhus). Infödda: Ȉ ödlekrigare (x2) och Ȋ apa. Väktaren: ormen varannan gång.
+//      Rullstenar (version 7:s fälla ¹ + level.boulders) i ~50 % av djungelbanorna, i en rak stig (inte knutna till guldidolen).
+//  Tecken: väggar Ǯ tältduk, ǯ djurbur, ǰ direktörens vägg, ǿ djungelsten, Ȁ tät djungel, ȁ ormens vägg; golvrutor Ǳ fallucka, Ȃ pirayavatten, ȃ lianer
+//    (alla tre aldrig enda vägen: generatorn och validate räknar dem som lava), ǲ strålkastare (gångbar, får ligga på vägen); rekvisita Ǵ lyckohjul och
+//    Ȅ guldidol (blockerar, fri framsida, måste nås), ǳ knivkastarhjul, ȅ pilidol, ȇ tikifackla (blockerar; ȇ är ljus), ǵ ballongklase, Ƕ
+//    glödlampsgirlang (ljus) och Ȇ giftblomma (blockerar inte); fiender Ƿ Ǹ ǹ Ǻ ǻ Ǽ Ȉ ȉ Ȋ ȋ Ȍ ȍ; vapen ǽ käglekastaren, Ȏ blåsröret; föremål Ǿ kägellåda
+//    (ammo pins) och ȏ pilkoger (ammo darts): alla biomer, ~20 % (cirkusen resp. djungeln ~40 %), 1-2, högst 2, helst i hemliga rum, valv och skattrum,
+//    aldrig i arenor, hemliga våningar eller labyrinter.
+//  Väktare/bosstema: ringmaster CIRKUSDIREKTÖREN (väggar ǰ, golv floor_boss_ringmaster, ljus Ƕ, dekor ballonger ǵ, lådor, kistor), serpent DEN FJÄDRADE
+//    ORMEN (ȁ, floor_boss_serpent, ljus ȇ, statyer, ben, träd). Båda kan vakta i alla biomer.
+//  Bossarenor (Gen.ARENAS, sist): 'circus' CIRKUSDIREKTÖRENS MANEGE (inomhus: tältduk Ǯ med burar ǯ, speglade fläckar fallluckor Ǳ och strålkastare ǲ,
+//    ett speglat par knivkastarhjul ǳ, burar, lådor och kistor som skydd, girlanger Ƕ i stället för eldfat; floors [0] floor_ring, [1] floor_sawdust) och
+//    'jungle' ORMENS TEMPELGÅRD (utomhus: tät djungel Ȁ med ojämna kanter och ruinstenar ǿ, speglade fläckar pirayavatten Ȃ och lianer ȃ, stenpelare,
+//    träd och statyer som skydd, tikifacklor ȇ i stället för eldfat; floors [0] floor_jungle, [1] floor_templestone (stigen), [2] floor_ground_dirt).
+//  Gen.secret och Gen.maze har utseendena circus (irrtältet med burar runt rummen) och jungle (djungelns irrgångar under himlen, ruinsten runt rummen).
+//  level.features utökas med { tents, cages, junglestone, junglewalls, trapdoors, spotlights, piranhas, vines, knifewheels, prizewheels, balloons,
+//    marquees, goldidols, dartidols, poisonflowers, tikitorches, pincrates, dartquivers, clowns, jugglers, stiltwalkers, knifethrowers, lions,
+//    marionettes, lizardmen, blowgunners, monkeys, jaguars, mosquitoes, templeguardians } (antal tecken på kartan).
+//  validate: tecknen bara där de får finnas, fienderna i sina biomer på tillåtna djup under taken (aldrig i arenor), taken ovan, knivkastarhjulen aldrig
+//    i korridorer, pilidolerna aldrig med en dörr eller öppning (gångbar ruta utanför rummen) inom 3 rutor i fri rak linje, Ǳ ǲ Ȃ ȃ Ȇ aldrig i dörröppningar, kägellådor/pilkoger aldrig i
+//    arenor/labyrinter/hemliga våningar; nåbarheten räknar Ǳ Ȃ ȃ som lava.
+//  Frön: vanliga våningar med en gammal biom ger samma bana som i version 17 med kägellådor/pilkoger ovanpå (opts.v18off: exakt version 17); utan
+//    opts.biome ändras dessutom banorna som slår cirkusen eller djungeln. Arenor, hemliga våningar och labyrinter med de gamla utseendena är oförändrade
+//    (utom de nya nycklarna i features). Vapnen ǽ Ȏ och väktarna ringmaster/serpent används nu.
+// Version 19 – "Gruvan och Observatoriet" (allt nytt har egna slumpflöden ur gaffeln 'v19'; content19 körs efter content18, föremålen i de gamla
+//   biomerna med ångra-lista opts.v19.undo: underkänns banan tas de bort igen och banan blir exakt som i version 18, se build7. opts.v19off ger exakt
+//   version 18; v15off-v18off stänger också av version 19 i de gamla biomerna):
+//  Biomer (egna slag i biomvalet ur gaffeln 'v19', gruvan med dubbel andel på sina djup; utan opts.biome ändras bara banorna som slår någon av dem; opts.biome går alltid, alla djup):
+//    mine DEN ÖVERGIVNA GRUVAN (inomhus, vikt 12, djup 2-4): fängelsehålans bygge i timrade stollar Ȑ med malmådror ȑ i timret; floors [0]
+//      floor_minedirt, [1] vaktarens, [2] floor_planks2 (stollarnas plankgolv i korridorerna); taket floor_planks2. Rumstyper: loadingdock (lastplatsen:
+//      lådor, en gruvvagn ț i vila mot väggen; rälsen läggs av content19, alltid en om någon sal är stor nog), shaft (schaktet: timmerstöttor,
+//      karbidlampor, en dynamitlåda), oregrotto (malmgrottan: fristående malmklippor ȑ), blastchamber (sprängkammaren: dynamitlådor Ȝ, lådor),
+//      collapsedgallery (den rasade stollen: nedfallet timmer, ben; rasen först), storeroom. content19: karbidlampor ȝ i stället för eldfaten (utom i
+//      vaktarens sal), malmådror ȑ i timret, räls Ȗ med vagnbanor (level.carts, se nedan; 1-3 banor, lastplatsen först, nästan alltid minst en), gasfickor
+//      ȗ (1-3 fläckar om 2-6 rutor, högst 16), ras Ș (1-3 fläckar om 2-6 rutor, högst 16, den rasade stollen först), dynamitlådor (högst 6), gruvvagnar
+//      i vila (högst 3), kolgolemer Ȣ (djup 2+, ~45 %, högst 2), gnistlyktor Ȥ (~55 %, 1-2, högst 4). Infödda: ȡ gruvarbetare (x2) och ȣ mullvadsman.
+//      Väktaren: förmannen varannan gång.
+//    observatory STJÄRNOBSERVATORIET (inomhus, vikt 12, djup 3-5): fängelsehålans bygge i mässing ȓ med stjärnkartor Ȕ i väggarna; floors [0]
+//      floor_brasstile, [1] vaktarens. Rumstyper: greatdome (stora kupolen: ett teleskop ȟ i mitten; kupolspringorna först; alltid en kupol eller ett
+//      planetarium om någon sal är stor nog), planetarium (orreryn Ȟ i mitten), telescopegallery (mässingspelare, ett teleskop mot väggen), chartroom
+//      (kartrummet: bord, hyllor, en kista), library, storeroom. content19: stjärnkartor Ȕ i mässingen, kupolspringor Ț (1-3 fläckar om 2-6 rutor,
+//      högst 16), stjärnkartegolv ș (1-3 fläckar, högst 24, får ligga på vägen), stjärnportar Ƞ i par (level.starports, 1-2 par, varje par i två olika
+//      rum), orrery (högst 2), teleskop (högst 2), urverksugglor ȧ (~60 %, 1-2, högst 4), tomrumsväktare Ȩ (djup 2+, ~45 %, högst 2). Infödda: ȥ
+//      stjärnfödd (x2) och Ȧ astronom. Väktaren: stjärnskådaren varannan gång.
+//  Tecken: väggar Ȑ timrad stoll, ȑ malmåder, Ȓ förmannens vägg, ȓ mässingspanel, Ȕ stjärnkarta, ȕ stjärnskådarens vägg; golvrutor Ȗ räls, ȗ gasficka,
+//    Ș knakande tak, Ț kupolspringa och Ƞ stjärnport (alla fem aldrig enda vägen: generatorn och validate räknar dem som lava; aldrig i dörröppningar),
+//    ș stjärnkartegolv (gångbart, får ligga på vägen, aldrig i dörröppningar); rekvisita ț gruvvagn i vila, Ȟ orrery och ȟ teleskop (blockerar, fri
+//    framsida, måste nås), Ȝ dynamitlåda (blockerar), ȝ karbidlampa (ljus, blockerar inte); fiender ȡ Ȣ ȣ Ȥ ȥ Ȧ ȧ Ȩ; vapen ȩ hackan, Ȫ stjärnlansen;
+//    föremål ȫ stjärnstoftsflaska (ammo stars): alla biomer, ~20 % (observatoriet ~40 %), 1-2, högst 2, aldrig i arenor, hemliga våningar eller labyrinter.
+//  level.carts = [{ path: [{ x, y }, ...], loop, speed, ph }] (alla banor; tom lista utan räls): path är rälsrutorna i ordning, varje steg en ortogonal
+//    granne; loop true = sluten slinga (sista rutan granne med första; vagnen åker runt), false = rak sträcka fram och tillbaka (vagnen vänder i
+//    ändarna); speed rutor/s (2-3,5); ph fas 0-1 (andel av ett varv, för fram-och-tillbaka av en hel tur och retur). En vagn per bana, varje Ȗ på
+//    kartan ingår i exakt en bana. Rälsen ligger aldrig intill en dörr, P, x eller interaktiv rekvisita och är aldrig enda vägen.
+//  level.starports = [[{ x, y }, { x, y }], ...] (alla banor; tom lista utan stjärnportar): varje Ƞ på kartan ingår i exakt ett par (i två olika rum).
+//  Väktare/bosstema: foreman GRUVFÖRMANNEN (väggar Ȓ, golv floor_boss_foreman, ljus ȝ, dekor dynamitlådor och lådor), starseer STJÄRNSKÅDAREN (ȕ,
+//    floor_boss_starseer, ljus c, dekor statyer och bord). Båda kan vakta i alla biomer.
+//  Bossarenor (Gen.ARENAS, sist): 'mine' FÖRMANNENS SCHAKT (inomhus: timrade väggar med malmådror och ojämna kanter, två speglade rälssträckor med
+//    vagnar (level.carts), speglade fläckar gas ȗ och ras Ș, timmerstöttor, lådor och malmklippor som skydd, karbidlampor i stället för eldfat; floors
+//    [0] floor_minedirt, [1] floor_planks2) och 'observatory' STJÄRNSKÅDARENS KUPOL (inomhus: mässing med stjärnkartor, speglade fläckar kupolspringor Ț
+//    och stjärnkartegolv ș, ett speglat stjärnportpar (level.starports), mässingspelare, statyer och bord som skydd; floors [0] floor_brasstile,
+//    [1] floor_starmap).
+//  Gen.secret och Gen.maze har utseendena mine (stollarnas irrgång, malmådror runt rummen) och observatory (mässingsgångar, stjärnkartor runt rummen).
+//  level.features utökas med { timbers, oreveins, brasswalls, starcharts, rails, gaspockets, caveins, starmaps, domeslits, starportals, minecarts,
+//    dynamite, carbidelamps, orreries, telescopes, stardust, miners, coalgolems, molemen, sparkwisps, starspawns, astronomers, clockowls, voidwatchers }.
+//  validate: tecknen bara där de får finnas, fienderna i sina biomer på tillåtna djup under taken (aldrig i arenor), taken ovan, Ȗ ȗ Ș Ț Ƞ ș aldrig
+//    i dörröppningar, level.carts och level.starports stämmer med kartan, stjärnstoft aldrig i arenor/labyrinter/hemliga våningar; nåbarheten räknar
+//    Ȗ ȗ Ș Ț Ƞ som lava.
+//  Frön: vanliga våningar med en gammal biom ger samma bana som i version 18 med stjärnstoftsflaskor ovanpå (opts.v19off: exakt version 18); utan
+//    opts.biome ändras dessutom banorna som slår gruvan eller observatoriet. Arenor, hemliga våningar och labyrinter med de gamla utseendena är
+//    oförändrade (utom de nya fälten carts/starports och de nya nycklarna i features).
+// Version 20 – "Kloakerna och Öknen" (allt nytt har egna slumpflöden ur gaffeln 'v20'; content20 körs efter content19, fällådorna Ɇ i de gamla
+//   biomerna med ångra-lista opts.v20.undo: underkänns banan tas de bort igen och banan blir exakt som i version 19. opts.v20off ger exakt version 19;
+//   v15off-v19off stänger också av version 20 i de gamla biomerna):
+//  Biomer: sewer KLOAKERNA (inomhus, vikt 12, djup 2-4, dubbel andel): fängelsehålans bygge i valvtegel Ȭ med rörväggar ȭ; floors [0] floor_sewer,
+//    [1] vaktarens, [2] floor_grate (galler i korridorerna). Rumstyper canalhall (kanalsalen, slam först; alltid en om någon sal är stor nog), pumproom
+//    (pumprummet: rörpelare, sprutrör först), ratden (råttboet: råttbon ȸ), sluicegallery (slussgången: slussarna först), storeroom, prison. content20:
+//    rörväggar, slam Ȳ (2-4 fläckar, högst 24), sprutrör ȳ (1-2 fläckar, högst 12), slussar ȷ (level.sluices, 1-2 sträckor om 1-3 rutor, högst 6) med
+//    exakt en slussratt ȶ, råttbon (högst 3), alligatorer ȼ (djup 2+, högst 2), iglar ȿ (högst 4). Infödda: Ƚ slamvarelse (x2) och Ⱦ rörmokare.
+//    desert ÖKNEN (utomhus, vikt 12, djup 3-5): frostfästets bygge: ökengårdar (rumstaggen 'yard') och stigarna under himlen med floor_desertsand
+//    (floors[2]), ruinsalarna under tak med floor_ruintile (floors[0]); väggar ȯ (ruinsten), väggar mot bara himmel blir klippor Ȱ. Rumstyper ruincourt
+//    (ruinhovet), storeroom, prison; gårdar oasis (oasen; alltid en om en gård blev ett stridsrum), dunefield (dynfältet), caravan (karavanlägret).
+//    content20: kokpannor Ȼ i stället för eldfaten, kvicksand ¯ (1-3 fläckar, dynfältet först), oaser ȴ (högst 2 rutor, aldrig intill varandra),
+//    hägringar ȵ (1-2 fläckar, högst 12), kaktusar ȹ (högst 16), amforor Ⱥ (högst 6), sandvålnader ɂ (djup 2+, högst 2), gamar Ƀ (högst 3). Infödda:
+//    ɀ skorpion (x2) och Ɂ nomad.
+//  Tecken: väggar Ȭ ȭ Ȯ (råttkungens) ȯ Ȱ ȱ (sfinxens); golvrutor Ȳ slam, ȳ sprutrör och ȷ sluss (alla tre aldrig enda vägen: generatorn och validate
+//    räknar dem som lava; aldrig i dörröppningar), ȴ oas och ȵ hägring (gångbara, får ligga på vägen, aldrig i dörröppningar); rekvisita ȶ slussratt
+//    (blockerar, fri framsida, måste nås; exakt en per bana med slussar), ȸ råttbo, ȹ kaktus, Ⱥ amfora, Ȼ kokpanna (ljus); fiender ȼ Ƚ Ⱦ ȿ ɀ Ɂ ɂ Ƀ
+//    (råttorna ǚ får också finnas i kloakerna); vapen Ʉ kroksabeln, Ʌ fällkastaren; föremål Ɇ fällåda (ammo traps): alla biomer ~20 % (egna ~35 %), 1-2.
+//  level.sluices = [{ x, y, open }] (alla banor; tom lista utan slussar): varje ȷ på kartan i exakt en post, open false från början (stängd = vägg).
+//  Väktare: ratking RÅTTKUNGEN (Ȯ, floor_boss_ratking, ljus f), sphinx SFINXEN (ȱ, floor_boss_sphinx, ljus Ȼ, dekor amforor och statyer).
+//  Bossarenor (Gen.ARENAS, sist): 'sewer' RÅTTKUNGENS KLOAK (inomhus: slam och sprutrör i speglade fläckar, rörpelare) och 'desert' SFINXENS ÖKEN
+//    (utomhus: kvicksand och hägringar i speglade fläckar, ruinpelare, kaktusar, kokpannor). Gen.secret/Gen.maze har utseendena sewer och desert.
+// Version 21 – "Järnfängelset och Fiskeläget" (allt nytt har egna slumpflöden ur gaffeln 'v21'; content21 körs efter content20, skrotpåsarna ɟ i de gamla
+//   biomerna med ångra-lista opts.v21.undo: underkänns banan tas de bort igen och banan blir exakt som i version 20. opts.v21off ger exakt version 20;
+//   v15off-v20off stänger också av version 21 i de gamla biomerna):
+//  Biomer: prison JÄRNFÄNGELSET (inomhus, vikt 12, djup 2-4, dubbel andel): fängelsehålans bygge i fängelsesten ɇ med cellgaller Ɉ; floors [0]
+//    floor_prison, [1] vaktarens, cellraden floor_straw. Rumstyper cellrow (cellraden: gallerpelare, hängande burar; alltid en om någon sal är stor nog),
+//    guardpost (vaktrummet), torturechamber (tortyrkammaren: sträckbänkar ɐ), gallowsyard (galggården: en galge ɑ), prison, storeroom. content21:
+//    cellgaller i väggarna, larmplattor ɍ (1-3, högst 3), hängande burar ɏ (blockerar inte, högst 6), tortyrmästare ɗ (djup 3+, högst 2), vakthundar ɘ
+//    i par (högst 4). Infödda: ɕ fångvaktare (x2) och ɖ kedjefånge.
+//    harbor DET DIMHÖLJDA FISKELÄGET (utomhus, vikt 12, djup 3-6): öknens bygge: kajer (gårdar, rumstaggen 'yard') och stigar under himlen med
+//    floor_cobble (floors[2]), bodar och fiskehus under tak med floor_dock (floors[0]); väggar Ɋ (bodväggar), väggar mot bara himmel blir kajsten ɋ.
+//    Rumstyper fishhall (fiskhallen), storeroom; gårdar pier (bryggan: en vik av djupt vatten Đ med en bryggplanka tvärs över; alltid en om en gård
+//    blev ett stridsrum), lighthouse (fyrplatsen: en fyrlykta ɒ i mitten), quayside (kajen). content21: fyrlyktor ɒ i stället för eldfaten, djupt
+//    vatten Đ (bryggans vik och 1-3 fläckar, högst 60; golvet floor_deepwater, rutorna runt vattnet floor_dock = bryggor; aldrig enda vägen), fisknät Ɏ
+//    (1-3 fläckar, högst 16), fisktunnor ɓ, ankare ɔ, fiskmän ɚ (högst 3; står på en djupvattenruta – golvet under är floor_deepwater – med minst en
+//    vattengranne och en gångbar granne), måsar ɜ i flockar om 3 (högst 6). Infödda: ə drunknad fiskare (x2) och ɛ krabba.
+//  Tecken: väggar ɇ Ɉ ɉ (bödelns) Ɋ ɋ Ɍ (tidvattenprästens); golvrutor ɍ larmplatta och Ɏ fisknät (båda aldrig enda vägen: generatorn och validate
+//    räknar dem som lava; aldrig i dörröppningar; larmplattan är gångbar och synlig); rekvisita ɏ hängande bur (blockerar inte), ɐ sträckbänk, ɑ galge,
+//    ɒ fyrlykta (ljus), ɓ fisktunna, ɔ ankare (alla blockerar); fiender ɕ ɖ ɗ ɘ ə ɚ ɛ ɜ; vapen ɝ morgonstjärnan (flail), ɞ trombonen (blunderbuss);
+//    föremål ɟ skrotpåse (ammo scrap): alla biomer ~20 % (egna ~35 %), 1-2, aldrig i arenor, hemliga våningar eller labyrinter.
+//  Väktare: executioner BÖDELN (ɉ, floor_boss_executioner, ljus f, dekor sträckbänk), tidepriest TIDVATTENPRÄSTEN (Ɍ, floor_boss_tidepriest, ljus ɒ,
+//    dekor fisktunnor och ankare). Båda kan vakta i alla biomer.
+//  Bossarenor (Gen.ARENAS, sist): 'prison' BÖDELNS GÅRD (inomhus: raka väggar av fängelsesten med cellgaller, gallerpelare, sträckbänkar och galgar
+//    som skydd; floors [0] floor_prison, [1] floor_straw) och 'harbor' TIDVATTENPRÄSTENS VIK (utomhus: kajsten med bodväggar, djupt vatten Đ och fisknät Ɏ
+//    i speglade fläckar, kajpelare, fisktunnor och ankare, fyrlyktor i stället för eldfat; floors [0] floor_cobble, [1] floor_dock, [2] floor_deepwater).
+//  Gen.secret och Gen.maze har utseendena prison och harbor.
+// Version 22 – "Badhuset och Skärselden" (allt nytt har egna slumpflöden ur gaffeln 'v22'; content22 körs efter content21, svavelklumparna ɻ i de gamla
+//   biomerna med ångra-lista opts.v22.undo: underkänns banan tas de bort igen och banan blir exakt som i version 21. opts.v22off ger exakt version 21;
+//   v15off-v21off stänger också av version 22 i de gamla biomerna):
+//  Biomer: bathhouse BADHUSET (inomhus, vikt 12, djup 2-5): fängelsehålans bygge i mosaikmarmor ɠ med pelare ɡ; floors [0] floor_bathtile, [1] vaktarens,
+//    [2] floor_mosaic (korridorerna). Rumstyper poolhall (bassänghallen: statyer, en fontän; alltid en om någon sal är stor nog), steamroom (ångrummet),
+//    peristyle (pelargången), hypocaust (hypokausten: eldstäder), storeroom. content22: pelare i väggarna, heta bassänger ɣ (2-3 fläckar, högst 24),
+//    kallbad ɥ (1-2 fläckar, högst 12), ånggaller ɤ (1-2 fläckar, högst 12), fontäner ɧ, ångvålnader ɪ (djup 3+, högst 3), mögelkrypare ɬ (högst 4).
+//    Infödda: ɩ badvakt (x2) och ɫ gladiator.
+//    purgatory SKÄRSELDEN (utomhus, vikt 12, djup 5-8, dubbel andel; Gen.floor går till djup 5, så utan opts.biome bara djup 5): fiskelägets bygge:
+//    askfält (gårdar, rumstaggen 'yard') och stigar under himlen med floor_ashfield (floors[2]), salarna under tak med floor_brimstone (floors[0]);
+//    väggar ɭ (köttmurar), väggar mot bara himmel blir benmurar ɮ. Rumstyper runeground (runplatsen), bonewaste (benfältet), storeroom; gårdar
+//    fireriver (eldfloden; alltid en om en gård blev ett stridsrum), bonewaste, soulvale (själarnas dal), runeground. content22: svavelgrytor ɴ i stället
+//    för eldfaten, eldfloder ɰ (1-3 raka sträckor om 3-9 rutor, högst 30, aldrig enda vägen), runcirklar ɱ (1-3, aldrig närmare P än 6 rutor), kedjade
+//    själar ɲ, benpelare ɳ, plågade själar ɶ (högst 4), köttbjässar ɷ (djup 5+ – kontraktets 6+ går inte i Gen.floor – högst 2). Infödda: ɵ eldimp (x2)
+//    och ɸ askvandrare.
+//  Tecken: väggar ɠ ɡ ɢ (badmästarens) ɭ ɮ ɯ (eldfurstens); golvrutor ɣ het bassäng, ɰ eldflod och ɱ runcirkel (aldrig enda vägen: generatorn och
+//    validate räknar dem som lava; aldrig i dörröppningar), ɤ ånggaller och ɥ kallbad (gångbara, får ligga på vägen, aldrig i dörröppningar); rekvisita
+//    ɦ badstaty, ɧ fontän, ɨ bänk, ɲ kedjad själ, ɳ benpelare, ɴ svavelgryta (ljus) (alla blockerar); fiender ɩ ɪ ɫ ɬ ɵ ɶ ɷ ɸ; vapen ɹ treudden
+//    (trident), ɺ svavelmortern (brimstone); föremål ɻ svavelklump (ammo brimstone): alla biomer ~20 % (egna ~35 %), 1-2, aldrig i arenor, hemliga
+//    våningar eller labyrinter.
+//  level.streams = [{ x, y, dx, dy }] (alla banor; tom lista utan eldfloder): varje ɰ på kartan i exakt en post; (dx, dy) är flödets riktning, en av
+//    (1,0) (-1,0) (0,1) (0,-1) (längs sträckan; i arenan flyter allt söderut, dy = 1).
+//  Väktare: bathmaster BADMÄSTAREN (ɢ, floor_boss_bathmaster, ljus c, dekor badstatyer och bänk), pyrelord ELDFURSTEN (ɯ, floor_boss_pyrelord, ljus ɴ,
+//    dekor benpelare och kedjad själ). Båda kan vakta i alla biomer.
+//  Bossarenor (Gen.ARENAS, sist): 'bathhouse' BADMÄSTARENS TERMER (inomhus: raka väggar av mosaikmarmor med pelare, heta bassänger, ånggaller och ett
+//    kallbad i speglade fläckar, pelare, statyer och fontäner som skydd; floors [0] floor_bathtile, [1] floor_mosaic) och 'purgatory' ELDFURSTENS KRETS
+//    (utomhus: benmurar med ojämna kanter och köttmurar, eldfloder i speglade fläckar (level.streams), benpelare och kedjade själar, svavelgrytor i
+//    stället för eldfat; floors [0] floor_ashfield, [1] floor_brimstone).
+//  Gen.secret och Gen.maze har utseendena bathhouse och purgatory.
+// Version 23 – "Slakteriet och Slagfältet" (allt nytt har egna slumpflöden ur gaffeln 'v23'; content23 körs efter content22, kulpåsarna ʖ i de gamla
+//   biomerna med ångra-lista opts.v23.undo: underkänns banan tas de bort igen och banan blir exakt som i version 22. opts.v23off ger exakt version 22;
+//   v15off-v22off stänger också av version 23 i de gamla biomerna):
+//  Biomer: abattoir SLAKTERIET (inomhus, vikt 12, djup 2-5): badhusets bygge i slaktkakel ɼ med kylrumsväggar ɽ; floors [0] floor_abattoir, [1] vaktarens,
+//    [2] floor_bloodgrate (korridorerna). Rumstyper slaughterhall (slakthallen: köttkrokar, slaktbänkar; alltid en om någon sal är stor nog), coldroom
+//    (kylrummet: köttkrokar), cuttingroom (styckningsrummet: slaktbänkar, en bandsåg), grinderroom (kvarnrummet), storeroom. content23: kylrumsväggar,
+//    blodhalt golv ɿ (2-4 fläckar, högst 24), köttkvarnar ʀ (1-2 fläckar, högst 12, aldrig enda vägen), köttkrokar ʁ (blockerar inte, högst 10),
+//    flugsvärmar ʆ i moln om 3 (högst 6), styckade ʇ (djup 3+, högst 4). Infödda: ʄ slaktare (x2) och ʅ grisman.
+//    battlefield DET EVIGA SLAGFÄLTET (utomhus, vikt 12, djup 4-5, dubbel andel): skärseldens bygge: lerfält (gårdar, rumstaggen 'yard') och stigar under
+//    himlen med floor_battlemud (floors[2]), värnen under tak med floor_trench (floors[0]); väggar ʈ (palissader), väggar mot bara himmel blir jordvallar ʉ.
+//    Rumstyper palisadecamp (palissadlägret), storeroom; gårdar trench (skyttegraven; alltid en om en gård blev ett stridsrum), catapultfield
+//    (katapultfältet: trasiga katapulter ʍ), riderplain (ryttarslätten), palisadecamp. content23: djup lera ʋ (2-3 fläckar, högst 24, aldrig enda vägen),
+//    katapultmål ʌ (3-8 enstaka rutor, aldrig närmare P än 6 rutor, aldrig enda vägen), krigsfanor ʎ, spjutpålar ʏ, spöksoldater ʐ i formationer om 3
+//    (högst 9; antalet är alltid delbart med 3), spökryttare ʒ (högst 2, där den fria raka linjen är minst 7 rutor), kråkor ʓ i flockar om 3 (högst 6).
+//    Infödd: ʑ spökbågskytt.
+//  Tecken: väggar ɼ ɽ ɾ (slaktmästarens) ʈ ʉ ʊ (krigsherrens); golvrutor ʀ köttkvarn, ʋ djup lera och ʌ katapultmål (aldrig enda vägen: generatorn och
+//    validate räknar dem som lava; aldrig i dörröppningar), ɿ blodhalt golv (gångbart, får ligga på vägen, aldrig i dörröppningar); rekvisita ʁ köttkrok
+//    (blockerar inte), ʂ slaktbänk, ʃ bandsåg, ʍ katapult, ʎ krigsfana, ʏ spjutpålar (blockerar); fiender ʄ ʅ ʆ ʇ ʐ ʑ ʒ ʓ; vapen ʔ slaktarkroken (hookchain),
+//    ʕ bombarden (bombard); föremål ʖ kulpåse (ammo cannonballs): alla biomer ~20 % (egna ~35 %), 1-2, aldrig i arenor, hemliga våningar eller labyrinter.
+//  Väktare: butcher SLAKTMÄSTAREN (ɾ, floor_boss_butcher, ljus c, dekor slaktbänkar och bandsåg), warlord KRIGSHERREN (ʊ, floor_boss_warlord, ljus f,
+//    dekor krigsfanor och spjutpålar). Båda kan vakta i alla biomer.
+//  Bossarenor (Gen.ARENAS, sist): 'abattoir' SLAKTMÄSTARENS HALL (inomhus: raka väggar av slaktkakel med kylrumsväggar, blodhalt golv och köttkvarnar i
+//    speglade fläckar, kylrumspelare, slaktbänkar och bandsågar som skydd; floors [0] floor_abattoir, [1] floor_bloodgrate) och 'battlefield' KRIGSHERRENS
+//    FÄLT (utomhus: jordvallar med ojämna kanter och palissader, djup lera i speglade fläckar, palissadpelare, katapulter och fanor, spjutpålar; floors
+//    [0] floor_battlemud, [1] floor_trench; katapultsalvorna beordras av bossen i spelet, inga ʌ i arenan).
+//  Gen.secret och Gen.maze har utseendena abattoir och battlefield.
+// Version 24 – "Jakten" (bandesign): content24 är en pass ovanpå den färdiga, validerade vanliga våningen (Gen.floor) med eget slumpflöde
+//   RNG(seed).fork('v24'); grundlayouten är exakt densamma. opts.v24off – och varje äldre vNNoff (v7off ... v23off) – stänger av passet helt (då
+//   finns inga av fälten nedan). Varje del valideras för sig och tas bort igen om banan underkänns. Arenor, hemliga våningar och labyrinter
+//   får inget. Alla vanliga våningar får listorna (tomma när det saknas):
+//  level.shortcuts = [{ x, y, oneway, sx, sy, nx, ny, gap, carved }]: genvägar, en dörr D i en vanlig vägg (1-3 rutor tjock; väggrutorna efter
+//    dörren blir golv och står i carved = [{ x, y }])
+//    mellan två gångbara rutor som ligger nära på kartan men minst max(7, 12 % av P->x) steg isär längs vägen (gap = sparade steg), högst 2-3
+//    per bana, aldrig vid valv, hemliga rum, vaktarens sal, butiken, arenor, P/x/Z, andra dörrar eller rekvisita. (sx, sy) är rutan intill dörren
+//    på den bortre sidan (den man når senare), (nx, ny) på den närmare. oneway: dörren är låst från den närmare sidan och öppnas bara från
+//    (sx, sy)-sidan ("ÖPPNAS FRÅN ANDRA SIDAN"), så att banan slingrar tillbaka. En dubbelriktad genväg som skulle korta vägen P->x eller P->Z
+//    under 75 % blir alltid enkelriktad. Allt nås med alla enkelriktade dörrar stängda (validate). I spelet heter flaggan d.oneway, fienderna
+//    öppnar dem inte och avståndsfältet går inte genom en stängd enkelriktad dörr.
+//  level.ambushes = [{ trigger: { x, y, kind: 'key' | 'chest' }, from: { x, y }, cells: [{ x, y }], enemies: [{ ch, x, y }] }] (högst 2): bakhåll.
+//    När spelaren tar nyckeln } (eller öppnar kistan C i ett skattrum) vid trigger öppnas en dold nisch: cells är väggrutor på kartan (först
+//    öppningen intill golvrutan from, sedan nischen bakom, 1x2 eller 2x2), runt om bara vägg; spelet gör dem till golv och skapar då 1-4 fiender
+//    (vanliga fiendesorter som redan finns på banan, aldrig eliter/unika/vattenbundna) på enemies-rutorna, med totalEnemies++.
+//  level.landmarks = [{ x, y, kind: 'statue', light, r, room }]: en staty u mitt i en central sal med fyra ljus (light: f eldfat, Ę glödkristall
+//    eller c kandelaber) i hörnen r rutor ut; spelet tänder ett starkt ljus vid statyn.
+//  level.breadcrumbs = [{ x, y, ch }]: högst 4 ammo a / hälsa h var sjunde-åttonde ruta i gångarna längs vägen från P mot nyckeln (eller utgången).
+//    De står inte på kartan (rutan är tomt golv .): spelet lägger ut föremålen, så att våningens slumpflöde i spelet inte förskjuts.
+//  level.secretHints = [{ x, y, fx, fy }]: varje hemlig vägg * och golvrutan framför den; spelet låter damm sila och ett svagt ljus sippra ut där.
+//  level.cover = [{ x, y }]: lådor T som skydd i stridsrum med minst tre fiender och inget skydd (högst 3 per bana).
+//  level.pacing = [{ room, beat: 'hard' | 'reward', x?, y? }]: en svår sal (elitrum eller arena) och det första lugna rummet efter den, där en hälsa
+//    h ligger (x, y).
+//  Gen.floor.stats.v24 = { rejected, last }: steg som underkändes och togs bort.
+// Version 27 – "Blodbad" (fler banor): ett pass ovanpå version 24 (Gen.floor = floor27) med eget slumpflöde RNG(seed).fork('v27'). opts.v27off – och
+//   varje äldre vNNoff (v7off ... v24off) – stänger av det helt: banan är då exakt som i version 26 och har inga av fälten nedan. Arenor, hemliga
+//   våningar och labyrinter får inget. opts.v27 = { plan: 'ring' | 'cross' | 'gauntlet' | 'court' | null, scenes: [id, ...], noScenes } tvingar fram
+//   en planritning och/eller scener (tester och gen-preview --plan= --scene=).
+//  Planritningar (ungefär var fjärde vanlig våning från djup 2 i biomerna som byggs med salar och korridorer, alla utom katedralen; grottorna, kyrkogården,
+//    skogen, borggården, träsket, kristallgrottorna och svampriket byggs som förut): build() får opts.plan27 och lägger rummen efter en ritning
+//    i stället för slumpat (samma antal rum som en vanlig våning, vaktarens sal minst 9x9, 3 rutors mellanrum för korridorerna; förbindelserna
+//    efter ritningen). ring RINGBORGEN: salar i en sluten ring runt vaktarens sal i mitten; cross KORSFÄSTNINGEN: mittgård, fyra flyglar (en eller
+//    två salar), vaktarens torn i ett hörn och små torn i de andra; gauntlet STORMLÖPET: en lång slingrande kedja av salar fram till vaktarens sal;
+//    court BORGGÅRDEN: en stor öppen gård med vaktarens hall ovanför och byggnader runt om. I biomerna med gårdar blir de största salarna gårdar
+//    under himlen. Banan godkänns bara om validate godkänner den (build7 och version 24), utgången ligger minst 0,55 kartbredder bort (enkelriktade
+//    dörrar stängda), vaktaren minst 0,32 av den längsta vägen från start, himlen räcker och kött ð bara ligger i läger/baracker/smedjor; annars
+//    byggs den vanliga våningen (högst sex byggförsök med planritningen; den första våningen får aldrig någon). level.plan27 = id | null,
+//    level.planName27 = namnet | null, level.hub27 = mittgårdens rumsindex (cross, court).
+//  Scener och rumsmallar (level.scenes27 = [{ kind, room, x, y, w, h }], högst 6, en per rum; försöker med 1-3 scener och 2-3 rumsmallar per bana): bara väggar i
+//    banans vanligaste väggtecken och vanlig rekvisita u T c j J H k q (kandelabrar blir benhögar i kristallgrottorna och svampriket); fiender,
+//    föremål och fällor ligger kvar (korsgången flyttar 1-2 av rummets egna fiender in i nischerna, tronsalen ett av rummets föremål bakom
+//    tronen). Scener (normal/elite/treasure/exit-rum): pillarhall pelarsal (2x2-pelare med fri gång runt om), cloister korsgång (nischer längs
+//    långsidorna), stacks hyllgångar (rader av bokhyllor/lådor med växlande öppningar), throne tronsal (statygång fram till tronen), lavabridge bro
+//    över ett lavadike (bara vulkanen). Rumsmallar 'prefab:<id>' (även i start-, special- och helgedomsrum): altarring, guardpost, readingnook,
+//    cryptrow, armory, feast, bonepit, colonnade, shrine, fourpillars, barricade, statuehall, storage, ossuary, candlewalk, wallcorner (vriden
+//    och speglad slumpvis; 70 % av rekvisitan räcker). Aldrig vid dörrar, P, x, Z, nyckeln, interaktiva saker, arenor eller det som version 24
+//    pekar ut (eller pilplattornas, spökryttarnas och kanonernas fria linjer, eller det som level.boulders/beams/saws ... pekar ut). Efter varje steg
+//    kontrolleras två flöden från P (över allt som inte blockerar, och utan faror; grindar och enkelriktade dörrar stängda): allt som nåddes förut
+//    nås efteråt, och det som blockerar har kvar en fri sida; annars tas steget bort. Hela validate körs inte per bana (det kostar ~2 ms); med
+//    opts.v27.check görs passet om med validate efter varje steg om banan underkänns. gen-test validerar ~19 000 banor med version 27.
+//  Gen.floor.stats.v27 = { plans, planFail, rejected, last, why }.
 (function () {
   // vapen på kartan: g hagelgevär, r gevär, m kpist, d dubbelbössa, b armborst, s signalpistol, p prickskyttegevär,
-  // å yxa, ä eldkastare, ö granatkastare, é spikpistol, ü stav, ñ båge, ô kastknivar, û hammare, ï musköt. opts.weapon får vara tecknet eller vapnets id ('axe', 'bow', ...)
+  // å yxa, ä eldkastare, ö granatkastare, é spikpistol, ü stav, ñ båge, ô kastknivar, û hammare, ï musköt, À harpun, Á bumerang, Â prisma,
+  // Į sågbladskastare, į vindbössa, Ĳ spjut, Ŕ sporkastare, ŕ spegelsköld, Ŗ piska, ƀ runboken, Ɓ ångkanonen.
+  // opts.weapon får vara tecknet eller vapnets id ('axe', 'bow', 'harpoon', ...)
   const WEAPONS = { g: 'shotgun', r: 'rifle', m: 'smg', d: 'dbshotgun', b: 'crossbow', s: 'flaregun', p: 'sniper', 'å': 'axe', 'ä': 'flamer', 'ö': 'launcher',
-    'é': 'nailgun', 'ü': 'staff', 'ñ': 'bow', 'ô': 'knives', 'û': 'hammer', 'ï': 'musket' };
+    'é': 'nailgun', 'ü': 'staff', 'ñ': 'bow', 'ô': 'knives', 'û': 'hammer', 'ï': 'musket', 'À': 'harpoon', 'Á': 'boomerang', 'Â': 'prism',
+    'Į': 'sawlauncher', 'į': 'windgun', 'Ĳ': 'spear', // version 9: sågbladskastare, vindbössa, spjut
+    'Ŕ': 'sporelauncher', 'ŕ': 'mirrorshield', 'Ŗ': 'whip', // version 11: sporkastare, spegelsköld, piska
+    'ƀ': 'runebook', 'Ɓ': 'steamcannon', // version 13: runboken, ångkanonen
+    'ƛ': 'censer', 'Ɲ': 'hivelauncher', // version 15: rökelsekaret, bikastaren
+    'Ʊ': 'shears', 'Ʋ': 'dreamstaff', // version 16: trädgårdssaxen, drömstaven
+    'Ǫ': 'chaincannon', 'Ǭ': 'acidsprayer', // version 17: kedjekulekanonen, syrasprutan
+    'ǽ': 'pinthrower', 'Ȏ': 'blowgun', // version 18: käglekastaren, blåsröret
+    '\u0229': 'pickaxe', '\u022a': 'starlance', // version 19: hackan ȩ, stjärnlansen Ȫ
+    '\u0244': 'scimitar', '\u0245': 'trapthrower', // version 20: kroksabeln Ʉ, fällkastaren Ʌ
+    '\u025d': 'flail', '\u025e': 'blunderbuss', // version 21: morgonstjärnan ɝ, trombonen ɞ
+    '\u0279': 'trident', '\u027a': 'brimstone', // version 22: treudden ɹ, svavelmortern ɺ
+    'ʔ': 'hookchain', 'ʕ': 'bombard', // version 23: slaktarkroken ʔ, bombarden ʕ
+    'ʲ': 'sling', 'ʳ': 'glassgun' }; // version 30: slungan ʲ, glasbössan ʳ
   const WEAPON_CHARS = Object.keys(WEAPONS).join('');
   const weaponChar = w => (!w ? null : WEAPONS[w] ? w : Object.keys(WEAPONS).find(c => WEAPONS[c] === w) || null);
   'use strict';
@@ -163,21 +850,130 @@
   const BARRELS6 = 'µß'; // version 6: gifttunna, frosttunna (blockerar, kan skjutas som e)
   const INTER7 = '²³'; // version 7: sarkofag, larmklocka (blockerar, fri framsida)
   const NPCS7 = 'çÿý'; // version 7: spelare, bankir, vandrare (blockerar, fri framsida, måste nås)
-  const BLOCK_PROPS = 'tnkquvwyeHJT' + INTERACT + INTER6 + BARRELS6 + INTER7; // rekvisita som blockerar spelaren
-  const PROP_CHARS = 'ckjquvwyzeiFHJT' + INTERACT + INTER6 + BARRELS6 + INTER7; // ny rekvisita (räknas som rummets dekor)
+  const PROPS8 = 'ĖĘ'; // version 8: brytande kristall, glödkristall (blockerar)
+  const INTER8 = 'ĚĠ'; // version 8: vrakkista, talangaltare (blockerar, fri framsida)
+  const NPCS8 = 'Ğ'; // version 8: kartografen (blockerar, fri framsida, måste nås)
+  const PROPS9 = 'Ņņ'; // version 9: urverk, blixtstång (blockerar)
+  const INTER9 = 'Ňň'; // version 9: klockspel, molnkista (blockerar, fri framsida, måste nås)
+  const INTER10 = 'Œ'; // version 10: legendaltaret (blockerar, fri framsida, måste nås)
+  const PROPS11 = 'Ŧŧ'; // version 11: glödsvamp (ljuskälla), spegelstaty (blockerar)
+  const INTER13 = 'Ű', PROPS13 = 'Żż'; // version 13: pulpet (blockerar, fri framsida, måste nås); stans/press och städ/gjutform (blockerar)
+  // version 15: blodfunt och klocka (blockerar, fri framsida, måste nås); kyrkbänk och larvsäck (blockerar)
+  // version 16: fontän och falsk dörr (blockerar, fri framsida, måste nås); stenstaty (blockerar); drömlykta ƪ (ljus, blockerar inte)
+  const INTER15 = 'ƏƐ', PROPS15 = 'ƎƗ', INTER16 = 'ƧƩ', PROPS16 = 'ƨ';
+  // version 17: kanon ǎ och alembik ǟ (blockerar, fri framsida, måste nås); krutkagge Ǒ, flaskhylla ǝ och teslaspole Ǟ (blockerar); skeppslykta ǐ
+  // (ljus, blockerar inte)
+  const CANNON17 = 'ǎ', ALEMBIC17 = 'ǟ', KEG17 = 'Ǒ', FLASKS17 = 'ǝ', TESLA17 = 'Ǟ', LANTERN17 = 'ǐ';
+  const INTER17 = CANNON17 + ALEMBIC17, PROPS17 = KEG17 + FLASKS17 + TESLA17;
+  // version 18: lyckohjul Ǵ och guldidol Ȅ (blockerar, fri framsida, måste nås); knivkastarhjul ǳ, pilidol ȅ och tikifackla ȇ (blockerar);
+  // ballongklase ǵ, glödlampsgirlang Ƕ (ljus) och giftblomma Ȇ (blockerar inte)
+  const KNIFE18 = 'ǳ', PRIZE18 = 'Ǵ', BALLOON18 = 'ǵ', MARQUEE18 = 'Ƕ', GIDOL18 = 'Ȅ', DIDOL18 = 'ȅ', FLOWER18 = 'Ȇ', TIKI18 = 'ȇ';
+  const INTER18 = PRIZE18 + GIDOL18, PROPS18 = KNIFE18 + DIDOL18 + TIKI18;
+  // version 19: gruvvagn ț, orrery Ȟ och teleskop ȟ (blockerar, fri framsida, måste nås); dynamitlåda Ȝ (blockerar); karbidlampa ȝ (ljus) och
+  // stjärnport Ƞ (blockerar inte; stjärnporten räknas som fara, se SINK19)
+  const CART19 = '\u021b', DYNA19 = '\u021c', LAMP19 = '\u021d', ORRERY19 = '\u021e', SCOPE19 = '\u021f', PORT19 = '\u0220';
+  const INTER19 = CART19 + ORRERY19 + SCOPE19, PROPS19 = DYNA19;
+  // version 20: slussratt ȶ (blockerar, fri framsida, måste nås); råttbo ȸ, kaktus ȹ, amfora Ⱥ och kokpanna Ȼ (ljus) blockerar
+  const WHEEL20 = '\u0236', SLUICE20 = '\u0237', NEST20 = '\u0238', CACTUS20 = '\u0239', AMPHORA20 = '\u023a', BRAZIER20 = '\u023b';
+  const INTER20 = WHEEL20, PROPS20 = NEST20 + CACTUS20 + AMPHORA20 + BRAZIER20;
+  // version 21: sträckbänk ɐ, galge ɑ, fyrlykta ɒ (ljus), fisktunna ɓ och ankare/nätställning ɔ blockerar; den hängande buren ɏ hänger i taket
+  // (blockerar inte)
+  const CAGE21 = '\u024f', RACK21 = '\u0250', GALLOWS21 = '\u0251', HLAMP21 = '\u0252', FBARREL21 = '\u0253', ANCHOR21 = '\u0254';
+  const PROPS21 = RACK21 + GALLOWS21 + HLAMP21 + FBARREL21 + ANCHOR21;
+  // version 22: badstaty ɦ, fontän ɧ, bänk/handdukshylla ɨ, kedjad själ ɲ, benpelare ɳ och svavelgryta ɴ (ljus) blockerar
+  const BSTATUE22 = 'ɦ', FOUNT22 = 'ɧ', BENCH22 = 'ɨ', SOUL22 = 'ɲ', BPILLAR22 = 'ɳ', BRIMPOT22 = 'ɴ';
+  const PROPS22 = BSTATUE22 + FOUNT22 + BENCH22 + SOUL22 + BPILLAR22 + BRIMPOT22;
+  // version 23: slaktbänk ʂ, bandsåg ʃ, trasig katapult ʍ, krigsfana ʎ och spjutpålar ʏ blockerar; köttkroken ʁ hänger i taket (blockerar inte)
+  const HOOK23 = 'ʁ', BLOCK23 = 'ʂ', SAW23 = 'ʃ', CATA23 = 'ʍ', BANNER23 = 'ʎ', STAKES23 = 'ʏ';
+  const PROPS23 = BLOCK23 + SAW23 + CATA23 + BANNER23 + STAKES23;
+  // version 30: raserad pelare ʢ, nedfallen takbjälke ʣ, huvudlös staty ʤ (ruinstaden), smältugn ʥ (ljus), glashylla ʦ (går att skjuta sönder i spelet)
+  // och glasblåsarbänk ʧ (glasbruket): alla blockerar
+  const COLUMN30 = 'ʢ', BEAM30 = 'ʣ', STATUE30 = 'ʤ', FURNACE30 = 'ʥ', RACK30 = 'ʦ', GBENCH30 = 'ʧ';
+  const PROPS30 = COLUMN30 + BEAM30 + STATUE30 + FURNACE30 + RACK30 + GBENCH30;
+  const BLOCK_PROPS = 'tnkquvwyeHJT' + INTERACT + INTER6 + BARRELS6 + INTER7 + PROPS8 + INTER8 + PROPS9 + INTER9 + INTER10 + PROPS11 + INTER13 + PROPS13
+    + INTER15 + PROPS15 + INTER16 + PROPS16 + INTER17 + PROPS17 + INTER18 + PROPS18 + INTER19 + PROPS19 + INTER20 + PROPS20 + PROPS21 + PROPS22 + PROPS23 + PROPS30; // rekvisita som blockerar spelaren
+  const PROP_CHARS = 'ckjquvwyzeiFHJT' + INTERACT + INTER6 + BARRELS6 + INTER7 + PROPS8 + INTER8 + PROPS9 + INTER9 + INTER10 + PROPS11 + INTER13 + PROPS13 + 'ű'
+    + INTER15 + PROPS15 + INTER16 + PROPS16 + 'ƪ' + INTER17 + PROPS17 + LANTERN17 + INTER18 + PROPS18 + BALLOON18 + MARQUEE18 + FLOWER18 + INTER19 + PROPS19 + LAMP19 + INTER20 + PROPS20 + PROPS21 + CAGE21 + PROPS22 + PROPS23 + HOOK23 + PROPS30; // ny rekvisita (räknas som rummets dekor; ű ljuskrona, ƪ drömlykta och ǐ skeppslykta blockerar inte)
   const GATES = '|]{'; // järngrind, låst dörr, sprucken vägg: blockerar tills de öppnas
-  const WALLS = '0123456789#%~&=Ø¦Ò¤ÈÌÙ';
+  const WALLS = '0123456789#%~&=Ø¦Ò¤ÈÌÙ' + 'ĄĆĈĊČĎ' + 'ĹĺĻļĽľ' + 'ŝŞşŠšŢ' // version 11: svampvägg, svamphatt, mycelmoderns, marmor, spegel, spegelkungens
+    + 'ũŪūŵŶŷ' // version 13: bokhylla, träpanel, bibliotekariens, järnplåt, smältugn, smideskolossens
+    + 'ƊƋƌƓƔƕ' // version 15: katedralsten, blyinfattat glas, kardinalens, vax, honungskaka, bidrottningens
+    + 'ƟƠơƢƣƤ' // version 16: häck, trädgårdsmur, trädgårdsmästarens, drömvägg, glidande vägg (ƣ: vägg halva tiden), mardrömsherrens
+    + 'ǒǓǔǠǡǢ' // version 17: skeppsskrov/plankvägg, mast och rigg, kaptenens, laboratoriekakel, hyllor med burkar, alkemistens
+    + 'ǮǯǰǿȀȁ' // version 18: tältduk, djurbur, cirkusdirektörens, djungelsten med mossa, tät djungel, ormens
+    + '\u0210\u0211\u0212\u0213\u0214\u0215' // version 19: timrad stoll Ȑ, malmåder ȑ, förmannens Ȓ, mässingspanel ȓ, stjärnkarta Ȕ, stjärnskådarens ȕ
+    + '\u022c\u022d\u022e\u022f\u0230\u0231' // version 20: timrad stoll Ȑ, malmåder ȑ, förmannens Ȓ, mässingspanel ȓ, stjärnkarta Ȕ, stjärnskådarens ȕ
+    + '\u0247\u0248\u0249\u024a\u024b\u024c' // version 21: fängelsesten ɇ, cellgaller Ɉ, bödelns ɉ, bodvägg Ɋ, kajsten ɋ, tidvattenprästens Ɍ
+    + 'ɠɡɢɭɮɯ' // version 22: mosaikmarmor ɠ, pelargång ɡ, badmästarens ɢ, köttmur ɭ, benmur ɮ, eldfurstens ɯ
+    + 'ɼɽɾʈʉʊ' // version 23: slaktkakel ɼ, kylrum ɽ, slaktmästarens ɾ, palissad ʈ, jordvall ʉ, krigsherrens ʊ
+    + 'ʗʘʙʚʛʜ' // version 30: raserad tegelmur ʗ, sprucken puts ʘ, borgmästarens ʙ, ugnstegel ʚ, glashyllepanel ʛ, glasmästarens ʜ
+    + 'ǂ'; // version 28: fönster/galler (en vägg man ser igenom)
+  const PSTONE21 = '\u0247', CELLS21 = '\u0248', EXECWALL21 = '\u0249', SHACK21 = '\u024a', QUAY21 = '\u024b', TIDEWALL21 = '\u024c'; // version 21
+  const MOSAIC22 = 'ɠ', COLUMN22 = 'ɡ', BATHWALL22 = 'ɢ', FLESH22 = 'ɭ', BONE22 = 'ɮ', PYREWALL22 = 'ɯ'; // version 22
+  const TILE23 = 'ɼ', COLD23 = 'ɽ', BUTCHWALL23 = 'ɾ', PALI23 = 'ʈ', EARTH23 = 'ʉ', WARWALL23 = 'ʊ'; // version 23
+  const RBRICK30 = 'ʗ', PLASTER30 = 'ʘ', MAYORWALL30 = 'ʙ', KILN30 = 'ʚ', SHELF30 = 'ʛ', GMWALL30 = 'ʜ'; // version 30
+  const SEWER20 = '\u022c', PIPES20 = '\u022d', RATWALL20 = '\u022e', DUNE20 = '\u022f', MESA20 = '\u0230', SPHWALL20 = '\u0231'; // version 20: valvtegel, rörvägg, råttkungens, ruinsten, klippa, sfinxens
+  const TIMBER19 = '\u0210', ORE19 = '\u0211', FOREWALL19 = '\u0212', BRASS19 = '\u0213', CHART19 = '\u0214', SEERWALL19 = '\u0215';
+  // version 18: väggtecknen med namn
+  const TENT18 = 'Ǯ', CAGE18 = 'ǯ', RMWALL18 = 'ǰ', JSTONE18 = 'ǿ', JUNGLE18 = 'Ȁ', SERPWALL18 = 'ȁ';
+  // version 17: väggtecknen med namn (skrovet, masten, kaptenens vägg, kaklet, burkhyllorna, alkemistens vägg)
+  const HULL17 = 'ǒ', MAST17 = 'Ǔ', CAPWALL17 = 'ǔ', TILE17 = 'Ǡ', JARS17 = 'ǡ', ALCHWALL17 = 'Ǣ';
+  // version 9: tomrum Ń (avgrund: ingen går där, allt nås utan den), sågspår Ŀ och tidsbubblor ŀ (aldrig enda vägen, som lava)
+  const VOID9 = 'Ń', SINK9 = 'Ŀŀ';
+  // version 11: studsplatta ţ, sporpöl Ť och teleporter ť (gångbara rutor som aldrig är enda vägen: generatorn räknar dem som hinder)
+  const SINK11 = 'ţŤť';
+  // version 13: bläckpöl Ŭ, smält metall Ź och ångventil ź (aldrig enda vägen: generatorn räknar dem som hinder); rullbandet Ÿ är vanligt golv
+  // som får vara enda vägen (det går att gå på), men ligger aldrig på/intill P och x
+  const SINK13 = 'ŬŹź', BELT13 = 'Ÿ';
+  // version 15: honung Ɩ (mycket långsam) och version 16: taggrankor ƥ (river, brinner bort): aldrig enda vägen (generatorn räknar dem som hinder);
+  // ljusstråk ƍ (välsignar) och sömnens dimma Ʀ är gångbara golvrutor som får ligga på vägen, men aldrig på/intill P och x eller i dörröppningar.
+  // Den glidande väggen ƣ är en vägg (WALLS): allt nås med den uppe, och den står aldrig intill en dörr
+  const SINK15 = 'Ɩ', SINK16 = 'ƥ', FLOOR15 = 'ƍ', FLOOR16 = 'Ʀ', SHIFT16 = 'ƣ';
+  // version 17: ruttna plankor Ǎ (brakar igenom), sköljt däck Ǐ (halt, vågor) och syrakar Ǜ (fräter): aldrig enda vägen (generatorn räknar dem som
+  // hinder); transmutationscirkeln ǜ är en gångbar golvruta som får ligga på vägen, men aldrig på/intill P och x eller i dörröppningar
+  const ROT17 = 'Ǎ', WET17 = 'Ǐ', ACID17 = 'Ǜ', TRANS17 = 'ǜ', SINK17 = ROT17 + WET17 + ACID17, FLOOR17 = TRANS17;
+  // version 18: fallucka Ǳ, pirayavatten Ȃ och lianer ȃ: aldrig enda vägen (generatorn räknar dem som hinder); strålkastaren ǲ är en gångbar
+  // golvruta som får ligga på vägen, men aldrig på/intill P och x eller i dörröppningar
+  const TRAP18 = 'Ǳ', SPOT18 = 'ǲ', PIRANHA18 = 'Ȃ', VINES18 = 'ȃ', SINK18 = TRAP18 + PIRANHA18 + VINES18, FLOOR18 = SPOT18;
+  // version 19: räls Ȗ (vagnar), gasficka ȗ, knakande tak Ș (blir ett stenblock), kupolspringa Ț (meteorer) och stjärnport Ƞ: aldrig enda vägen (generatorn
+  // räknar dem som hinder); stjärnkartegolvet ș är en gångbar golvruta som får ligga på vägen, men aldrig på/intill P och x eller i dörröppningar
+  const RAIL19 = '\u0216', GAS19 = '\u0217', CAVE19 = '\u0218', STARMAP19 = '\u0219', SLIT19 = '\u021a';
+  const SINK19 = RAIL19 + GAS19 + CAVE19 + SLIT19 + PORT19, FLOOR19 = STARMAP19;
+  // version 20: slam Ȳ, sprutrör ȳ och sluss ȷ: aldrig enda vägen (generatorn räknar dem som hinder); oas ȴ och hägring ȵ är gångbara golvrutor som
+  // får ligga på vägen, men aldrig på/intill P och x eller i dörröppningar
+  const SLUDGE20 = '\u0232', SPRAY20 = '\u0233', OASIS20 = '\u0234', MIRAGE20 = '\u0235';
+  const SINK20 = SLUDGE20 + SPRAY20 + SLUICE20, FLOOR20 = OASIS20 + MIRAGE20;
+  // version 21: larmplatta ɍ (går att se och hoppa över) och fisknät Ɏ (snärjer): aldrig enda vägen (generatorn räknar dem som hinder)
+  const ALARM21 = '\u024d', NET21 = '\u024e', SINK21 = ALARM21 + NET21;
+  // version 22: het bassäng ɣ (skållar), eldflod ɰ (drar med strömmen, level.streams) och runcirkel ɱ (kallar eldimpar): aldrig enda vägen (generatorn
+  // räknar dem som hinder); ånggaller ɤ och kallbad ɥ är gångbara golvrutor som får ligga på vägen, men aldrig på/intill P och x eller i dörröppningar
+  const HOTPOOL22 = 'ɣ', VENT22 = 'ɤ', COLDPOOL22 = 'ɥ', FIRE22 = 'ɰ', RUNE22 = 'ɱ';
+  const SINK22 = HOTPOOL22 + FIRE22 + RUNE22, FLOOR22 = VENT22 + COLDPOOL22;
+  // version 23: köttkvarn ʀ, djup lera ʋ och katapultmål ʌ: aldrig enda vägen (generatorn räknar dem som hinder); blodhalt golv ɿ är en gångbar golvruta
+  // som får ligga på vägen, men aldrig på/intill P och x eller i dörröppningar
+  const SLICK23 = 'ɿ', GRIND23 = 'ʀ', MUD23 = 'ʋ', TARGET23 = 'ʌ';
+  const SINK23 = GRIND23 + MUD23 + TARGET23, FLOOR23 = SLICK23;
+  // version 30: rasande tak ʝ, smält glas ʟ, glasskärvor ʠ och ugnsmun ʡ: aldrig enda vägen (generatorn räknar dem som hinder; ugnsmunnens hetta når
+  // 1,5 rutor, så rutorna runt den får inte heller vara enda vägen); grushögen ʞ är en gångbar golvruta (långsam) som får ligga på vägen, men aldrig
+  // på/intill P och x eller i dörröppningar
+  const ROOF30 = 'ʝ', RUBBLE30 = 'ʞ', MOLTEN30 = 'ʟ', SHARDS30 = 'ʠ', VENT30 = 'ʡ';
+  const SINK30 = ROOF30 + MOLTEN30 + SHARDS30 + VENT30, FLOOR30 = RUBBLE30;
+  const WET8 = 'ĐĒĔĜÓ'; // version 8: djupt vatten, kristallspikar, tidvatten, luftbubblor, ål (står i vattnet): aldrig enda vägen
+  const WATER8 = 'ĐĔĜÓ'; // simbart vatten (kristallspikarna räknas som lava)
   // teckentabeller över hela BMP (de nya tecknen ligger utanför ASCII, € = 8364)
-  const T_WALL = new Uint8Array(65536), T_BLOCK = new Uint8Array(65536), T_GEN = new Uint8Array(65536);
+  const T_WALL = new Uint8Array(65536), T_BLOCK = new Uint8Array(65536), T_GEN = new Uint8Array(65536), T_WET = new Uint8Array(65536);
   for (const c of WALLS) T_WALL[c.charCodeAt(0)] = 1;
-  for (const c of WALLS + 'fM' + BLOCK_PROPS + GATES + NPCS + NPCS7) T_BLOCK[c.charCodeAt(0)] = 1;
-  for (const c of WALLS + 'fMo_z¬¯' + BLOCK_PROPS + GATES + NPCS + NPCS7) T_GEN[c.charCodeAt(0)] = 1; // lava, spikar, smulande golv och kvicksand ska alltid gå att gå runt
+  for (const c of WALLS + 'fM' + BLOCK_PROPS + GATES + NPCS + NPCS7 + NPCS8 + VOID9) T_BLOCK[c.charCodeAt(0)] = 1;
+  for (const c of WALLS + 'fMo_z¬¯' + WET8 + BLOCK_PROPS + GATES + NPCS + NPCS7 + NPCS8 + VOID9 + SINK9 + SINK11 + SINK13 + SINK15 + SINK16 + SINK17 + SINK18 + SINK19 + SINK20 + SINK21 + SINK22 + SINK23 + SINK30) T_GEN[c.charCodeAt(0)] = 1; // lava, spikar, smulande golv, kvicksand och vatten ska alltid gå att gå runt
+  for (const c of WET8) T_WET[c.charCodeAt(0)] = 1;
   const isWall = c => T_WALL[c.charCodeAt(0)] === 1;
   const isBlock = c => T_BLOCK[c.charCodeAt(0)] === 1; // blockerar spelaren
   const genBlk = c => T_GEN[c.charCodeAt(0)] === 1; // generatorn räknar även krukor, lava och spikar som hinder
+  const isWet = c => T_WET[c.charCodeAt(0)] === 1;
   const isDoorCh = c => c === 'D' || c === 'G' || c === '*' || c === '|' || c === ']' || c === '{';
-  const isInter = c => INTERACT.includes(c) || NPCS.includes(c) || INTER6.includes(c) || INTER7.includes(c) || NPCS7.includes(c); // fri framsida, ska nås med grindarna stängda
-  const HAZARD = '_-:"z<>Ç°¬±¨¯¹'; // farliga golv och fällor: aldrig på eller intill P och x
+  const isInter = c => INTERACT.includes(c) || NPCS.includes(c) || INTER6.includes(c) || INTER7.includes(c) || NPCS7.includes(c) || INTER8.includes(c) || NPCS8.includes(c) || INTER9.includes(c) || c === 'Œ' || c === 'Ű'
+    || c === 'Ə' || c === 'Ɛ' || c === 'Ƨ' || c === 'Ʃ' || c === CANNON17 || c === ALEMBIC17 || c === PRIZE18 || c === GIDOL18 || INTER19.includes(c) || c === WHEEL20; // fri framsida, ska nås med grindarna stängda
+  const HAZARD = '_-:"z<>Ç°¬±¨¯¹' + 'ĐĒĔĜ' + 'ĿŀŃń' + SINK11 + SINK13 + BELT13 + SINK15 + SINK16 + FLOOR15 + FLOOR16 + SINK17 + FLOOR17 + SINK18 + FLOOR18 + SINK19 + FLOOR19 + SINK20 + FLOOR20 + SINK21 + SINK22 + FLOOR22 + SINK23 + FLOOR23 + SINK30 + FLOOR30; // farliga golv och fällor (och tomrummet, rullbanden): aldrig på eller intill P och x
   const cheb = (ax, ay, bx, by) => Math.max(Math.abs(ax - bx), Math.abs(ay - by));
 
   // ---------- Biomer ----------
@@ -191,6 +987,44 @@
     { id: 'frost', name: 'FROSTFÄSTET', outdoor: true, weight: 12, depth: [1, 5] }, // frusna salar kring snötäckta gårdar
     { id: 'volcano', name: 'VULKANEN', outdoor: true, weight: 12, depth: [1, 5] }, // obsidiansalar, lavafloder och askfält under röd himmel
     { id: 'tomb', name: 'GRAVKAMMAREN', outdoor: true, weight: 12, depth: [1, 5] }, // sandstenssalar, sandfyllda gångar och gårdar under ökensolen
+    { id: 'crystal', name: 'KRISTALLGROTTORNA', outdoor: false, weight: 12, depth: [1, 5] }, // version 8: kristallgrottor med glödkristaller och spikar
+    { id: 'sunken', name: 'DEN SJUNKNA STADEN', outdoor: true, weight: 12, depth: [1, 5] }, // version 8: översvämmade ruiner, bassänger, tidvatten
+    { id: 'clock', name: 'KLOCKTORNET', outdoor: false, weight: 12, depth: [1, 5] }, // version 9: mässingssalar, urverk, sågspår och tidsbubblor
+    { id: 'sky', name: 'MOLNBORGEN', outdoor: true, weight: 12, depth: [1, 5] }, // version 9: flytande öar över tomrummet, broar och vindbyar
+    { id: 'fungus', name: 'SVAMPRIKET', outdoor: false, weight: 12, depth: [1, 5] }, // version 11: svampgrottor, glödsvampar, studsplattor och sporpölar
+    { id: 'mirror', name: 'SPEGELPALATSET', outdoor: false, weight: 12, depth: [1, 5] }, // version 11: marmorsalar, spegelväggar och teleportrar
+    { id: 'library', name: 'DET FÖRBJUDNA BIBLIOTEKET', outdoor: false, weight: 12, depth: [1, 5] }, // version 13: läsesalar, bokhyllegångar, pulpeter och bläckpölar
+    { id: 'foundry', name: 'GJUTERIET', outdoor: false, weight: 12, depth: [1, 5] }, // version 13: järnplåt, smältugnar, rullband, smält metall, ångventiler och stansar
+    // version 15 (mellersta djup): långhus med bänkrader, kapell och klocktorn; sexkantiga vaxceller, larvkammare och honungssalar
+    { id: 'cathedral', name: 'BLODKATEDRALEN', outdoor: false, weight: 12, depth: [2, 5] },
+    { id: 'hive', name: 'BIKUPAN', outdoor: false, weight: 12, depth: [2, 5] },
+    // version 16 (sena djup): murade trädgårdar och häckgångar under himlen; schackbrädesalar, glidande väggar och falska dörrar
+    { id: 'garden', name: 'DEN DÖDA TRÄDGÅRDEN', outdoor: true, weight: 12, depth: [3, 5] },
+    { id: 'dream', name: 'DRÖMRIKET', outdoor: false, weight: 12, depth: [3, 5] },
+    // version 17: spökskeppet (däck under natthimlen, kajutor och lastrum under däck) och alkemistens laboratorium (sent: aldrig först)
+    { id: 'ship', name: 'SPÖKSKEPPET', outdoor: true, weight: 12, depth: [2, 5] },
+    { id: 'lab', name: 'ALKEMISTENS LABORATORIUM', outdoor: false, weight: 12, depth: [3, 5] },
+    // version 18: den övergivna cirkusen (inomhus under stora tält) och djungeltemplet (utomhus: gläntor och stigar under lövkronan, templets salar under tak)
+    { id: 'circus', name: 'DEN ÖVERGIVNA CIRKUSEN', outdoor: false, weight: 12, depth: [2, 5] },
+    { id: 'jungle', name: 'DJUNGELTEMPLET', outdoor: true, weight: 12, depth: [3, 5] },
+    // version 19: den övergivna gruvan (inomhus, mellersta djupen) och stjärnobservatoriet (inomhus, sent)
+    { id: 'mine', name: 'DEN ÖVERGIVNA GRUVAN', outdoor: false, weight: 12, depth: [2, 4] },
+    { id: 'observatory', name: 'STJÄRNOBSERVATORIET', outdoor: false, weight: 12, depth: [3, 5] },
+    // version 20: kloakerna (inomhus, mellersta djupen) och öknen (utomhus, mellersta/sena djupen)
+    { id: 'sewer', name: 'KLOAKERNA', outdoor: false, weight: 12, depth: [2, 4] },
+    { id: 'desert', name: 'ÖKNEN', outdoor: true, weight: 12, depth: [3, 5] },
+    // version 21: järnfängelset (inomhus, mellersta djupen) och det dimhöljda fiskeläget (utomhus, mellersta/sena djupen)
+    { id: 'prison', name: 'JÄRNFÄNGELSET', outdoor: false, weight: 12, depth: [2, 4] },
+    { id: 'harbor', name: 'DET DIMHÖLJDA FISKELÄGET', outdoor: true, weight: 12, depth: [3, 6] },
+    // version 22: badhuset (inomhus, mellersta djupen) och skärselden (utomhus, sena djup: Gen.floor går till djup 5, så i praktiken bara djup 5)
+    { id: 'bathhouse', name: 'BADHUSET', outdoor: false, weight: 12, depth: [2, 5] },
+    { id: 'purgatory', name: 'SKÄRSELDEN', outdoor: true, weight: 12, depth: [5, 8] },
+    // version 23: slakteriet (inomhus, mellersta/sena djupen) och det eviga slagfältet (utomhus, sena djup)
+    { id: 'abattoir', name: 'SLAKTERIET', outdoor: false, weight: 12, depth: [2, 5] },
+    { id: 'battlefield', name: 'DET EVIGA SLAGFÄLTET', outdoor: true, weight: 12, depth: [4, 5] },
+    // version 30: ruinstaden (utomhus, djup 3-6) och glasbruket (inomhus, djup 4-7); Gen.floor går till djup 5
+    { id: 'ruins', name: 'RUINSTADEN', outdoor: true, weight: 12, depth: [3, 6] },
+    { id: 'glassworks', name: 'GLASBRUKET', outdoor: false, weight: 12, depth: [4, 7] },
   ];
 
   // ---------- Vaktare/bossar: väggtecken, golvtextur, ljuskälla och dekor runt salens kanter ----------
@@ -203,6 +1037,34 @@
     frost: { wall: '¦', floor: 'floor_boss_frost', light: 'c', decor: 'uuii' },
     flame: { wall: '¤', floor: 'floor_boss_volcano', light: 'f', decor: 'uuii' },
     pharaoh: { wall: 'Ù', floor: 'floor_boss_pharaoh', light: 'c', decor: 'uu²²' },
+    crystalqueen: { wall: 'Ĉ', floor: 'floor_boss_crystalqueen', light: 'Ę', decor: 'iiuu' }, // version 8
+    leviathan: { wall: 'Ď', floor: 'floor_boss_leviathan', light: 'c', decor: 'jjuu' }, // version 8 (salen får en bassäng Đ)
+    clockmaker: { wall: 'Ļ', floor: 'floor_boss_clockmaker', light: 'f', decor: 'ŅŅuu' }, // version 9: urmakaren (dekor: urverk)
+    thunderbird: { wall: 'ľ', floor: 'floor_boss_thunderbird', light: 'f', decor: 'ņņuu' }, // version 9: stormfågeln (dekor: blixtstänger)
+    mycelmother: { wall: 'ş', floor: 'floor_boss_mycelmother', light: 'Ŧ', decor: 'FFjj' }, // version 11: mycelmodern (ljus: glödsvampar)
+    mirrorking: { wall: 'Ţ', floor: 'floor_boss_mirrorking', light: 'c', decor: 'ŧŧuu' }, // version 11: spegelkungen (dekor: spegelstatyer)
+    librarian: { wall: 'ū', floor: 'floor_boss_librarian', light: 'ű', decor: 'qquu' }, // version 13: bibliotekarien (ljus: ljuskronor, dekor: bokhyllor)
+    colossus: { wall: 'ŷ', floor: 'floor_boss_colossus', light: 'f', decor: 'żżuu' }, // version 13: smideskolossen (dekor: städ/gjutformar)
+    cardinal: { wall: 'ƌ', floor: 'floor_boss_cardinal', light: 'c', decor: 'ƎƎuu' }, // version 15: kardinalen (dekor: kyrkbänkar)
+    queenbee: { wall: 'ƕ', floor: 'floor_boss_queenbee', light: 'f', decor: 'jjuT' }, // version 15: bidrottningen
+    gardener: { wall: 'ơ', floor: 'floor_boss_gardener', light: 'f', decor: 'ƨƨjj' }, // version 16: trädgårdsmästaren (dekor: stenstatyer)
+    sandman: { wall: 'Ƥ', floor: 'floor_boss_sandman', light: 'ƪ', decor: 'uukk' }, // version 16: Jon Blund (ljus: drömlyktor)
+    captain: { wall: 'ǔ', floor: 'floor_boss_captain', light: 'ǐ', decor: 'ǑǑkT' }, // version 17: spökkaptenen (ljus: skeppslyktor, dekor: krutkaggar)
+    alchemist: { wall: 'Ǣ', floor: 'floor_boss_alchemist', light: 'c', decor: 'ǝǝJu' }, // version 17: alkemisten (dekor: flaskhyllor)
+    ringmaster: { wall: RMWALL18, floor: 'floor_boss_ringmaster', light: MARQUEE18, decor: 'ǵǵTk' }, // version 18: cirkusdirektören (ljus: glödlampsgirlanger, dekor: ballonger)
+    serpent: { wall: SERPWALL18, floor: 'floor_boss_serpent', light: TIKI18, decor: 'uujt' }, // version 18: den fjädrade ormen (ljus: tikifacklor)
+    foreman: { wall: FOREWALL19, floor: 'floor_boss_foreman', light: LAMP19, decor: DYNA19 + DYNA19 + 'TT' }, // version 19: gruvförmannen (ljus: karbidlampor, dekor: dynamitlådor)
+    starseer: { wall: SEERWALL19, floor: 'floor_boss_starseer', light: 'c', decor: 'uuJk' }, // version 19: stjärnskådaren
+    ratking: { wall: RATWALL20, floor: 'floor_boss_ratking', light: 'f', decor: 'jjTk' }, // version 20: råttkungen
+    sphinx: { wall: SPHWALL20, floor: 'floor_boss_sphinx', light: BRAZIER20, decor: AMPHORA20 + AMPHORA20 + 'uu' }, // version 20: sfinxen (ljus: kokpannor, dekor: amforor)
+    executioner: { wall: EXECWALL21, floor: 'floor_boss_executioner', light: 'f', decor: RACK21 + 'jjk' }, // version 21: bödeln (dekor: sträckbänk)
+    tidepriest: { wall: TIDEWALL21, floor: 'floor_boss_tidepriest', light: HLAMP21, decor: FBARREL21 + FBARREL21 + ANCHOR21 + 'u' }, // version 21: tidvattenprästen (ljus: fyrlyktor, dekor: fisktunnor och ankare)
+    bathmaster: { wall: BATHWALL22, floor: 'floor_boss_bathmaster', light: 'c', decor: BSTATUE22 + BSTATUE22 + BENCH22 + 'u' }, // version 22: badmästaren (dekor: badstatyer, bänk)
+    pyrelord: { wall: PYREWALL22, floor: 'floor_boss_pyrelord', light: BRIMPOT22, decor: BPILLAR22 + BPILLAR22 + SOUL22 + 'j' }, // version 22: eldfursten (ljus: svavelgrytor, dekor: benpelare, kedjad själ)
+    butcher: { wall: BUTCHWALL23, floor: 'floor_boss_butcher', light: 'c', decor: BLOCK23 + BLOCK23 + SAW23 + 'j' }, // version 23: slaktmästaren (dekor: slaktbänkar, bandsåg)
+    warlord: { wall: WARWALL23, floor: 'floor_boss_warlord', light: 'f', decor: BANNER23 + BANNER23 + STAKES23 + 'u' }, // version 23: krigsherren (dekor: krigsfanor, spjutpålar)
+    mayor: { wall: MAYORWALL30, floor: 'floor_boss_mayor', light: 'c', decor: COLUMN30 + COLUMN30 + STATUE30 + 'j' }, // version 30: borgmästaren (dekor: raserade pelare, huvudlös staty)
+    glassmaster: { wall: GMWALL30, floor: 'floor_boss_glassmaster', light: FURNACE30, decor: RACK30 + RACK30 + GBENCH30 + 'T' }, // version 30: glasmästaren (ljus: smältugnar, dekor: glashyllor, bänk)
   };
   // slumpad vaktare (utan opts.guardian): de fem ursprungliga; i frostfästet blir det frostväktaren varannan gång
   const GUARD_IDS = ['demon', 'beast', 'nightmare', 'ogre', 'ghost'];
@@ -245,6 +1107,14 @@
     // träsket: floors[0] mossa, [1] spänger (plankor), [2] lera, [3] vissnat gräs; vattnet är tecknet '-' (spelets egen textur)
     swamp: { wall: '0', floors: ['floor_swamp', 'floor_wood_planks', 'floor_mud', 'floor_grass_dead'], ceil: 'floor_wood_planks', ambient: [0.21, 0.27],
       fog: SWAMP_FOG, names: ['TRÄSKET', 'DE DRUNKNADES MOSSE', 'DIMKÄRRET', 'HÄXKÄRRET', 'GUNGFLYET', 'RUTTENMYREN'] },
+    // kristallgrottorna (version 8): grottans bygge i kristallvägg; floors[0] kristallgolv, [1] grottberg (fläckar)
+    crystal: { wall: 'Ą', biome: 'crystal', floors: ['floor_crystal', 'floor_cave'], ceil: 'ceil_cave', ambient: [0.1, 0.14],
+      fog: rng => [rng.int(14, 18), rng.int(10, 13), rng.int(28, 34)], // kall blåviolett
+      names: ['KRISTALLGROTTORNA', 'GLITTERSALEN', 'PRISMAGRUVAN', 'AMETISTDJUPET', 'DE SJUNGANDE KRISTALLERNA', 'SKÄRVGÅNGARNA'] },
+    // svampriket (version 11): grottans bygge i svampvägg ŝ (glesa glödande svamphattar Ş); floors[0] mossa, [1] grottberg (fläckar)
+    fungus: { wall: 'ŝ', biome: 'fungus', floors: ['floor_moss', 'floor_cave'], ceil: 'ceil_cave', ambient: [0.13, 0.18],
+      fog: rng => [rng.int(16, 19), rng.int(25, 29), rng.int(20, 24)], // grön-lila sporrök (grönast, med lila skimmer)
+      names: ['SVAMPRIKET', 'MYCELDJUPET', 'SPORGROTTORNA', 'DE GLÖDANDE HATTARNA', 'RÖTANS RIKE', 'JÄTTESVAMPARNAS SKOG'] },
   };
   // frostfästet: byggs som fängelsehålan (salar + korridorer i Ø) men med snögårdar under himlen;
   // floors: [0] frusen sten (inomhus), [1] vaktarens golv, [2] snö (gårdarna)
@@ -261,6 +1131,142 @@
   const TOMB_FOG = rng => [rng.int(30, 34), rng.int(24, 28), rng.int(14, 18)]; // varmt sanddis
   const TOMB = { id: 'tomb', wall: 'È', floor: 'floor_sand', snow: 'floor_sand', ceil: 'floor_sand', ambient: [0.22, 0.28],
     fog: TOMB_FOG, names: ['GRAVKAMMAREN', 'DEN SJUNKNA GRAVEN', 'FARAONENS VALV', 'SANDHALLARNA', 'DE GYLLENE KAMRARNA', 'SKARABÉGROTTAN'] };
+  // den sjunkna staden (version 8): samma bygge (salar + korridorer i ruinmur Ċ) med översvämmade torg under himlen;
+  // floors: [0] sjunkna plattor (salar, korridorer, torg), [1] vaktarens golv; djupt vatten och tidvatten målas av content8
+  const SUNKEN_FOG = rng => [rng.int(8, 11), rng.int(18, 22), rng.int(22, 27)]; // grumlig grönblå
+  const SUNKEN = { id: 'sunken', wall: 'Ċ', floor: 'floor_sunken_tiles', snow: 'floor_sunken_tiles', ceil: 'floor_stone', ambient: [0.18, 0.24],
+    fog: SUNKEN_FOG, names: ['DEN SJUNKNA STADEN', 'DE DRUNKNADES GATOR', 'KORALLTEMPLET', 'TIDVATTENSHAMNEN', 'DEN ÖVERSVÄMMADE KATEDRALEN', 'DJUPETS KVARTER'] };
+  const CRYSTAL_FOG = LOOKS.crystal.fog;
+  // klocktornet (version 9): fängelsehålans bygge (salar + korridorer, inomhus) i mässingsvägg Ĺ med kuggväggar ĺ;
+  // floors: [0] mässing, [1] vaktarens golv; urverk, sågspår, tidsbubblor och klockspel sätts av content9
+  const CLOCK_FOG = rng => [rng.int(28, 33), rng.int(21, 25), rng.int(10, 14)]; // varm mässingsdimma
+  const CLOCK = { id: 'clock', wall: 'Ĺ', floor: 'floor_brass', snow: 'floor_brass', ceil: 'floor_brass', ambient: [0.16, 0.22], indoor: true,
+    fog: CLOCK_FOG, names: ['KLOCKTORNET', 'URVERKET', 'PENDELSALEN', 'KUGGARNAS GÅNGAR', 'TIDENS VALV', 'URMAKARENS VERKSTAD'] };
+  // molnborgen (version 9): samma bygge (salar = öar, korridorer = broar) under öppen himmel; väggarna blir tomrum Ń (golv floor_void)
+  // utom glesa låga murar och pelare (ļ Ľ), valvens och de hemliga rummens murar och dörrkarmarna (content9); kanten är stormmur Ľ.
+  // floors: [0] molngolv, [1] vaktarens golv, sedan floor_void (under Ń) och floor_wind (under vindrutorna ń)
+  const SKY_FOG = rng => [rng.int(25, 28), rng.int(30, 33), rng.int(34, 38)]; // ljus blåvit
+  const SKY = { id: 'sky', wall: 'ļ', floor: 'floor_cloud', snow: 'floor_cloud', ceil: 'floor_cloud', ambient: [0.26, 0.32],
+    fog: SKY_FOG, names: ['MOLNBORGEN', 'STORMENS TINNAR', 'DE SVÄVANDE ÖARNA', 'VINDARNAS RIKE', 'ÅSKANS TRAPPOR', 'HIMMELSBORGEN'] };
+
+  // spegelpalatset (version 11): fängelsehålans bygge (salar + korridorer, inomhus) i marmor Š med spegelväggar š (hela väggsegment i salarna);
+  // floors: [0] marmor, [1] vaktarens golv; spegelväggar, teleporterpar och spegelstatyer sätts av content11
+  const MIRROR_FOG = rng => [rng.int(24, 27), rng.int(23, 26), rng.int(30, 34)]; // blek silverviolett
+  const MIRROR = { id: 'mirror', wall: 'Š', floor: 'floor_marble', snow: 'floor_marble', ceil: 'floor_marble', ambient: [0.2, 0.26], indoor: true,
+    fog: MIRROR_FOG, names: ['SPEGELPALATSET', 'DE TUSEN SPEGLARNA', 'MARMORSALARNA', 'GLASKUNGENS HOV', 'ILLUSIONERNAS SAL', 'DEN BRUTNA SPEGELN'] };
+  const FUNGUS_FOG = LOOKS.fungus.fog;
+  // det förbjudna biblioteket (version 13): fängelsehålans bygge (salar + korridorer, inomhus) i träpanel Ū med bokhyllor ũ (sträckor i väggarna
+  // och rader av fristående hyllor i läsesalarna och hyllgångarna); floors: [0] matta, [1] vaktarens golv; pulpeter, ljuskronor och bläckpölar
+  // sätts av content13
+  const LIBRARY_FOG = rng => [rng.int(22, 26), rng.int(17, 20), rng.int(12, 15)]; // dammig, varm brun
+  const LIBRARY = { id: 'library', wall: 'Ū', floor: 'floor_carpet', snow: 'floor_carpet', ceil: 'floor_wood_planks', ambient: [0.14, 0.2], indoor: true,
+    fog: LIBRARY_FOG, names: ['DET FÖRBJUDNA BIBLIOTEKET', 'LÄSESALEN', 'DE DAMMIGA GÅNGARNA', 'ARKIVETS DJUP', 'DE TYSTA HYLLORNA', 'BLÄCKETS KAMMARE'] };
+  // gjuteriet (version 13): samma bygge i järnplåt ŵ med glesa smältugnar Ŷ; floors: [0] järngaller, [1] vaktarens golv; rullband, kanaler med
+  // smält metall, ångventiler, stansar och städ sätts av content13
+  const FOUNDRY_FOG = rng => [rng.int(30, 35), rng.int(17, 21), rng.int(10, 13)]; // orangeröd rök
+  const FOUNDRY = { id: 'foundry', wall: 'ŵ', floor: 'floor_irongrate', snow: 'floor_irongrate', ceil: 'floor_irongrate', ambient: [0.17, 0.23], indoor: true,
+    fog: FOUNDRY_FOG, names: ['GJUTERIET', 'SMÄLTVERKET', 'DE GLÖDANDE HALLARNA', 'STANSARNAS GÅNGAR', 'JÄRNETS HJÄRTA', 'ÅNGANS VERKSTAD'] };
+  // blodkatedralen (version 15): fängelsehålans bygge (salar + korridorer, inomhus) i katedralsten Ɗ med ett avlångt långhus; blyinfattade fönster Ƌ
+  // och ljusstråk ƍ, blodfuntar, klockor och kyrkbänkar sätts av rumstyperna och content15; floors: [0] svart-röd marmor, [1] vaktarens golv
+  const CATHEDRAL_FOG = rng => [rng.int(26, 30), rng.int(9, 12), rng.int(11, 14)]; // mörkröd rökelse
+  const CATHEDRAL = { id: 'cathedral', wall: 'Ɗ', floor: 'floor_cathedral', snow: 'floor_cathedral', ceil: 'floor_stone_pattern', ambient: [0.14, 0.2], indoor: true,
+    fog: CATHEDRAL_FOG, names: ['BLODKATEDRALEN', 'DET RÖDA LÅNGHUSET', 'MARTYRERNAS KOR', 'DE BLÖDANDE VALVEN', 'KARDINALENS KYRKA', 'KLOCKTORNETS SKUGGA'] };
+  // bikupan (version 15): samma bygge i vax Ɠ med sexkantiga celler (rumsformen 'hex'); honungskakor Ɣ i väggarna, honung Ɩ och larvsäckar Ɨ sätts
+  // av rumstyperna och content15; floors: [0] vaxgolv, [1] vaktarens golv
+  const HIVE_FOG = rng => [rng.int(30, 34), rng.int(21, 25), rng.int(6, 9)]; // varm bärnsten
+  const HIVE = { id: 'hive', wall: 'Ɠ', floor: 'floor_hivefloor', snow: 'floor_hivefloor', ceil: 'floor_hivefloor', ambient: [0.16, 0.22], indoor: true,
+    fog: HIVE_FOG, names: ['BIKUPAN', 'VAXCELLERNA', 'HONUNGSSALARNA', 'DET SURRANDE DJUPET', 'LARVKAMRARNA', 'DROTTNINGENS KUPA'] };
+  // den döda trädgården (version 16): molnborgens bygge under öppen himmel (salar = trädgårdsrum, gårdar = stora gräsmattor, korridorer = häckgångar)
+  // med häckar Ɵ som väggar; murade trädgårdar (trädgårdsmur Ơ), fontäner, statyer och taggrankor ƥ sätts av rumstyperna och content16;
+  // floors: [0] grus och gräs, [1] vaktarens golv, [2] gräsmatta (gårdarna)
+  const GARDEN_FOG = rng => [rng.int(13, 16), rng.int(17, 20), rng.int(15, 18)]; // grågrön skymning
+  const GARDEN = { id: 'garden', wall: 'Ɵ', floor: 'floor_garden', snow: 'floor_ground_grass', ceil: 'floor_wood_planks', ambient: [0.24, 0.3],
+    fog: GARDEN_FOG, names: ['DEN DÖDA TRÄDGÅRDEN', 'HÄCKARNAS IRRGÅNG', 'DE VISSNA RABATTERNA', 'STATYERNAS PARK', 'TAGGARNAS LUSTGÅRD', 'DEN TYSTA FONTÄNEN'] };
+  // drömriket (version 16): fängelsehålans bygge (inomhus) i drömvägg Ƣ; glidande väggar ƣ (level.shifts), sömnens dimma Ʀ, drömlyktor ƪ och
+  // falska dörrar Ʃ sätts av rumstyperna och content16; floors: [0] flytande schackruta, [1] vaktarens golv
+  const DREAM_FOG = rng => [rng.int(20, 24), rng.int(10, 13), rng.int(28, 33)]; // lila
+  const DREAM = { id: 'dream', wall: 'Ƣ', floor: 'floor_dream', snow: 'floor_dream', ceil: 'floor_dream', ambient: [0.15, 0.21], indoor: true,
+    fog: DREAM_FOG, names: ['DRÖMRIKET', 'SÖMNENS SALAR', 'DE GLIDANDE VÄGGARNA', 'MARDRÖMMENS SCHACKBRÄDE', 'DET VAKNA ÖGATS HALL', 'JON BLUNDS RIKE'] };
+  // spökskeppet (version 17): frostfästets bygge (salar + korridorer i skeppsskrov ǒ) där gårdarna är däck under natthimlen (master och rigg Ǔ som
+  // pelare, relingen = skrovet runt däcket) och salarna kajutor, lastrum och kanondäck under däck; ruttna plankor Ǎ, sköljt däck Ǐ, kanoner ǎ,
+  // skeppslyktor ǐ och krutkaggar Ǒ sätts av rumstyperna och content17; floors: [0] lastrummets golv, [1] vaktarens golv, [2] däcksplankor (däcken)
+  const SHIP_FOG = rng => [rng.int(8, 11), rng.int(13, 16), rng.int(18, 22)]; // nattsvart hav, kall dimma
+  const SHIP = { id: 'ship', wall: HULL17, floor: 'floor_hold', snow: 'floor_deck', ceil: 'floor_deck', ambient: [0.19, 0.25],
+    fog: SHIP_FOG, names: ['SPÖKSKEPPET', 'DET SVARTA HAVET', 'DÖDA MÄNS DÄCK', 'LASTRUMMETS MÖRKER', 'KAPTENENS FREGATT', 'DIMMANS SKEPP'] };
+  // alkemistens laboratorium (version 17): fängelsehålans bygge (inomhus) i laboratoriekakel Ǡ med hyllor med burkar ǡ; syrakar Ǜ,
+  // transmutationscirklar ǜ, flaskhyllor ǝ, teslaspolar Ǟ och alembiker ǟ sätts av rumstyperna och content17; floors: [0] kakel, [1] vaktarens golv
+  const LAB_FOG = rng => [rng.int(12, 15), rng.int(22, 26), rng.int(14, 17)]; // sjukligt grön ånga
+  const LAB = { id: 'lab', wall: TILE17, floor: 'floor_labtile', snow: 'floor_labtile', ceil: 'floor_labtile', ambient: [0.16, 0.22], indoor: true,
+    fog: LAB_FOG, names: ['ALKEMISTENS LABORATORIUM', 'DE BUBBLANDE KAREN', 'TRANSMUTATIONENS SALAR', 'GLASETS GÅNGAR', 'DEN GRÖNA ÅNGAN', 'DE VISES STEN'] };
+  // den övergivna cirkusen (version 18): fängelsehålans bygge (inomhus) i tältduk Ǯ med djurburar ǯ i duken; manegen (floor_ring), fallluckor Ǳ,
+  // strålkastare ǲ, knivkastarhjul ǳ, lyckohjul Ǵ, ballonger ǵ och glödlampsgirlanger Ƕ sätts av rumstyperna och content18; floors: [0] sågspån,
+  // [1] vaktarens golv (manegens matta läggs till av rumstypen); taket: manegens röda duk
+  const CIRCUS_FOG = rng => [rng.int(19, 23), rng.int(13, 16), rng.int(11, 14)]; // dammigt, varmt tältdunkel
+  const CIRCUS = { id: 'circus', wall: TENT18, floor: 'floor_sawdust', snow: 'floor_sawdust', ceil: 'floor_ring', ambient: [0.16, 0.22], indoor: true,
+    fog: CIRCUS_FOG, names: ['DEN ÖVERGIVNA CIRKUSEN', 'DET STORA TÄLTET', 'MANEGENS SPÖKEN', 'DE TYSTA CLOWNERNAS SCEN', 'DIREKTÖRENS SISTA FÖRESTÄLLNING', 'SÅGSPÅNETS GÅNGAR'] };
+  // djungeltemplet (version 18): frostfästets bygge där gårdarna är gläntor under lövkronan (sky '1', floors[2] floor_jungle, snår av tät djungel Ȁ
+  // och träd, rumstaggen 'yard') och stigarna mellan salarna går under himlen, medan templets salar har tak (floors[0] floor_templestone); väggarna
+  // av djungelsten ǿ, mot gläntorna och stigarna tät djungel Ȁ; pirayavatten Ȃ, lianer ȃ, idoler Ȅ ȅ, giftblommor Ȇ och tikifacklor ȇ sätts av
+  // rumstyperna och content18
+  const JUNGLE_FOG = rng => [rng.int(9, 12), rng.int(17, 21), rng.int(10, 13)]; // fuktigt grön dis
+  const JUNGLE = { id: 'jungle', wall: JSTONE18, floor: 'floor_templestone', snow: 'floor_jungle', ceil: 'floor_templestone', ambient: [0.21, 0.27],
+    fog: JUNGLE_FOG, names: ['DJUNGELTEMPLET', 'DEN FJÄDRADE ORMENS TEMPEL', 'LIANERNAS RIKE', 'DE GYLLENE IDOLERNAS DJUNGEL', 'DET FÖRVUXNA TEMPLET', 'PIRAYAFLODEN'] };
+  // den övergivna gruvan (version 19): fängelsehålans bygge (inomhus) i timrade stollar Ȑ med malmådror ȑ; korridorerna (stollarna) får plankgolv
+  // (floors[2]); räls, vagnar, gas, ras, dynamit och karbidlampor sätts av rumstyperna och content19
+  const MINE_FOG = rng => [rng.int(14, 17), rng.int(11, 14), rng.int(8, 11)]; // sotigt gruvdunkel
+  const MINE = { id: 'mine', wall: TIMBER19, floor: 'floor_minedirt', snow: 'floor_planks2', ceil: 'floor_planks2', ambient: [0.13, 0.19], indoor: true,
+    fog: MINE_FOG, names: ['DEN ÖVERGIVNA GRUVAN', 'DE DJUPA STOLLARNA', 'FÖRMANNENS ORT', 'MALMÅDRORNAS GÅNGAR', 'DET STORA RASET', 'KARBIDLAMPORNAS SCHAKT'] };
+  // stjärnobservatoriet (version 19): fängelsehålans bygge (inomhus, högt upp) i mässing ȓ med stjärnkartor Ȕ; kupolspringor, stjärnkartegolv,
+  // stjärnportar, orrerier och teleskop sätts av rumstyperna och content19
+  const OBS_FOG = rng => [rng.int(8, 11), rng.int(10, 13), rng.int(20, 25)]; // mörkblå natt
+  const OBSERVATORY = { id: 'observatory', wall: BRASS19, floor: 'floor_brasstile', snow: 'floor_brasstile', ceil: 'floor_brasstile', ambient: [0.17, 0.23], indoor: true,
+    fog: OBS_FOG, names: ['STJÄRNOBSERVATORIET', 'DEN STORA KUPOLEN', 'STJÄRNSKÅDARENS TORN', 'PLANETERNAS SAL', 'DE TUSEN STJÄRNORNAS VALV', 'MÄSSINGSKUPOLEN'] };
+  // kloakerna (version 20): fängelsehålans bygge (inomhus) i valvtegel Ȭ med rörväggar ȭ; korridorerna får galler (floors[2])
+  const SEWER_FOG = rng => [rng.int(10, 13), rng.int(13, 16), rng.int(9, 12)]; // grumligt grönt
+  const SEWER = { id: 'sewer', wall: SEWER20, floor: 'floor_sewer', snow: 'floor_grate', ceil: 'floor_sewer', ambient: [0.13, 0.19], indoor: true,
+    fog: SEWER_FOG, names: ['KLOAKERNA', 'RÅTTKUNGENS RIKE', 'DE DROPPANDE VALVEN', 'SLAMKANALERNA', 'SLUSSARNAS LABYRINT', 'STADENS UNDERLIV'] };
+  // öknen (version 20): frostfästets bygge: ökengårdar och stigar under himlen (sand, floors[2]), ruinsalarna under tak; väggar mot bara himmel blir klippor
+  const DESERT_FOG = rng => [rng.int(28, 32), rng.int(24, 27), rng.int(16, 19)]; // sanddis
+  const DESERT = { id: 'desert', wall: DUNE20, floor: 'floor_ruintile', snow: 'floor_desertsand', ceil: 'floor_ruintile', ambient: [0.22, 0.28],
+    fog: DESERT_FOG, names: ['ÖKNEN', 'SFINXENS SANDHAV', 'DE BRÄNDA DYNERNA', 'HÄGRINGARNAS ÖKEN', 'DEN BEGRAVDA STADEN', 'KARAVANVÄGEN'] };
+  // järnfängelset (version 21): fängelsehålans bygge (inomhus) i fuktig fängelsesten ɇ med cellgaller Ɉ; korridorerna får smutsig sten, cellerna halm
+  const PRISON_FOG = rng => [rng.int(12, 15), rng.int(11, 14), rng.int(10, 13)]; // fuktigt grått
+  const PRISON = { id: 'prison', wall: PSTONE21, floor: 'floor_prison', snow: 'floor_prison', ceil: 'floor_prison', ambient: [0.13, 0.19], indoor: true,
+    fog: PRISON_FOG, names: ['JÄRNFÄNGELSET', 'BÖDELNS BORG', 'DE GLÖMDAS CELLER', 'KEDJORNAS HUS', 'FÅNGTORNET', 'DET TYSTA FÄNGELSET'] };
+  // det dimhöljda fiskeläget (version 21): öknens bygge: kajer och stigar under himlen (kullersten, floors[2]), bodar och fiskehus under tak
+  // (bryggplank, floors[0]); väggar Ɋ (bodväggar), väggar mot bara himmel blir kajsten ɋ; djupt vatten Đ med bryggor sätts av content21
+  const HARBOR_FOG = rng => [rng.int(22, 26), rng.int(25, 29), rng.int(28, 32)]; // tät gråblå dimma (inte för mörk)
+  const HARBOR = { id: 'harbor', wall: SHACK21, floor: 'floor_dock', snow: 'floor_cobble', ceil: 'floor_dock', ambient: [0.2, 0.26],
+    fog: HARBOR_FOG, names: ['DET DIMHÖLJDA FISKELÄGET', 'DE DRUNKNADES HAMN', 'FYRVAKTARENS VIK', 'DIMBRYGGORNA', 'TIDVATTNETS BY', 'NÄTENS KAJ'] };
+  // badhuset (version 22): fängelsehålans bygge (inomhus) i mosaikmarmor ɠ med pelargångar ɡ; korridorerna får mosaikgolv (floors[2])
+  const BATH_FOG = rng => [rng.int(16, 19), rng.int(17, 20), rng.int(17, 21)]; // fuktig ånga
+  const BATHHOUSE = { id: 'bathhouse', wall: MOSAIC22, floor: 'floor_bathtile', snow: 'floor_mosaic', ceil: 'floor_bathtile', ambient: [0.15, 0.21], indoor: true,
+    fog: BATH_FOG, names: ['BADHUSET', 'DE FÖRFALLNA TERMERNA', 'BADMÄSTARENS SALAR', 'ÅNGORNAS HUS', 'MARMORBADEN', 'DE KALLA BASSÄNGERNA'] };
+  // skärselden (version 22): öknens bygge: askfält och stigar under den blodröda himlen (floor_ashfield, floors[2]), salarna under tak med svavelgolv
+  // (floor_brimstone, floors[0]); väggar ɭ (köttmurar), väggar mot bara himmel blir benmurar ɮ; eldfloder ɰ och runcirklar ɱ sätts av content22
+  const PURG_FOG = rng => [rng.int(26, 30), rng.int(9, 12), rng.int(6, 9)]; // röd askdis (inte för mörk)
+  const PURGATORY = { id: 'purgatory', wall: FLESH22, floor: 'floor_brimstone', snow: 'floor_ashfield', ceil: 'floor_brimstone', ambient: [0.2, 0.26],
+    fog: PURG_FOG, names: ['SKÄRSELDEN', 'ELDFURSTENS RIKE', 'DE FÖRDÖMDAS FÄLT', 'ASKANS SLÄTT', 'SVAVELSJÖARNA', 'DE JÄMRANDE SJÄLARNAS DAL'] };
+  // slakteriet (version 23): fängelsehålans bygge (inomhus) i slaktkakel ɼ med kylrumsväggar ɽ; korridorerna får blodgaller (floors[2])
+  const ABAT_FOG = rng => [rng.int(14, 17), rng.int(10, 12), rng.int(10, 12)]; // kall, rödaktig dis
+  const ABATTOIR = { id: 'abattoir', wall: TILE23, floor: 'floor_abattoir', snow: 'floor_bloodgrate', ceil: 'floor_abattoir', ambient: [0.14, 0.2], indoor: true,
+    fog: ABAT_FOG, names: ['SLAKTERIET', 'SLAKTMÄSTARENS HALLAR', 'DE KALLA KROKARNA', 'KVARNARNAS HUS', 'BLODRÄNNORNA', 'STYCKNINGSSALARNA'] };
+  // det eviga slagfältet (version 23): fiskelägets bygge: lerfält och stigar under den grå himlen (floor_battlemud, floors[2]), skyttegravsvärn under tak
+  // (floor_trench, floors[0]); väggar ʈ (palissader), väggar mot bara himmel blir jordvallar ʉ; djup lera och katapultmål sätts av content23
+  const BATTLE_FOG = rng => [rng.int(20, 23), rng.int(19, 22), rng.int(18, 21)]; // grå rök
+  const BATTLEFIELD = { id: 'battlefield', wall: PALI23, floor: 'floor_trench', snow: 'floor_battlemud', ceil: 'floor_trench', ambient: [0.2, 0.26],
+    fog: BATTLE_FOG, names: ['DET EVIGA SLAGFÄLTET', 'KRIGSHERRENS FÄLT', 'DE STUPADES LERA', 'SKYTTEGRAVARNA', 'DET SISTA SLAGET', 'FANORNAS SLÄTT'] };
+  // ruinstaden (version 30): slagfältets bygge: torg, gränder och gator under den gråockra himlen med kullersten (floor_ruincobble, floors[2]), de
+  // raserade husen under tak med torgplattor (floor_ruinplaza, floors[0]); väggar ʘ (sprucken puts), väggar mot bara himmel blir raserade tegelmurar ʗ;
+  // rasande tak och grus sätts av content30 (spruckna väggar som rasar sätter RAS i spelet, level.ras30 är bara förslag)
+  const RUINS_FOG = rng => [rng.int(25, 29), rng.int(22, 25), rng.int(16, 19)]; // gråockra damm
+  const RUINS = { id: 'ruins', wall: PLASTER30, floor: 'floor_ruinplaza', snow: 'floor_ruincobble', ceil: 'floor_ruinplaza', ambient: [0.2, 0.26],
+    fog: RUINS_FOG, names: ['RUINSTADEN', 'DEN RASADE STADEN', 'BORGMÄSTARENS STAD', 'DE TOMMA GRÄNDERNA', 'DAMMETS TORG', 'DE STÖRTADE TAKENS KVARTER'] };
+  // glasbruket (version 30): slakteriets bygge (inomhus) i ugnstegel ʚ med glashyllepaneler ʛ; korridorerna får slagg (floor_slag, floors[2]);
+  // smält glas, skärvor och ugnsmunnar sätts av content30
+  const GLASS_FOG = rng => [rng.int(22, 26), rng.int(14, 17), rng.int(10, 13)]; // varmt ugnsljus
+  const GLASSWORKS = { id: 'glassworks', wall: KILN30, floor: 'floor_glassworks', snow: 'floor_slag', ceil: 'floor_glassworks', ambient: [0.16, 0.22], indoor: true,
+    fog: GLASS_FOG, names: ['GLASBRUKET', 'GLASMÄSTARENS VERKSTAD', 'DE GLÖDANDE UGNARNA', 'SKÄRVORNAS HUS', 'KYLUGNARNA', 'DET SMÄLTA GLASETS HALLAR'] };
 
   const roundAmb = (rng, a) => Math.max(a[0], Math.min(a[1], Math.round(rng.range(a[0], a[1]) * 100) / 100));
   const mapSize = (rng, depth) => { const base = 30 + (depth - 1) * 3; return [Math.min(44, base + rng.int(0, 2)), Math.min(44, base + rng.int(0, 2))]; };
@@ -308,13 +1314,72 @@
     // version 7: Ã mumie och Ê schakalkrigare (gravkammarens egna); Õ skarabé (grupper), Î tjuv, Ô dubbelgångare och Ã/Ê i andra biomer
     // byts in efteråt, se content7
     'Ã': [1, d => 2.6 + 0.6 * d], 'Ê': [2, d => 1 + 0.5 * d], 'Õ': [1, d => 1], 'Î': [2, d => 0.3], 'Ô': [3, d => 0.3],
+    // version 8: Ë golem och Í skärvirrbloss (kristallgrottornas egna), Ï sjöman, Û krabba och Ú siren (sjunkna stadens egna);
+    // Ó ål (läggs i vattnet av content8), Ā skuggjägare och Ă häxa byts in efteråt
+    'Ë': [1, d => 1.4 + 0.5 * d], 'Í': [1, d => 2 + 0.5 * d], 'Ï': [1, d => 2.4 + 0.5 * d], 'Û': [1, d => 1.8 + 0.4 * d], 'Ú': [2, d => 0.8 + 0.4 * d],
+    'Ó': [1, d => 1], 'Ā': [2, d => 0.3], 'Ă': [3, d => 0.3],
+    // version 9: ĳ urverkssoldat och ĵ tidsväktare (klocktornets egna), Ķ harpya och ķ stormkallare (molnborgens egna);
+    // Ĵ kuggspindel (grupper) och ĸ molnjätte byts in efteråt av content9
+    'ĳ': [1, d => 2.2 + 0.5 * d], 'ĵ': [2, d => 0.8 + 0.4 * d], 'Ĵ': [1, d => 1], 'Ķ': [1, d => 2.2 + 0.5 * d], 'ķ': [2, d => 0.9 + 0.4 * d], 'ĸ': [3, d => 0.3],
+    // version 10: Ō fångvaktare, ō grävare, Ŏ likgrävare, ŏ rotvätte, Ő armborstskytt, ő paddjätte; alla byts in efteråt av content10
+    // (vikterna används inte: de står inte i BIOME_ENEMIES), se FOES10
+    'Ō': [1, d => 1], 'ō': [2, d => 1], 'Ŏ': [1, d => 1], 'ŏ': [1, d => 1], 'Ő': [1, d => 1], 'ő': [2, d => 1],
+    // version 11: ř svampshaman (svamprikets egen, djup 2+) och Ś spegelriddare (spegelpalatsets egen); ŗ sporling (grupper), Ř mycelbest,
+    // ś illusionist och Ŝ glasskärva (grupper) byts in efteråt av content11
+    'ř': [2, d => 0.9 + 0.4 * d], 'Ś': [1, d => 2.2 + 0.5 * d], 'ŗ': [1, d => 1], 'Ř': [2, d => 1], 'ś': [2, d => 1], 'Ŝ': [1, d => 1],
+    // version 13: ų bläckslem (bibliotekets egen) och ž ångautomat (gjuteriets egen); Ų flygande bok (grupper), Ŵ arkivariespöke, Ž smältgolem
+    // och ſ gnistdrönare (grupper) byts in efteråt av content13
+    'ų': [1, d => 2.2 + 0.5 * d], 'ž': [1, d => 2.2 + 0.5 * d], 'Ų': [1, d => 1], 'Ŵ': [2, d => 1], 'Ž': [2, d => 1], 'ſ': [1, d => 1],
+    // version 14: Ƅ snöfantom, ƅ lavaorm, Ɔ skarabépräst, Ƈ kristallspindel, ƈ marulk, Ɖ vindande; alla byts in efteråt av content14 (FOES14)
+    'Ƅ': [1, d => 1], 'ƅ': [2, d => 1], 'Ɔ': [2, d => 1], 'Ƈ': [1, d => 1], 'ƈ': [1, d => 1], 'Ɖ': [2, d => 1],
+    // version 15: ƒ botgörare och Ɯ kerub (katedralens egna), ƚ larv (bikupans egen); Ƒ korgosse, Ƙ arbetsbi (svärmar) och ƙ gaddkrigare byts in
+    // efteråt av content15
+    'ƒ': [1, d => 2.2 + 0.5 * d], 'Ɯ': [1, d => 1.2 + 0.4 * d], 'ƚ': [1, d => 2.2 + 0.5 * d], 'Ƒ': [1, d => 1], 'Ƙ': [1, d => 1], 'ƙ': [2, d => 1],
+    // version 16: ƭ trädgårdsdräng (trädgårdens egen), Ʈ drömätare (drömrikets egen); ƫ stenängel, Ƭ taggranka, Ư spegling och ư sömngångare byts in
+    // efteråt av content16
+    'ƭ': [1, d => 2.2 + 0.5 * d], 'Ʈ': [1, d => 2.2 + 0.5 * d], 'ƫ': [2, d => 1], 'Ƭ': [1, d => 1], 'Ư': [2, d => 1], 'ư': [2, d => 1],
+    // version 17: Ǖ spökpirat och Ǘ drunknad matros (skeppets egna), ǣ homunkulus och ǥ lärling (laboratoriets egna); ǖ kanonjär, ǘ papegojspöke,
+    // Ǚ tentakel, ǚ skeppsråttor (grupper), Ǥ slem, Ǧ kvicksilvergolem, ǧ flaskgast och Ǩ kimär byts in efteråt av content17
+    'Ǖ': [1, d => 2.2 + 0.5 * d], 'Ǘ': [1, d => 1.2 + 0.4 * d], 'ǣ': [1, d => 2.2 + 0.5 * d], 'ǥ': [1, d => 1.2 + 0.4 * d],
+    'ǖ': [2, d => 1], 'ǘ': [1, d => 1], 'Ǚ': [2, d => 1], 'ǚ': [1, d => 1], 'Ǥ': [1, d => 1], 'Ǧ': [2, d => 1], 'ǧ': [1, d => 1], 'Ǩ': [2, d => 1],
+    // version 18: Ƿ clown och Ǹ jonglör (cirkusens egna), Ȉ ödlekrigare och Ȋ apa (djungelns egna); ǹ styltgångare, Ǻ knivkastare, ǻ lejon, Ǽ marionett,
+    // ȉ blåsrörsjägare, ȋ jaguar, Ȍ myggsvärm (grupper) och ȍ tempelväktare byts in efteråt av content18
+    'Ƿ': [1, d => 2.2 + 0.5 * d], 'Ǹ': [1, d => 1.2 + 0.4 * d], 'Ȉ': [1, d => 2.2 + 0.5 * d], 'Ȋ': [1, d => 1.2 + 0.4 * d],
+    'ǹ': [2, d => 1], 'Ǻ': [1, d => 1], 'ǻ': [2, d => 1], 'Ǽ': [1, d => 1], 'ȉ': [1, d => 1], 'ȋ': [2, d => 1], 'Ȍ': [1, d => 1], 'ȍ': [2, d => 1],
+    // version 19: ȡ gruvarbetare och ȣ mullvadsman (gruvans egna), ȥ stjärnfödd och Ȧ astronom (observatoriets egna); Ȣ kolgolem, Ȥ gnistlykta,
+    // ȧ urverksuggla och Ȩ tomrumsväktare byts in efteråt av content19
+    '\u0221': [1, d => 2.2 + 0.5 * d], '\u0223': [1, d => 1.2 + 0.4 * d], '\u0225': [1, d => 2.2 + 0.5 * d], '\u0226': [1, d => 1.2 + 0.4 * d],
+    '\u0222': [2, d => 1], '\u0224': [1, d => 1], '\u0227': [1, d => 1], '\u0228': [2, d => 1],
+    // version 20: Ƚ slamvarelse och Ⱦ rörmokare (kloakernas egna), ɀ skorpion och Ɂ nomad (öknens egna); ȼ alligator, ȿ igel, ɂ sandvålnad och Ƀ gam
+    // byts in efteråt av content20
+    '\u023d': [1, d => 2.2 + 0.5 * d], '\u023e': [1, d => 1.2 + 0.4 * d], '\u0240': [1, d => 2.2 + 0.5 * d], '\u0241': [1, d => 1.2 + 0.4 * d],
+    '\u023c': [2, d => 1], '\u023f': [1, d => 1], '\u0242': [2, d => 1], '\u0243': [1, d => 1],
+    // version 21: ɕ fångvaktare och ɖ kedjefånge (fängelsets egna), ə drunknad fiskare och ɛ krabba (fiskelägets egna); ɗ tortyrmästare, ɘ vakthundar,
+    // ɚ fiskman och ɜ måssvärm byts in efteråt av content21
+    '\u0255': [1, d => 2.2 + 0.5 * d], '\u0256': [1, d => 1.2 + 0.4 * d], '\u0259': [1, d => 2.2 + 0.5 * d], '\u025b': [1, d => 1.2 + 0.4 * d],
+    '\u0257': [3, d => 1], '\u0258': [1, d => 1], '\u025a': [1, d => 1], '\u025c': [1, d => 1],
+    // version 22: ɩ badvakt och ɫ gladiator (badhusets egna), ɵ eldimp och ɸ askvandrare (skärseldens egna); ɪ ångvålnad, ɬ mögelkrypare,
+    // ɶ plågad själ och ɷ köttbjässe byts in efteråt av content22
+    'ɩ': [1, d => 2.2 + 0.5 * d], 'ɫ': [1, d => 1.2 + 0.4 * d], 'ɵ': [1, d => 2.2 + 0.5 * d], 'ɸ': [1, d => 1.2 + 0.4 * d],
+    'ɪ': [3, d => 1], 'ɬ': [1, d => 1], 'ɶ': [1, d => 1], 'ɷ': [5, d => 1], // (ɷ: kontraktets djup 6+ finns inte i Gen.floor, se BRUTE22_DEPTH)
+    // version 23: ʄ slaktare och ʅ grisman (slakteriets egna), ʑ spökbågskytt (slagfältets egen); ʆ flugsvärmar, ʇ styckade, ʐ spöksoldater (i grupper om
+    // 3), ʒ spökryttare och ʓ kråkor byts in efteråt av content23
+    'ʄ': [1, d => 2.2 + 0.5 * d], 'ʅ': [1, d => 1.2 + 0.4 * d], 'ʑ': [1, d => 2.2 + 0.5 * d],
+    'ʆ': [1, d => 1], 'ʇ': [3, d => 1], 'ʐ': [1, d => 1], 'ʒ': [1, d => 1], 'ʓ': [1, d => 1],
+    // version 30: ʨ plundrare och ʪ takskytt (ruinstadens egna), ʮ glasblåsare och ʱ ugnsande (glasbrukets egna); ʩ stengolem (djup 4+), ʫ dammvirvel,
+    // ʯ glasgolem och ʰ slaggkrypare byts in efteråt av content30
+    'ʨ': [1, d => 2.2 + 0.5 * d], 'ʪ': [1, d => 1.6 + 0.5 * d], 'ʮ': [1, d => 2.2 + 0.5 * d], 'ʱ': [1, d => 1.2 + 0.4 * d],
+    'ʩ': [4, d => 1], 'ʫ': [1, d => 1], 'ʯ': [1, d => 1], 'ʰ': [1, d => 1],
   };
   const BIOME_ENEMIES = { caves: 'UXÜ', forest: 'YUXÉ', graveyard: 'X!^ÅÄÖ', dungeon: '@!U+ÅÄÖ', courtyard: '@Y!ÄÖ', swamp: '^UYXÅ', frost: 'ÉÜ@', volcano: 'YXÆ!',
-    tomb: 'ÃÊX' };
+    tomb: 'ÃÊX', crystal: 'ËÍX', sunken: 'ÏÛÚ', clock: 'ĳĵ', sky: 'Ķķ', fungus: 'ř^U', mirror: 'Ś@', library: 'ųX', foundry: 'žÆ',
+    cathedral: 'ƒƜ', hive: 'ƚ', garden: 'ƭX', dream: 'Ʈ', ship: 'ǕǗ', lab: 'ǣǥ', circus: 'ǷǸ', jungle: 'ȈȊ', mine: '\u0221\u0223', observatory: '\u0225\u0226', sewer: '\u023d\u023e', desert: '\u0240\u0241', prison: '\u0255\u0256', harbor: '\u0259\u025b', bathhouse: 'ɩɫ', purgatory: 'ɵɸ', abattoir: 'ʄʅ', battlefield: 'ʑ', ruins: 'ʨʪ', glassworks: 'ʮʱ' }; // version 15/16/17/18/19/20/21/22/23/30
   const enemyTypes = (depth, biome) => [['S', Math.max(4, 10 - depth)], ['K', 3 + 1.2 * depth], ['V', depth >= 2 ? 1.5 + 1.5 * (depth - 1) : 0],
     ['L', 2 + 0.5 * depth], ['I', depth >= 2 ? 1 + depth : 0], ['O', depth >= 2 ? 0.8 + 0.4 * depth : 0],
     ['N', depth >= 3 ? 0.5 + 0.5 * depth : 0], ['R', depth >= 3 ? 1 + 0.5 * depth : 0], ['W', depth >= 3 ? 0.6 + 0.6 * depth : 0]]
-    .concat([...(BIOME_ENEMIES[biome] || '')].map(c => [c, depth >= NEW_ENEMIES[c][0] ? NEW_ENEMIES[c][1](depth) * ((biome === 'frost' && c !== '@') || (biome === 'volcano' && c === 'Æ') || (biome === 'tomb' && c !== 'X') ? 2 : 1) : 0]));
+    .concat([...(BIOME_ENEMIES[biome] || '')].map(c => [c, depth >= NEW_ENEMIES[c][0] ? NEW_ENEMIES[c][1](depth) * ((biome === 'frost' && c !== '@') || (biome === 'volcano' && c === 'Æ') || (biome === 'tomb' && c !== 'X') || (biome === 'crystal' && c !== 'X') || biome === 'sunken' || biome === 'clock' || biome === 'sky' || (biome === 'fungus' && c !== 'U') || (biome === 'mirror' && c === 'Ś') || (biome === 'library' && c === 'ų') || (biome === 'foundry' && c === 'ž')
+      || (biome === 'cathedral' && c === 'ƒ') || biome === 'hive' || (biome === 'garden' && c === 'ƭ') || biome === 'dream' || (biome === 'ship' && c === 'Ǖ') || (biome === 'lab' && c === 'ǣ')
+      || (biome === 'circus' && c === 'Ƿ') || (biome === 'jungle' && c === 'Ȉ') || (biome === 'mine' && c === '\u0221') || (biome === 'observatory' && c === '\u0225') || (biome === 'sewer' && c === '\u023d') || (biome === 'desert' && c === '\u0240') || (biome === 'prison' && c === '\u0255') || (biome === 'harbor' && c === '\u0259') || (biome === 'bathhouse' && c === 'ɩ') || (biome === 'purgatory' && c === 'ɵ') || (biome === 'abattoir' && c === 'ʄ') || biome === 'battlefield' || (biome === 'ruins' && c === 'ʨ') || (biome === 'glassworks' && c === 'ʮ') ? 2 : 1) : 0]));
 
   // ---------- Rumstyper (arketyper) ----------
   // mix: fiendesorter som trivs här (vikt x3), floor: golvtextur inomhus (paint: även utomhus/i grottan),
@@ -573,6 +1638,550 @@
       F.place(r, 't', F.int(0, 2), { spread: 3 });
       F.place(r, 'j', F.int(1, 2), {});
     } },
+    // --- kristallgrottorna (version 8; brytande kristaller, spikfläckar, glödkristaller och ådror läggs även av content8) ---
+    geode: { mix: 'ÍËK', min: 12, fill(r, F) { // geod: kluster av glödande kristaller längs väggarna och en glödkristall
+      for (let k = F.int(2, 3); k > 0; k--) {
+        const s = F.place(r, 'i', 1, { wall: true, avoid: ['i', 3] })[0];
+        if (s) F.place(r, 'i', F.int(1, 2), { near: [s[0], s[1], 1.6] });
+      }
+      F.place(r, 'Ę', 1, { wall: true });
+    } },
+    prismhall: { mix: 'ËÍS', min: 30, fill(r, F) { // prismasal: glödkristaller vid väggarna, kristallsplitter och ben (brytande kristaller av content8)
+      F.place(r, 'Ę', F.int(1, 2), { wall: true, spread: 4 });
+      F.place(r, 'i', F.int(1, 3), { wall: true, spread: 2 });
+      F.place(r, 'j', F.int(1, 2), {});
+    } },
+    shardfield: { mix: 'ÍXK', min: 14, fill(r, F) { // skärvfält: ben och kristallsplitter (spikfläckarna lägger content8 helst här)
+      F.place(r, 'j', F.int(2, 3), { spread: 2 });
+      F.place(r, 'i', F.int(1, 2), { wall: true });
+    } },
+    // --- den sjunkna staden (version 8; tidvatten, kanaler i korridorerna, luftbubblor, ålar och vrakkistor läggs av content8) ---
+    cistern: { mix: 'ÏÛS', min: 24, fits: r => r.box.w >= 6 && r.box.h >= 6, fill(r, F) { // cistern: en bassäng med en gångbro tvärs över
+      F.place(r, 'u', F.int(0, 1), { wall: true });
+      F.place(r, 'j', F.int(1, 2), {});
+    }, hazard(r, Z) { Z.lake(r, 'Đ'); } },
+    drownedhall: { mix: 'ÏÚK', min: 20, fits: r => r.box.w >= 5 && r.box.h >= 5 && r.box.w * r.box.h >= 30, fill(r, F) { // översvämmad pelarsal med en kanal
+      F.pillars(r, 'Ċ');
+      F.place(r, 'c', F.int(1, 2), { wall: true, spread: 3 });
+    }, hazard(r, Z) { Z.river(r, 'Đ'); } },
+    wreckhall: { mix: 'ÏÛW', min: 12, fill(r, F) { // vraksal: lådor, ben och bråte (vrakkistan lägger content8 helst här)
+      for (const p of F.place(r, 'T', F.int(1, 2), { corner: true, spread: 3 })) F.place(r, 'T', F.int(0, 1), { near: [p[0], p[1], 1.5] });
+      F.place(r, 'j', F.int(1, 3), { spread: 2 });
+    }, hazard(r, Z) { if (Z.chance(0.5)) Z.pool(r, 'Đ', Z.range(1.2, 2)); } },
+    coralgrotto: { mix: 'ÛÚS', min: 12, fill(r, F) { // korallgrotta: lysande alger i klungor, en staty, en göl
+      for (let k = F.int(1, 2); k > 0; k--) {
+        const s = F.place(r, 'F', 1, { avoid: ['F', 3] })[0];
+        if (s) F.place(r, 'F', F.int(1, 2), { near: [s[0], s[1], 1.6] });
+      }
+      F.place(r, 'u', F.int(0, 1), { wall: true });
+    }, hazard(r, Z) { Z.pool(r, 'Đ', Z.range(1.4, 2.2)); } },
+    plaza: { mix: 'ÏÚÛ', min: 20, fill(r, F) { // översvämmat torg under himlen: brutna statyer och bråte; en bassäng med bro eller en kanal
+      F.place(r, 'u', F.int(1, 2), { open: true, spread: 3 });
+      F.place(r, 'j', F.int(1, 2), {});
+    }, hazard(r, Z) { if (r.box.w >= 7 && r.box.h >= 7 && Z.chance(0.6)) Z.lake(r, 'Đ'); else { Z.river(r, 'Đ'); Z.pool(r, 'Đ', Z.range(1.4, 2.2)); } } },
+    // --- version 9: klocktornet (urverk Ņ blockerar som rekvisita) ---
+    gearworks: { mix: 'ĳĵK', min: 12, fill(r, F) { // urverkshall: urverk längs väggarna, lådor och ljus
+      F.place(r, 'Ņ', F.int(2, 3), { wall: true, spread: 3 });
+      F.place(r, 'T', F.int(0, 2), { corner: true, spread: 2 });
+      F.place(r, 'c', 1, { wall: true });
+    } },
+    pendulumhall: { mix: 'ĳĵS', min: 16, fits: r => r.box.w >= 5 && r.box.h >= 5 && r.box.w * r.box.h >= 30, fill(r, F) { // pendelsal: rader av mässingspelare
+      F.pillars(r, 'Ĺ');
+      F.place(r, 'Ņ', 1, { wall: true });
+      F.place(r, 'c', F.int(1, 2), { wall: true, spread: 3 });
+    } },
+    workshop: { mix: 'ĳKR', floor: 'floor_wood_planks', min: 12, fill(r, F) { // urmakarens verkstad: bord, vapenställ, lådor och ett urverk
+      if (!F.row(r, 'J', F.int(2, 4), true).length) F.place(r, 'J', F.int(1, 2), { spread: 2 });
+      F.place(r, 'H', F.int(1, 2), { wall: true, spread: 2 });
+      F.place(r, 'T', F.int(1, 2), { corner: true });
+      F.place(r, 'Ņ', 1, { wall: true });
+    } },
+    // --- version 9: molnborgen (öarna; blixtstänger ņ blockerar som rekvisita) ---
+    cloudisle: { mix: 'ĶķK', min: 9, fill(r, F) { // molnö: statyer och ben
+      F.place(r, 'u', F.int(1, 2), { open: true, spread: 3 });
+      F.place(r, 'j', F.int(0, 2), {});
+    } },
+    harpynest: { mix: 'ĶS', min: 9, fill(r, F) { // harpyrede: benhögar och bråte
+      F.place(r, 'j', F.int(3, 5), {});
+      F.place(r, 'T', F.int(0, 1), { corner: true });
+    } },
+    stormspire: { mix: 'ķĶW', min: 12, fill(r, F) { // stormspira: en blixtstång mitt på ön, en staty och ett ljus
+      F.place(r, 'ņ', 1, { open: true, center: true, jit: 2 });
+      F.place(r, 'u', F.int(0, 1), {});
+      F.place(r, 'c', 1, {});
+    } },
+    cloudcourt: { mix: 'ĶķK', min: 20, fill(r, F) { // molngård (de stora öarna): statyer, en blixtstång, ben
+      F.place(r, 'u', F.int(2, 3), { open: true, spread: 3 });
+      F.place(r, 'ņ', F.int(0, 1), { open: true, spread: 4 });
+      F.place(r, 'j', F.int(1, 2), {});
+    } },
+    // --- version 11: svampriket (glödsvampar Ŧ blockerar som rekvisita och lyser) ---
+    sporegrotto: { mix: 'ř^K', min: 10, fill(r, F) { // sporgrotta: klungor av glödsvampar och lysande svamp
+      for (let k = F.int(1, 2); k > 0; k--) {
+        const s = F.place(r, 'Ŧ', 1, { wall: true, avoid: ['Ŧ', 3] })[0];
+        if (s) F.place(r, 'F', F.int(1, 3), { near: [s[0], s[1], 1.8] });
+      }
+    } },
+    giantcaps: { mix: '^ŘS', min: 20, fits: r => r.box.w >= 5 && r.box.h >= 5, fill(r, F) { // jättesvampar: fristående stjälkar av glödande svamphatt
+      F.place(r, 'Ş', F.int(1, 3), { open: true, spread: 3, avoid: ['Ş', 2] });
+      F.place(r, 'F', F.int(1, 2), {});
+    } },
+    myceliumden: { mix: 'U^L', min: 9, fill(r, F) { // mycelnäste: ben och bråte insnärjda i mycel, en glödsvamp
+      F.place(r, 'j', F.int(2, 3), { spread: 2 });
+      F.place(r, 'Ŧ', 1, { wall: true });
+      F.place(r, 'T', F.int(0, 1), { corner: true });
+    } },
+    // --- version 11: spegelpalatset (spegelstatyer ŧ blockerar som rekvisita) ---
+    mirrorhall: { mix: 'ŚKS', min: 12, fill(r, F) { // spegelsal: spegelstatyer längs väggarna och kandelabrar
+      F.place(r, 'ŧ', F.int(1, 2), { wall: true, spread: 3 });
+      F.place(r, 'c', F.int(1, 2), { wall: true, spread: 3 });
+    } },
+    ballroom: { mix: 'Ś@S', min: 16, fits: r => r.box.w >= 5 && r.box.h >= 5 && r.box.w * r.box.h >= 30, fill(r, F) { // balsal: rader av marmorpelare
+      F.pillars(r, 'Š');
+      F.place(r, 'c', F.int(1, 2), { wall: true, spread: 3 });
+      F.place(r, 'ŧ', F.int(0, 1), { wall: true });
+    } },
+    gallery: { mix: 'ŚKN', floor: 'floor_wood_planks', min: 12, fill(r, F) { // konstgalleri: statyer, en spegelstaty och ett bord
+      F.place(r, 'u', F.int(1, 3), { wall: true, spread: 2 });
+      F.place(r, 'ŧ', 1, { wall: true });
+      F.place(r, 'J', F.int(0, 1), { open: true });
+    } },
+    // --- version 13: det förbjudna biblioteket (bokhyllor ũ är väggar: rader av fristående hyllor med luckor, se F.stacks) ---
+    readingroom: { mix: 'ųXK', min: 20, fits: r => r.box.w >= 5 && r.box.h >= 5, fill(r, F) { // läsesal: hyllrader, ett läsbord och ljus
+      F.stacks(r, 'ũ', 0.85);
+      F.place(r, 'J', F.int(1, 2), { open: true, center: true, spread: 3 });
+      F.place(r, 'c', F.int(1, 2), { wall: true, spread: 4 });
+    } },
+    stacks: { mix: 'ųSK', min: 16, fits: r => r.box.w >= 5 && r.box.h >= 5, fill(r, F) { // hyllgångar: täta hyllrader, ett ljus och lösa böcker (ben)
+      F.stacks(r, 'ũ', 1);
+      F.place(r, 'c', 1, { wall: true });
+      F.place(r, 'j', F.int(0, 1), {});
+    } },
+    scriptorium: { mix: 'ųNK', floor: 'floor_wood_planks', min: 12, fill(r, F) { // skrivarsal: skrivpulpeter (bord) i rader, hyllor längs väggarna
+      if (!F.row(r, 'J', F.int(2, 4), true).length) F.place(r, 'J', F.int(1, 2), { spread: 2 });
+      F.shelves(r, 'q', 2 + Math.floor(r.cells.length / 20));
+      F.place(r, 'c', F.int(1, 2), { wall: true, spread: 3 });
+    } },
+    archive: { mix: 'ųSL', min: 9, fill(r, F) { // arkivet: ibland hyllrader, lådor med handlingar, hyllor och en kista
+      F.stacks(r, 'ũ', 0.5);
+      F.shelves(r, 'q', 2 + Math.floor(r.cells.length / 16));
+      for (const p of F.place(r, 'T', F.int(1, 2), { corner: true, spread: 3 })) F.place(r, 'T', F.int(0, 1), { near: [p[0], p[1], 1.5] });
+      F.chest(r, 0.3);
+    } },
+    // --- version 13: gjuteriet (städ/gjutformar ż blockerar som rekvisita; rullband, kanaler, ventiler och stansar sätts av content13) ---
+    smeltery: { mix: 'žÆK', min: 12, fill(r, F) { // smältverk: ibland en kanal med smält metall, eldgropar, gjutformar och lådor
+      if (F.chance(0.5)) F.canal(r, 'Ź');
+      F.place(r, 'f', F.int(1, 2), { wall: true, spread: 3 });
+      F.place(r, 'ż', F.int(1, 2), { wall: true, spread: 3 });
+      F.place(r, 'T', F.int(1, 2), { corner: true, spread: 2 });
+    } },
+    beltworks: { mix: 'žKS', min: 16, fill(r, F) { // rullbandshall: arbetsbord och lådor (banden läggs av content13)
+      F.place(r, 'J', F.int(1, 2), { wall: true, spread: 3 });
+      F.place(r, 'T', F.int(1, 3), { corner: true, spread: 2 });
+    } },
+    casting: { mix: 'žÆW', min: 16, fits: r => r.box.w >= 5 && r.box.h >= 5, fill(r, F) { // gjuthall: en kanal med smält metall, gjutformar och ett vapenställ
+      F.canal(r, 'Ź');
+      F.place(r, 'ż', F.int(1, 3), { wall: true, spread: 2 });
+      F.place(r, 'H', F.int(0, 1), { wall: true });
+      F.place(r, 'c', F.int(0, 1), { wall: true });
+    } },
+    pressroom: { mix: 'žRK', min: 12, fill(r, F) { // presshall: vapenställ, lådor och en gjutform
+      F.place(r, 'H', F.int(1, 2), { wall: true, spread: 2 });
+      F.place(r, 'T', F.int(1, 2), { corner: true, spread: 2 });
+      F.place(r, 'ż', F.int(0, 1), { wall: true });
+    } },
+    // --- version 15: blodkatedralen (kyrkbänkar Ǝ, blodfuntar Ə, klockor Ɛ; blyinfattade fönster Ƌ och ljusstråk ƍ sätts av content15) ---
+    nave: { mix: 'ƒƜK', min: 40, fits: r => !!r.nave, fill(r, F) { // långhus: bänkrader tvärs över salen, mittgång med röd matta, kor med altare och ljus
+      F.pews(r);
+      F.place(r, 'c', F.int(1, 2), { wall: true, spread: 4 });
+    } },
+    baptistery: { mix: 'ƒƜV', min: 12, fill(r, F) { // dopkapell: en blodfunt i mitten, ljus runt den och en bänk
+      const f = F.place(r, 'Ə', 1, { open: true, center: true, jit: 1.2 })[0] || F.place(r, 'Ə', 1, { center: true })[0];
+      F.place(r, 'c', F.int(2, 3), f ? { near: [f[0], f[1], 2.5] } : { wall: true });
+      F.place(r, 'Ǝ', F.int(0, 2), { wall: true, spread: 2 });
+    } },
+    belltower: { mix: 'ƜKS', min: 9, fits: r => r.box.w <= 7 && r.box.h <= 7, fill(r, F) { // klocktorn: en klocka i mitten (högst två per bana), ben i hörnen
+      if (!F.place(r, 'Ɛ', 1, { center: true, jit: 1 }).length) F.place(r, 'u', 1, { center: true });
+      F.place(r, 'j', F.int(1, 2), { corner: true });
+      F.place(r, 'c', F.int(0, 1), { wall: true });
+    } },
+    // --- version 15: bikupan (larvsäckar Ɨ; honungskakor Ɣ, honung Ɩ och fler larvsäckar sätts av content15) ---
+    hexcell: { mix: 'ƚKS', min: 9, fill(r, F) { // vaxcell: larvsäckar längs väggarna och ben (honungspölar i content15)
+      F.place(r, 'Ɨ', F.int(0, 2), { wall: true, spread: 3 });
+      F.place(r, 'j', F.int(1, 2), {});
+    } },
+    nursery: { mix: 'ƚƚK', min: 12, fill(r, F) { // larvkammare: rader av larvsäckar
+      if (F.grid(r, 'Ɨ', F.int(3, 5)).length < 2) F.place(r, 'Ɨ', F.int(2, 3), { wall: true, spread: 2 });
+      F.place(r, 'j', 1, { corner: true });
+    } },
+    honeyhall: { mix: 'ƚKL', min: 16, fill(r, F) { // honungssal: krukor med honung och lådor (honungspölarna läggs av content15, flest här)
+      F.place(r, 'o', F.int(1, 2), { wall: true, spread: 2 });
+      F.place(r, 'T', F.int(1, 2), { corner: true, spread: 2 });
+    } },
+    // --- version 16: den döda trädgården (häckar Ɵ, trädgårdsmur Ơ, fontäner Ƨ, stenstatyer ƨ; taggrankor ƥ sätts av content16) ---
+    walledgarden: { mix: 'ƭKS', min: 16, fill(r, F) { // murad trädgård: trädgårdsmur Ơ runt rummet, träd, en stenstaty och ett ljus
+      F.rewall(r, 'Ơ');
+      F.place(r, 't', F.int(1, 3), { spread: 2 });
+      F.place(r, 'ƨ', 1, { wall: true });
+      F.place(r, 'c', F.int(0, 1), { wall: true });
+    } },
+    hedgewalk: { mix: 'ƭXK', min: 20, fits: r => r.box.w >= 5 && r.box.h >= 5, fill(r, F) { // häckgångar: rader av häckar med luckor
+      F.stacks(r, 'Ɵ', 0.85);
+      F.place(r, 'ƨ', F.int(0, 1), { wall: true });
+    } },
+    statuewalk: { mix: 'ƭKS', min: 16, fill(r, F) { // statygång: stenstatyer i två rader längs långsidan
+      if (F.pillars(r, 'ƨ').length < 2) F.place(r, 'ƨ', F.int(2, 3), { wall: true, spread: 2 });
+      F.place(r, 'j', F.int(0, 1), {});
+    } },
+    fountaincourt: { mix: 'ƭKX', min: 20, fill(r, F) { // fontängård: en fontän (högst två per bana) i mitten med statyer och ljus runt om, träd
+      const f = F.putAt(r.cx, r.cy, 'Ƨ') ? [r.cx, r.cy] : F.place(r, 'Ƨ', 1, { open: true, center: true, jit: 1.5 })[0];
+      if (f) for (const [dx, dy] of [[-2, -2], [2, -2], [-2, 2], [2, 2]]) F.putAt(f[0] + dx, f[1] + dy, F.chance(0.5) ? 'ƨ' : 'c');
+      else F.place(r, 'ƨ', 1, { center: true });
+      F.place(r, 't', F.int(0, 2), { wall: true, spread: 3 });
+    } },
+    // --- version 16: drömriket (glidande väggar ƣ, falska dörrar Ʃ, drömlyktor ƪ; sömnens dimma Ʀ sätts av content16) ---
+    chessboard: { mix: 'ƮKS', min: 16, fill(r, F) { // schackbrädesal: rutigt golv (drömruta/marmor), statyer som pjäser i ett rutnät, drömlyktor
+      F.checker(r, 'floor_marble');
+      F.grid(r, 'u', F.int(2, 4));
+      F.place(r, 'ƪ', F.int(1, 2), { wall: true, spread: 3 });
+    } },
+    shifthall: { mix: 'ƮSK', min: 16, fits: r => r.box.w >= 5 && r.box.h >= 5, fill(r, F) { // de glidande väggarnas sal: rader av glidande väggar ƣ
+      F.shifts(r, 0.9);
+      F.place(r, 'ƪ', 1, { wall: true });
+    } },
+    falsedoors: { mix: 'ƮKV', min: 12, fill(r, F) { // de falska dörrarnas rum: 1-2 falska dörrar mot väggarna, en lykta, ibland en kista
+      F.place(r, 'Ʃ', F.int(1, 2), { wall: true, spread: 3, pred: F.front });
+      F.place(r, 'ƪ', 1, { wall: true });
+      F.chest(r, 0.3);
+    } },
+    // --- version 17: spökskeppet (master Ǔ, kanoner ǎ längs relingen, skeppslyktor ǐ, krutkaggar Ǒ; ruttna plankor Ǎ och sköljt däck Ǐ sätts av
+    // content17) ---
+    deck: { mix: 'ǕǗK', min: 30, fill(r, F) { // däck: kanoner längs relingen, lyktor och lådor (masterna står redan)
+      F.place(r, CANNON17, F.int(2, 3), { wall: true, spread: 3, pred: F.rail });
+      F.place(r, LANTERN17, F.int(1, 2), { wall: true, spread: 4 });
+      F.place(r, 'T', F.int(0, 2), { corner: true, spread: 2 });
+    } },
+    quarterdeck: { mix: 'ǕKS', min: 20, fill(r, F) { // akterdäck: rorkulten (ett bord) i mitten, en kanon, lyktor och ibland en kista
+      F.place(r, 'J', 1, { open: true, center: true, jit: 1.5 });
+      F.place(r, CANNON17, F.int(1, 2), { wall: true, spread: 3, pred: F.rail });
+      F.place(r, LANTERN17, F.int(1, 2), { wall: true, spread: 3 });
+      F.chest(r, 0.3);
+    } },
+    cabin: { mix: 'ǕǗS', floor: 'floor_deck', min: 9, fill(r, F) { // kajuta: bord, sjökista, bokhylla och en lykta
+      F.place(r, 'J', 1, { open: true, center: true, jit: 1.2 });
+      F.place(r, 'k', 1, { wall: true });
+      F.place(r, 'q', F.int(0, 1), { wall: true });
+      F.place(r, LANTERN17, F.int(1, 2), { wall: true, spread: 3 });
+      F.chest(r, 0.25);
+    } },
+    hold: { mix: 'ǗǕL', min: 16, fill(r, F) { // lastrum: lådrader, krutkaggar och krukor (ruttna plankor läggs av content17)
+      if (F.grid(r, 'T', F.int(3, 6)).length < 2) F.place(r, 'T', F.int(2, 3), { corner: true, spread: 2 });
+      F.place(r, KEG17, F.int(1, 2), { wall: true, spread: 2 });
+      F.place(r, 'o', F.int(0, 1), { wall: true });
+    } },
+    gundeck: { mix: 'ǕKV', min: 16, fill(r, F) { // kanondäck under däck: kanoner längs skrovet, en krutkagge och en lykta
+      F.place(r, CANNON17, F.int(2, 3), { wall: true, spread: 3, pred: F.rail });
+      F.place(r, KEG17, F.int(0, 1), { wall: true });
+      F.place(r, LANTERN17, 1, { wall: true });
+    } },
+    // --- version 17: laboratoriet (alembiker ǟ, flaskhyllor ǝ, teslaspolar Ǟ, transmutationscirklar ǜ, hyllor med burkar ǡ; syrakaren Ǜ sätts av
+    // content17) ---
+    stillroom: { mix: 'ǣǥK', min: 16, fill(r, F) { // alkemistens verkstad: en alembik mot väggen, flaskhyllor och bord (flest syrakar läggs här)
+      F.place(r, ALEMBIC17, 1, { wall: true, pred: F.front });
+      F.place(r, FLASKS17, F.int(1, 2), { wall: true, spread: 2 });
+      F.place(r, 'J', F.int(1, 2), { open: true, center: true, spread: 2 });
+    } },
+    jarhall: { mix: 'ǣǥS', min: 20, fits: r => r.box.w >= 5 && r.box.h >= 5, fill(r, F) { // burkhallen: rader av fristående hyllor med burkar
+      F.stacks(r, JARS17, 0.85);
+      F.place(r, FLASKS17, F.int(0, 1), { wall: true });
+    } },
+    teslachamber: { mix: 'ǣKV', min: 20, fits: r => r.box.w >= 5 && r.box.h >= 5, fill(r, F) { // teslakammaren: en teslaspole i salens mitt, ljus
+      F.place(r, TESLA17, 1, { open: true, center: true, jit: 1.2, pred: F.free8 });
+      F.place(r, 'c', F.int(1, 2), { wall: true, spread: 3 });
+    } },
+    transmutation: { mix: 'ǥǣK', min: 16, fill(r, F) { // transmutationssalen: en cirkel ǜ i mitten, ljus runt den
+      F.circle(r, TRANS17);
+      F.place(r, 'c', F.int(2, 3), { wall: true, spread: 3 });
+      F.place(r, FLASKS17, F.int(0, 1), { wall: true });
+    } },
+    // --- version 18: cirkusen (manegen med röd matta, burar ǯ, lyckohjul Ǵ, knivkastarhjul ǳ, ballonger ǵ, glödlampsgirlanger Ƕ; fallluckor Ǳ och
+    // strålkastare ǲ sätts av content18) ---
+    bigtop: { mix: 'ǷǸK', min: 20, floor: 'floor_ring', fits: r => r.box.w >= 5 && r.box.h >= 5, fill(r, F) { // manegen: röd matta, girlanger och ballonger runt kanten
+      F.place(r, MARQUEE18, F.int(1, 2), { wall: true, spread: 3 });
+      F.place(r, BALLOON18, F.int(1, 2), { wall: true, spread: 3 });
+      F.place(r, 'T', F.int(0, 1), { corner: true });
+    } },
+    cagerow: { mix: 'ǸǷL', min: 20, fits: r => r.box.w >= 5 && r.box.h >= 5, fill(r, F) { // burgången: rader av djurburar (fristående, varje sträcka bara om allt nås ändå)
+      F.stacks(r, CAGE18, 0.85);
+      F.place(r, MARQUEE18, F.int(0, 1), { wall: true });
+    } },
+    dressingroom: { mix: 'ǷǸS', min: 9, fill(r, F) { // artistlogen: sminkbord, kistor, en ballongklase och en girlang
+      F.place(r, 'J', F.int(1, 2), { wall: true, spread: 2 });
+      F.place(r, 'k', 1, { wall: true });
+      F.place(r, BALLOON18, F.int(0, 1), { wall: true });
+      F.place(r, MARQUEE18, 1, { wall: true });
+      F.chest(r, 0.25);
+    } },
+    midway: { mix: 'ǸǷK', min: 16, fill(r, F) { // nöjesfältet: ett lyckohjul mot väggen, ibland ett knivkastarhjul, ballonger och girlanger
+      F.place(r, PRIZE18, 1, { wall: true, pred: F.front });
+      F.place(r, KNIFE18, F.int(0, 1), { open: true, center: true, jit: 1.5, pred: F.free8 });
+      F.place(r, BALLOON18, F.int(1, 3), { wall: true, spread: 2 });
+      F.place(r, MARQUEE18, F.int(1, 2), { wall: true, spread: 3 });
+    } },
+    // --- version 18: djungeltemplet (tikifacklor ȇ, pilidoler ȅ, guldidol Ȅ, giftblommor Ȇ, pirayavatten Ȃ; lianerna ȃ sätts av content18) ---
+    templehall: { mix: 'ȈȊK', min: 20, fits: r => r.box.w >= 5 && r.box.h >= 5, fill(r, F) { // tempelsalen: pelarrader av sten, facklor, en pilidol
+      F.pillars(r, JSTONE18);
+      F.place(r, TIKI18, F.int(1, 2), { wall: true, spread: 3 });
+      F.place(r, DIDOL18, 1, { wall: true, pred: F.dart });
+    } },
+    altar: { mix: 'ȈȊS', min: 16, fill(r, F) { // offeraltaret: guldidolen i mitten (fri runt om), facklor
+      F.place(r, GIDOL18, 1, { open: true, center: true, jit: 1.2, pred: F.free8 });
+      F.place(r, TIKI18, F.int(2, 3), { wall: true, spread: 3 });
+    } },
+    collapsedstair: { mix: 'ȈȊL', min: 16, fill(r, F) { // den rasade trappan: nedfallna stenblock, ben och krukor (lianerna läggs av content18)
+      F.place(r, JSTONE18, F.int(2, 4), { open: true, spread: 2 });
+      F.place(r, 'j', F.int(1, 2), {});
+      F.place(r, 'o', F.int(0, 1), { wall: true });
+    } },
+    riverbed: { mix: 'ȈȊK', min: 30, fill(r, F) { // flodbädden: en kanal med pirayor tvärs över gläntan (med ett vadställe), träd
+      F.canal(r, PIRANHA18);
+      F.place(r, 't', F.int(1, 3), { spread: 2 });
+    } },
+    clearing: { mix: 'ȊȈK', min: 30, fill(r, F) { // gläntan: träd, giftblommor och en fackla
+      F.place(r, 't', F.int(2, 4), { spread: 2 });
+      F.place(r, FLOWER18, F.int(1, 2), { spread: 3, pred: F.free8 });
+      F.place(r, TIKI18, F.int(0, 1), { wall: true });
+    } },
+    // --- version 19: gruvan (gruvvagnar ț, dynamitlådor Ȝ, karbidlampor ȝ, malmklippor ȑ; rälsen Ȗ, gasen ȗ och rasen Ș sätts av content19) ---
+    loadingdock: { mix: '\u0221\u0223L', min: 20, fits: r => r.box.w >= 5 && r.box.h >= 5, fill(r, F) { // lastplatsen: räls (en slinga runt en ö eller en rak sträcka), lådor, en gruvvagn i vila, lampor
+      F.track(r);
+      F.place(r, 'T', F.int(1, 3), { wall: true, spread: 2 });
+      F.place(r, CART19, 1, { wall: true, pred: (x, y) => F.front(x, y) && F.free8(x, y) });
+      F.place(r, LAMP19, F.int(1, 2), { wall: true, spread: 3 });
+    } },
+    shaft: { mix: '\u0221\u0223K', min: 16, fill(r, F) { // schaktet: timmerstöttor, karbidlampor och en dynamitlåda
+      F.pillars(r, TIMBER19);
+      F.place(r, LAMP19, F.int(1, 2), { wall: true, spread: 3 });
+      F.place(r, DYNA19, F.int(0, 1), { wall: true });
+    } },
+    oregrotto: { mix: '\u0223\u0221L', min: 16, fill(r, F) { // malmgrottan: fristående malmklippor och lampor
+      F.place(r, ORE19, F.int(2, 4), { open: true, spread: 2 });
+      F.place(r, LAMP19, F.int(1, 2), { wall: true, spread: 3 });
+    } },
+    blastchamber: { mix: '\u0221KS', min: 12, fill(r, F) { // sprängkammaren: dynamitlådor, lådor och en lampa
+      F.place(r, DYNA19, F.int(1, 3), { wall: true, spread: 2 });
+      F.place(r, 'T', F.int(0, 2), { wall: true });
+      F.place(r, LAMP19, 1, { wall: true });
+    } },
+    collapsedgallery: { mix: '\u0221\u0223K', min: 16, fill(r, F) { // den rasade stollen: nedfallet timmer och ben (rasen läggs av content19)
+      F.place(r, TIMBER19, F.int(2, 4), { open: true, spread: 2 });
+      F.place(r, 'j', F.int(1, 2), {});
+    } },
+    // --- version 19: observatoriet (orrery Ȟ, teleskop ȟ; kupolspringorna Ț, stjärnkartegolvet ș och stjärnportarna Ƞ sätts av content19) ---
+    greatdome: { mix: '\u0225\u0226K', min: 20, fits: r => r.box.w >= 5 && r.box.h >= 5, fill(r, F) { // stora kupolen: ett teleskop i mitten, ljus
+      F.place(r, SCOPE19, 1, { open: true, center: true, jit: 1.2, pred: F.free8 });
+      F.place(r, 'c', F.int(1, 2), { wall: true, spread: 3 });
+    } },
+    planetarium: { mix: '\u0226\u0225S', min: 16, fill(r, F) { // planetariesalen: orreryn i mitten, ljus
+      F.place(r, ORRERY19, 1, { open: true, center: true, jit: 1.2, pred: F.free8 });
+      F.place(r, 'c', F.int(1, 2), { wall: true, spread: 3 });
+    } },
+    telescopegallery: { mix: '\u0225\u0226K', min: 16, fill(r, F) { // teleskopgalleriet: mässingspelare och ett teleskop mot väggen
+      F.pillars(r, BRASS19);
+      F.place(r, SCOPE19, 1, { wall: true, pred: (x, y) => F.front(x, y) && F.free8(x, y) });
+    } },
+    chartroom: { mix: '\u0226\u0225S', min: 9, fill(r, F) { // kartrummet: bord, hyllor och en kista
+      F.place(r, 'J', F.int(1, 2), { wall: true, spread: 2 });
+      F.place(r, 'q', F.int(0, 2), { wall: true, spread: 2 });
+      F.chest(r, 0.25);
+    } },
+    // --- version 20: kloakerna (råttbon ȸ, rörpelare ȭ; slammet Ȳ, sprutrören ȳ och slussarna ȷ sätts av content20) ---
+    canalhall: { mix: '\u023d\u023eK', min: 20, fits: r => r.box.w >= 5 && r.box.h >= 5, fill(r, F) { // kanalsalen: lådor mot väggarna (slammet läggs av content20)
+      F.place(r, 'T', F.int(0, 2), { wall: true, spread: 2 });
+    } },
+    pumproom: { mix: '\u023e\u023dS', min: 16, fill(r, F) { // pumprummet: rörpelare och lådor
+      F.pillars(r, PIPES20);
+      F.place(r, 'T', F.int(0, 1), { wall: true });
+    } },
+    ratden: { mix: '\u023dSK', min: 12, fill(r, F) { // råttboet: råttbon och ben
+      F.place(r, NEST20, F.int(1, 2), { wall: true, spread: 3, pred: F.free8 });
+      F.place(r, 'j', F.int(1, 2), {});
+    } },
+    sluicegallery: { mix: '\u023e\u023dL', min: 16, fits: r => r.box.w >= 5 && r.box.h >= 5, fill(r, F) { // slussgången: lådor (slussarna och ratten läggs av content20)
+      F.place(r, 'T', F.int(0, 2), { wall: true, spread: 2 });
+    } },
+    // --- version 20: öknen (kaktusar ȹ, amforor Ⱥ, kokpannor Ȼ, ruinpelare ȯ; kvicksanden, oaserna och hägringarna sätts av content20) ---
+    ruincourt: { mix: '\u0241\u0240K', min: 16, fill(r, F) { // ruinhovet: sandstenspelare, amforor och kokpannor
+      F.pillars(r, DUNE20);
+      F.place(r, AMPHORA20, F.int(1, 2), { wall: true, spread: 2 });
+      F.place(r, BRAZIER20, F.int(1, 2), { wall: true, spread: 3 });
+    } },
+    oasis: { mix: '\u0240\u0241K', min: 20, fits: r => r.box.w >= 5 && r.box.h >= 5, fill(r, F) { // oasen: palmer och en amfora (oasvattnet läggs av content20)
+      F.place(r, 't', F.int(1, 3), { spread: 2, pred: F.free8 });
+      F.place(r, AMPHORA20, F.int(0, 1), { wall: true });
+    } },
+    dunefield: { mix: '\u0240\u0241S', min: 20, fill(r, F) { // dynfältet: dyner och kaktusar (kvicksanden läggs av content20)
+      F.place(r, DUNE20, F.int(2, 4), { open: true, spread: 2 });
+      F.place(r, CACTUS20, F.int(1, 3), { spread: 2, pred: F.free8 });
+    } },
+    caravan: { mix: '\u0241\u0240K', min: 20, fill(r, F) { // karavanlägret: lådor, amforor och en kokpanna
+      F.place(r, 'T', F.int(1, 3), { wall: true, spread: 2 });
+      F.place(r, AMPHORA20, F.int(1, 2), { spread: 2, pred: F.free8 });
+      F.place(r, BRAZIER20, 1, { open: true, center: true, jit: 1.5, pred: F.free8 });
+    } },
+    // --- version 21: järnfängelset (cellgallerpelare Ɉ, hängande burar ɏ, sträckbänkar ɐ, galgar ɑ; larmplattorna och cellgallren i väggarna sätts av content21) ---
+    cellrow: { mix: '\u0256\u0255S', floor: 'floor_straw', min: 16, fill(r, F) { // cellraden: halm, gallerpelare, hängande burar och ben
+      F.pillars(r, CELLS21);
+      F.place(r, CAGE21, F.int(1, 2), { spread: 3, pred: F.free8 });
+      F.place(r, 'j', F.int(1, 2), {});
+    } },
+    guardpost: { mix: '\u0255\u0255K', min: 12, fill(r, F) { // vaktrummet: bord, lådor, en kista och ljus
+      F.place(r, 'J', F.int(1, 2), { spread: 2, pred: F.free8 });
+      F.place(r, 'T', F.int(1, 2), { wall: true, spread: 2 });
+      F.place(r, 'c', 1, { wall: true });
+      F.chest(r, 0.3);
+    } },
+    torturechamber: { mix: '\u0256\u0255I', floor: 'floor_prison', min: 12, fill(r, F) { // tortyrkammaren: sträckbänkar, burar med skelett, ben
+      F.place(r, RACK21, F.int(1, 2), { spread: 3, pred: F.free8 });
+      F.place(r, 'v', F.int(0, 1), { wall: true, spread: 3 });
+      F.place(r, 'j', F.int(1, 2), {});
+      F.place(r, 'c', 1, { wall: true });
+    } },
+    gallowsyard: { mix: '\u0255\u0256K', min: 20, fits: r => r.box.w >= 5 && r.box.h >= 5, fill(r, F) { // galggården: en galge i mitten, burar
+      F.place(r, GALLOWS21, 1, { open: true, center: true, jit: 1, pred: F.free8 });
+      F.place(r, CAGE21, F.int(0, 2), { spread: 3, pred: F.free8 });
+      F.place(r, 'j', F.int(0, 2), {});
+    } },
+    // --- version 21: fiskeläget (fisktunnor ɓ, ankare ɔ, fyrlyktor ɒ; vattnet, bryggorna och näten sätts av content21) ---
+    fishhall: { mix: '\u0259\u025bK', floor: 'floor_dock', min: 12, fill(r, F) { // fiskhallen: fisktunnor, bord och lådor
+      F.place(r, FBARREL21, F.int(1, 3), { wall: true, spread: 2 });
+      F.place(r, 'J', F.int(0, 2), { spread: 2, pred: F.free8 });
+      F.place(r, 'T', F.int(0, 1), { wall: true });
+    } },
+    pier: { mix: '\u0259\u025bS', min: 20, fits: r => r.box.w >= 5 && r.box.h >= 5, fill(r, F) { // bryggan: några tunnor (vattnet läggs av content21)
+      F.place(r, FBARREL21, F.int(0, 2), { wall: true, spread: 2 });
+    } },
+    lighthouse: { mix: '\u025b\u0259K', min: 16, fill(r, F) { // fyrplatsen: en fyrlykta i mitten, ankare
+      F.place(r, HLAMP21, 1, { open: true, center: true, jit: 1, pred: F.free8 });
+      F.place(r, ANCHOR21, F.int(0, 1), { spread: 2, pred: F.free8 });
+    } },
+    quayside: { mix: '\u0259\u025bK', min: 16, fill(r, F) { // kajen: tunnor, lådor, ankare och en lyktstolpe
+      F.place(r, FBARREL21, F.int(1, 2), { wall: true, spread: 2 });
+      F.place(r, 'T', F.int(0, 2), { wall: true, spread: 2 });
+      F.place(r, ANCHOR21, F.int(0, 1), { spread: 2, pred: F.free8 });
+      F.place(r, HLAMP21, F.int(0, 1), { wall: true, spread: 3 });
+    } },
+    // --- version 22: badhuset (badstatyer ɦ, fontäner ɧ, bänkar ɨ, pelargångar ɡ; bassängerna och ånggallren sätts av content22) ---
+    poolhall: { mix: 'ɩɫK', min: 20, fits: r => r.box.w >= 5 && r.box.h >= 5, fill(r, F) { // bassänghallen: statyer och en fontän (bassängerna läggs av content22)
+      F.place(r, BSTATUE22, F.int(1, 2), { wall: true, spread: 3 });
+      F.place(r, FOUNT22, F.int(0, 1), { open: true, center: true, jit: 1.5, pred: F.free8 });
+    } },
+    steamroom: { mix: 'ɩɩS', floor: 'floor_bathtile', min: 12, fill(r, F) { // ångrummet: bänkar och handdukshyllor (ånggallren läggs av content22)
+      F.place(r, BENCH22, F.int(1, 2), { wall: true, spread: 2 });
+      F.place(r, 'c', F.int(0, 1), { wall: true });
+    } },
+    peristyle: { mix: 'ɫɩL', min: 16, fill(r, F) { // pelargången: pelare och en staty
+      F.pillars(r, COLUMN22);
+      F.place(r, BSTATUE22, F.int(0, 1), { wall: true, spread: 3 });
+    } },
+    hypocaust: { mix: 'ɫɩI', floor: 'floor_bathtile', min: 12, fill(r, F) { // hypokausten: eldstäder under golvet, lådor och ben
+      F.place(r, 'f', F.int(1, 2), { wall: true, spread: 3 });
+      F.place(r, 'T', F.int(0, 2), { wall: true, spread: 2 });
+      F.place(r, 'j', F.int(0, 1), {});
+    } },
+    // --- version 22: skärselden (kedjade själar ɲ, benpelare ɳ, svavelgrytor ɴ; eldfloderna och runcirklarna sätts av content22) ---
+    fireriver: { mix: 'ɵɸS', min: 20, fits: r => r.box.w >= 5 && r.box.h >= 5, fill(r, F) { // eldfloden: en svavelgryta (floden läggs av content22)
+      F.place(r, BRIMPOT22, F.int(0, 1), { wall: true, spread: 3 });
+    } },
+    bonewaste: { mix: 'ɸɵK', min: 16, fill(r, F) { // benfältet: benpelare och benhögar
+      F.place(r, BPILLAR22, F.int(2, 4), { open: true, spread: 2, pred: F.free8 });
+      F.place(r, 'j', F.int(1, 3), {});
+    } },
+    soulvale: { mix: 'ɵɸK', min: 16, fill(r, F) { // själarnas dal: kedjade själar och en svavelgryta
+      F.place(r, SOUL22, F.int(2, 3), { spread: 2, pred: F.free8 });
+      F.place(r, BRIMPOT22, 1, { wall: true, spread: 3 });
+    } },
+    runeground: { mix: 'ɵɵS', min: 16, fill(r, F) { // runplatsen: svavelgrytor och ben (runcirklarna läggs av content22)
+      F.place(r, BRIMPOT22, F.int(1, 2), { wall: true, spread: 3 });
+      F.place(r, 'j', F.int(0, 2), {});
+    } },
+    // --- version 23: slakteriet (köttkrokar ʁ, slaktbänkar ʂ, bandsågar ʃ; kylrumsväggarna, blodhalkan och köttkvarnarna sätts av content23) ---
+    slaughterhall: { mix: 'ʄʅK', min: 20, fits: r => r.box.w >= 5 && r.box.h >= 5, fill(r, F) { // slakthallen: köttkrokar och slaktbänkar
+      F.place(r, HOOK23, F.int(2, 3), { spread: 2, pred: F.free8 });
+      F.place(r, BLOCK23, F.int(1, 2), { wall: true, spread: 3 });
+    } },
+    coldroom: { mix: 'ʄʄS', min: 12, fill(r, F) { // kylrummet: rader av köttkrokar
+      F.place(r, HOOK23, F.int(2, 4), { spread: 2 });
+    } },
+    cuttingroom: { mix: 'ʅʄI', floor: 'floor_abattoir', min: 12, fill(r, F) { // styckningsrummet: slaktbänkar och en bandsåg
+      F.place(r, BLOCK23, F.int(1, 2), { spread: 2, pred: F.free8 });
+      F.place(r, SAW23, 1, { wall: true, spread: 3 });
+      F.place(r, 'j', F.int(0, 1), {});
+    } },
+    grinderroom: { mix: 'ʅʅK', min: 16, fits: r => r.box.w >= 5 && r.box.h >= 5, fill(r, F) { // kvarnrummet: lådor (köttkvarnarna läggs av content23)
+      F.place(r, 'T', F.int(1, 2), { wall: true, spread: 2 });
+      F.place(r, 'c', F.int(0, 1), { wall: true });
+    } },
+    // --- version 23: slagfältet (katapulter ʍ, krigsfanor ʎ, spjutpålar ʏ, jordvallar ʉ; den djupa leran och katapultmålen sätts av content23) ---
+    trench: { mix: 'ʑʑS', min: 16, fill(r, F) { // skyttegraven: jordvallar och spjutpålar
+      F.pillars(r, EARTH23);
+      F.place(r, STAKES23, F.int(0, 2), { wall: true, spread: 3 });
+    } },
+    catapultfield: { mix: 'ʑʑK', min: 20, fits: r => r.box.w >= 5 && r.box.h >= 5, fill(r, F) { // katapultfältet: trasiga katapulter (målen läggs av content23)
+      F.place(r, CATA23, F.int(1, 2), { open: true, spread: 3, pred: F.free8 });
+    } },
+    palisadecamp: { mix: 'ʑKS', min: 16, fill(r, F) { // palissadlägret: fanor, lådor och ett eldfat
+      F.place(r, BANNER23, F.int(1, 2), { wall: true, spread: 3 });
+      F.place(r, 'T', F.int(0, 2), { wall: true, spread: 2 });
+      F.place(r, 'f', F.int(0, 1), { wall: true });
+    } },
+    riderplain: { mix: 'ʑʑK', min: 24, fits: r => r.box.w >= 6 && r.box.h >= 5, fill(r, F) { // ryttarslätten: öppen slätt med en fana (ryttarna läggs av content23)
+      F.place(r, BANNER23, F.int(0, 1), { wall: true });
+    } },
+    // --- version 30: ruinstaden (raserade pelare ʢ, takbjälkar ʣ, huvudlösa statyer ʤ, tegelmurar ʗ; de rasande taken ʝ och gruset ʞ sätts av content30) ---
+    townsquare: { mix: 'ʨʪK', floor: 'floor_ruinplaza', paint: true, min: 30, fits: r => r.box.w >= 7 && r.box.h >= 7, fill(r, F) { // torget: en brunn av tegel mitt på torget, raserade pelare, en huvudlös staty
+      const cx = r.box.x + (r.box.w >> 1) - 1, cy = r.box.y + (r.box.h >> 1) - 1;
+      if (F.chance(0.8)) for (const [dx, dy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) F.putAt(cx + dx, cy + dy, RBRICK30);
+      F.place(r, COLUMN30, F.int(2, 3), { open: true, spread: 3, pred: F.free8 });
+      F.place(r, STATUE30, F.int(0, 1), { open: true, pred: F.free8 });
+    } },
+    ruinhouse: { mix: 'ʨʨS', min: 12, fill(r, F) { // de raserade husen: nedfallna takbjälkar och en låda
+      F.place(r, BEAM30, F.int(1, 2), { spread: 2, pred: F.free8 });
+      F.place(r, 'T', F.int(0, 1), { wall: true });
+    } },
+    alleys: { mix: 'ʨʪS', min: 20, fits: r => r.box.w >= 6 && r.box.h >= 6, fill(r, F) { // gränderna: tegelmurar på tvären, växelvis från var sin sida, gör gången smal och slingrande
+      const b = r.box, hz = b.w >= b.h, A = hz ? b.w : b.h, B = hz ? b.h : b.w;
+      let side = F.chance(0.5) ? 1 : 0;
+      for (let a = 2 + F.int(0, 1); a <= A - 3; a += F.int(3, 4)) {
+        const len = B - 2 - F.int(0, 1);
+        for (let k = 0; k < len; k++) { const o = side ? B - 1 - k : k, x = hz ? b.x + a : b.x + o, y = hz ? b.y + o : b.y + a; if (!F.putAt(x, y, RBRICK30)) break; }
+        side ^= 1;
+      }
+      F.place(r, BEAM30, F.int(0, 1), { spread: 2, pred: F.free8 });
+    } },
+    townhallsteps: { mix: 'ʪʪK', floor: 'floor_ruinplaza', paint: true, min: 24, fits: r => r.box.w >= 6 && r.box.h >= 6, fill(r, F) { // rådhustrappan: en kolonnad av raserade pelare och statyer
+      F.place(r, COLUMN30, F.int(3, 4), { wall: true, spread: 2 });
+      F.place(r, STATUE30, F.int(1, 2), { wall: true, spread: 4 });
+      F.place(r, 'c', F.int(0, 1), { wall: true });
+    } },
+    // --- version 30: glasbruket (smältugnar ʥ, glashyllor ʦ, glasblåsarbänkar ʧ; smält glas ʟ, skärvor ʠ, ugnsmunnar ʡ och hyllpaneler ʛ sätts av content30) ---
+    furnacehall: { mix: 'ʮʱK', min: 20, fits: r => r.box.w >= 5 && r.box.h >= 5, fill(r, F) { // ugnshallen: smältugnar längs väggarna
+      F.place(r, FURNACE30, F.int(1, 2), { wall: true, spread: 3 });
+      F.place(r, 'T', F.int(0, 1), { wall: true });
+    } },
+    blowshop: { mix: 'ʮʮS', floor: 'floor_glassworks', min: 12, fill(r, F) { // verkstaden: glasblåsarbänkar, glashyllor och ibland en ugn
+      F.place(r, GBENCH30, F.int(1, 2), { spread: 2, pred: F.free8 });
+      F.place(r, RACK30, F.int(1, 2), { wall: true, spread: 2 });
+      F.place(r, FURNACE30, F.int(0, 1), { wall: true });
+    } },
+    glassstore: { mix: 'ʮʱS', min: 16, fits: r => r.box.w >= 5 && r.box.h >= 5, fill(r, F) { // lagret: rader av glashyllor
+      F.shelves(r, RACK30, 3 + Math.floor(r.cells.length / 14));
+      F.place(r, 'T', F.int(0, 1), { wall: true });
+    } },
+    annealgallery: { mix: 'ʱʮK', min: 10, fits: r => (r.box.w >= 7 && r.box.h <= 5) || (r.box.h >= 7 && r.box.w <= 5), fill(r, F) { // kylugnsgången: kylugnar i rad längs väggen
+      F.place(r, FURNACE30, F.int(1, 3), { wall: true, spread: 3 });
+      F.place(r, RACK30, F.int(0, 1), { wall: true });
+    } },
     // --- specialrum (inga fiender) ---
     alchemy: { floor: 'floor_wood_planks', fill(r, F) { // alkemistens rum: alkemisten, bokhyllor, bord med drycker
       const a = F.npc(r, '£');
@@ -647,6 +2256,36 @@
       yard: [['ashfield', 3], ['lavalake', 1.5], ['statues', 0.6]] },
     tomb: { room: [['burialchamber', 3], ['pillarhall', 3], ['treasury', 1.6], ['sandtunnel', 2], ['trap', 1.2], ['crypt', 0.8], ['storeroom', 0.8], ['gas', 0.5]],
       yard: [['sandcourt', 3], ['statues', 1]] },
+    crystal: { open: [['geode', 3], ['prismhall', 2.5], ['shardfield', 2.5], ['grotto', 1.5], ['mushroom', 1], ['boneden', 1], ['camp', 1.2]] },
+    sunken: { room: [['cistern', 3], ['drownedhall', 2.5], ['wreckhall', 2.5], ['coralgrotto', 2], ['storeroom', 1], ['library', 0.6], ['crypt', 0.8], ['prison', 0.6]],
+      yard: [['plaza', 3], ['statues', 0.8]] },
+    clock: { room: [['gearworks', 3], ['pendulumhall', 2.5], ['workshop', 2.5], ['storeroom', 1.5], ['armory', 1.5], ['library', 1], ['prison', 0.8], ['crypt', 0.6]] },
+    sky: { room: [['cloudisle', 3], ['harpynest', 2], ['stormspire', 2], ['storeroom', 0.6], ['statues', 0.8]], yard: [['cloudcourt', 3], ['statues', 1]] },
+    fungus: { open: [['sporegrotto', 3], ['giantcaps', 2.5], ['myceliumden', 2], ['mushroom', 2], ['boneden', 1], ['camp', 1.2], ['nest', 0.8]] }, // version 11
+    mirror: { room: [['mirrorhall', 3], ['ballroom', 2.5], ['gallery', 2.5], ['library', 1.2], ['dining', 1], ['chapel', 1], ['storeroom', 0.8], ['armory', 0.8]] },
+    library: { room: [['readingroom', 3], ['stacks', 3], ['scriptorium', 2], ['archive', 2], ['library', 1], ['storeroom', 0.6], ['chapel', 0.6], ['crypt', 0.6]] }, // version 13
+    foundry: { room: [['smeltery', 3], ['beltworks', 2.5], ['casting', 2.5], ['pressroom', 2], ['storeroom', 1], ['armory', 1.2], ['prison', 0.6]] },
+    cathedral: { room: [['nave', 4], ['baptistery', 2.5], ['chapel', 2], ['belltower', 1.2], ['crypt', 1.2], ['ossuary', 1], ['library', 0.5], ['storeroom', 0.5]] }, // version 15
+    hive: { room: [['hexcell', 3], ['nursery', 2.5], ['honeyhall', 2.5], ['storeroom', 0.4]] },
+    garden: { room: [['walledgarden', 3], ['hedgewalk', 2.5], ['statuewalk', 2], ['fountaincourt', 1], ['statues', 0.8]], // version 16
+      yard: [['fountaincourt', 3], ['hedgewalk', 2], ['statuewalk', 1.5], ['walledgarden', 1]] },
+    dream: { room: [['chessboard', 3], ['shifthall', 3], ['falsedoors', 2.5], ['statues', 0.8], ['library', 0.6], ['chapel', 0.5]] },
+    ship: { room: [['cabin', 3], ['hold', 3], ['gundeck', 2.5], ['storeroom', 0.8], ['prison', 0.6]], yard: [['deck', 3], ['quarterdeck', 1.5]] }, // version 17
+    lab: { room: [['stillroom', 3], ['jarhall', 2.5], ['teslachamber', 2], ['transmutation', 2], ['library', 0.6], ['storeroom', 0.5]] },
+    circus: { room: [['bigtop', 3], ['cagerow', 2.5], ['midway', 2.5], ['dressingroom', 2], ['storeroom', 0.6], ['prison', 0.5]] }, // version 18
+    jungle: { room: [['templehall', 3], ['altar', 1.5], ['collapsedstair', 2.5], ['storeroom', 0.5], ['prison', 0.4]], yard: [['clearing', 3], ['riverbed', 2.5]] },
+    mine: { room: [['loadingdock', 3], ['shaft', 2.5], ['oregrotto', 2.5], ['blastchamber', 2], ['collapsedgallery', 2], ['storeroom', 0.5]] }, // version 19
+    observatory: { room: [['greatdome', 3], ['planetarium', 2.5], ['telescopegallery', 2.5], ['chartroom', 2], ['library', 0.6], ['storeroom', 0.4]] },
+    sewer: { room: [['canalhall', 3], ['pumproom', 2.5], ['ratden', 2.5], ['sluicegallery', 2.5], ['storeroom', 0.5], ['prison', 0.4]] }, // version 20
+    desert: { room: [['ruincourt', 3], ['storeroom', 0.6], ['prison', 0.4]], yard: [['oasis', 2.5], ['dunefield', 3], ['caravan', 2.5]] },
+    prison: { room: [['cellrow', 3], ['guardpost', 2.5], ['torturechamber', 2.5], ['gallowsyard', 2], ['prison', 1], ['storeroom', 0.5]] }, // version 21
+    harbor: { room: [['fishhall', 3], ['storeroom', 0.6]], yard: [['pier', 3], ['lighthouse', 2], ['quayside', 2.5]] },
+    bathhouse: { room: [['poolhall', 3], ['steamroom', 2.5], ['peristyle', 2.5], ['hypocaust', 2], ['storeroom', 0.4]] }, // version 22
+    purgatory: { room: [['runeground', 2.5], ['bonewaste', 2], ['storeroom', 0.4]], yard: [['fireriver', 3], ['bonewaste', 2.5], ['soulvale', 2.5], ['runeground', 1.5]] },
+    abattoir: { room: [['slaughterhall', 3], ['coldroom', 2.5], ['cuttingroom', 2.5], ['grinderroom', 2], ['storeroom', 0.4]] }, // version 23
+    battlefield: { room: [['palisadecamp', 3], ['storeroom', 0.5]], yard: [['trench', 3], ['catapultfield', 2.5], ['riderplain', 2.5], ['palisadecamp', 1]] },
+    ruins: { room: [['ruinhouse', 3], ['storeroom', 0.4]], yard: [['townsquare', 3], ['alleys', 2.5], ['townhallsteps', 2]] }, // version 30
+    glassworks: { room: [['furnacehall', 3], ['blowshop', 2.5], ['glassstore', 2.5], ['annealgallery', 2], ['storeroom', 0.4]] },
   };
 
   // ---------- Bana ----------
@@ -655,22 +2294,117 @@
     if (opts.theme !== undefined && opts.theme !== null) return BIOMES[0]; // teman finns bara i fängelsehålan
     // de gamla biomerna dras som förut (samma seed ger samma biom); frostfästet och vulkanen tar sina andelar i egna slag
     const ok = b => depth >= b.depth[0] && depth <= b.depth[1], frost = BIOMES.find(b => b.id === 'frost'), volc = BIOMES.find(b => b.id === 'volcano');
-    const tomb = BIOMES.find(b => b.id === 'tomb');
-    const base = rng.weighted(BIOMES, b => (b !== frost && b !== volc && b !== tomb && ok(b) ? b.weight : 0));
-    const tot = BIOMES.reduce((n, b) => n + (ok(b) && b !== volc && b !== tomb ? b.weight : 0), 0);
+    const tomb = BIOMES.find(b => b.id === 'tomb'), late = b => b === volc || b === tomb || ['crystal', 'sunken', 'clock', 'sky', 'fungus', 'mirror', 'library', 'foundry',
+      'cathedral', 'hive', 'garden', 'dream', 'ship', 'lab', 'circus', 'jungle', 'mine', 'observatory', 'sewer', 'desert', 'prison', 'harbor', 'bathhouse', 'purgatory', 'abattoir', 'battlefield', 'ruins', 'glassworks'].includes(b.id); // egna slag
+    const base = rng.weighted(BIOMES, b => (b !== frost && !late(b) && ok(b) ? b.weight : 0));
+    const tot = BIOMES.reduce((n, b) => n + (ok(b) && !late(b) ? b.weight : 0), 0);
     const v5 = ok(frost) && rng.fork('frost').chance(frost.weight / tot) ? frost : base;
     const v6 = ok(volc) && rng.fork('volcano').chance(volc.weight / (tot + volc.weight)) ? volc : v5;
     // version 7: gravkammaren tar sin andel i ett eget slag (övriga seeds behåller sin biom från version 6)
-    return ok(tomb) && rng.fork('tomb').chance(tomb.weight / (tot + volc.weight + tomb.weight)) ? tomb : v6;
+    const v7 = ok(tomb) && rng.fork('tomb').chance(tomb.weight / (tot + volc.weight + tomb.weight)) ? tomb : v6;
+    // version 8: kristallgrottorna och den sjunkna staden tar sina andelar i egna slag ur gaffeln 'v8' (övriga seeds behåller sin biom)
+    const cry = BIOMES.find(b => b.id === 'crystal'), sun = BIOMES.find(b => b.id === 'sunken'), f8 = rng.fork('v8'), t8 = tot + volc.weight + tomb.weight;
+    const v8 = ok(cry) && f8.fork('crystal').chance(cry.weight / (t8 + cry.weight)) ? cry : v7;
+    const v8b = ok(sun) && f8.fork('sunken').chance(sun.weight / (t8 + cry.weight + sun.weight)) ? sun : v8;
+    // version 9: klocktornet och molnborgen tar sina andelar i egna slag ur gaffeln 'v9' (övriga seeds behåller sin biom)
+    const clk = BIOMES.find(b => b.id === 'clock'), skb = BIOMES.find(b => b.id === 'sky'), f9 = rng.fork('v9'), t9 = t8 + cry.weight + sun.weight;
+    const v9 = ok(clk) && f9.fork('clock').chance(clk.weight / (t9 + clk.weight)) ? clk : v8b;
+    const v9b = ok(skb) && f9.fork('sky').chance(skb.weight / (t9 + clk.weight + skb.weight)) ? skb : v9;
+    // version 11: svampriket och spegelpalatset tar sina andelar i egna slag ur gaffeln 'v11' (övriga seeds behåller sin biom)
+    const fun = BIOMES.find(b => b.id === 'fungus'), mir = BIOMES.find(b => b.id === 'mirror'), f11 = rng.fork('v11'), t11 = t9 + clk.weight + skb.weight;
+    const v11 = ok(fun) && f11.fork('fungus').chance(fun.weight / (t11 + fun.weight)) ? fun : v9b;
+    const v11b = ok(mir) && f11.fork('mirror').chance(mir.weight / (t11 + fun.weight + mir.weight)) ? mir : v11;
+    // version 13: biblioteket och gjuteriet tar sina andelar i egna slag ur gaffeln 'v13' (övriga seeds behåller sin biom)
+    const lib = BIOMES.find(b => b.id === 'library'), fou = BIOMES.find(b => b.id === 'foundry'), f13 = rng.fork('v13'), t13 = t11 + fun.weight + mir.weight;
+    const v13 = ok(lib) && f13.fork('library').chance(lib.weight / (t13 + lib.weight)) ? lib : v11b;
+    const v13b = ok(fou) && f13.fork('foundry').chance(fou.weight / (t13 + lib.weight + fou.weight)) ? fou : v13;
+    // version 15: blodkatedralen och bikupan tar sina andelar i egna slag ur gaffeln 'v15', version 16: trädgården och drömriket ur 'v16' (övriga seeds
+    // behåller sin biom; opts.v15off/opts.v16off stänger av slagen: exakt version 14 resp. 15)
+    if (opts.v15off) return v13b;
+    const cat = BIOMES.find(b => b.id === 'cathedral'), hiv = BIOMES.find(b => b.id === 'hive'), f15 = rng.fork('v15'), t15 = t13 + lib.weight + fou.weight;
+    const v15 = ok(cat) && f15.fork('cathedral').chance(cat.weight / (t15 + cat.weight)) ? cat : v13b;
+    const v15b = ok(hiv) && f15.fork('hive').chance(hiv.weight / (t15 + cat.weight + hiv.weight)) ? hiv : v15;
+    if (opts.v16off) return v15b;
+    const gar = BIOMES.find(b => b.id === 'garden'), drm = BIOMES.find(b => b.id === 'dream'), f16 = rng.fork('v16'), t16 = t15 + cat.weight + hiv.weight;
+    const v16 = ok(gar) && f16.fork('garden').chance(gar.weight / (t16 + gar.weight)) ? gar : v15b;
+    const v16b = ok(drm) && f16.fork('dream').chance(drm.weight / (t16 + gar.weight + drm.weight)) ? drm : v16;
+    // version 17: spökskeppet och laboratoriet tar sina andelar i egna slag ur gaffeln 'v17' (opts.v17off: exakt version 16)
+    if (opts.v17off) return v16b;
+    const shp = BIOMES.find(b => b.id === 'ship'), lab = BIOMES.find(b => b.id === 'lab'), f17 = rng.fork('v17'), t17 = t16 + gar.weight + drm.weight;
+    const v17 = ok(shp) && f17.fork('ship').chance(shp.weight / (t17 + shp.weight)) ? shp : v16b;
+    const v17b = ok(lab) && f17.fork('lab').chance(lab.weight / (t17 + shp.weight + lab.weight)) ? lab : v17;
+    // version 18: cirkusen och djungeltemplet tar sina andelar i egna slag ur gaffeln 'v18' (opts.v18off: exakt version 17)
+    if (opts.v18off) return v17b;
+    const cir = BIOMES.find(b => b.id === 'circus'), jun = BIOMES.find(b => b.id === 'jungle'), f18 = rng.fork('v18'), t18 = t17 + shp.weight + lab.weight;
+    const v18 = ok(cir) && f18.fork('circus').chance(cir.weight / (t18 + cir.weight)) ? cir : v17b;
+    const v18b = ok(jun) && f18.fork('jungle').chance(jun.weight / (t18 + cir.weight + jun.weight)) ? jun : v18;
+    // version 19: gruvan och observatoriet tar sina andelar i egna slag ur gaffeln 'v19' (opts.v19off: exakt version 18)
+    if (opts.v19off) return v18b;
+    const mne = BIOMES.find(b => b.id === 'mine'), obs = BIOMES.find(b => b.id === 'observatory'), f19 = rng.fork('v19'), t19 = t18 + cir.weight + jun.weight;
+    const v19 = ok(mne) && f19.fork('mine').chance(2 * mne.weight / (t19 + 2 * mne.weight)) ? mne : v18b; // (gruvan bara på djup 2-4: dubbel andel där)
+    const v19b = ok(obs) && f19.fork('observatory').chance(obs.weight / (t19 + mne.weight + obs.weight)) ? obs : v19;
+    // version 20: kloakerna och öknen tar sina andelar i egna slag ur gaffeln 'v20' (opts.v20off: exakt version 19)
+    if (opts.v20off) return v19b;
+    const sew = BIOMES.find(b => b.id === 'sewer'), des = BIOMES.find(b => b.id === 'desert'), f20 = rng.fork('v20'), t20 = t19 + mne.weight + obs.weight;
+    const v20 = ok(sew) && f20.fork('sewer').chance(2 * sew.weight / (t20 + 2 * sew.weight)) ? sew : v19b; // (kloakerna bara på djup 2-4: dubbel andel där)
+    const v20b = ok(des) && f20.fork('desert').chance(des.weight / (t20 + sew.weight + des.weight)) ? des : v20;
+    // version 21: järnfängelset och fiskeläget tar sina andelar i egna slag ur gaffeln 'v21' (opts.v21off: exakt version 20)
+    if (opts.v21off) return v20b;
+    const pri = BIOMES.find(b => b.id === 'prison'), har = BIOMES.find(b => b.id === 'harbor'), f21 = rng.fork('v21'), t21 = t20 + sew.weight + des.weight;
+    const v21 = ok(pri) && f21.fork('prison').chance(2 * pri.weight / (t21 + 2 * pri.weight)) ? pri : v20b; // (fängelset bara på djup 2-4: dubbel andel där)
+    const v21b = ok(har) && f21.fork('harbor').chance(har.weight / (t21 + pri.weight + har.weight)) ? har : v21;
+    // version 22: badhuset och skärselden tar sina andelar i egna slag ur gaffeln 'v22' (opts.v22off: exakt version 21)
+    if (opts.v22off) return v21b;
+    const bat = BIOMES.find(b => b.id === 'bathhouse'), pur = BIOMES.find(b => b.id === 'purgatory'), f22 = rng.fork('v22'), t22 = t21 + pri.weight + har.weight;
+    const v22 = ok(bat) && f22.fork('bathhouse').chance(bat.weight / (t22 + bat.weight)) ? bat : v21b;
+    const v22b = ok(pur) && f22.fork('purgatory').chance(2 * pur.weight / (t22 + bat.weight + 2 * pur.weight)) ? pur : v22; // (skärselden bara på djup 5: dubbel andel där)
+    // version 23: slakteriet och slagfältet tar sina andelar i egna slag ur gaffeln 'v23' (opts.v23off: exakt version 22)
+    if (opts.v23off) return v22b;
+    const aba = BIOMES.find(b => b.id === 'abattoir'), btl = BIOMES.find(b => b.id === 'battlefield'), f23 = rng.fork('v23'), t23 = t22 + bat.weight + pur.weight;
+    const v23 = ok(aba) && f23.fork('abattoir').chance(aba.weight / (t23 + aba.weight)) ? aba : v22b;
+    const v23b = ok(btl) && f23.fork('battlefield').chance(2 * btl.weight / (t23 + aba.weight + 2 * btl.weight)) ? btl : v23; // (slagfältet bara på djup 4-5: dubbel andel där)
+    // version 30: ruinstaden och glasbruket tar sina andelar i egna slag ur gaffeln 'v30' (opts.v30off: exakt version 29)
+    if (opts.v30off) return v23b;
+    const rui = BIOMES.find(b => b.id === 'ruins'), gla = BIOMES.find(b => b.id === 'glassworks'), f30 = rng.fork('v30'), t30 = t23 + aba.weight + btl.weight;
+    const v30 = ok(rui) && f30.fork('ruins').chance(rui.weight / (t30 + rui.weight)) ? rui : v23b;
+    return ok(gla) && f30.fork('glassworks').chance(2 * gla.weight / (t30 + rui.weight + 2 * gla.weight)) ? gla : v30; // (glasbruket bara på djup 4-5: dubbel andel där)
   }
   // vaktaren: opts.guardian, annars deterministiskt ur seeden (frostfästet: frostväktaren varannan gång, vulkanen: flamväktaren,
   // gravkammaren: faraonen)
   const pickGuardian = (root, opts, biome) => (GUARDIANS[opts.guardian] ? opts.guardian
     : biome === 'frost' && root.fork('guardian-frost').chance(0.5) ? 'frost'
       : biome === 'volcano' && root.fork('guardian-flame').chance(0.5) ? 'flame'
-        : biome === 'tomb' && root.fork('guardian-pharaoh').chance(0.5) ? 'pharaoh' : root.fork('guardian').pick(GUARD_IDS));
+        : biome === 'tomb' && root.fork('guardian-pharaoh').chance(0.5) ? 'pharaoh'
+          : biome === 'crystal' && root.fork('guardian-crystal').chance(0.5) ? 'crystalqueen' // version 8
+            : biome === 'sunken' && root.fork('guardian-sunken').chance(0.5) ? 'leviathan'
+              : biome === 'clock' && root.fork('guardian-clock').chance(0.5) ? 'clockmaker' // version 9
+                : biome === 'sky' && root.fork('guardian-sky').chance(0.5) ? 'thunderbird'
+                  : biome === 'fungus' && root.fork('guardian-fungus').chance(0.5) ? 'mycelmother' // version 11
+                    : biome === 'mirror' && root.fork('guardian-mirror').chance(0.5) ? 'mirrorking'
+                      : biome === 'library' && root.fork('guardian-library').chance(0.5) ? 'librarian' // version 13
+                        : biome === 'foundry' && root.fork('guardian-foundry').chance(0.5) ? 'colossus'
+                          : biome === 'cathedral' && root.fork('guardian-cathedral').chance(0.5) ? 'cardinal' // version 15
+                            : biome === 'hive' && root.fork('guardian-hive').chance(0.5) ? 'queenbee'
+                              : biome === 'garden' && root.fork('guardian-garden').chance(0.5) ? 'gardener' // version 16
+                                : biome === 'dream' && root.fork('guardian-dream').chance(0.5) ? 'sandman'
+                                  : biome === 'ship' && root.fork('guardian-ship').chance(0.5) ? 'captain' // version 17
+                                    : biome === 'lab' && root.fork('guardian-lab').chance(0.5) ? 'alchemist'
+                                      : biome === 'circus' && root.fork('guardian-circus').chance(0.5) ? 'ringmaster' // version 18
+                                        : biome === 'jungle' && root.fork('guardian-jungle').chance(0.5) ? 'serpent'
+                                          : biome === 'mine' && root.fork('guardian-mine').chance(0.5) ? 'foreman' // version 19
+                                            : biome === 'observatory' && root.fork('guardian-observatory').chance(0.5) ? 'starseer'
+                                              : biome === 'sewer' && root.fork('guardian-sewer').chance(0.5) ? 'ratking' // version 20
+                                                : biome === 'desert' && root.fork('guardian-desert').chance(0.5) ? 'sphinx'
+                                                  : biome === 'prison' && root.fork('guardian-prison').chance(0.5) ? 'executioner' // version 21
+                                                    : biome === 'harbor' && root.fork('guardian-harbor').chance(0.5) ? 'tidepriest'
+                                                      : biome === 'bathhouse' && root.fork('guardian-bathhouse').chance(0.5) ? 'bathmaster' // version 22
+                                                        : biome === 'purgatory' && root.fork('guardian-purgatory').chance(0.5) ? 'pyrelord'
+                                                          : biome === 'abattoir' && root.fork('guardian-abattoir').chance(0.5) ? 'butcher' // version 23
+                                                            : biome === 'battlefield' && root.fork('guardian-battlefield').chance(0.5) ? 'warlord'
+                                                              : biome === 'ruins' && root.fork('guardian-ruins').chance(0.5) ? 'mayor' // version 30
+                                                                : biome === 'glassworks' && root.fork('guardian-glassworks').chance(0.5) ? 'glassmaster' : root.fork('guardian').pick(GUARD_IDS));
 
-  function floor(seed, depth, opts) {
+  function floor23(seed, depth, opts) { // (version 24: Gen.floor är floor nedan, som lägger bandesignen ovanpå)
     opts = opts || {};
     depth = Math.max(1, Math.min(5, Math.round(depth || 1)));
     if (opts.weapon) opts = Object.assign({}, opts, { weapon: weaponChar(opts.weapon) });
@@ -680,6 +2414,32 @@
     if (biome.id === 'frost') return frostFloor(root, seed, depth, opts, gid, FROST);
     if (biome.id === 'volcano') return frostFloor(root, seed, depth, opts, gid, VOLCANO);
     if (biome.id === 'tomb') return frostFloor(root, seed, depth, opts, gid, TOMB);
+    if (biome.id === 'sunken') return frostFloor(root, seed, depth, opts, gid, SUNKEN);
+    if (biome.id === 'clock') return frostFloor(root, seed, depth, opts, gid, CLOCK); // version 9
+    if (biome.id === 'sky') return frostFloor(root, seed, depth, opts, gid, SKY);
+    if (biome.id === 'mirror') return frostFloor(root, seed, depth, opts, gid, MIRROR); // version 11 (svampriket byggs som grottan i biomeFloor)
+    if (biome.id === 'library') return frostFloor(root, seed, depth, opts, gid, LIBRARY); // version 13
+    if (biome.id === 'foundry') return frostFloor(root, seed, depth, opts, gid, FOUNDRY);
+    if (biome.id === 'cathedral') return frostFloor(root, seed, depth, opts, gid, CATHEDRAL); // version 15
+    if (biome.id === 'hive') return frostFloor(root, seed, depth, opts, gid, HIVE);
+    if (biome.id === 'garden') return frostFloor(root, seed, depth, opts, gid, GARDEN); // version 16
+    if (biome.id === 'dream') return frostFloor(root, seed, depth, opts, gid, DREAM);
+    if (biome.id === 'ship') return frostFloor(root, seed, depth, opts, gid, SHIP); // version 17
+    if (biome.id === 'lab') return frostFloor(root, seed, depth, opts, gid, LAB);
+    if (biome.id === 'circus') return frostFloor(root, seed, depth, opts, gid, CIRCUS); // version 18
+    if (biome.id === 'jungle') return frostFloor(root, seed, depth, opts, gid, JUNGLE);
+    if (biome.id === 'mine') return frostFloor(root, seed, depth, opts, gid, MINE); // version 19
+    if (biome.id === 'observatory') return frostFloor(root, seed, depth, opts, gid, OBSERVATORY);
+    if (biome.id === 'sewer') return frostFloor(root, seed, depth, opts, gid, SEWER); // version 20
+    if (biome.id === 'desert') return frostFloor(root, seed, depth, opts, gid, DESERT);
+    if (biome.id === 'prison') return frostFloor(root, seed, depth, opts, gid, PRISON); // version 21
+    if (biome.id === 'harbor') return frostFloor(root, seed, depth, opts, gid, HARBOR);
+    if (biome.id === 'bathhouse') return frostFloor(root, seed, depth, opts, gid, BATHHOUSE); // version 22
+    if (biome.id === 'purgatory') return frostFloor(root, seed, depth, opts, gid, PURGATORY);
+    if (biome.id === 'abattoir') return frostFloor(root, seed, depth, opts, gid, ABATTOIR); // version 23
+    if (biome.id === 'battlefield') return frostFloor(root, seed, depth, opts, gid, BATTLEFIELD);
+    if (biome.id === 'ruins') return frostFloor(root, seed, depth, opts, gid, RUINS); // version 30
+    if (biome.id === 'glassworks') return frostFloor(root, seed, depth, opts, gid, GLASSWORKS);
     if (biome.id !== 'dungeon') return biomeFloor(root, seed, depth, opts, biome, gid);
     const trng = root.fork('theme');
     let theme;
@@ -696,23 +2456,121 @@
         name, biome: 'dungeon', floor: lv.floors[0], floors: lv.floors, floorMask: rowsOf(lv.W, lv.H, lv.fm),
         ceil: theme.ceil, sky: null, secretWall: theme.wall, fog: theme.fog.slice(), ambient,
         map: lv.map, depth, seed, rooms: lv.rooms, roomMask: lv.roomMask, theme: theme.id, guardian: gid, boulders: lv.boulders, beams: lv.beams,
+        saws: lv.saws, winds: lv.winds, teleports: lv.teleports, belts: lv.belts, arenas: lv.arenas, shifts: lv.shifts, carts: lv.carts, starports: lv.starports, sluices: lv.sluices, streams: lv.streams,
       }));
       if (!level) { floor.stats.retries++; continue; }
       return level;
     }
     throw new Error('Gen.floor: kunde inte bygga en giltig bana (seed ' + seed + ', djup ' + depth + ')');
   }
-  floor.stats = { retries: 0, v7off: 0 };
+  floor.stats = { retries: 0, v7off: 0, v8off: 0, v9off: 0, v10off: 0, v11off: 0, v13off: 0, v14off: 0, v15off: 0, v16off: 0, v17off: 0, v18off: 0, v19off: 0, v20off: 0, v21off: 0, v22off: 0, v23off: 0 };
 
   // version 7: bygger banan (build6), gör banobjektet med mk(lv) och validerar. Underkänns en bana där version 7 lagt ut nya saker
   // byggs samma försök om utan dem (opts.v7off), så att seeds som klarade sig i version 6 aldrig får ett nytt omförsök.
+  // version 8: varje bygge görs med version 8 (content8, sist av allt). Underkänns banan och version 8 lade ut nya saker i en gammal biom
+  // tas de bort igen (opts.v8.undo: rutorna och deras gamla tecken) och banan valideras om; den är då exakt som i version 7
+  // (kristallgrottorna och sjunkna staden byggs alltid med version 8).
+  // version 9: likadant med content9 (gaffeln 'v9'): underkänns banan tas version 9-sakerna bort först (opts.v9.undo, utom i klocktornet
+  // och molnborgen) och banan valideras om; den är då exakt som i version 8, och först därefter prövas version 8-ångringen.
+  // version 10: likadant med content10 (gaffeln 'v10', alla biomer): först tas version 10-sakerna bort (opts.v10.undo) och banan blir exakt
+  // som i version 9, sedan prövas version 9- och version 8-ångringen.
   function build7(f, opts, mk) {
-    const fin = lv => { if (!lv) return null; const level = mk(lv); level.boulders = level.boulders || []; level.beams = level.beams || [];
-      level.features = features(level.map, level.beams); return validate(level).length ? null : level; };
-    const o7 = { v7: {} }, level = fin(build6(f, Object.assign({}, opts, o7)));
+    const make = lv => { const level = mk(lv); level.boulders = level.boulders || []; level.beams = level.beams || [];
+      if (level.tide === undefined) level.tide = null;
+      level.saws = level.saws || []; level.winds = level.winds || []; level.teleports = level.teleports || []; level.belts = level.belts || [];
+      level.arenas = level.arenas || []; level.shifts = level.shifts || []; level.carts = level.carts || []; level.starports = level.starports || []; level.sluices = level.sluices || []; level.streams = level.streams || [];
+      level.features = features(level.map, level.beams, level.arenas, level.rooms); return level; };
+    const try8 = extra => {
+      const o8 = { v8: {}, v9: {}, v10: {}, v11: {}, v13: {}, v14: {}, v15: {}, v16: {}, v17: {}, v18: {}, v19: {}, v20: {}, v21: {}, v22: {}, v23: {} }, lv = build6(f, Object.assign({}, opts, extra, o8));
+      if (!lv) return null;
+      const level = make(lv);
+      if (!validate(level).length) return level;
+      const rows = level.map.map(r => r.split(''));
+      const redo = () => { level.map = rows.map(r => r.join('')); level.features = features(level.map, level.beams, level.arenas, level.rooms); return !validate(level).length; };
+      if (o8.v23.added) { // version 23: kulpåsarna bort först, banan är då exakt som i version 22
+        floor.stats.v23off++;
+        for (let k = o8.v23.undo.length - 1; k >= 0; k--) { const [x, y, c] = o8.v23.undo[k]; rows[y][x] = c; }
+        if (redo()) return level;
+      }
+      if (o8.v22.added) { // version 22: svavelklumparna bort först, banan är då exakt som i version 21
+        floor.stats.v22off++;
+        for (let k = o8.v22.undo.length - 1; k >= 0; k--) { const [x, y, c] = o8.v22.undo[k]; rows[y][x] = c; }
+        if (redo()) return level;
+      }
+      if (o8.v21.added) { // version 21: skrotpåsarna bort först, banan är då exakt som i version 20
+        floor.stats.v21off++;
+        for (let k = o8.v21.undo.length - 1; k >= 0; k--) { const [x, y, c] = o8.v21.undo[k]; rows[y][x] = c; }
+        if (redo()) return level;
+      }
+      if (o8.v20.added) { // version 20: fällådorna bort först, banan är då exakt som i version 19
+        floor.stats.v20off++;
+        for (let k = o8.v20.undo.length - 1; k >= 0; k--) { const [x, y, c] = o8.v20.undo[k]; rows[y][x] = c; }
+        if (redo()) return level;
+      }
+      if (o8.v19.added) { // version 19: stjärnstoftsflaskorna bort först, banan är då exakt som i version 18
+        floor.stats.v19off++;
+        for (let k = o8.v19.undo.length - 1; k >= 0; k--) { const [x, y, c] = o8.v19.undo[k]; rows[y][x] = c; }
+        if (redo()) return level;
+      }
+      if (o8.v18.added) { // version 18: kägellådorna och pilkogren bort först, banan är då exakt som i version 17
+        floor.stats.v18off++;
+        for (let k = o8.v18.undo.length - 1; k >= 0; k--) { const [x, y, c] = o8.v18.undo[k]; rows[y][x] = c; }
+        if (redo()) return level;
+      }
+      if (o8.v17.added) { // version 17: rumstyperna, gläntorna/grottorna som arenor, skeppsråttorna, kulkistorna och syraflaskorna bort först, banan är då
+        // exakt som i version 16
+        floor.stats.v17off++;
+        for (let k = o8.v17.undo.length - 1; k >= 0; k--) { const [x, y, c] = o8.v17.undo[k]; rows[y][x] = c; }
+        for (let k = o8.v17.arch.length - 1; k >= 0; k--) { const [i, a] = o8.v17.arch[k]; level.rooms[i].arch = a; }
+        if (o8.v17.arenas) level.arenas = level.arenas.slice(0, level.arenas.length - o8.v17.arenas);
+        if (redo()) return level;
+      }
+      if (o8.v16.added) { // version 16: drömflaskorna och de inbytta fienderna i andra biomer bort först, banan är då exakt som i version 15
+        floor.stats.v16off++;
+        for (let k = o8.v16.undo.length - 1; k >= 0; k--) { const [x, y, c] = o8.v16.undo[k]; rows[y][x] = c; }
+        if (redo()) return level;
+      }
+      if (o8.v15.added) { // version 15: bikuporna och de inbytta fienderna i andra biomer bort, banan är då exakt som i version 14
+        floor.stats.v15off++;
+        for (let k = o8.v15.undo.length - 1; k >= 0; k--) { const [x, y, c] = o8.v15.undo[k]; rows[y][x] = c; }
+        if (redo()) return level;
+      }
+      if (o8.v14.added) { // version 14: rumstyperna, de nya fienderna och arenorna bort först, banan är då exakt som i version 13
+        floor.stats.v14off++;
+        for (let k = o8.v14.undo.length - 1; k >= 0; k--) { const [x, y, c] = o8.v14.undo[k]; rows[y][x] = c; }
+        for (let k = o8.v14.arch.length - 1; k >= 0; k--) { const [i, a] = o8.v14.arch[k]; level.rooms[i].arch = a; }
+        level.arenas = [];
+        if (redo()) return level;
+      }
+      if (o8.v13.added) { // version 13: bläckflaskorna (Ƃ) bort först, banan är då exakt som i version 11
+        floor.stats.v13off++;
+        for (let k = o8.v13.undo.length - 1; k >= 0; k--) { const [x, y, c] = o8.v13.undo[k]; rows[y][x] = c; }
+        if (redo()) return level;
+      }
+      if (o8.v11.added) { // version 11: sporsäckarna (Ũ) bort först, banan är då exakt som i version 10
+        floor.stats.v11off++;
+        for (let k = o8.v11.undo.length - 1; k >= 0; k--) { const [x, y, c] = o8.v11.undo[k]; rows[y][x] = c; }
+        if (redo()) return level;
+      }
+      if (o8.v10.added) {
+        floor.stats.v10off++;
+        for (let k = o8.v10.undo.length - 1; k >= 0; k--) { const [x, y, c] = o8.v10.undo[k]; rows[y][x] = c; }
+        if (redo()) return level;
+      }
+      if (o8.v9.added && !o8.v9.keep) {
+        floor.stats.v9off++;
+        for (const [x, y, c] of o8.v9.undo) rows[y][x] = c;
+        if (redo()) return level;
+      }
+      if (!o8.v8.added || o8.v8.keep) return null;
+      floor.stats.v8off++;
+      for (const [x, y, c] of o8.v8.undo) rows[y][x] = c;
+      return redo() ? level : null;
+    };
+    const o7 = { v7: {} }, level = try8(o7);
     if (level || !o7.v7.added || opts.biome === 'tomb' || o7.v7.tomb) return level; // gravkammaren byggs alltid med version 7
     floor.stats.v7off++;
-    return fin(build6(f, Object.assign({}, opts, { v7off: true })));
+    return try8({ v7off: true });
   }
 
   // version 6: misslyckas ett byggförsök som fick ett lägerrum byggs samma försök om utan lägerrum, så att seeds som annars
@@ -729,11 +2587,59 @@
     arrows: '<', gas: '>', lava: '_', water: '-', ice: ':', webs: '"', alchemist: '£', priest: '€', petcage: '©', potions: '¥', icicles: 'Ç',
     campfire: '¶', questboard: '®', runes: 'ª', meat: 'ð', firejets: '°', crumble: '¬', pendulums: '±', plates: '¨', secretstairs: '÷',
     poisonbarrels: 'µ', frostbarrels: 'ß',
-    sarcophagi: '²', quicksand: '¯', boulders: '¹', bells: '³', gambler: 'ç', banker: 'ÿ', wanderer: 'ý', pages: 'þ', batteries: '¼', stones: '½' };
-  function features(map, beams) {
+    sarcophagi: '²', quicksand: '¯', boulders: '¹', bells: '³', gambler: 'ç', banker: 'ÿ', wanderer: 'ý', pages: 'þ', batteries: '¼', stones: '½',
+    deepwater: 'Đ', crystalspikes: 'Ē', tide: 'Ĕ', breakcrystals: 'Ė', glowcrystals: 'Ę', wrecks: 'Ě', bubbles: 'Ĝ', cartographer: 'Ğ', talentaltar: 'Ġ',
+    books: 'Ģ', stalker: 'Ā', witch: 'Ă', eels: 'Ó',
+    saws: 'Ŀ', timebubbles: 'ŀ', void: 'Ń', winds: 'ń', clockworks: 'Ņ', lightningrods: 'ņ', chimes: 'Ň', cloudchests: 'ň', gears: 'Ŋ', feathers: 'ŋ',
+    gearspiders: 'Ĵ', cloudgiants: 'ĸ',
+    jailers: 'Ō', burrowers: 'ō', gravediggers: 'Ŏ', rootlings: 'ŏ', crossbowmen: 'Ő', toads: 'ő', legendaltar: 'Œ', // version 10
+    bouncepads: 'ţ', sporepools: 'Ť', teleporters: 'ť', glowshrooms: 'Ŧ', mirrorstatues: 'ŧ', mirrorwalls: 'š', capwalls: 'Ş', sporesacks: 'Ũ', // version 11
+    sporelings: 'ŗ', mycelbrutes: 'Ř', shamans: 'ř', mirrorknights: 'Ś', illusionists: 'ś', shardlings: 'Ŝ',
+    bookshelves: 'ũ', lecterns: 'Ű', chandeliers: 'ű', inkpools: 'Ŭ', belts: 'Ÿ', molten: 'Ź', vents: 'ź', presses: 'Ż', molds: 'ż', furnaces: 'Ŷ', // version 13
+    inkflasks: 'Ƃ', grimoires: 'Ų', inkslimes: 'ų', archivists: 'Ŵ', moltengolems: 'Ž', steambots: 'ž', sparkdrones: 'ſ',
+    snowwraiths: 'Ƅ', lavaworms: 'ƅ', scarabpriests: 'Ɔ', crystalspiders: 'Ƈ', anglerfish: 'ƈ', windspirits: 'Ɖ', // version 14
+    stainedglass: 'Ƌ', lightbeams: 'ƍ', pews: 'Ǝ', bloodfonts: 'Ə', churchbells: 'Ɛ', honeycomb: 'Ɣ', honey: 'Ɩ', larvasacs: 'Ɨ', beehives: 'ƞ', // version 15
+    choirboys: 'Ƒ', flagellants: 'ƒ', cherubs: 'Ɯ', workerbees: 'Ƙ', stingerknights: 'ƙ', larvae: 'ƚ',
+    hedges: 'Ɵ', gardenwalls: 'Ơ', shiftwalls: 'ƣ', thorns: 'ƥ', dreammist: 'Ʀ', fountains: 'Ƨ', statues2: 'ƨ', falsedoors: 'Ʃ', dreamlamps: 'ƪ', // version 16
+    dreamflasks: 'Ƴ', weepingangels: 'ƫ', thornvines: 'Ƭ', gardeners: 'ƭ', dreameaters: 'Ʈ', doppelgangers: 'Ư', sleepwalkers: 'ư',
+    masts: 'Ǔ', jarshelves: 'ǡ', rotplanks: 'Ǎ', wetdeck: 'Ǐ', acidvats: 'Ǜ', transmutes: 'ǜ', cannons: 'ǎ', shiplanterns: 'ǐ', powderkegs: 'Ǒ', // version 17
+    flaskshelves: 'ǝ', teslacoils: 'Ǟ', alembics: 'ǟ', chainballs: 'ǫ', acidflasks: 'ǭ',
+    ghostpirates: 'Ǖ', gunners: 'ǖ', drownedsailors: 'Ǘ', ghostparrots: 'ǘ', tentacles: 'Ǚ', rats: 'ǚ',
+    homunculi: 'ǣ', oozes: 'Ǥ', apprentices: 'ǥ', mercurygolems: 'Ǧ', vialwisps: 'ǧ', chimeras: 'Ǩ',
+    tents: 'Ǯ', cages: 'ǯ', junglestone: 'ǿ', junglewalls: 'Ȁ', trapdoors: 'Ǳ', spotlights: 'ǲ', piranhas: 'Ȃ', vines: 'ȃ', knifewheels: 'ǳ', // version 18
+    prizewheels: 'Ǵ', balloons: 'ǵ', marquees: 'Ƕ', goldidols: 'Ȅ', dartidols: 'ȅ', poisonflowers: 'Ȇ', tikitorches: 'ȇ', pincrates: 'Ǿ', dartquivers: 'ȏ',
+    clowns: 'Ƿ', jugglers: 'Ǹ', stiltwalkers: 'ǹ', knifethrowers: 'Ǻ', lions: 'ǻ', marionettes: 'Ǽ',
+    lizardmen: 'Ȉ', blowgunners: 'ȉ', monkeys: 'Ȋ', jaguars: 'ȋ', mosquitoes: 'Ȍ', templeguardians: 'ȍ',
+    timbers: '\u0210', oreveins: '\u0211', brasswalls: '\u0213', starcharts: '\u0214', rails: '\u0216', gaspockets: '\u0217', caveins: '\u0218', // version 19
+    starmaps: '\u0219', domeslits: '\u021a', minecarts: '\u021b', dynamite: '\u021c', carbidelamps: '\u021d', orreries: '\u021e', telescopes: '\u021f',
+    starportals: '\u0220', stardust: '\u022b', miners: '\u0221', coalgolems: '\u0222', molemen: '\u0223', sparkwisps: '\u0224', starspawns: '\u0225',
+    astronomers: '\u0226', clockowls: '\u0227', voidwatchers: '\u0228',
+    sewerbricks: '\u022c', pipewalls: '\u022d', dunes: '\u022f', mesas: '\u0230', sludge: '\u0232', steampipes: '\u0233', oases: '\u0234', mirages: '\u0235', // version 20
+    sluicewheels: '\u0236', sluices: '\u0237', ratnests: '\u0238', cacti: '\u0239', amphorae: '\u023a', braziers: '\u023b', traps: '\u0246',
+    alligators: '\u023c', sludgemen: '\u023d', plumbers: '\u023e', leeches: '\u023f', scorpions: '\u0240', nomads: '\u0241', sandwraiths: '\u0242', vultures: '\u0243',
+    prisonstone: '\u0247', cellbars: '\u0248', shacks: '\u024a', quays: '\u024b', alarmplates: '\u024d', nets: '\u024e', hangcages: '\u024f', // version 21
+    racks: '\u0250', gallows: '\u0251', harborlamps: '\u0252', fishbarrels: '\u0253', anchors: '\u0254', scrap: '\u025f',
+    turnkeys: '\u0255', convicts: '\u0256', torturers: '\u0257', hounds: '\u0258', drowned: '\u0259', fishmen: '\u025a', crabs: '\u025b', gulls: '\u025c',
+    bathmosaic: 'ɠ', bathcolumns: 'ɡ', fleshwalls: 'ɭ', bonewalls: 'ɮ', hotpools: 'ɣ', steamvents: 'ɤ', coldpools: 'ɥ', firestreams: 'ɰ', runecircles: 'ɱ', // version 22
+    bathstatues: 'ɦ', bathfountains: 'ɧ', bathbenches: 'ɨ', chainedsouls: 'ɲ', bonepillars: 'ɳ', brimpots: 'ɴ', brimstone: 'ɻ',
+    attendants: 'ɩ', steamghosts: 'ɪ', gladiators: 'ɫ', moldcrawlers: 'ɬ', fireimps: 'ɵ', lostsouls: 'ɶ', fleshbrutes: 'ɷ', ashwalkers: 'ɸ',
+    abattoirtiles: 'ɼ', coldwalls: 'ɽ', palisades: 'ʈ', earthworks: 'ʉ', bloodslick: 'ɿ', grinders: 'ʀ', deepmud: 'ʋ', catapulttargets: 'ʌ', // version 23
+    meathooks: 'ʁ', butcherblocks: 'ʂ', bandsaws: 'ʃ', catapults: 'ʍ', warbanners: 'ʎ', stakes: 'ʏ', cannonballs: 'ʖ',
+    butchers: 'ʄ', pigmen: 'ʅ', flies: 'ʆ', crawlers: 'ʇ', ghostsoldiers: 'ʐ', ghostarchers: 'ʑ', ghostriders: 'ʒ', crows: 'ʓ',
+    ruinbricks: 'ʗ', ruinplaster: 'ʘ', kilnbricks: 'ʚ', glassshelves: 'ʛ', crackedroofs: 'ʝ', rubble: 'ʞ', moltenglass: 'ʟ', glassshards: 'ʠ', furnacevents: 'ʡ', // version 30
+    brokencolumns: 'ʢ', fallenbeams: 'ʣ', ruinstatues: 'ʤ', glassfurnaces: 'ʥ', glassracks: 'ʦ', glassbenches: 'ʧ', slingstones: 'ʴ', glassbits: 'ʵ',
+    looters: 'ʨ', rubblegolems: 'ʩ', rooftoppers: 'ʪ', dustdevils: 'ʫ', glassblowers: 'ʮ', glassgolems: 'ʯ', slagcrawlers: 'ʰ', kilnspirits: 'ʱ' };
+  // version 30: nycklarna för ruinstadens och glasbrukets saker sätts bara när saken finns på banan (saknas nyckeln är antalet 0)
+  const FEATURE30 = { ruinbricks: 1, ruinplaster: 1, kilnbricks: 1, glassshelves: 1, crackedroofs: 1, rubble: 1, moltenglass: 1, glassshards: 1, furnacevents: 1, brokencolumns: 1,
+    fallenbeams: 1, ruinstatues: 1, glassfurnaces: 1, glassracks: 1, glassbenches: 1, slingstones: 1, glassbits: 1, looters: 1, rubblegolems: 1, rooftoppers: 1, dustdevils: 1,
+    glassblowers: 1, glassgolems: 1, slagcrawlers: 1, kilnspirits: 1 };
+  function features(map, beams, arenas, rooms) {
     const n = {}; for (const row of map) for (const c of row) n[c] = (n[c] || 0) + 1;
-    const out = {}; for (const k in FEATURE_CH) out[k] = n[FEATURE_CH[k]] || 0;
+    const out = {}; for (const k in FEATURE_CH) { const v = n[FEATURE_CH[k]] || 0; if (v || !FEATURE30[k]) out[k] = v; } // (version 30: de nya nycklarna bara när de finns)
     out.beams = beams ? beams.length : 0;
+    out.arenas = arenas ? arenas.length : 0; // version 14: arenarum och de nya rumstyperna (antal rum)
+    out.setpieces = rooms ? rooms.filter(r => SET14[r.arch]).length : 0;
+    out.setpieces17 = rooms ? rooms.filter(r => SET17[r.arch]).length : 0; // version 17: den andra nya rumstypen
     return out;
   }
 
@@ -748,6 +2654,7 @@
           name, biome: biome.id, floor: res.floors[0], floors: res.floors, floorMask: rowsOf(G.W, G.H, G.fm),
           ceil: look.ceil, sky: biome.outdoor ? rowsOf(G.W, G.H, G.sky) : null, secretWall: look.wall, fog, ambient,
           map: G.g.map(r => r.join('')), depth, seed, rooms: res.rooms, roomMask: res.roomMask, theme: biome.id, guardian: gid, boulders: G.boulders, beams: G.beams,
+          saws: G.saws, winds: G.winds, teleports: G.teleports, belts: G.belts, arenas: G.arenas, shifts: G.shifts, carts: G.carts, starports: G.starports, sluices: G.sluices, streams: G.streams,
         };
       });
       if (!level) { floor.stats.retries++; continue; }
@@ -761,12 +2668,14 @@
   function frostFloor(root, seed, depth, opts, gid, T) {
     const lrng = root.fork('look'), id = T.id;
     const name = lrng.pick(T.names), fog = T.fog(lrng), ambient = roundAmb(lrng, T.ambient);
+    const tide = id === 'sunken' ? { period: lrng.int(24, 40) } : null; // version 8: tidvattnets period (sekunder)
     for (let attempt = 0; attempt < 40; attempt++) {
       const K = { id: gid, wall: GUARDIANS[gid].wall, floor: GUARDIANS[gid].floor };
       const level = build7(o => build(root.fork(id + attempt), depth, T, o, K, id === 'frost' ? true : id), opts, lv => ({
         name, biome: id, floor: lv.floors[0], floors: lv.floors, floorMask: rowsOf(lv.W, lv.H, lv.fm),
-        ceil: T.ceil, sky: rowsOf(lv.W, lv.H, lv.sky), secretWall: T.wall, fog, ambient,
+        ceil: T.ceil, sky: T.indoor ? null : rowsOf(lv.W, lv.H, lv.sky), secretWall: T.wall, fog, ambient,
         map: lv.map, depth, seed, rooms: lv.rooms, roomMask: lv.roomMask, theme: id, guardian: gid, boulders: lv.boulders, beams: lv.beams,
+        saws: lv.saws, winds: lv.winds, teleports: lv.teleports, belts: lv.belts, arenas: lv.arenas, shifts: lv.shifts, carts: lv.carts, starports: lv.starports, sluices: lv.sluices, streams: lv.streams, tide: tide ? { period: tide.period } : null,
       }));
       if (!level) { floor.stats.retries++; continue; }
       return level;
@@ -778,11 +2687,38 @@
   // frost: frostfästet (1-3 stora gårdar under himlen med snögolv, torn och döda träd; allt annat inomhus);
   // frost = 'volcano': vulkanen (samma gårdar men askfält; lavan i rummen sätts av rumstyperna)
   // frost = 'tomb': gravkammaren (ökengårdar med sandgolv; kvicksand, hieroglyfväggar och ljusschakt sätts av content7)
+  // frost = 'sunken': sjunkna staden (översvämmade torg med plattor och brutna statyer; vattnet sätts av rumstyperna och content8)
+  // frost = 'clock': klocktornet (version 9; byggs som fängelsehålan, inomhus, utan gårdar)
+  // frost = 'sky': molnborgen (version 9; som frostfästet med gårdar = stora öar, allt under himlen; väggarna blir tomrum i content9)
   function build(rng, depth, theme, opts, K, frost) {
-    const wc = theme.wall, volc = frost === 'volcano', tomb = frost === 'tomb';
+    const wc = theme.wall, volc = frost === 'volcano', tomb = frost === 'tomb', sunk = frost === 'sunken', clock = frost === 'clock', skyB = frost === 'sky';
+    const mirror = frost === 'mirror'; // version 11: spegelpalatset byggs som klocktornet (inomhus, utan gårdar)
+    const lib = frost === 'library', fou = frost === 'foundry'; // version 13: biblioteket och gjuteriet likaså
+    // version 15/16: katedralen, bikupan och drömriket likaså (inomhus, utan gårdar); trädgården byggs som molnborgen (allt under himlen, gårdar =
+    // stora gräsmattor) men med häckar som väggar
+    const cath = frost === 'cathedral', hive = frost === 'hive', gard = frost === 'garden', drm = frost === 'dream';
+    // version 17: spökskeppet byggs som frostfästet (gårdarna = däck under himlen, master i stället för torn), laboratoriet som klocktornet
+    const shipB = frost === 'ship', labB = frost === 'lab';
+    // version 18: cirkusen byggs som laboratoriet (inomhus), djungeltemplet som frostfästet (gläntorna under himlen, stigarna likaså)
+    const circB = frost === 'circus', jungB = frost === 'jungle';
+    // version 19: gruvan och observatoriet byggs som cirkusen (inomhus); gruvans korridorer (stollarna) får plankgolv
+    const mineB = frost === 'mine', obsB = frost === 'observatory';
+    // version 20: kloakerna byggs som gruvan (inomhus, galler i korridorerna), öknen som djungeltemplet (gårdarna och stigarna under himlen)
+    const sewB = frost === 'sewer', desB0 = frost === 'desert';
+    // version 21: järnfängelset byggs som kloakerna (inomhus), fiskeläget som öknen (kajerna och stigarna under himlen)
+    const priB = frost === 'prison', harB0 = frost === 'harbor';
+    // version 22: badhuset byggs som kloakerna (inomhus, mosaikgolv i korridorerna), skärselden som fiskeläget (askfälten och stigarna under himlen)
+    const batB0 = frost === 'bathhouse', purB = frost === 'purgatory';
+    // version 23: slakteriet byggs som badhuset (inomhus, blodgaller i korridorerna), slagfältet som skärselden (lerfälten och stigarna under himlen)
+    const abaB0 = frost === 'abattoir', btlB0 = frost === 'battlefield';
+    // version 30: glasbruket byggs som slakteriet (inomhus, slagg i korridorerna), ruinstaden som slagfältet (torgen, gränderna och gatorna under himlen)
+    const ruiB = frost === 'ruins', glaB = frost === 'glassworks', abaB = abaB0 || glaB, btlB = btlB0 || ruiB;
+    const batB = batB0 || abaB, harB = harB0 || purB || btlB, desB = desB0 || harB;
+    if (clock || mirror || lib || fou || cath || hive || drm || labB || circB || mineB || obsB || sewB || priB || batB) frost = false;
     const base = 30 + (depth - 1) * 3;
     const W = Math.min(44, base + rng.int(0, 2)), H = Math.min(44, base + rng.int(0, 2));
     const G = Grid(W, H, wc), g = G.g;
+    if (skyB || gard) G.sky.fill(1);
     const inb = (x, y) => x >= 1 && y >= 1 && x <= W - 2 && y <= H - 2;
 
     // ----- 1. Rum: vaktarens sal först (stor), sedan de vanliga -----
@@ -805,6 +2741,11 @@
         if (rooms.every(o => gapOK(o, r, 3))) { r.yard = true; rooms.push(r); break; }
       }
       if (rooms.length < 2) return null;
+    } else if (cath) { // version 15: katedralens långhus, en stor avlång sal (10-13 x 7-8, längs eller tvärs; kortare på de första djupen)
+      for (let t = 0; t < 80; t++) {
+        const L = rng.int(10, depth >= 3 ? 13 : 11), S = rng.int(7, 8), hz = rng.chance(0.5), w = hz ? L : S, h = hz ? S : L, r = mk(rng.int(2, W - 2 - w), rng.int(2, H - 2 - h), w, h, 'normal');
+        if (rooms.every(o => gapOK(o, r, 3))) { r.big = true; r.nave = true; rooms.push(r); break; }
+      }
     } else if (rng.chance(0.4)) for (let t = 0; t < 60; t++) { // ibland en stor öppen sal (plats för ett utmaningsaltare)
       const w = rng.int(7, 9), h = rng.int(7, 9), r = mk(rng.int(2, W - 2 - w), rng.int(2, H - 2 - h), w, h, 'normal');
       if (rooms.every(o => gapOK(o, r, 3))) { r.big = true; rooms.push(r); break; }
@@ -815,7 +2756,8 @@
       const r = mk(rng.int(2, W - 2 - w), rng.int(2, H - 2 - h), w, h, 'normal');
       if (rooms.every(o => gapOK(o, r, 3))) rooms.push(r);
     }
-    if (rooms.length < Math.max(frost ? 6 : 7, lo - (frost ? 3 : 2))) return null;
+    if (opts.plan27) plan27(rng.fork('v27plan'), opts.plan27, rooms, mk, W, H, depth, !!frost, cath, gapOK); // version 27: planritningen ersätter rummen om den får plats
+    if (rooms.length < Math.max(frost ? 6 : 7, lo - (frost ? 3 : 2)) - (cath ? 1 : 0)) return null; // (katedralens långhus räknas som två rum)
     const n = rooms.length;
     const forb = new Uint8Array(W * H); // rum + väggring: hit får inga korridorer
     for (const r of rooms) {
@@ -842,7 +2784,9 @@
         if ((w >= 7 && h >= 5) || (h >= 7 && w >= 5)) sh.push(['pillars', 2]);
         if (w >= 9 && h >= 9) sh.push(['ring', 3]);
         if ((w >= 8 && h >= 5) || (h >= 8 && w >= 5)) sh.push(['vault', 1.5]); // två rum förbundna av en valvbåge
-        r.shape = rng.weighted(r.big ? [['rect', 2], ['round', 1], ['pillars', 1.5]] : sh, s => s[1])[0];
+        if (hive && w >= 5 && h >= 5) sh.push(['hex', 9]); // version 15: bikupans sexkantiga celler
+        if (cath && w >= 6 && h >= 6) sh.push(['cross', 2]); // katedralens korskapell
+        r.shape = rng.weighted(r.nave ? [['rect', 1]] : r.big ? [['rect', 2], ['round', 1], ['pillars', 1.5]] : sh, s => s[1])[0];
         if (r.shape === 'cross') { const cw = Math.floor(w / 3), ch = Math.floor(h / 3); fillW(x, y, cw, ch); fillW(x + w - cw, y, cw, ch); fillW(x, y + h - ch, cw, ch); fillW(x + w - cw, y + h - ch, cw, ch); }
         else if (r.shape === 'L') { const qw = w >> 1, qh = h >> 1, c = rng.int(0, 3); fillW(c & 1 ? x + w - qw : x, c & 2 ? y + h - qh : y, qw, qh); }
         else if (r.shape === 'round') {
@@ -853,6 +2797,12 @@
           const x0 = x + 2, y0 = y + 2, x1 = x + w - 3, y1 = y + h - 3, hz = rng.chance(0.5);
           for (let yy = y0; yy <= y1; yy++) for (let xx = x0; xx <= x1; xx++) if (xx === x0 || xx === x1 || yy === y0 || yy === y1) g[yy][xx] = wc;
           if (hz) { g[(y0 + y1) >> 1][x0] = '.'; g[(y0 + y1 + 1) >> 1][x1] = '.'; } else { g[y0][(x0 + x1) >> 1] = '.'; g[y1][(x0 + x1 + 1) >> 1] = '.'; }
+        } else if (r.shape === 'hex') { // sexkant: spetsiga kortsidor (raderna/kolumnerna kapas mot ändarna)
+          const hz = w >= h, S = hz ? h : w, L = hz ? w : h, mid = (S - 1) / 2;
+          for (let k = 0; k < S; k++) {
+            const m = Math.min(Math.floor((L - 3) / 2), Math.round(Math.abs(k - mid) * 0.75));
+            for (let a = 0; a < m; a++) for (const e of [a, L - 1 - a]) { if (hz) g[y + k][x + e] = wc; else g[y + e][x + k] = wc; }
+          }
         } else if (r.shape === 'vault') { // tvärvägg mitt i rummet med en valvbåge (1-2 rutor) i mitten
           const hz = w >= 8 && (w >= h || h < 8), L = hz ? h : w, gap = L >= 6 ? 2 : 1, a0 = (L - gap) >> 1;
           for (let k = 0; k < L; k++) if (k < a0 || k >= a0 + gap) { if (hz) g[y + k][x + (w >> 1)] = wc; else g[y + (h >> 1)][x + k] = wc; }
@@ -888,6 +2838,7 @@
     extraCand.sort((a, b) => a[2] - b[2]);
     const nExtra = Math.min(rng.int(1, 3), extraCand.length);
     const extra = rng.shuffle(extraCand.slice(0, Math.max(nExtra * 2, 4))).slice(0, nExtra);
+    if (opts.plan27 && opts.plan27.ok) { edges.length = 0; extra.length = 0; for (const e of opts.plan27.edges) edges.push(e.slice()); } // version 27: planritningens förbindelser
 
     function pickOpening(room, side) {
       const horizSide = side === 0 || side === 2;
@@ -1038,7 +2989,7 @@
     const dG = bfs(gr.rep[0], gr.rep[1]);
     if (rooms.some(r => at(dG, r) < 0)) return null;
     let start = null, sv = -1;
-    for (const r of rooms) if (r !== gr) { const v = at(dG, r) + rng.next() * 3; if (v > sv) { sv = v; start = r; } }
+    for (const r of rooms) if (r !== gr && !r.nave) { const v = at(dG, r) + rng.next() * 3; if (v > sv) { sv = v; start = r; } } // (version 15: aldrig i långhuset)
     start.type = 'start';
     const dS = bfs(start.rep[0], start.rep[1]);
     for (const r of rooms) r.d = at(dS, r);
@@ -1063,39 +3014,66 @@
     }
     if (gr.w >= 11 && gr.h >= 11) for (const sx of [-3, 3]) for (const sy of [-3, 3]) plant(G, gr.cx + sx, gr.cy + sy, K.wall);
     // frostfästet: gårdarna får himmel och snögolv (floors[2]), några torn (1x1 eller 2x2 Ø) med fri ring runt om och döda träd
-    if (frost) for (const r of rooms) if (r.yard) {
-      for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) { G.sky[y * W + x] = 1; G.fm[y * W + x] = tomb ? 0 : 2; } // gravkammarens gårdar: sand (floors[0])
+    if (shipB) for (const r of rooms) if (r.yard) { // version 17: skeppets däck: himmel, däcksplankor (floors[2]), master Ǔ i en rad längs däcket, lådor
+      for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) { G.sky[y * W + x] = 1; G.fm[y * W + x] = 2; }
+      const hz = r.w >= r.h, A = hz ? r.w : r.h, c = (hz ? r.y + (r.h >> 1) : r.x + (r.w >> 1)) + rng.int(-1, 1);
+      for (let a = 2 + rng.int(0, 1); a <= A - 3; a += rng.int(3, 4)) {
+        const x = hz ? r.x + a : c, y = hz ? c : r.y + a;
+        let ok = true;
+        for (let yy = y - 1; ok && yy <= y + 1; yy++) for (let xx = x - 1; xx <= x + 1; xx++) if (g[yy][xx] !== '.' || G.lock[yy * W + xx]) { ok = false; break; }
+        if (ok) plant(G, x, y, MAST17);
+      }
+      for (let k = rng.int(0, 2); k > 0; k--) plant(G, rng.int(r.x + 1, r.x + r.w - 2), rng.int(r.y + 1, r.y + r.h - 2), 'T');
+    }
+    if (frost && !shipB) for (const r of rooms) if (r.yard) {
+      for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) { G.sky[y * W + x] = 1; G.fm[y * W + x] = tomb || sunk || skyB ? 0 : 2; } // gravkammarens gårdar: sand (floors[0]), sjunkna stadens torg: plattor, molnborgens öar: moln
       for (let t = 0, k = 0, nT = rng.int(1, 2) + (r.w * r.h >= 110 ? 1 : 0); t < 40 && k < nT; t++) {
         const s = rng.chance(0.5) ? 2 : 1, x = rng.int(r.x + 2, r.x + r.w - 2 - s), y = rng.int(r.y + 2, r.y + r.h - 2 - s);
         let ok = true;
         for (let yy = y - 1; ok && yy <= y + s; yy++) for (let xx = x - 1; xx <= x + s; xx++) if (g[yy][xx] !== '.' || G.lock[yy * W + xx]) { ok = false; break; }
         if (!ok) continue;
         let n = 0;
-        for (let yy = y; yy < y + s; yy++) for (let xx = x; xx < x + s; xx++) if (plant(G, xx, yy, wc)) n++;
+        for (let yy = y; yy < y + s; yy++) for (let xx = x; xx < x + s; xx++) if (plant(G, xx, yy, jungB ? JUNGLE18 : ruiB ? RBRICK30 : btlB ? EARTH23 : purB ? BONE22 : harB ? QUAY21 : desB ? MESA20 : wc)) n++; // (djungeln: snår) (öknen: klippor)
         if (n) k++;
       }
-      for (let k = rng.int(0, 2); k > 0; k--) plant(G, rng.int(r.x + 1, r.x + r.w - 2), rng.int(r.y + 1, r.y + r.h - 2), 't');
+      for (let k = rng.int(0, 2); k > 0; k--) plant(G, rng.int(r.x + 1, r.x + r.w - 2), rng.int(r.y + 1, r.y + r.h - 2), sunk || skyB ? 'u' : ruiB ? COLUMN30 : btlB ? STAKES23 : purB ? BPILLAR22 : harB ? ANCHOR21 : desB ? CACTUS20 : 't'); // (öknen: kaktusar) sjunkna staden: brutna statyer, molnborgen: statyer
     }
+
+    // version 18: djungelns stigar går under himlen (jordgolv floors[2]); väggar som bara gränsar mot himmel blir tät djungel Ȁ (inte vid den hemliga väggen)
+    if (jungB || desB) { // (version 20: öknens stigar likaså, med sand; väggarna mot himlen blir klippor Ȱ)
+      for (let i = 0; i < W * H; i++) if (corr[i] && g[(i / W) | 0][i % W] === '.') { G.sky[i] = 1; G.fm[i] = 2; }
+      const nearSecret = (x, y) => { for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (G.at(x + dx, y + dy) === '*') return true; return false; };
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        if (g[y][x] !== wc) continue;
+        let out = 0, inn = 0;
+        for (let k = 0; k < 8; k++) { const xx = x + RX[k], yy = y + RY[k]; if (!G.inb(xx, yy) || isWall(g[yy][xx])) continue; if (G.sky[yy * W + xx]) out++; else inn++; }
+        if (out && !inn && !nearSecret(x, y)) g[y][x] = ruiB ? RBRICK30 : btlB ? EARTH23 : purB ? BONE22 : harB ? QUAY21 : desB ? MESA20 : JUNGLE18;
+      }
+    }
+
+    // version 19: gruvans stollar (korridorerna) får plankgolv floors[2]
+    if (mineB || sewB || batB) for (let i = 0; i < W * H; i++) if (corr[i] && g[(i / W) | 0][i % W] === '.') G.fm[i] = 2; // (version 20: kloakernas galler) (version 22: badhusets mosaik)
 
     // ----- 7. Rumsposter och innehåll -----
     const rid = new Int16Array(W * H).fill(-1);
     const recs = rooms.map(r => {
       const cells = [];
       for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) if (!isWall(g[y][x])) { rid[y * W + x] = r.id; cells.push([x, y]); }
-      return { id: r.id, type: r.type, tag: r.yard ? 'yard' : 'room', shape: r.shape, cells, cx: r.cx, cy: r.cy, box: { x: r.x, y: r.y, w: r.w, h: r.h }, d: r.d, deg: r.deg, indoor: !r.yard };
+      return { id: r.id, type: r.type, tag: r.yard ? 'yard' : 'room', shape: r.shape, cells, cx: r.cx, cy: r.cy, box: { x: r.x, y: r.y, w: r.w, h: r.h }, d: r.d, deg: r.deg, indoor: !r.yard && !skyB && !gard,
+        nave: r.nave };
     });
     let srec = null;
     if (secret) {
       const cells = [];
       for (let y = secret.y; y < secret.y + 3; y++) for (let x = secret.x; x < secret.x + 3; x++) { rid[y * W + x] = n; cells.push([x, y]); }
-      srec = { id: n, type: 'secret', tag: 'secret', cells, cx: secret.x + 1, cy: secret.y + 1, box: { x: secret.x, y: secret.y, w: 3, h: 3 }, d: 0, indoor: true, door: secret.door };
+      srec = { id: n, type: 'secret', tag: 'secret', cells, cx: secret.x + 1, cy: secret.y + 1, box: { x: secret.x, y: secret.y, w: 3, h: 3 }, d: 0, indoor: !skyB && !gard, door: secret.door };
       recs.push(srec);
     }
     const corridors = [];
     for (let i = 0; i < W * H; i++) if (corr[i] && rid[i] < 0 && g[(i / W) | 0][i % W] === '.') corridors.push([i % W, (i / W) | 0]);
     const res = content(G, rng, depth, opts, {
-      biome: tomb ? 'tomb' : volc ? 'volcano' : frost ? 'frost' : 'dungeon', P, X, rooms: recs, rid, corridors,
-      floors: frost && !tomb ? [theme.floor, K.floor, theme.snow] : [theme.floor, K.floor], gid: K.id,
+      biome: ruiB ? 'ruins' : glaB ? 'glassworks' : abaB ? 'abattoir' : btlB ? 'battlefield' : batB ? 'bathhouse' : purB ? 'purgatory' : priB ? 'prison' : harB ? 'harbor' : sewB ? 'sewer' : desB ? 'desert' : mineB ? 'mine' : obsB ? 'observatory' : circB ? 'circus' : jungB ? 'jungle' : shipB ? 'ship' : labB ? 'lab' : cath ? 'cathedral' : hive ? 'hive' : gard ? 'garden' : drm ? 'dream' : lib ? 'library' : fou ? 'foundry' : mirror ? 'mirror' : clock ? 'clock' : skyB ? 'sky' : tomb ? 'tomb' : sunk ? 'sunken' : volc ? 'volcano' : frost ? 'frost' : 'dungeon', P, X, rooms: recs, rid, corridors,
+      floors: (frost && !tomb && !sunk && !skyB) || mineB || sewB || batB ? [theme.floor, K.floor, theme.snow] : [theme.floor, K.floor], gid: K.id,
       guardian: { center: [gr.cx, gr.cy] }, secret: srec, spikes: frost ? rng.int(1, 3) : rng.int(2, 4), vaultWall: wc,
       cfg: frost ? { barrels: { p: 0.5, min: 2 }, deadEnd: true, eliteTags: ['yard'] } : { barrels: { p: 0.55, min: 2 }, deadEnd: true },
     });
@@ -1105,7 +3083,8 @@
       for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (!isWall(g[y][x])) { walk++; if (G.sky[y * W + x]) sky++; }
       if (sky < walk * 0.22) return null;
     }
-    return { map: g.map(row => row.join('')), rooms: res.rooms, roomMask: res.roomMask, floors: res.floors, fm: G.fm, sky: G.sky, W, H, boulders: G.boulders, beams: G.beams };
+    return { map: g.map(row => row.join('')), rooms: res.rooms, roomMask: res.roomMask, floors: res.floors, fm: G.fm, sky: G.sky, W, H, boulders: G.boulders, beams: G.beams,
+      saws: G.saws, winds: G.winds, teleports: G.teleports, belts: G.belts, arenas: G.arenas, shifts: G.shifts, carts: G.carts, starports: G.starports, sluices: G.sluices, streams: G.streams };
   }
 
   // hemligt rum: kortkista eller rustning i mitten, resten slumpat
@@ -1443,9 +3422,24 @@
   function content(G, rng, depth, opts, L) {
     const rngMain = rng;
     const { W, g, lock, fm } = G, { P, X, rooms, rid } = L, cfg = L.cfg || {};
+    G.shifts = []; // version 16: glidande väggar (drömriket) [{ x, y, ph }]
+    G.carts = []; G.starports = []; // version 19: vagnbanor och stjärnportpar (gruvan, observatoriet)
+    G.sluices = []; // version 20: slussar (kloakerna)
+    G.streams = []; // version 22: eldfloder (skärselden) [{ x, y, dx, dy }]
     const cnt = {}, CAP = { o: 8, e: 4, z: 6, w: 1, y: 1, '(': 1, ')': 1, '[': 1, '?': 1, ';': 1, '/': 1, '}': 1, "'": 1, '<': 4, '>': 3, ',': 5,
       '£': 1, '€': 1, '©': 1, '¥': 2, 'Ç': 8, '¶': 1, '®': 1, '÷': 1, 'ª': 1, 'ð': 2, '°': 4, '¬': 8, '±': 3, '¨': 2, 'µ': 3, 'ß': 3,
-      '²': 5, '³': 1, 'ç': 1, 'ÿ': 1, 'ý': 1, 'þ': 1, '¼': 2, '½': 2, '¹': 1, '¯': QUICKSAND_CAP, 'Î': 1, 'Ô': 1 };
+      '²': 5, '³': 1, 'ç': 1, 'ÿ': 1, 'ý': 1, 'þ': 1, '¼': 2, '½': 2, '¹': 1, '¯': QUICKSAND_CAP, 'Î': 1, 'Ô': 1,
+      'Ė': 4, 'Ě': 3, 'Ğ': 1, 'Ġ': 1, 'Ģ': 2, 'Ā': 1, 'Ă': 1, 'Ē': SPIKES8_CAP, 'Ĕ': TIDE_CAP, 'Ĝ': 6, 'Ó': 4,
+      'Ŋ': 3, 'ŋ': 1, 'ŀ': 3, 'Ň': 1, 'ň': 3, 'ĸ': 2, 'Œ': 1, 'Ũ': SPORESACK11_CAP, 'Ř': 2, 'ś': 2,
+      'Ɛ': BELL15_CAP, 'Ə': FONT15_CAP, 'Ɨ': SAC15_CAP, 'Ƨ': FOUNTAIN16_CAP, 'Ʃ': FALSEDOOR16_CAP, // version 15/16
+      'ǎ': CANNON17_CAP, 'ǟ': ALEMBIC17_CAP, 'Ǟ': TESLA17_CAP, 'Ǒ': KEG17_CAP, 'ǝ': FLASK17_CAP, 'ǜ': TRANS17_CAP, // version 17
+      'ǳ': KNIFE18_CAP, 'Ǵ': PRIZE18_CAP, 'Ȅ': GIDOL18_CAP, 'ȅ': DIDOL18_CAP, 'Ȇ': FLOWER18_CAP, 'ǵ': BALLOON18_CAP, // version 18
+      [CART19]: CART19_CAP, [DYNA19]: DYNA19_CAP, [ORRERY19]: ORRERY19_CAP, [SCOPE19]: SCOPE19_CAP, [LAMP19]: LAMP19_CAP, // version 19
+      [WHEEL20]: 1, [NEST20]: NEST20_CAP, [CACTUS20]: CACTUS20_CAP, [AMPHORA20]: AMPHORA20_CAP, [BRAZIER20]: BRAZIER20_CAP, // version 20
+      [RACK21]: RACK21_CAP, [GALLOWS21]: GALLOWS21_CAP, [CAGE21]: CAGE21_CAP, [FBARREL21]: FBARREL21_CAP, [ANCHOR21]: ANCHOR21_CAP, // version 21
+      [BSTATUE22]: BSTATUE22_CAP, [FOUNT22]: FOUNT22_CAP, [BENCH22]: BENCH22_CAP, [SOUL22]: SOUL22_CAP, [BPILLAR22]: BPILLAR22_CAP, [BRIMPOT22]: BRIMPOT22_CAP, // version 22
+      [HOOK23]: HOOK23_CAP, [BLOCK23]: BLOCK23_CAP, [SAW23]: SAW23_CAP, [CATA23]: CATA23_CAP, [BANNER23]: BANNER23_CAP, [STAKES23]: STAKES23_CAP, // version 23
+      [COLUMN30]: COLUMN30_CAP, [BEAM30]: BEAM30_CAP, [STATUE30]: STATUE30_CAP, [FURNACE30]: FURNACE30_CAP, [RACK30]: RACK30_CAP, [GBENCH30]: GBENCH30_CAP }; // version 30
     const can = ch => CAP[ch] === undefined || (cnt[ch] || 0) < CAP[ch];
     const set = (x, y, ch) => {
       g[y][x] = ch; cnt[ch] = (cnt[ch] || 0) + 1;
@@ -1602,7 +3596,207 @@
       }
       return done;
     }
-    const F = { int: (a, b) => rng.int(a, b), chance: p => rng.chance(p), place, putAt, shelves, row, grid, ring, stalls, focal, chest, vault, npc, restSite, pillars,
+    // hyllrader (version 13, biblioteket): rader av fristående hyllor (1 ruta tjocka) längs salens långsida med en gång emellan och luckor om 1-2
+    // rutor; varje hyllsträcka (2-4 rutor) sätts bara om allt som nåddes förut nås ändå (flood fill från P, generatorns hinder), aldrig på låsta
+    // rutor (dörrframsidor o.d.) och aldrig intill en kruka, spikfälla eller lava som då skulle stängas in. p: sannolikheten för varje rad
+    let reachMemo = 0, rSeen = null, rQ = null;
+    function reachN() {
+      const N = W * G.H; if (!rSeen) { rSeen = new Uint8Array(N); rQ = new Int32Array(N); } else rSeen.fill(0);
+      let qh = 0, qt = 0, n = 0; const s0 = P[1] * W + P[0]; rSeen[s0] = 1; rQ[qt++] = s0;
+      while (qh < qt) {
+        const cur = rQ[qh++], x = cur % W, y = (cur / W) | 0; n++;
+        for (let d = 0; d < 4; d++) {
+          const nx = x + DX[d], ny = y + DY[d], ni = ny * W + nx;
+          if (nx < 0 || ny < 0 || nx >= W || ny >= G.H || rSeen[ni] || genBlk(g[ny][nx])) continue;
+          rSeen[ni] = 1; rQ[qt++] = ni;
+        }
+      }
+      return n;
+    }
+    function stacks(r, ch, p) {
+      const b = r.box, hz = b.w >= b.h, A = hz ? b.w : b.h, B = hz ? b.h : b.w, done = [];
+      if (A < 5 || B < 5 || r.type === 'start') return done;
+      reachMemo = reachN(); // (rekvisita kan ha tillkommit sedan förra salen)
+      const encloses = (x, y) => [0, 1, 2, 3].some(d => { // en kruka/spikfälla/lavaruta intill skulle tappa sin sista fria granne
+        const nx = x + DX[d], ny = y + DY[d], c = g[ny][nx];
+        if (!genBlk(c) || isBlock(c)) return false;
+        return ![0, 1, 2, 3].some(e => { const mx = nx + DX[e], my = ny + DY[e]; return (mx !== x || my !== y) && !genBlk(G.at(mx, my)); });
+      });
+      // rader varannan linje: två rutor från långväggarna (udda bredd) eller en ruta från dem (jämn bredd, fler rader); får ingen rad plats
+      // (utgången, dörrarnas gångar o.d. står i vägen) prövas den andra uppsättningen
+      const sets = [[], []];
+      for (let o = 2; o <= B - 3; o += 2) sets[0].push(o);
+      for (let o = 1; o <= B - 2; o += 2) sets[1].push(o);
+      if (B % 2 === 0) sets.reverse();
+      for (const set of sets) {
+        if (done.length) break;
+        for (const o of set) {
+          if (!rng.chance(p)) continue;
+          let a = 1 + rng.int(0, 1);
+          while (a <= A - 2) {
+            const len = rng.int(2, 4), seg = [];
+            for (let k = 0; k < len && a + k <= A - 2; k++) {
+              const x = hz ? b.x + a + k : b.x + o, y = hz ? b.y + o : b.y + a + k, i = y * W + x;
+              if (!G.inb(x, y) || rid[i] !== r.id || g[y][x] !== '.' || lock[i] || resv[i] || encloses(x, y)) break;
+              seg.push([x, y]);
+            }
+            if (seg.length < 2) { a += seg.length + 1; continue; } // (förbi rutan som stod i vägen)
+            a += seg.length + rng.int(1, 2);
+            for (const [x, y] of seg) g[y][x] = ch;
+            const n = reachN();
+            if (n !== reachMemo - seg.length) { for (const [x, y] of seg) g[y][x] = '.'; continue; }
+            reachMemo = n;
+            for (const [x, y] of seg) { cnt[ch] = (cnt[ch] || 0) + 1; done.push([x, y]); }
+          }
+        }
+      }
+      return done;
+    }
+    // kanal med smält metall (version 13, gjuteriet): rak kanal (1-2 bred) tvärs över salen med en spång (1-2 rutor) där man går över; varje ruta
+    // läggs med localOK (aldrig enda vägen), aldrig på låsta rutor, intill P/x eller vid dörrar. Under 3 rutor: ingen kanal alls
+    function canal(r, ch) {
+      for (let t = 0; t < 3; t++) { const n = canal1(r, ch); if (n) return n; }
+      return 0;
+    }
+    function canal1(r, ch) {
+      const b = r.box;
+      if (b.w < 5 || b.h < 5) return 0;
+      const vert = rng.chance(0.5), A = vert ? b.h : b.w, B = vert ? b.w : b.h;
+      const wide = B >= 7 && rng.chance(0.5) ? 2 : 1, o = rng.int(1, B - 1 - wide), br = rng.int(1, A - 3), bw = rng.int(1, 2), cells = [];
+      for (let a = 0; a < A; a++) {
+        if (a >= br && a < br + bw) continue; // spången
+        for (let t = 0; t < wide; t++) {
+          const x = vert ? b.x + o + t : b.x + a, y = vert ? b.y + a : b.y + o + t, i = y * W + x;
+          if (!G.inb(x, y) || rid[i] !== r.id || g[y][x] !== '.' || lock[i] || cheb(x, y, P[0], P[1]) <= 1 || cheb(x, y, X[0], X[1]) <= 1
+            || RX.some((dx, k) => isDoorCh(G.at(x + dx, y + RY[k]))) || !localOK(G, x, y)) continue;
+          set(x, y, ch); cells.push([x, y]);
+        }
+      }
+      // lösa rutor (utan granne i kanalen) tas bort igen: kanalen består av raka sträckor
+      const kept = cells.filter(([x, y]) => cells.some(p => Math.abs(p[0] - x) + Math.abs(p[1] - y) === 1));
+      for (const c of cells) if (!kept.includes(c)) { g[c[1]][c[0]] = '.'; cnt[ch]--; }
+      if (kept.length < 3) { for (const [x, y] of kept) g[y][x] = '.'; cnt[ch] -= kept.length; return 0; }
+      return kept.length;
+    }
+    // ----- version 15/16: hjälpare för katedralens, trädgårdens och drömrikets rumstyper (bara i de nya biomerna) -----
+    // en kruka/spikfälla/lavaruta intill (x, y) skulle tappa sin sista fria granne om (x, y) blev ett hinder
+    const encl = (x, y) => [0, 1, 2, 3].some(d => {
+      const nx = x + DX[d], ny = y + DY[d], c = g[ny][nx];
+      if (!genBlk(c) || isBlock(c)) return false;
+      return ![0, 1, 2, 3].some(e => { const mx = nx + DX[e], my = ny + DY[e]; return (mx !== x || my !== y) && !genBlk(G.at(mx, my)); });
+    });
+    const doorNear8 = (x, y) => RX.some((dx, k) => isDoorCh(G.at(x + dx, y + RY[k])));
+    // långhusets bänkrader (version 15): mittgång (röd matta) längs salen, bänkar Ǝ i par tvärs över salen var annan rad (sidogångarna längs väggarna
+    // fria), koret i ena kortänden fritt med ett altare/en staty och ljus; varje bänkhalva sätts bara om allt som nåddes förut nås ändå
+    function pews(r) {
+      const b = r.box, hz = b.w >= b.h, A = hz ? b.w : b.h, B = hz ? b.h : b.w, done = [];
+      if (A < 9 || B < 5) return done;
+      const xy = (a, o) => (hz ? [b.x + a, b.y + o] : [b.x + o, b.y + a]);
+      const aisle = B % 2 ? [(B - 1) >> 1] : [B / 2 - 1, B / 2], lo = Math.min(...aisle), hi = Math.max(...aisle);
+      const ci = floorIdx('floor_carpet');
+      if (ci >= 0) for (let a = 0; a < A; a++) for (const o of aisle) { const [x, y] = xy(a, o); if (rid[y * W + x] === r.id && !isWall(g[y][x])) fm[y * W + x] = ci; }
+      const choir = rng.chance(0.5) ? A - 1 : 0, dir = choir ? -1 : 1; // koret: kortänden a = choir
+      reachMemo = reachN();
+      for (let a = choir ? 2 : A - 3; choir ? a <= A - 4 : a >= 3; a += choir ? 2 : -2) for (const [o0, o1] of [[1, lo - 1], [hi + 1, B - 2]]) {
+        const seg = [];
+        for (let o = o0; o <= o1; o++) {
+          const [x, y] = xy(a, o), i = y * W + x;
+          if (!G.inb(x, y) || rid[i] !== r.id || g[y][x] !== '.' || lock[i] || resv[i] || encl(x, y)) { seg.length = 0; break; }
+          seg.push([x, y]);
+        }
+        if (!seg.length) continue;
+        for (const [x, y] of seg) g[y][x] = 'Ǝ';
+        const n = reachN();
+        if (n !== reachMemo - seg.length) { for (const [x, y] of seg) g[y][x] = '.'; continue; }
+        reachMemo = n;
+        for (const [x, y] of seg) { cnt['Ǝ'] = (cnt['Ǝ'] || 0) + 1; done.push([x, y]); }
+      }
+      // koret: altaret (om banan får ett) eller en staty vid kortväggen, ljus bredvid
+      const [ax, ay] = xy(choir + dir, aisle[0]);
+      const alt = place(r, L.altar && can('y') ? 'y' : 'u', 1, { near: [ax, ay, 2.5], jit: 0.5 })[0];
+      if (alt) place(r, 'c', rng.int(1, 2), { near: [alt[0], alt[1], 2] });
+      return done;
+    }
+    // murad trädgård (version 16): biomens väggar (häck) runt rummet blir trädgårdsmur, utom vid den hemliga/spruckna väggen
+    function rewall(r, ch) {
+      const wc = L.vaultWall; let n = 0;
+      for (const [x, y] of r.cells) for (let k = 0; k < 8; k++) {
+        const xx = x + RX[k], yy = y + RY[k];
+        if (G.at(xx, yy) !== wc) continue;
+        let hid = false; for (let q = 0; q < 8 && !hid; q++) { const c = G.at(xx + RX[q], yy + RY[q]); if (c === '*' || c === '{') hid = true; }
+        if (!hid) { g[yy][xx] = ch; n++; }
+      }
+      return n;
+    }
+    // schackbräde (version 16): varannan ruta i golvtexturen name
+    function checker(r, name) {
+      const k = floorIdx(name); if (k < 0) return 0;
+      let n = 0; for (const [x, y] of r.cells) if (((x + y) & 1) && !isWall(g[y][x])) { fm[y * W + x] = k; n++; }
+      return n;
+    }
+    // glidande väggar (version 16, drömriket): rader av ƣ (1 ruta tjocka, sträckor om 2-3) längs salens långsida, en fas per sträcka (G.shifts);
+    // aldrig på låsta eller reserverade rutor, aldrig intill en dörr/grind/hemlig vägg (de åtta grannarna) eller inom 2 rutor från P och x, och varje
+    // sträcka sätts bara om allt som nåddes förut nås ändå med väggen uppe (flood fill med ƣ som vägg)
+    function shifts(r, p) {
+      const b = r.box, hz = b.w >= b.h, A = hz ? b.w : b.h, B = hz ? b.h : b.w, done = [];
+      if (A < 5 || B < 5 || r.type === 'start') return done;
+      reachMemo = reachN();
+      for (let o = 2; o <= B - 3; o += 2) {
+        if (!rng.chance(p)) continue;
+        let a = 1 + rng.int(0, 1);
+        while (a <= A - 2) {
+          const len = rng.int(2, 3), seg = [];
+          for (let k = 0; k < len && a + k <= A - 2; k++) {
+            const x = hz ? b.x + a + k : b.x + o, y = hz ? b.y + o : b.y + a + k, i = y * W + x;
+            if (!G.inb(x, y) || rid[i] !== r.id || g[y][x] !== '.' || lock[i] || resv[i] || encl(x, y) || doorNear8(x, y)
+              || cheb(x, y, P[0], P[1]) <= 2 || cheb(x, y, X[0], X[1]) <= 2) break;
+            seg.push([x, y]);
+          }
+          if (seg.length < 2) { a += seg.length + 1; continue; }
+          a += seg.length + rng.int(1, 2);
+          for (const [x, y] of seg) g[y][x] = SHIFT16;
+          const n = reachN();
+          if (n !== reachMemo - seg.length) { for (const [x, y] of seg) g[y][x] = '.'; continue; }
+          reachMemo = n;
+          const ph = rng.int(0, 39) / 10;
+          for (const [x, y] of seg) { cnt[SHIFT16] = (cnt[SHIFT16] || 0) + 1; done.push([x, y]); G.shifts.push({ x, y, ph }); }
+        }
+      }
+      return done;
+    }
+    // transmutationscirkel (version 17): 3x3 rutor ǜ kring rummets mitt (minst fem), aldrig vid dörrar, P eller x, på låsta eller reserverade rutor
+    function circle(r, ch) {
+      let best = null, bd = 1e9;
+      for (const [x, y] of r.cells) { const d = Math.hypot(x - r.cx, y - r.cy) + rng.next() * 0.8; if (d < bd && g[y][x] === '.') { bd = d; best = [x, y]; } }
+      if (!best) return 0;
+      const cells = [];
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const x = best[0] + dx, y = best[1] + dy, i = y * W + x;
+        if (!G.inb(x, y) || rid[i] !== r.id || g[y][x] !== '.' || lock[i] > 1 || resv[i] || doorNear8(x, y) || cheb(x, y, P[0], P[1]) <= 1 || cheb(x, y, X[0], X[1]) <= 1) continue;
+        cells.push([x, y]);
+      }
+      if (cells.length < 5 || (cnt[ch] || 0) + cells.length > TRANS17_CAP) return 0;
+      for (const [x, y] of cells) set(x, y, ch);
+      return cells.length;
+    }
+    // fri framsida: en vägg bakom och fritt golv framför (pulpet, falsk dörr)
+    const front = (x, y) => [0, 1, 2, 3].some(k => isWall(g[y + DY[k]][x + DX[k]]) && g[y - DY[k]][x - DX[k]] === '.' && lock[(y - DY[k]) * W + x - DX[k]] < 2);
+    // version 19: räls med en vagnbana i lastplatsen (G.carts, se track19): på fritt golv i rummet, aldrig intill dörrar, interaktiv rekvisita, P och x
+    const reach19 = () => {
+      const seen = new Uint8Array(W * G.H), q = [P[1] * W + P[0]]; seen[q[0]] = 1; let n = 0;
+      while (q.length) { const c = q.pop(), x = c % W, y = (c / W) | 0; n++; for (let d = 0; d < 4; d++) { const nx = x + DX[d], ny = y + DY[d], ni = ny * W + nx; if (!G.inb(nx, ny) || seen[ni] || genBlk(g[ny][nx])) continue; seen[ni] = 1; q.push(ni); } }
+      return n;
+    };
+    const track = r => track19(G, rng, r, (x, y) => G.inb(x, y) && rid[y * W + x] === r.id && g[y][x] === '.' && lock[y * W + x] < 2 && !resv[y * W + x] && cheb(x, y, P[0], P[1]) > 2 && cheb(x, y, X[0], X[1]) > 2
+      && !RX.some((dx, k) => { const c = G.at(x + dx, y + RY[k]); return isDoorCh(c) || isInter(c) || (HAZARD.includes(c) && c !== RAIL19); }), reach19,
+      (x, y, ch) => { g[y][x] = ch; cnt[ch] = (cnt[ch] || 0) + 1; }, (x, y) => { if (cnt[g[y][x]]) cnt[g[y][x]]--; g[y][x] = '.'; }, true, 5);
+    const F = { int: (a, b) => rng.int(a, b), chance: p => rng.chance(p), place, putAt, shelves, row, grid, ring, stalls, focal, chest, vault, npc, restSite, pillars, stacks, canal,
+      pews, rewall, checker, shifts, front, track,
+      // version 17: kanonen vid relingen (skrovet bakom, fritt golv framför), teslaspolen aldrig intill en dörr, transmutationscirkeln
+      rail: (x, y) => [0, 1, 2, 3].some(k => g[y + DY[k]][x + DX[k]] === HULL17 && g[y - DY[k]][x - DX[k]] === '.' && lock[(y - DY[k]) * W + x - DX[k]] < 2), free8: (x, y) => !doorNear8(x, y) && cheb(x, y, P[0], P[1]) > 2 && cheb(x, y, X[0], X[1]) > 2,
+      circle,
+      // version 18: pilidolen täcker aldrig en dörröppning på nära håll (och står inte vid P och x)
+      dart: (x, y) => !dartBad18((xx, yy) => G.at(xx, yy), x, y, (xx, yy) => G.inb(xx, yy) && rid[yy * W + xx] < 0) && cheb(x, y, P[0], P[1]) > 3 && cheb(x, y, X[0], X[1]) > 3,
       nextTo: ch => (x, y) => g[y - 1][x] === ch || g[y + 1][x] === ch || g[y][x - 1] === ch || g[y][x + 1] === ch };
 
     // ----- farliga golv och fällor (körs sist, när fiender och föremål redan står på plats) -----
@@ -1614,6 +3808,12 @@
       return false;
     };
     const trapOK = (x, y) => g[y][x] === '.' && !lock[y * W + x] && !nearPX(x, y) && ![0, 1, 2, 3].some(d => isDoorCh(g[y + DY[d]][x + DX[d]]));
+    // version 8: djupt vatten (Đ) stänger aldrig in en kruka, spikfälla o.d.: de behåller en fri granne (gäller bara Đ, så äldre biomer är som förut)
+    const wetOK = (ch, x, y) => ch !== 'Đ' || [0, 1, 2, 3].every(d => {
+      const nx = x + DX[d], ny = y + DY[d], c = g[ny][nx];
+      if (!genBlk(c) || isBlock(c) || isWet(c)) return true;
+      return [0, 1, 2, 3].some(e => { const mx = nx + DX[e], my = ny + DY[e]; return (mx !== x || my !== y) && !genBlk(G.at(mx, my)); });
+    });
     const Z = {
       int: (a, b) => rng.int(a, b), range: (a, b) => rng.range(a, b), chance: p => rng.chance(p),
       // fläck som växer från en slumpad ruta (walls: hellre längs väggarna och i hörnen)
@@ -1639,7 +3839,7 @@
           if (rng.chance(0.4)) c += rng.chance(0.5) ? 1 : -1;
           for (let t = 0; t < (wide ? 2 : 1); t++) {
             const x = vert ? c + t : A0 + k, y = vert ? A0 + k : c + t;
-            if (!G.inb(x, y) || rid[y * W + x] !== r.id || g[y][x] !== '.' || lock[y * W + x] || nearPX(x, y) || !localOK(G, x, y)) continue;
+            if (!G.inb(x, y) || rid[y * W + x] !== r.id || g[y][x] !== '.' || lock[y * W + x] || nearPX(x, y) || !localOK(G, x, y) || !wetOK(ch, x, y)) continue;
             set(x, y, ch); n++;
           }
         }
@@ -1649,7 +3849,7 @@
         const fc = hzFree(r); if (!fc.length) return 0;
         const s = rng.pick(fc); let n = 0;
         for (const [x, y] of fc.filter(([x, y]) => Math.hypot(x - s[0], y - s[1]) <= rad).sort((a, b) => Math.hypot(a[0] - s[0], a[1] - s[1]) - Math.hypot(b[0] - s[0], b[1] - s[1]))) {
-          if (g[y][x] !== '.' || lock[y * W + x] || !localOK(G, x, y)) continue;
+          if (g[y][x] !== '.' || lock[y * W + x] || !localOK(G, x, y) || !wetOK(ch, x, y)) continue;
           set(x, y, ch); n++;
         }
         return n;
@@ -1671,7 +3871,7 @@
         let n = 0;
         const c = hzFree(r).filter(([x, y]) => !bridge(x, y) && ((x - mx) / rx) ** 2 + ((y - my) / ry) ** 2 <= 1 + (rng.next() - 0.5) * 0.3)
           .sort((p, q) => Math.hypot(p[0] - mx, p[1] - my) - Math.hypot(q[0] - mx, q[1] - my));
-        for (const [x, y] of c) if (g[y][x] === '.' && !lock[y * W + x] && localOK(G, x, y)) { set(x, y, ch); n++; }
+        for (const [x, y] of c) if (g[y][x] === '.' && !lock[y * W + x] && localOK(G, x, y) && wetOK(ch, x, y)) { set(x, y, ch); n++; }
         return n;
       },
       traps(r, ch, n) {
@@ -1696,7 +3896,8 @@
     const spareRoom = (q, extra) => q.far < 4 || rooms.reduce((n, a) => n + (isCombat(a) && a !== q ? capOf(a) : 0), 0) >= needCap + (extra || 0);
     // ----- specialrum utan fiender: spåaltare, offerskål, utmaningsaltare (öppen sal >= 7x7) och smedja (väljs före de andra rollerna) -----
     const wantAnvil = rng.chance(0.4);
-    const roomy = L.biome === 'dungeon' || L.biome === 'courtyard' || L.biome === 'frost' || L.biome === 'volcano' || L.biome === 'tomb'; // biomer med möblerade salar inomhus
+    const roomy = L.biome === 'dungeon' || L.biome === 'courtyard' || L.biome === 'frost' || L.biome === 'volcano' || L.biome === 'tomb' || L.biome === 'sunken' || L.biome === 'clock' || L.biome === 'mirror' || L.biome === 'library' || L.biome === 'foundry'
+      || L.biome === 'cathedral' || L.biome === 'dream' || L.biome === 'ship' || L.biome === 'lab' || L.biome === 'circus' || L.biome === 'jungle' || L.biome === 'mine' || L.biome === 'observatory' || L.biome === 'sewer' || L.biome === 'desert' || L.biome === 'prison' || L.biome === 'harbor' || L.biome === 'bathhouse' || L.biome === 'purgatory' || L.biome === 'abattoir' || L.biome === 'battlefield' || L.biome === 'ruins' || L.biome === 'glassworks'; // biomer med möblerade salar inomhus
     const v6 = rng.fork('v6'); // version 6: eget slumpflöde så att banor utan de nya sakerna blir som förut
     let anvilArmory = wantAnvil && roomy && rng.chance(0.5);
     const npcLeft = []; // NPC:er som inte fick ett eget rum (hamnar i butiken eller ett annat specialrum)
@@ -1714,12 +3915,12 @@
       const pref = (id, q) => (id === 'chapel2' ? (q.tag === 'chapel' ? 0 : 1) : id === 'alchemy' ? Math.min(1, size(q) / 64) : 0);
       for (const [id, p, fits] of rng.shuffle(SP)) {
         if (!rng.chance(p)) continue;
-        const c = rng.shuffle(normal().filter(q => fits(q) && spot(q) && spareRoom(q, 4 + (opts.shop ? 3 : 0) + (npcRoom(id) ? 2 : 0)))).sort((a, b) => (a.far < 4 ? 0 : 2) + pref(id, a) - (b.far < 4 ? 0 : 2) - pref(id, b));
+        const c = rng.shuffle(normal().filter(q => !q.nave && fits(q) && spot(q) && spareRoom(q, 4 + (opts.shop ? 3 : 0) + (npcRoom(id) ? 2 : 0)))).sort((a, b) => (a.far < 4 ? 0 : 2) + pref(id, a) - (b.far < 4 ? 0 : 2) - pref(id, b));
         if (c.length) { c[0].type = 'special'; c[0].special = id; } else if (id === 'smithy') anvilArmory = true; else if (id === 'alchemy') npcLeft.push('£'); else if (id === 'chapel2') npcLeft.push('€');
       }
       // version 6: viloplats (~25 % av våningarna): ett litet rum utan fiender (helst ett återvändsrum) med en lägereld ¶
       if (!(opts.v6 && opts.v6.noCamp) && v6.chance(0.34)) {
-        const c = v6.shuffle(normal().filter(q => size(q) >= 9 && size(q) <= 64 && spot(q) && spareRoom(q, 2 + (opts.shop ? 3 : 0))))
+        const c = v6.shuffle(normal().filter(q => !q.nave && size(q) >= 9 && size(q) <= 64 && spot(q) && spareRoom(q, 2 + (opts.shop ? 3 : 0))))
           .sort((a, b) => (a.deg === 1 ? 0 : 1) + (a.far < 4 ? 0 : 1) - (b.deg === 1 ? 0 : 1) - (b.far < 4 ? 0 : 1));
         if (c.length) { c[0].type = 'special'; c[0].special = 'camp'; if (opts.v6) opts.v6.camp = true; }
       }
@@ -1790,7 +3991,7 @@
           let ok = true;
           for (let yy = iy - 1; ok && yy <= iy + 3; yy++) for (let xx = ix - 1; xx <= ix + 3; xx++) if (g[yy][xx] !== wc) { ok = false; break; }
           if (!ok) continue;
-          const skyV = L.biome === 'frost' || L.biome === 'volcano' || L.biome === 'tomb' ? 0 : G.sky[i], cells = [], id = rooms.length; // frostfästets, vulkanens och gravkammarens valv har tak
+          const skyV = L.biome === 'frost' || L.biome === 'volcano' || L.biome === 'tomb' || L.biome === 'sunken' ? 0 : G.sky[i], cells = [], id = rooms.length; // frostfästets, vulkanens, gravkammarens och sjunkna stadens valv har tak
           for (let yy = iy; yy < iy + 3; yy++) for (let xx = ix; xx < ix + 3; xx++) {
             const j = yy * W + xx;
             g[yy][xx] = '.'; fm[j] = fm[i]; G.sky[j] = skyV; G.solid[j] = 0; G.lockMin(xx, yy, 1); rid[j] = id; cells.push([xx, yy]);
@@ -1833,12 +4034,26 @@
       if (lit < 2) return null;
       for (const ch of rng.shuffle(sp.decor.split(''))) if (!place(gRoom, ch, 1, { wall: true, spread: 2, avoid: [ch, 1] }).length) place(gRoom, ch, 1, {});
       place(gRoom, 'h', 1, { wall: true }); place(gRoom, 'a', 1, { wall: true });
+      // version 8: leviatans sal får en bassäng (djupt vatten Đ, 5-13 rutor) minst tre rutor från Z (eget slumpflöde)
+      if (L.gid === 'leviathan') {
+        const R = rngMain.fork('v8-leviathan'), dw = floorIdx('floor_deepwater');
+        const okW = (x, y) => g[y][x] === '.' && !lock[y * W + x] && rid[y * W + x] === gRoom.id && cheb(x, y, zx, zy) >= 3 && localOK(G, x, y);
+        let done = 0;
+        for (const s of R.shuffle(gRoom.cells.filter(([x, y]) => okW(x, y) && cheb(x, y, zx, zy) >= 4)).slice(0, 12)) {
+          const rad = R.range(1.5, 2.3), pool = [];
+          for (const [x, y] of gRoom.cells.filter(([x, y]) => Math.hypot(x - s[0], y - s[1]) <= rad).sort((a, b) => Math.hypot(a[0] - s[0], a[1] - s[1]) - Math.hypot(b[0] - s[0], b[1] - s[1])))
+            if (okW(x, y)) { g[y][x] = 'Đ'; pool.push([x, y]); }
+          if (pool.length >= 5) { for (const [x, y] of pool) { cnt['Đ'] = (cnt['Đ'] || 0) + 1; if (dw >= 0) fm[y * W + x] = dw; } done = pool.length; break; }
+          for (const [x, y] of pool) g[y][x] = '.';
+        }
+        if (!done) return null;
+      }
     }
 
     // ----- köpman: mot en vägg med fritt golv framför sig, i den närmare halvan av banan -----
     if (opts.shop) {
       const front = (x, y) => { for (let k = 0; k < 4; k++) { const fx = x - DX[k], fy = y - DY[k]; if (isWall(g[y + DY[k]][x + DX[k]]) && g[fy][fx] === '.' && lock[fy * W + fx] < 2) return [fx, fy]; } return null; };
-      const c = normal().filter(a => size(a) >= 12).sort((a, b) => a.d - b.d);
+      const c = normal().filter(a => !a.nave && size(a) >= 12).sort((a, b) => a.d - b.d); // (version 15: aldrig i katedralens långhus)
       const pool = rng.shuffle(c.slice(0, Math.max(1, Math.ceil(c.length / 2))));
       pool.sort((a, b) => (a.far < 4 ? 0 : 1) - (b.far < 4 ? 0 : 1)); // rum där inga fiender får stå passar bäst
       let shop = null;
@@ -1854,7 +4069,7 @@
       const tags = cfg.treasureTags || [];
       let c = [];
       for (const t of tags) { c = normal().filter(a => a.tag === t); if (c.length) break; }
-      if (!c.length) c = normal().filter(a => size(a) >= 8);
+      if (!c.length) c = normal().filter(a => !a.nave && size(a) >= 8);
       const t = rng.weighted(c, a => (1 + 2 * a.d / maxD) * (cfg.deadEnd && a.deg === 1 ? 3 : 1) * (a.far < 4 ? 4 : 1));
       if (!t || !place(t, 'C', 1, { center: true }).length) return null;
       t.type = 'treasure';
@@ -1877,7 +4092,7 @@
       if ((rng.chance(0.5) && spare > 0) || tooNear().length) {
         const st = cfg.shrineTags || [];
         let c = tooNear();
-        if (!c.length) { c = normal().filter(a => st.includes(a.tag)); if (!c.length) c = normal().filter(a => size(a) >= 9); }
+        if (!c.length) { c = normal().filter(a => st.includes(a.tag)); if (!c.length) c = normal().filter(a => !a.nave && size(a) >= 9); }
         for (const a of rng.shuffle(c.slice()).sort((u, v) => (st.includes(v.tag) ? 1 : 0) - (st.includes(u.tag) ? 1 : 0))) {
           const w = a.tag === 'fountain' && putAt(a.cx, a.cy, 'w') ? [a.cx, a.cy] : place(a, 'w', 1, { center: true, jit: 2 })[0];
           if (w) { a.type = 'shrine'; F.wellAt = w; break; }
@@ -1905,6 +4120,36 @@
       if (c.length) c[0].arch = id;
     };
     if (wantCage) forceArch('prison', CAGE_ARCH, r => r.tag !== 'yard'); // inget fängelse ute på frostfästets gårdar
+    // version 13: biblioteket har alltid en läsesal eller hyllgång (om någon sal är stor nog), gjuteriet en gjuthall
+    if (L.biome === 'library') forceArch('readingroom', ['readingroom', 'stacks'], r => ARCH.readingroom.fits(r));
+    if (L.biome === 'foundry') forceArch('casting', ['casting'], r => ARCH.casting.fits(r));
+    // version 15/16: katedralen har alltid sitt långhus (om det blev ett stridsrum), drömriket en sal med glidande väggar
+    if (L.biome === 'cathedral') forceArch('nave', ['nave'], r => !!r.nave);
+    if (L.biome === 'dream') forceArch('shifthall', ['shifthall'], r => ARCH.shifthall.fits(r));
+    // version 17: laboratoriet har alltid en verkstad (alembiken), skeppet ett däck (om en gård blev ett stridsrum)
+    if (L.biome === 'lab') forceArch('stillroom', ['stillroom'], r => true);
+    if (L.biome === 'ship') forceArch('deck', ['deck', 'quarterdeck'], r => r.tag === 'yard');
+    // version 18: cirkusen har alltid en manege (om någon sal är stor nog), djungeltemplet en tempelsal eller ett offeraltare inomhus
+    if (L.biome === 'circus') forceArch('bigtop', ['bigtop'], r => ARCH.bigtop.fits(r));
+    if (L.biome === 'jungle') forceArch('templehall', ['templehall', 'altar'], r => r.tag !== 'yard' && ARCH.templehall.fits(r));
+    // version 19: gruvan har alltid en lastplats (om någon sal är stor nog), observatoriet en kupol eller ett planetarium
+    if (L.biome === 'mine') forceArch('loadingdock', ['loadingdock'], r => ARCH.loadingdock.fits(r));
+    if (L.biome === 'observatory') forceArch('greatdome', ['greatdome', 'planetarium'], r => ARCH.greatdome.fits(r));
+    // version 20: kloakerna har alltid en kanalsal (om någon sal är stor nog), öknen en oas (om en gård blev ett stridsrum)
+    if (L.biome === 'sewer') forceArch('canalhall', ['canalhall'], r => ARCH.canalhall.fits(r));
+    if (L.biome === 'desert') forceArch('oasis', ['oasis'], r => r.tag === 'yard' && ARCH.oasis.fits(r));
+    // version 21: fängelset har alltid en cellrad, fiskeläget en brygga (om en gård blev ett stridsrum)
+    if (L.biome === 'prison') forceArch('cellrow', ['cellrow'], r => r.cells.length >= 16);
+    if (L.biome === 'harbor') forceArch('pier', ['pier'], r => r.tag === 'yard' && ARCH.pier.fits(r));
+    // version 22: badhuset har alltid en bassänghall (om någon sal är stor nog), skärselden en eldflod (om en gård blev ett stridsrum)
+    if (L.biome === 'bathhouse') forceArch('poolhall', ['poolhall'], r => ARCH.poolhall.fits(r));
+    if (L.biome === 'purgatory') forceArch('fireriver', ['fireriver'], r => r.tag === 'yard' && ARCH.fireriver.fits(r));
+    // version 23: slakteriet har alltid en slakthall (om någon sal är stor nog), slagfältet en skyttegrav (om en gård blev ett stridsrum)
+    if (L.biome === 'abattoir') forceArch('slaughterhall', ['slaughterhall'], r => ARCH.slaughterhall.fits(r));
+    if (L.biome === 'battlefield') forceArch('trench', ['trench'], r => r.tag === 'yard');
+    // version 30: ruinstaden har alltid ett torg (om en gård blev ett stridsrum), glasbruket en ugnshall (om någon sal är stor nog)
+    if (L.biome === 'ruins') forceArch('townsquare', ['townsquare'], r => r.tag === 'yard' && ARCH.townsquare.fits(r));
+    if (L.biome === 'glassworks') forceArch('furnacehall', ['furnacehall'], r => ARCH.furnacehall.fits(r));
     if (anvilArmory && roomy) forceArch('armory', ANVIL_ARCH, r => r.indoor);
     for (const r of rooms) {
       const A = ARCH[r.arch];
@@ -2074,6 +4319,16 @@
           if ((cnt._ || 0) < goal) Z.pool(r, '_', Z.range(1.4, 2.2));
         }
       }
+      // sjunkna staden (version 8): minst 18 + 3 * djup rutor djupt vatten: fler bassänger och gölar, torgen och stridsrummen först
+      if (L.biome === 'sunken') {
+        const goal = 18 + 3 * depth, pri = r => (r.tag === 'yard' ? 0 : isCombat(r) ? 1 : r.type === 'start' ? 3 : 2);
+        const more = rng.shuffle(rooms.filter(r => !['guardian', 'secret', 'vault', 'special', 'shop'].includes(r.type))).sort((a, b) => pri(a) - pri(b));
+        for (let pass = 0; pass < 2; pass++) for (const r of more) {
+          if ((cnt['Đ'] || 0) >= goal) break;
+          if (r.box.w >= 7 && r.box.h >= 7 && !r.cells.some(([x, y]) => g[y][x] === 'Đ') && rng.chance(0.5)) Z.lake(r, 'Đ');
+          else Z.pool(r, 'Đ', Z.range(1.5, 2.4));
+        }
+      }
     }
     // ----- sprucken vägg i stället för hemlig vägg (40 %): räknas som vägg tills den sprängs -----
     if (L.secret && rng.chance(0.4)) { const [dx, dy] = L.secret.door; if (g[dy][dx] === '*') g[dy][dx] = '{'; }
@@ -2091,6 +4346,41 @@
     // ----- version 7: nya fiender, sarkofager, NPC:er, föremål, kvicksand, rullsten, ljusschakt, hieroglyfer (eget slumpflöde) -----
     G.boulders = []; G.beams = [];
     if (!(opts.v7off) && !content7(G, depth, opts, L, { rng: rng.fork('v7'), rooms, fight, P, X, cnt, can, set, place, npc, trapOK, nearCh, nWall, farFromP, nearPX, rid, size, isCombat })) return null;
+    // ----- version 8: kristallgrottornas och sjunkna stadens egna saker, nya fiender, NPC:er och föremål i alla biomer (gaffeln 'v8') -----
+    if (!content8(G, depth, opts, L, { rng: rng.fork('v8'), rooms, fight, P, X, cnt, can, set, place, trapOK, nearCh, nWall, farFromP, nearPX, rid, size, isCombat, floorIdx })) return null;
+    // ----- version 9: klocktornets och molnborgens egna saker, kugghjul och fjädrar i alla biomer (gaffeln 'v9') -----
+    if (!content9(G, depth, opts, L, { rng: rng.fork('v9'), rooms, fight, P, X, cnt, can, set, place, trapOK, nearCh, nWall, farFromP, nearPX, rid, size, isCombat, floorIdx })) return null;
+    // ----- version 10: nya fiender i de gamla biomerna och legendaltaret (gaffeln 'v10', med ångra-lista) -----
+    content10(G, depth, opts, L, { rng: rng.fork('v10'), rooms, fight, cnt, place, rid, size });
+    // ----- version 11: svamprikets och spegelpalatsets egna saker, sporsäckar i alla biomer (gaffeln 'v11', körs sist av allt) -----
+    if (!content11(G, depth, opts, L, { rng: rng.fork('v11'), rooms, fight, P, X, cnt, set, place, trapOK, nearPX, rid, size, isCombat, floorIdx })) return null;
+    // ----- version 13: bibliotekets och gjuteriets egna saker, bläckflaskor i alla biomer (gaffeln 'v13', körs sist av allt) -----
+    if (!content13(G, depth, opts, L, { rng: rng.fork('v13'), rooms, fight, P, X, cnt, set, place, trapOK, nearPX, rid, size, isCombat, corridors: L.corridors })) return null;
+    // ----- version 14: nya rumstyper, nya fiender i de mellersta och sena biomerna, arenarum (gaffeln 'v14', med ångra-lista, körs sist av allt) -----
+    G.arenas = [];
+    if (!opts.v14off) content14(G, depth, opts, L, { rng: rng.fork('v14'), rooms, fight, P, X, cnt, rid });
+    // ----- version 15: katedralens och bikupans egna saker, bikupor och några korgossar/keruber/arbetsbin i andra biomer (gaffeln 'v15', ångra-lista) -----
+    const H15 = { rooms, fight, P, X, cnt, set, place, trapOK, rid, isCombat, corridors: L.corridors, floorIdx, resv };
+    if (!opts.v15off || ['cathedral', 'hive'].includes(L.biome)) if (!content15(G, depth, opts, L, Object.assign({ rng: rng.fork('v15') }, H15))) return null;
+    // ----- version 16: trädgårdens och drömrikets egna saker, drömflaskor och några taggrankor/drömätare/sömngångare i andra biomer (gaffeln 'v16') -----
+    if ((!opts.v16off && !opts.v15off) || ['garden', 'dream'].includes(L.biome)) if (!content16(G, depth, opts, L, Object.assign({ rng: rng.fork('v16') }, H15))) return null;
+    // ----- version 17: skeppets och laboratoriets egna saker, den andra nya rumstypen och arenarum i de organiska biomerna, kulkistor och syraflaskor
+    // (gaffeln 'v17', ångra-lista) -----
+    if ((!opts.v17off && !opts.v16off && !opts.v15off) || ['ship', 'lab'].includes(L.biome)) if (!content17(G, depth, opts, L, Object.assign({ rng: rng.fork('v17') }, H15))) return null;
+    // ----- version 18: cirkusens och djungelns egna saker, kägellådor och pilkoger i alla biomer (gaffeln 'v18', ångra-lista) -----
+    if ((!opts.v18off && !opts.v17off && !opts.v16off && !opts.v15off) || ['circus', 'jungle'].includes(L.biome)) if (!content18(G, depth, opts, L, Object.assign({ rng: rng.fork('v18') }, H15))) return null;
+    // ----- version 19: gruvans och observatoriets egna saker, stjärnstoftsflaskor i alla biomer (gaffeln 'v19', ångra-lista) -----
+    if ((!opts.v19off && !opts.v18off && !opts.v17off && !opts.v16off && !opts.v15off) || ['mine', 'observatory'].includes(L.biome)) if (!content19(G, depth, opts, L, Object.assign({ rng: rng.fork('v19') }, H15))) return null;
+    // ----- version 20: kloakernas och öknens egna saker, fällådor i alla biomer (gaffeln 'v20', ångra-lista) -----
+    if ((!opts.v20off && !opts.v19off && !opts.v18off && !opts.v17off && !opts.v16off && !opts.v15off) || ['sewer', 'desert'].includes(L.biome)) if (!content20(G, depth, opts, L, Object.assign({ rng: rng.fork('v20') }, H15))) return null;
+    // ----- version 21: fängelsets och fiskelägets egna saker, skrotpåsar i alla biomer (gaffeln 'v21', ångra-lista) -----
+    if ((!opts.v21off && !opts.v20off && !opts.v19off && !opts.v18off && !opts.v17off && !opts.v16off && !opts.v15off) || ['prison', 'harbor'].includes(L.biome)) if (!content21(G, depth, opts, L, Object.assign({ rng: rng.fork('v21') }, H15))) return null;
+    // ----- version 22: badhusets och skärseldens egna saker, svavelklumpar i alla biomer (gaffeln 'v22', ångra-lista) -----
+    if ((!opts.v22off && !opts.v21off && !opts.v20off && !opts.v19off && !opts.v18off && !opts.v17off && !opts.v16off && !opts.v15off) || ['bathhouse', 'purgatory'].includes(L.biome)) if (!content22(G, depth, opts, L, Object.assign({ rng: rng.fork('v22') }, H15))) return null;
+    // ----- version 23: slakteriets och slagfältets egna saker, kulpåsar i alla biomer (gaffeln 'v23', ångra-lista) -----
+    if ((!opts.v23off && !opts.v22off && !opts.v21off && !opts.v20off && !opts.v19off && !opts.v18off && !opts.v17off && !opts.v16off && !opts.v15off) || ['abattoir', 'battlefield'].includes(L.biome)) if (!content23(G, depth, opts, L, Object.assign({ rng: rng.fork('v23') }, H15))) return null;
+    // ----- version 30: ruinstadens och glasbrukets egna saker (gaffeln 'v30'; bara i de två biomerna, de gamla biomerna rörs inte) -----
+    if (L.biome === 'ruins' || L.biome === 'glassworks') if (!content30(G, depth, opts, L, Object.assign({ rng: rng.fork('v30') }, H15))) return null;
 
     // ----- utdata: rumslista och rumsmask -----
     const out = rooms.map(r => {
@@ -2254,7 +4544,7 @@
             const c = st[--sp];
             for (let d = 0; d < 4; d++) {
               const ni = c + DX[d] + DY[d] * W, ch = g[(ni / W) | 0][ni % W];
-              if (seen[ni] || ch === '_' || ch === 'z' || ch === '¬' || (isBlock(ch) && !(open && GATES.includes(ch)))) continue;
+              if (seen[ni] || ch === '_' || ch === 'z' || ch === '¬' || isWet(ch) || (isBlock(ch) && !(open && GATES.includes(ch)))) continue; // (version 8: vatten och spikar räknas som lava)
               seen[ni] = 1; st[sp++] = ni; n++;
             }
           }
@@ -2433,9 +4723,9 @@
     }
     // ----- rullsten (gravkammaren ~50 %, fängelsehålan ~20 %): utlösaren ¹ i ena änden av en rak korridor (minst 6 rutor, fri från
     // hinder och dörrar); spelet rullar stenen från andra änden mot utlösaren. G.boulders = [{ tx, ty, sx, sy }] -----
-    if ((tomb || b === 'dungeon') && cor.length) {
+    if ((tomb || b === 'dungeon' || b === 'jungle') && cor.length) { // (version 18: djungeltemplet ~50 %, en vanlig rullstensfälla i en stig)
       const R = fk('boulder');
-      if (R.chance(tomb ? 0.5 : 0.26)) { // (fängelsehålan: ~20 % av banorna får en, alla har inte en lång rak korridor)
+      if (R.chance(tomb || b === 'jungle' ? 0.5 : 0.26)) { // (fängelsehålan: ~20 % av banorna får en, alla har inte en lång rak korridor)
         const inCor = new Uint8Array(N);
         for (const [x, y] of cor) if (rid[y * W + x] < 0) inCor[y * W + x] = 1;
         const clear = (x, y) => inCor[y * W + x] && !isBlock(g[y][x]) && !isDoorCh(g[y][x]) && !HAZARD.includes(g[y][x]);
@@ -2492,6 +4782,2810 @@
       for (let y = 1; y < G.H - 1; y++) for (let x = 1; x < W - 1; x++) if (g[y][x] === '*' || g[y][x] === '{')
         for (let yy = y - 2; yy <= y + 2; yy++) for (let xx = x - 2; xx <= x + 2; xx++) if (G.inb(xx, yy) && g[yy][xx] === 'Ì') g[yy][xx] = 'È';
     }
+    return true;
+  }
+
+  // ---------- Version 8: kristallgrottorna, sjunkna staden, nya fiender, NPC:er och föremål ----------
+  // Körs allra sist i content med egna slumpflöden (forks av content-slumpens 'v8'): allt från version 7 ligger kvar och de nya sakerna
+  // läggs ovanpå. Kristallgrottornas och sjunkna stadens egna saker läggs alltid; de nya sakerna i alla biomer (Ā Ă Ğ Ġ Ģ) bara utan
+  // opts.v8off. I de gamla biomerna misslyckas den aldrig; underkänns banan ändå tas de nya sakerna bort igen (opts.v8.undo, se build7).
+  const SPIKES8_CAP = 24, TIDE_CAP = 48;
+  function content8(G, depth, opts, L, H) {
+    const { W, g, lock, fm } = G, { rooms, fight, P, cnt, set, place, trapOK, nearCh, farFromP, rid, size } = H, b = L.biome;
+    const fk = tag => H.rng.fork(tag), cor = L.corridors || [], N = W * G.H;
+    const crystal = b === 'crystal', sunken = b === 'sunken';
+    if (opts.v8) { opts.v8.added = false; opts.v8.undo = []; if (crystal || sunken) opts.v8.keep = true; }
+    const undo = opts.v8 ? opts.v8.undo : [], put8 = (x, y, ch) => { undo.push([x, y, g[y][x]]); g[y][x] = ch; cnt[ch] = (cnt[ch] || 0) + 1; };
+    const front = (x, y) => [0, 1, 2, 3].some(k => isWall(g[y + DY[k]][x + DX[k]]) && g[y - DY[k]][x - DX[k]] === '.' && lock[(y - DY[k]) * W + x - DX[k]] < 2);
+    const enemyFree = r => r.type === 'shop' || r.type === 'shrine' || r.type === 'treasure' || (r.type === 'special' && r.special !== 'challenge');
+    // ett nytt hinder får inte stänga in en kruka, spikfälla, lavaruta o.d.: de behåller en fri granne (vatten: en fri granne eller mer vatten)
+    const safe8 = (x, y) => [0, 1, 2, 3].every(d => {
+      const nx = x + DX[d], ny = y + DY[d], c = g[ny][nx];
+      if (!genBlk(c) || isBlock(c)) return true;
+      const wet = isWet(c);
+      return [0, 1, 2, 3].some(e => { const mx = nx + DX[e], my = ny + DY[e]; if (mx === x && my === y) return false; const m = G.at(mx, my); return !genBlk(m) || (wet && isWet(m)); });
+    });
+    const gRoom = rooms.find(r => r.type === 'guardian'), inG = (x, y) => !!gRoom && rid[y * W + x] === gRoom.id;
+    const hidden = [];
+    for (let y = 1; y < G.H - 1; y++) for (let x = 1; x < W - 1; x++) if (g[y][x] === '*' || g[y][x] === '{') hidden.push([x, y]);
+    // väggruta som syns (har golv intill) och inte ligger vid den hemliga/spruckna väggen
+    const face = (x, y, ch) => x >= 0 && y >= 0 && x < W && y < G.H && g[y][x] === ch && !hidden.some(([hx, hy]) => cheb(hx, hy, x, y) <= 2)
+      && [0, 1, 2, 3].some(d => { const c = G.at(x + DX[d], y + DY[d]); return !isWall(c); });
+    // glesa sträckor (1-4 rutor) av tecknet to i väggarna av tecknet from
+    const veins = (R, from, to, p) => {
+      for (let y = 0; y < G.H; y++) for (let x = 0; x < W; x++) {
+        if (!face(x, y, from) || !R.chance(p)) continue;
+        g[y][x] = to;
+        let cx = x, cy = y;
+        for (let k = R.int(0, 3); k > 0; k--) {
+          const nb = [0, 1, 2, 3].map(d => [cx + DX[d], cy + DY[d]]).filter(([nx, ny]) => face(nx, ny, from));
+          if (!nb.length) break;
+          [cx, cy] = R.pick(nb); g[cy][cx] = to;
+        }
+      }
+    };
+
+    // ----- kristallgrottorna: glödkristaller, brytande kristaller, spikfläckar och ådror -----
+    if (crystal) {
+      // glödkristaller Ę i stället för eldfat och glödande kristaller i stället för kandelabrar (utom i vaktarens sal)
+      for (let y = 1; y < G.H - 1; y++) for (let x = 1; x < W - 1; x++) {
+        const c = g[y][x];
+        if ((c !== 'f' && c !== 'c') || inG(x, y)) continue;
+        const to = c === 'f' ? 'Ę' : 'i';
+        g[y][x] = to; cnt[c]--; cnt[to] = (cnt[to] || 0) + 1;
+      }
+      // brytande kristaller (1-4): fritt i stora rum (minst 36 rutor, prismasalarna först), aldrig vid P, stänger aldrig av något
+      {
+        const R = fk('prisms'), want = R.int(1, 4);
+        const big = R.shuffle(rooms.filter(r => size(r) >= 36 && ['normal', 'elite', 'exit', 'treasure', 'start'].includes(r.type)))
+          .sort((p, q) => (q.arch === 'prismhall' ? 1 : 0) - (p.arch === 'prismhall' ? 1 : 0));
+        for (let pass = 0; pass < 3; pass++) for (const r of big) {
+          if ((cnt['Ė'] || 0) >= want) break;
+          place(r, 'Ė', 1, { open: true, spread: 3, avoid: ['Ė', 2], pred: (x, y) => cheb(x, y, P[0], P[1]) >= 3 && safe8(x, y), rng: R });
+        }
+      }
+      // kristallspikar: 2-4 fläckar om 2-6 rutor i stridsrummen och skattrummen (skärvfälten först), aldrig vid dörrar, P eller x
+      {
+        const R = fk('spikes'), ok = (x, y) => trapOK(x, y) && localOK(G, x, y) && safe8(x, y);
+        const hosts = R.shuffle(rooms.filter(r => H.isCombat(r) || r.type === 'treasure')).sort((p, q) => (q.arch === 'shardfield' ? 1 : 0) - (p.arch === 'shardfield' ? 1 : 0));
+        let patches = R.int(2, 4);
+        for (const r of hosts) {
+          if (patches <= 0) break;
+          for (let k = r.arch === 'shardfield' ? 2 : 1; k > 0 && patches > 0; k--) {
+            const s = R.shuffle(r.cells.filter(([x, y]) => ok(x, y)))[0];
+            if (!s) break;
+            const want = R.int(2, 6), done = [], fr = [s], seen = new Set([s[1] * W + s[0]]);
+            while (fr.length && done.length < want && (cnt['Ē'] || 0) < SPIKES8_CAP) {
+              const [x, y] = fr.splice(R.int(0, fr.length - 1), 1)[0];
+              if (!ok(x, y)) continue;
+              set(x, y, 'Ē'); done.push([x, y]);
+              for (let d = 0; d < 4; d++) { const nx = x + DX[d], ny = y + DY[d], ni = ny * W + nx; if (!seen.has(ni) && rid[ni] === r.id) { seen.add(ni); fr.push([nx, ny]); } }
+            }
+            if (done.length === 1) { const [x, y] = done[0]; g[y][x] = '.'; cnt['Ē']--; } else if (done.length) patches--;
+          }
+        }
+      }
+      // kristallådror Ć: glesa sträckor i väggarna
+      veins(fk('veins'), 'Ą', 'Ć', 0.05);
+    }
+
+    // ----- sjunkna staden: kanaler, tidvatten, luftbubblor, ålar, vrakkistor, vattenskatt, korall och vattnets golv -----
+    if (sunken) {
+      // kanaler i korridorerna där de är minst två rutor breda (localOK: aldrig enda vägen), helst intill vatten
+      {
+        const R = fk('canals'), c = R.shuffle(cor.filter(([x, y]) => rid[y * W + x] < 0));
+        let n = R.int(0, 14);
+        for (let pass = 0; pass < 3 && n > 0; pass++) for (const [x, y] of c) {
+          if (n <= 0) break;
+          if (g[y][x] !== '.' || (pass < 2 && !nearCh(x, y, 'Đ', 1)) || !trapOK(x, y) || !localOK(G, x, y) || !safe8(x, y)) continue;
+          set(x, y, 'Đ'); n--;
+        }
+      }
+      // tidvatten: grunda rutor längs stränderna (intill djupt vatten), aldrig vid dörrar, P eller x, aldrig enda vägen
+      {
+        const R = fk('tide'), want = R.int(10, 30), c = [];
+        const shore = (x, y) => [0, 1, 2, 3].some(d => g[y + DY[d]][x + DX[d]] === 'Đ');
+        for (let y = 1; y < G.H - 1; y++) for (let x = 1; x < W - 1; x++) if (g[y][x] === '.' && !inG(x, y) && shore(x, y)) c.push([x, y]);
+        let n = 0;
+        for (const [x, y] of R.shuffle(c)) {
+          if (n >= want || (cnt['Ĕ'] || 0) >= TIDE_CAP) break;
+          if (g[y][x] === '.' && shore(x, y) && trapOK(x, y) && localOK(G, x, y) && safe8(x, y)) { set(x, y, 'Ĕ'); n++; }
+        }
+      }
+      // luftbubblor: en ruta mitt i de flesta bassänger och kanaler om minst 8 rutor (högst 4)
+      {
+        const R = fk('bubbles'), seen = new Uint8Array(N);
+        let n = 0;
+        for (let i = 0; i < N && n < 4; i++) {
+          if (seen[i] || g[(i / W) | 0][i % W] !== 'Đ') continue;
+          const comp = [], st = [i]; seen[i] = 1;
+          while (st.length) {
+            const cur = st.pop(); comp.push(cur);
+            for (let d = 0; d < 4; d++) { const ni = cur + DX[d] + DY[d] * W; if (!seen[ni] && g[(ni / W) | 0][ni % W] === 'Đ') { seen[ni] = 1; st.push(ni); } }
+          }
+          if (comp.length < 8 || !R.chance(0.8)) continue;
+          const mid = comp.filter(j => { const x = j % W, y = (j / W) | 0; return !inG(x, y) && [0, 1, 2, 3].filter(d => g[y + DY[d]][x + DX[d]] === 'Đ').length >= 2; });
+          if (!mid.length) continue;
+          const j = R.pick(mid); g[(j / W) | 0][j % W] = 'Ĝ'; cnt['Đ']--; cnt['Ĝ'] = (cnt['Ĝ'] || 0) + 1; n++;
+        }
+      }
+      // ålar (1-3): en fiende i ett stridsrum flyttas ut i rummets vatten (gruppernas storlek står kvar), långt från P
+      {
+        const R = fk('eels'), mob = FOE_FROM + 'ÃÊËÍÏÚÛ';
+        let n = R.chance(0.88) ? R.int(1, 3) : 0;
+        for (const r of R.shuffle(fight.slice())) {
+          if (n <= 0) break;
+          const spots = r.cells.filter(([x, y]) => g[y][x] === 'Đ' && farFromP(x, y) && [0, 1, 2, 3].filter(d => 'ĐĜ'.includes(g[y + DY[d]][x + DX[d]])).length >= 2);
+          const movers = r.cells.filter(([x, y]) => mob.includes(g[y][x]));
+          if (!spots.length || !movers.length) continue;
+          const s = R.pick(spots), m = R.pick(movers);
+          g[m[1]][m[0]] = '.'; g[s[1]][s[0]] = 'Ó'; cnt['Đ']--; cnt['Ó'] = (cnt['Ó'] || 0) + 1; n--;
+        }
+      }
+      // vrakkistor (1-2 på land, med fri framsida): vraksalarna först, sedan skattrum och stridsrum
+      {
+        const R = fk('wrecks'), pri = r => (r.arch === 'wreckhall' ? 0 : r.type === 'treasure' ? 1 : H.isCombat(r) ? 2 : 3);
+        const host = R.shuffle(rooms.filter(r => !['guardian', 'secret', 'vault', 'start', 'shop', 'special'].includes(r.type))).sort((p, q) => pri(p) - pri(q));
+        let want = R.int(1, 2);
+        for (const r of host) { if (want <= 0) break; if (place(r, 'Ě', 1, { wall: true, pred: (x, y) => front(x, y) && safe8(x, y), rng: R }).length) want--; }
+      }
+      // vattenskatt (~60 % av banorna med en tillräckligt stor bassäng): en holme mitt i en bassäng (alla fyra grannar och minst sex av de
+      // åtta runt om djupt vatten) med en vrakkista (eller guld); nås bara simmande
+      {
+        const R = fk('islet');
+        if (R.chance(0.6)) {
+          const c = [];
+          for (const r of rooms) if (!['guardian', 'vault', 'secret', 'start'].includes(r.type)) for (const [x, y] of r.cells)
+            if (g[y][x] === 'Đ' && [0, 1, 2, 3].every(d => g[y + DY[d]][x + DX[d]] === 'Đ') && RX.filter((dx, k) => g[y + RY[k]][x + dx] === 'Đ').length >= 6) c.push([x, y]);
+          if (c.length) { const [x, y] = R.pick(c); cnt['Đ']--; set(x, y, H.can('Ě') ? 'Ě' : '$'); }
+        }
+      }
+      // korall Č: där vattnet når ruinmuren och i glesa sträckor
+      {
+        const R = fk('coral');
+        for (let y = 0; y < G.H; y++) for (let x = 0; x < W; x++) {
+          if (!face(x, y, 'Ċ')) continue;
+          if (RX.some((dx, k) => WATER8.includes(G.at(x + dx, y + RY[k]))) && R.chance(0.6)) g[y][x] = 'Č';
+        }
+        veins(R, 'Ċ', 'Č', 0.04);
+      }
+      // vattnets golv: djupt vatten (Đ Ĝ Ó) och tidvatten (Ĕ)
+      const dw = H.floorIdx('floor_deepwater'), sh = H.floorIdx('floor_shallow');
+      let wet = 0;
+      for (let y = 0; y < G.H; y++) for (let x = 0; x < W; x++) {
+        const c = g[y][x];
+        if (c === 'Đ' || c === 'Ĝ' || c === 'Ó') { wet++; if (dw >= 0) fm[y * W + x] = dw; } else if (c === 'Ĕ' && sh >= 0) fm[y * W + x] = sh;
+      }
+      if (wet < 12) return false;
+    }
+
+    // ----- alla biomer: skuggjägare, häxa, kartografen, talangaltare och kunskapsböcker -----
+    if (!opts.v8off) {
+      let added = false;
+      {
+        const R = fk('foes'), mob = FOE_FROM + 'ÃÊËÍÏÚÛ';
+        const swapIn = ch => {
+          for (const r of R.shuffle(fight.filter(r => r.arch !== 'nest'))) { // (spindelboet behåller sina spindlar)
+            const c = r.cells.filter(([x, y]) => mob.includes(g[y][x]));
+            if (!c.length) continue;
+            const [x, y] = R.pick(c); put8(x, y, ch); return true;
+          }
+          return false;
+        };
+        if (depth >= 2 && R.chance(0.2) && swapIn('Ā')) added = true;
+        if (depth >= 3 && R.chance(0.2) && swapIn('Ă')) added = true;
+      }
+      {
+        const R = fk('npc');
+        const host = R.shuffle(rooms.filter(enemyFree)).sort((p, q) => size(p) - size(q)).concat(rooms.filter(r => r.type === 'start'));
+        const put = (r, ch) => place(r, ch, 1, { wall: true, center: true, jit: 2, pred: (x, y) => front(x, y) && safe8(x, y), rng: R })[0]
+          || place(r, ch, 1, { center: true, pred: safe8, rng: R })[0] || null;
+        let p;
+        if (R.chance(0.16)) for (const r of host) if ((p = put(r, 'Ğ'))) { undo.push([p[0], p[1], '.']); added = true; break; }
+        if (R.chance(0.26)) for (const r of host) if ((p = put(r, 'Ġ'))) { undo.push([p[0], p[1], '.']); added = true; break; }
+      }
+      {
+        const R = fk('books'), loot = rooms.filter(r => r.type !== 'guardian' && r.type !== 'shop' && r.type !== 'start');
+        const nB = R.chance(0.36) ? (R.chance(0.25) ? 2 : 1) : 0;
+        for (let k = 0; k < nB; k++) for (let t = 0; t < 6; t++) {
+          const r = R.weighted(loot, r => (r.type === 'secret' ? 5 : r.type === 'vault' || r.type === 'treasure' ? 3 : 1));
+          const p = r && place(r, 'Ģ', 1, { rng: R })[0];
+          if (p) { undo.push([p[0], p[1], '.']); added = true; break; }
+        }
+      }
+      if (added && opts.v8) opts.v8.added = true;
+    }
+    return true;
+  }
+
+  // ---------- Version 9: klocktornet, molnborgen, kugghjul och fjädrar ----------
+  // Körs allra sist i content med egna slumpflöden (forks av content-slumpens 'v9'): allt från version 8 ligger kvar och de nya sakerna
+  // läggs ovanpå. Klocktornets och molnborgens egna saker läggs alltid (opts.v9.keep); kugghjul Ŋ och fjädrar ŋ i alla biomer läggs med
+  // en ångra-lista (opts.v9.undo): underkänns banan tas de bort igen och banan blir exakt som i version 8 (se build7).
+  // Lägger sågspåren i G.saws ([{ x0, y0, x1, y1 }]) och vindrutorna i G.winds ([{ x, y, dx, dy }]).
+  function content9(G, depth, opts, L, H) {
+    const { W, g, lock, fm } = G, { rooms, fight, P, X, cnt, set, place, trapOK, nearPX, rid, size } = H, b = L.biome;
+    const fk = tag => H.rng.fork(tag), cor = L.corridors || [], N = W * G.H;
+    const clock = b === 'clock', sky = b === 'sky';
+    G.saws = []; G.winds = [];
+    if (opts.v9) { opts.v9.added = false; opts.v9.undo = []; if (clock || sky) opts.v9.keep = true; }
+    const undo = opts.v9 ? opts.v9.undo : [];
+    const edge = c => isWall(c) || c === 'Ń'; // vägg eller tomrum (öns kant)
+    // fri framsida: vägg/tomrum bakom, fritt golv framför
+    const front = (x, y) => [0, 1, 2, 3].some(k => edge(g[y + DY[k]][x + DX[k]]) && g[y - DY[k]][x - DX[k]] === '.' && lock[(y - DY[k]) * W + x - DX[k]] < 2);
+    const freeSide = (x, y) => [0, 1, 2, 3].some(d => !isBlock(g[y + DY[d]][x + DX[d]]));
+    const enemyFree = r => r.type === 'shop' || r.type === 'shrine' || r.type === 'treasure' || (r.type === 'special' && r.special !== 'challenge');
+    // ett nytt hinder får inte stänga in en kruka, spikfälla, lavaruta o.d.: de behåller en fri granne (vatten: en fri granne eller mer vatten)
+    const safe9 = (x, y) => [0, 1, 2, 3].every(d => {
+      const nx = x + DX[d], ny = y + DY[d], c = g[ny][nx];
+      if (!genBlk(c) || isBlock(c)) return true;
+      const wet = isWet(c);
+      return [0, 1, 2, 3].some(e => { const mx = nx + DX[e], my = ny + DY[e]; if (mx === x && my === y) return false; const m = G.at(mx, my); return !genBlk(m) || (wet && isWet(m)); });
+    });
+    const gRoom = rooms.find(r => r.type === 'guardian'), inG = (x, y) => !!gRoom && rid[y * W + x] === gRoom.id;
+    // ingen ny fara intill en annan (sågspår, tidsbubbla, vindruta) utom den egna sträckans rutor
+    const touch = (x, y, chs, own) => RX.some((dx, k) => { const xx = x + dx, yy = y + RY[k], c = G.at(xx, yy); return chs.includes(c) && !own.some(p => p[0] === xx && p[1] === yy); });
+
+    // ----- klocktornet: kuggväggar, urverk, sågspår, tidsbubblor, klockspel och kuggspindlar -----
+    if (clock) {
+      // kuggväggar ĺ: glesa sträckor (1-4 rutor) i de synliga mässingsväggarna, aldrig vid den hemliga/spruckna väggen
+      {
+        const R = fk('gearwalls'), hidden = [];
+        for (let y = 1; y < G.H - 1; y++) for (let x = 1; x < W - 1; x++) if (g[y][x] === '*' || g[y][x] === '{') hidden.push([x, y]);
+        const face = (x, y) => x >= 0 && y >= 0 && x < W && y < G.H && g[y][x] === 'Ĺ' && !hidden.some(([hx, hy]) => cheb(hx, hy, x, y) <= 2)
+          && [0, 1, 2, 3].some(d => !isWall(G.at(x + DX[d], y + DY[d])));
+        for (let y = 0; y < G.H; y++) for (let x = 0; x < W; x++) {
+          if (!face(x, y) || !R.chance(0.05)) continue;
+          g[y][x] = 'ĺ';
+          let cx = x, cy = y;
+          for (let k = R.int(0, 3); k > 0; k--) {
+            const nb = [0, 1, 2, 3].map(d => [cx + DX[d], cy + DY[d]]).filter(([nx, ny]) => face(nx, ny));
+            if (!nb.length) break;
+            [cx, cy] = R.pick(nb); g[cy][cx] = 'ĺ';
+          }
+        }
+      }
+      // urverk Ņ (ljuskälla) i stället för ungefär vartannat eldfat, utom i vaktarens sal
+      {
+        const R = fk('clockworks');
+        for (let y = 1; y < G.H - 1; y++) for (let x = 1; x < W - 1; x++) if (g[y][x] === 'f' && !inG(x, y) && R.chance(0.5)) { g[y][x] = 'Ņ'; cnt.f--; cnt['Ņ'] = (cnt['Ņ'] || 0) + 1; }
+      }
+      // sågspår Ŀ: 2-5 raka spår om 3-7 rutor i korridorerna och längs väggarna i strids- och skattrummen; varje ruta läggs med localOK
+      // (aldrig enda vägen), aldrig vid dörrar, P eller x, aldrig intill ett annat spår
+      {
+        const R = fk('saws'), want = R.int(2, 4) + (depth >= 3 ? 1 : 0);
+        const host = new Uint8Array(rooms.length);
+        for (const r of rooms) if (H.isCombat(r) || r.type === 'treasure') host[r.id] = 1;
+        const okS = (x, y, own) => trapOK(x, y) && !inG(x, y) && safe9(x, y) && !touch(x, y, 'Ŀŀ', own);
+        const starts = R.shuffle(cor.filter(([x, y]) => rid[y * W + x] < 0).concat(...rooms.filter(r => host[r.id]).map(r => r.cells)));
+        const more = R.shuffle([].concat(...rooms.filter(r => !host[r.id] && !['guardian', 'vault', 'secret', 'shop'].includes(r.type)).map(r => r.cells)));
+        // först längs väggarna, sedan även tvärs över rummen, sist (om inget spår fick plats) i startrummet och rummen utan fiender
+        for (let pass = 0; pass < 3; pass++) for (const [sx, sy] of pass < 2 ? starts : G.saws.length ? [] : more) {
+          if (G.saws.length >= want) break;
+          const reg = rid[sy * W + sx];
+          if (!okS(sx, sy, []) || (pass === 2 && cheb(sx, sy, P[0], P[1]) < 3)) continue;
+          for (const d of R.shuffle([0, 1])) {
+            const dx = d ? 0 : 1, dy = d ? 1 : 0, len = R.int(3, 7), cells = [];
+            for (let k = 0; k < len; k++) {
+              const x = sx + dx * k, y = sy + dy * k;
+              if (!G.inb(x, y) || rid[y * W + x] !== reg || !okS(x, y, cells)) break;
+              if (!pass && reg >= 0 && !isWall(g[y - dx][x - dy]) && !isWall(g[y + dx][x + dy])) break; // i rummen: längs en vägg
+              if (pass === 2 && cheb(x, y, P[0], P[1]) < 3) break;
+              if (!localOK(G, x, y)) break;
+              g[y][x] = 'Ŀ'; cells.push([x, y]);
+            }
+            if (cells.length >= 3) {
+              cnt['Ŀ'] = (cnt['Ŀ'] || 0) + cells.length;
+              const [a, z] = [cells[0], cells[cells.length - 1]];
+              G.saws.push({ x0: a[0], y0: a[1], x1: z[0], y1: z[1] });
+              break;
+            }
+            for (const [x, y] of cells) g[y][x] = '.';
+          }
+        }
+      }
+      // tidsbubblor ŀ (1-3): mitt i stora strids- och skattrum (fritt runt om, radie ~2), långt från P och x och från varandra
+      {
+        const R = fk('bubbles'), want = R.int(1, 3), done = [];
+        const roomy2 = (x, y) => { let k = 0; for (let yy = y - 2; yy <= y + 2; yy++) for (let xx = x - 2; xx <= x + 2; xx++) if (!isBlock(G.at(xx, yy))) k++; return k >= 16; };
+        for (const r of R.shuffle(rooms.filter(r => (H.isCombat(r) || r.type === 'treasure') && size(r) >= 16))) {
+          if (done.length >= want) break;
+          const c = r.cells.filter(([x, y]) => trapOK(x, y) && cheb(x, y, P[0], P[1]) >= 4 && cheb(x, y, X[0], X[1]) >= 3 && done.every(p => cheb(p[0], p[1], x, y) >= 6) && roomy2(x, y))
+            .map(([x, y]) => [x, y, Math.hypot(x - r.cx, y - r.cy) + R.next() * 2]).sort((p, q) => p[2] - q[2]);
+          for (const [x, y] of c) if (!touch(x, y, 'Ŀŀń', []) && localOK(G, x, y) && safe9(x, y)) { set(x, y, 'ŀ'); done.push([x, y]); break; }
+        }
+      }
+      // klockspel Ň (~60 %): i ett rum utan fiender (annars startrummet eller ett stridsrum), fri framsida
+      {
+        const R = fk('chime');
+        if (R.chance(0.6)) {
+          const host = R.shuffle(rooms.filter(enemyFree)).sort((p, q) => size(p) - size(q)).concat(rooms.filter(r => r.type === 'start'), R.shuffle(fight.slice()));
+          for (const r of host) {
+            const p = place(r, 'Ň', 1, { wall: true, center: true, jit: 2, pred: (x, y) => front(x, y) && safe9(x, y), rng: R })[0]
+              || place(r, 'Ň', 1, { center: true, pred: (x, y) => freeSide(x, y) && safe9(x, y), rng: R })[0];
+            if (p) break;
+          }
+        }
+      }
+      // kuggspindlar Ĵ: en hel grupp (3-5) i ett stridsrum (~80 %, djup 3+ ibland två grupper); urverkssoldaterna står kvar
+      {
+        const R = fk('spiders'), mobS = FOE_FROM + 'ĳ';
+        let groups = R.chance(0.8) ? (depth >= 3 && R.chance(0.3) ? 2 : 1) : 0;
+        for (const r of R.shuffle(fight.filter(r => r.arch !== 'nest'))) {
+          if (groups <= 0) break;
+          const c = r.cells.filter(([x, y]) => mobS.includes(g[y][x]));
+          if (c.length < 3) continue;
+          for (const [x, y] of c.slice(0, 5)) { cnt[g[y][x]]--; g[y][x] = 'Ĵ'; cnt['Ĵ'] = (cnt['Ĵ'] || 0) + 1; }
+          groups--;
+        }
+      }
+    }
+
+    // ----- molnborgen: väggarna blir tomrum, öarnas kanter, vindrutor, blixtstänger, molnkistor och molnjättar -----
+    if (sky) {
+      const R = fk('void'), VF = H.floorIdx('floor_void'), gw = GUARDIANS[L.gid] ? GUARDIANS[L.gid].wall : '';
+      // broarna är öppna: vanliga dörrar blir golv (grindar, låsta dörrar och hemliga/spruckna väggar står kvar med sina karmar)
+      for (let y = 1; y < G.H - 1; y++) for (let x = 1; x < W - 1; x++) if (g[y][x] === 'D') g[y][x] = '.';
+      const keep = new Uint8Array(N);
+      const mark8 = (x, y) => { for (let k = 0; k < 8; k++) { const xx = x + RX[k], yy = y + RY[k]; if (xx >= 0 && yy >= 0 && xx < W && yy < G.H) keep[yy * W + xx] = 1; } };
+      for (let y = 1; y < G.H - 1; y++) for (let x = 1; x < W - 1; x++) { const c = g[y][x]; if (isDoorCh(c) || c === 'P' || c === 'x') mark8(x, y); }
+      for (const r of rooms) if (r.type === 'vault' || r.type === 'secret') for (const [x, y] of r.cells) mark8(x, y); // valven och de hemliga rummen: små stenhus
+      // pelare: väggklungor om högst 4 rutor som inte når kanten
+      {
+        const lab = new Uint8Array(N), st = [];
+        for (let i = 0; i < N; i++) {
+          const x0 = i % W, y0 = (i / W) | 0;
+          if (lab[i] || !G.inb(x0, y0) || !isWall(g[y0][x0])) continue;
+          const comp = [i]; let border = false; lab[i] = 1; st.push(i);
+          while (st.length) {
+            const c = st.pop(), x = c % W, y = (c / W) | 0;
+            for (let k = 0; k < 8; k++) {
+              const xx = x + RX[k], yy = y + RY[k], j = yy * W + xx;
+              if (!isWall(G.at(xx, yy))) continue;
+              if (!G.inb(xx, yy)) { border = true; continue; }
+              if (lab[j]) continue;
+              lab[j] = 1; comp.push(j); st.push(j);
+            }
+          }
+          if (!border && comp.length <= 4) for (const j of comp) keep[j] = 1;
+        }
+      }
+      // låga murar: glesa korta sträckor av väggrutor intill golvet (vaktarens väggring tätare)
+      {
+        const faceW = (x, y) => G.inb(x, y) && isWall(g[y][x]) && RX.some((dx, k) => !isWall(G.at(x + dx, y + RY[k])));
+        const list = [];
+        for (let y = 1; y < G.H - 1; y++) for (let x = 1; x < W - 1; x++) if (faceW(x, y)) list.push([x, y]);
+        for (const [x, y] of R.shuffle(list)) {
+          if (keep[y * W + x] || !R.chance(g[y][x] === gw ? 0.3 : 0.07)) continue;
+          keep[y * W + x] = 1;
+          let cx = x, cy = y;
+          for (let k = R.int(0, 2); k > 0; k--) {
+            const nb = [0, 1, 2, 3].map(d => [cx + DX[d], cy + DY[d]]).filter(([nx, ny]) => faceW(nx, ny) && !keep[ny * W + nx]);
+            if (!nb.length) break;
+            [cx, cy] = R.pick(nb); keep[cy * W + cx] = 1;
+          }
+        }
+      }
+      // resten av väggarna blir tomrum (golv floor_void); kanten är stormmur, de kvarstående murarna molnsten eller stormmur
+      for (let y = 0; y < G.H; y++) for (let x = 0; x < W; x++) {
+        const c = g[y][x], i = y * W + x;
+        if (!G.inb(x, y)) { g[y][x] = 'Ľ'; continue; }
+        if (!isWall(c)) continue;
+        if (!keep[i]) { g[y][x] = 'Ń'; fm[i] = VF; } else if (c === 'ļ' && R.chance(0.3)) g[y][x] = 'Ľ';
+      }
+      // pilplattor som inte längre har en vägg inom 6 rutor blir golv
+      for (let y = 1; y < G.H - 1; y++) for (let x = 1; x < W - 1; x++) if (g[y][x] === '<') {
+        let ok = false;
+        for (let d = 0; d < 4 && !ok; d++) for (let k = 1; k <= 6; k++) { const c = G.at(x + DX[d] * k, y + DY[d] * k); if (isWall(c)) { ok = true; break; } if (isBlock(c)) break; }
+        if (!ok) { g[y][x] = '.'; cnt['<']--; }
+      }
+      // öarnas hörn faller bort; vaktarens sal får tomrum runt kanterna men inte i den fria mitten (5x5 runt Z är låst)
+      {
+        const zc = L.guardian.center, voidN = (x, y) => [0, 1, 2, 3].filter(d => g[y + DY[d]][x + DX[d]] === 'Ń').length;
+        for (const r of rooms) {
+          if (r.type === 'vault' || r.type === 'secret') continue;
+          const isG = r.type === 'guardian';
+          for (const [x, y] of R.shuffle(r.cells.slice())) {
+            if (g[y][x] !== '.' || lock[y * W + x] || nearPX(x, y)) continue;
+            const vn = voidN(x, y);
+            if (isG ? (vn < 1 || cheb(x, y, zc[0], zc[1]) < 3 || !R.chance(0.45)) : (vn < 2 || !R.chance(0.5))) continue;
+            if ([0, 1, 2, 3].some(d => isDoorCh(g[y + DY[d]][x + DX[d]])) || !localOK(G, x, y) || !safe9(x, y)) continue;
+            g[y][x] = 'Ń'; fm[y * W + x] = VF;
+          }
+        }
+      }
+      // vindrutor ń: 2-4 vindbyar om 2-4 rutor i rad på broarna; vinden blåser längs bron, aldrig ut i tomrummet
+      {
+        const R2 = fk('winds'), WF = H.floorIdx('floor_wind');
+        let lanes = R2.int(2, 4);
+        for (const [sx, sy] of R2.shuffle(cor.filter(([x, y]) => rid[y * W + x] < 0 && g[y][x] === '.'))) {
+          if (lanes <= 0) break;
+          for (const d of R2.shuffle([0, 1, 2, 3])) {
+            const dx = DX[d], dy = DY[d], len = R2.int(2, 4), cells = [];
+            for (let k = 0; k < len; k++) {
+              const x = sx + dx * k, y = sy + dy * k;
+              if (!G.inb(x, y) || rid[y * W + x] >= 0 || g[y][x] !== '.' || !trapOK(x, y) || touch(x, y, 'ńŀ', cells)) break;
+              cells.push([x, y]);
+            }
+            if (cells.length < 2) continue;
+            const [lx, ly] = cells[cells.length - 1], t = G.at(lx + dx, ly + dy);
+            if (isBlock(t) || t === 'ń') continue;
+            for (const [x, y] of cells) { g[y][x] = 'ń'; if (WF >= 0) fm[y * W + x] = WF; G.winds.push({ x, y, dx, dy }); }
+            cnt['ń'] = (cnt['ń'] || 0) + cells.length;
+            lanes--;
+            break;
+          }
+        }
+      }
+      // blixtstänger ņ (2-4 till utöver stormspirornas): helst vid öns kant, aldrig nära P
+      {
+        const R2 = fk('rods'), want = R2.int(2, 4) + (cnt['ņ'] || 0), voidAdj = (x, y) => RX.some((dx, k) => G.at(x + dx, y + RY[k]) === 'Ń');
+        const host = R2.shuffle(rooms.filter(r => !['guardian', 'vault', 'secret', 'start', 'shop'].includes(r.type))).concat(rooms.filter(r => r.type === 'start'));
+        for (let pass = 0; pass < 3; pass++) for (const r of host) { // vid kanten, sedan var som helst, sist tätare
+          if ((cnt['ņ'] || 0) >= want) break;
+          place(r, 'ņ', 1, pass < 2 ? { spread: 4, avoid: ['ņ', 3], pred: (x, y) => (pass || voidAdj(x, y)) && safe9(x, y) && cheb(x, y, P[0], P[1]) >= 3, rng: R2 }
+            : { pred: (x, y) => safe9(x, y) && cheb(x, y, P[0], P[1]) >= 2, rng: R2 });
+        }
+      }
+      // molnkistor ň (1-3): skattrummen först, sedan stridsrummen; fri framsida
+      {
+        const R2 = fk('chests'), pri = r => (r.type === 'treasure' ? 0 : H.isCombat(r) ? 1 : 2);
+        const host = R2.shuffle(rooms.filter(r => !['guardian', 'secret', 'vault', 'start', 'shop', 'special'].includes(r.type))).sort((p, q) => pri(p) - pri(q));
+        let want = R2.int(1, 3);
+        for (const r of host) { if (want <= 0) break; if (place(r, 'ň', 1, { pred: (x, y) => front(x, y) && safe9(x, y), rng: R2 }).length) want--; }
+      }
+      // molnjättar ĸ (djup 3+, ~55 %, 1-2): byts in mot redan utplacerade fiender i stora stridsrum
+      {
+        const R2 = fk('giants'), mobG = FOE_FROM + 'Ķķ';
+        let n = depth >= 3 && R2.chance(0.55) ? (R2.chance(0.3) ? 2 : 1) : 0;
+        for (const r of R2.shuffle(fight.filter(r => size(r) >= 30))) {
+          if (n <= 0) break;
+          const c = r.cells.filter(([x, y]) => mobG.includes(g[y][x]));
+          if (!c.length) continue;
+          const [x, y] = R2.pick(c); cnt[g[y][x]]--; g[y][x] = 'ĸ'; cnt['ĸ'] = (cnt['ĸ'] || 0) + 1; n--;
+        }
+      }
+    }
+
+    // ----- alla biomer: kugghjul (~30 %, klocktornet ~50 %, 1-3) och fjädrar (~15 %, molnborgen ~25 %, högst 1) -----
+    {
+      let added = false;
+      const loot = rooms.filter(r => r.type !== 'guardian' && r.type !== 'shop' && r.type !== 'start');
+      const drop = (R, ch, n, wt) => {
+        for (let k = 0; k < n; k++) for (let t = 0; t < 6; t++) {
+          const r = R.weighted(loot, wt), p = r && place(r, ch, 1, { rng: R })[0];
+          if (p) { undo.push([p[0], p[1], '.']); added = true; break; }
+        }
+      };
+      const RG = fk('gears'), RF = fk('feathers');
+      drop(RG, 'Ŋ', RG.chance(clock ? 0.5 : 0.3) ? RG.int(1, 3) : 0, r => (r.type === 'secret' ? 3 : r.type === 'vault' || r.type === 'treasure' ? 2 : 1));
+      drop(RF, 'ŋ', RF.chance(sky ? 0.25 : 0.15) ? 1 : 0, r => (r.type === 'secret' ? 5 : r.type === 'vault' || r.type === 'treasure' ? 3 : 1));
+      if (added && opts.v9) opts.v9.added = true;
+    }
+    return true;
+  }
+
+  // ---------- Version 10: nya invånare i de gamla biomerna och legendaltaret ----------
+  // FOES10: tecken -> { home: biomen där den är infödd, near: närliggande biomer där den är sällsynt, d: första djup, p: andel banor hemma,
+  //   n: [min, max] per bana hemma (sällsynt: n[0]), max: tak (validate), group: alltid en hel grupp i samma stridsrum }
+  const FOES10 = {
+    'Ō': { home: 'dungeon', near: ['courtyard'], d: 1, p: 0.55, n: [1, 3], max: 4 }, // fångvaktare
+    'ō': { home: 'caves', near: ['graveyard'], d: 2, p: 0.55, n: [1, 3], max: 4 }, // grävare (aldrig i/intill vatten)
+    'Ŏ': { home: 'graveyard', near: ['dungeon'], d: 1, p: 0.55, n: [1, 2], max: 2 }, // likgrävare
+    'ŏ': { home: 'forest', near: ['swamp'], d: 1, p: 0.5, n: [2, 3], max: 3, group: true }, // rotvätte
+    'Ő': { home: 'courtyard', near: ['dungeon'], d: 1, p: 0.55, n: [1, 3], max: 4 }, // armborstskytt (helst vid skydd)
+    'ő': { home: 'swamp', near: ['forest'], d: 2, p: 0.5, n: [1, 2], max: 2 }, // paddjätte (helst nära vatten)
+  };
+  const FOES10_CH = Object.keys(FOES10).join(''), NEAR10_P = 0.08, ALTAR10_P = 0.12;
+  const COVER10 = 'TeHJkquv²µßĖ'; // skydd för armborstskyttarna (utöver fristående pelare)
+  // Körs allra sist i content med egna slumpflöden (forks av content-slumpens 'v10'): allt från version 9 ligger kvar. De nya fienderna byts
+  // in mot redan utplacerade fiender i stridsrummen (samma ruta i samma grupp) och legendaltaret läggs på golvet, allt med en ångra-lista
+  // (opts.v10.undo, tecknet som stod där förut): underkänns banan tas de bort igen och banan blir exakt som i version 9 (se build7).
+  function content10(G, depth, opts, L, H) {
+    const { W, g, lock } = G, { rooms, fight, cnt, place } = H, b = L.biome;
+    const fk = tag => H.rng.fork(tag);
+    if (opts.v10) { opts.v10.added = false; opts.v10.undo = []; }
+    const undo = opts.v10 ? opts.v10.undo : [];
+    let added = false;
+    const swap = (x, y, ch) => { const o = g[y][x]; undo.push([x, y, o]); cnt[o]--; g[y][x] = ch; cnt[ch] = (cnt[ch] || 0) + 1; added = true; };
+    const wetAt = (x, y) => { const c = G.at(x, y); return c === '-' || isWet(c); };
+    const pillar = (x, y) => G.inb(x, y) && isWall(g[y][x]) && RX.filter((dx, k) => !isWall(G.at(x + dx, y + RY[k]))).length >= 5;
+    const coverAt = (x, y) => COVER10.includes(G.at(x, y)) || pillar(x, y);
+    const nearBy = (x, y, rad, f) => { for (let yy = y - rad; yy <= y + rad; yy++) for (let xx = x - rad; xx <= x + rad; xx++) if ((xx !== x || yy !== y) && f(xx, yy)) return true; return false; };
+    const host = fight.filter(r => r.arch !== 'nest'); // (spindelboet behåller sina spindlar)
+
+    // ----- nya fiender: infödda i sin biom, sällsynta i en närliggande -----
+    for (const ch of FOES10_CH) {
+      const F = FOES10[ch], R = fk('foe-' + ch), home = b === F.home;
+      if (depth < F.d || (!home && !F.near.includes(b))) continue;
+      if (!R.chance(home ? F.p : NEAR10_P)) continue;
+      let want = Math.min(F.max, home ? R.int(F.n[0], F.n[1]) : F.n[0]);
+      const ok = (x, y) => FOE_FROM.includes(g[y][x]) && (ch !== 'ō' || ![0, 1, 2, 3].some(d => wetAt(x + DX[d], y + DY[d])));
+      // rumsordning (slump; armborstskyttar helst i rum med skydd, paddjättar helst i rum med vatten) och rutornas ordning i rummet
+      const pref = ch === 'Ő' ? (x, y) => nearBy(x, y, 1, coverAt) : ch === 'ő' ? (x, y) => nearBy(x, y, 2, wetAt) : null;
+      let order = R.shuffle(host.slice());
+      if (pref) {
+        const score = new Map(order.map(r => [r, r.cells.some(([x, y]) => (ch === 'Ő' ? coverAt(x, y) || nearBy(x, y, 1, pillar) : wetAt(x, y))) ? 0 : 1]));
+        order = order.sort((p, q) => score.get(p) - score.get(q));
+      }
+      const cands = r => {
+        const c = R.shuffle(r.cells.filter(([x, y]) => ok(x, y)));
+        return pref ? c.map(p => [p, pref(p[0], p[1]) ? 0 : 1]).sort((p, q) => p[1] - q[1]).map(p => p[0]) : c;
+      };
+      if (F.group) { // en hel grupp i ett rum (2-3 av gruppens fiender)
+        for (const r of order) {
+          const c = cands(r);
+          if (c.length < 2) continue;
+          for (const [x, y] of c.slice(0, Math.max(2, want))) swap(x, y, ch);
+          break;
+        }
+        continue;
+      }
+      for (let pass = 0; pass < 2 && want > 0; pass++) for (const r of order) { // en per rum först, sedan tätare
+        if (want <= 0) break;
+        const c = cands(r);
+        if (!c.length) continue;
+        swap(c[0][0], c[0][1], ch); want--;
+      }
+    }
+
+    // ----- legendaltaret Œ (~12 % på djup 2+): i ett lugnt rum (helgedomen, skattrummet, specialrum utom utmaningen; annars startrummet) -----
+    {
+      const R = fk('legendaltar');
+      if (depth >= 2 && R.chance(ALTAR10_P)) {
+        const front = (x, y) => [0, 1, 2, 3].some(k => isWall(g[y + DY[k]][x + DX[k]]) && g[y - DY[k]][x - DX[k]] === '.' && lock[(y - DY[k]) * W + x - DX[k]] < 2);
+        const freeSide = (x, y) => [0, 1, 2, 3].some(d => g[y + DY[d]][x + DX[d]] === '.' && lock[(y + DY[d]) * W + x + DX[d]] < 2);
+        // ett nytt hinder får inte stänga in en kruka, spikfälla, lavaruta o.d.: de behåller en fri granne (vatten: en fri granne eller mer vatten)
+        const safe = (x, y) => [0, 1, 2, 3].every(d => {
+          const nx = x + DX[d], ny = y + DY[d], c = g[ny][nx];
+          if (!genBlk(c) || isBlock(c)) return true;
+          const wet = isWet(c);
+          return [0, 1, 2, 3].some(e => { const mx = nx + DX[e], my = ny + DY[e]; if (mx === x && my === y) return false; const m = G.at(mx, my); return !genBlk(m) || (wet && isWet(m)); });
+        });
+        const calm = r => r.type === 'shrine' || r.type === 'treasure' || (r.type === 'special' && r.special !== 'challenge' && r.arch !== 'challenge');
+        const hosts = R.shuffle(rooms.filter(calm)).concat(rooms.filter(r => r.type === 'start'));
+        for (const r of hosts) {
+          const p = place(r, 'Œ', 1, { wall: true, center: true, jit: 2, pred: (x, y) => front(x, y) && safe(x, y), rng: R })[0]
+            || place(r, 'Œ', 1, { center: true, pred: (x, y) => freeSide(x, y) && safe(x, y), rng: R })[0];
+          if (p) { undo.push([p[0], p[1], '.']); added = true; break; }
+        }
+      }
+    }
+    if (added && opts.v10) opts.v10.added = true;
+    return true;
+  }
+
+  // ---------- Version 11: svampriket, spegelpalatset och sporsäckar ----------
+  // Körs allra sist i content med egna slumpflöden (forks av content-slumpens 'v11'): allt från version 10 ligger kvar. Svamprikets och
+  // spegelpalatsets egna saker läggs alltid (opts.v11.keep); sporsäckarna Ũ i alla biomer läggs med en ångra-lista (opts.v11.undo):
+  // underkänns banan tas de bort igen och banan blir exakt som i version 10 (se build7). Lägger teleporterparen i G.teleports
+  // ([{ a: { x, y }, b: { x, y } }]).
+  const SPORESACK11_CAP = 2, SPOREPOOL11_CAP = 24, MIRROR11 = [0.2, 0.35]; // tak för sporsäckar och sporpölsrutor; spegelväggarnas andel av salarnas väggar
+  const SPORESACK11_P = 0.25;
+  // rumsväggarna (ringen runt rummets ruta utan hörnen) i salarna där spegelväggar får sitta: [[x, y, sida], ...]; delas med validate/test
+  const mirrorRing = (r, at) => {
+    const out = [], { x, y, w, h } = r;
+    for (let k = 0; k < w; k++) { out.push([x + k, y - 1, 3]); out.push([x + k, y + h, 1]); }
+    for (let k = 0; k < h; k++) { out.push([x - 1, y + k, 2]); out.push([x + w, y + k, 0]); }
+    return out.filter(([xx, yy]) => { const c = at(xx, yy); return c === 'Š' || c === 'š'; });
+  };
+  const mirrorHall = r => r.type !== 'guardian' && r.type !== 'secret' && r.type !== 'vault';
+  function content11(G, depth, opts, L, H) {
+    const { W, g, lock } = G, { rooms, fight, P, X, cnt, set, place, trapOK, rid, size } = H, b = L.biome;
+    const fk = tag => H.rng.fork(tag);
+    const fungus = b === 'fungus', mirror = b === 'mirror';
+    G.teleports = [];
+    if (opts.v11) { opts.v11.added = false; opts.v11.undo = []; if (fungus || mirror) opts.v11.keep = true; }
+    const undo = opts.v11 ? opts.v11.undo : [];
+    const bump = (ch, n) => { cnt[ch] = (cnt[ch] || 0) + n; };
+    // ett nytt hinder (eller en ruta som aldrig får vara enda vägen) får inte stänga in en kruka, spikfälla, lavaruta o.d.
+    const safe11 = (x, y) => [0, 1, 2, 3].every(d => {
+      const nx = x + DX[d], ny = y + DY[d], c = g[ny][nx];
+      if (!genBlk(c) || isBlock(c)) return true;
+      const wet = isWet(c);
+      return [0, 1, 2, 3].some(e => { const mx = nx + DX[e], my = ny + DY[e]; if (mx === x && my === y) return false; const m = G.at(mx, my); return !genBlk(m) || (wet && isWet(m)); });
+    });
+    const gRoom = rooms.find(r => r.type === 'guardian'), inG = (x, y) => !!gRoom && rid[y * W + x] === gRoom.id;
+    const doorNear = (x, y) => RX.some((dx, k) => isDoorCh(G.at(x + dx, y + RY[k]))); // dörr, grind, hemlig/sprucken vägg i de åtta grannarna
+    // ingen ny fara intill en annan fara (utom den egna fläckens rutor)
+    const HZ11 = SINK11 + '_z¬¯°<>±¨¹' + WET8 + SINK9 + 'Ńń';
+    const touch = (x, y, own) => RX.some((dx, k) => { const xx = x + dx, yy = y + RY[k]; return HZ11.includes(G.at(xx, yy)) && !own.some(p => p[0] === xx && p[1] === yy); });
+    const hidden = [];
+    for (let y = 1; y < G.H - 1; y++) for (let x = 1; x < W - 1; x++) if (g[y][x] === '*' || g[y][x] === '{') hidden.push([x, y]);
+    const nearHidden = (x, y) => hidden.some(([hx, hy]) => cheb(hx, hy, x, y) <= 2);
+    const swapIn = (x, y, ch) => { cnt[g[y][x]]--; g[y][x] = ch; bump(ch, 1); };
+
+    // ----- svampriket: glödande svamphattar i väggarna, glödsvampar, studsplattor, sporpölar, sporlingar och mycelbestar -----
+    if (fungus) {
+      // svamphattar Ş: glesa sträckor (1-3 rutor) i de synliga svampväggarna, aldrig vid den hemliga/spruckna väggen
+      {
+        const R = fk('caps');
+        const face = (x, y) => x >= 0 && y >= 0 && x < W && y < G.H && g[y][x] === 'ŝ' && !nearHidden(x, y) && [0, 1, 2, 3].some(d => !isWall(G.at(x + DX[d], y + DY[d])));
+        for (let y = 0; y < G.H; y++) for (let x = 0; x < W; x++) {
+          if (!face(x, y) || !R.chance(0.045)) continue;
+          g[y][x] = 'Ş';
+          let cx = x, cy = y;
+          for (let k = R.int(0, 2); k > 0; k--) {
+            const nb = [0, 1, 2, 3].map(d => [cx + DX[d], cy + DY[d]]).filter(([nx, ny]) => face(nx, ny));
+            if (!nb.length) break;
+            [cx, cy] = R.pick(nb); g[cy][cx] = 'Ş';
+          }
+        }
+      }
+      // glödsvampar Ŧ i stället för eldfaten och lysande svamp F i stället för kandelabrarna (utom i vaktarens sal)
+      for (let y = 1; y < G.H - 1; y++) for (let x = 1; x < W - 1; x++) {
+        const c = g[y][x];
+        if ((c !== 'f' && c !== 'c') || inG(x, y)) continue;
+        const to = c === 'f' ? 'Ŧ' : 'F';
+        g[y][x] = to; cnt[c]--; bump(to, 1);
+      }
+      // studsplattor ţ (1-4): i stridsrummen och skattrummen (annars startrummet), på öppet golv, aldrig vid dörrar, P eller x,
+      // aldrig enda vägen (localOK: med plattan som hinder hänger allt ihop)
+      {
+        const R = fk('bounce'), want = R.int(1, 4);
+        const okB = (x, y) => trapOK(x, y) && !doorNear(x, y) && !inG(x, y) && safe11(x, y) && !touch(x, y, []);
+        const host = R.shuffle(rooms.filter(r => (H.isCombat(r) || r.type === 'treasure') && size(r) >= 12));
+        const more = rooms.filter(r => r.type === 'start' || r.type === 'shrine' || (r.type === 'special' && size(r) >= 12));
+        let n = 0;
+        for (let pass = 0; pass < 3 && n < want; pass++) for (const r of pass < 2 ? host : more) {
+          if (n >= want) break;
+          if (pass === 0 && r.cells.some(([x, y]) => g[y][x] === 'ţ')) continue; // först en per rum
+          n += place(r, 'ţ', 1, { open: pass < 2, center: pass === 0, jit: 3, spread: 4, avoid: ['ţ', 3], pred: okB, rng: R }).length;
+        }
+        if (!n) return null;
+      }
+      // sporpölar Ť: 2-4 fläckar om 2-6 rutor i strids- och skattrummen och ibland i breda korridorer; aldrig vid dörrar, P eller x,
+      // aldrig enda vägen (varje ruta läggs med localOK)
+      {
+        const R = fk('spores'), okS = own => (x, y) => trapOK(x, y) && !doorNear(x, y) && !inG(x, y) && localOK(G, x, y) && safe11(x, y) && !touch(x, y, own);
+        const hosts = R.shuffle(rooms.filter(r => H.isCombat(r) || r.type === 'treasure'));
+        let patches = R.int(2, 4);
+        for (const r of hosts) {
+          if (patches <= 0) break;
+          const s = R.shuffle(r.cells.filter(([x, y]) => okS([])(x, y)))[0];
+          if (!s) continue;
+          const want = R.int(2, 6), done = [], fr = [s], seen = new Set([s[1] * W + s[0]]);
+          while (fr.length && done.length < want && (cnt['Ť'] || 0) < SPOREPOOL11_CAP) {
+            const [x, y] = fr.splice(R.int(0, fr.length - 1), 1)[0];
+            if (!okS(done)(x, y)) continue;
+            set(x, y, 'Ť'); done.push([x, y]);
+            for (let d = 0; d < 4; d++) { const nx = x + DX[d], ny = y + DY[d], ni = ny * W + nx; if (!seen.has(ni) && rid[ni] === r.id) { seen.add(ni); fr.push([nx, ny]); } }
+          }
+          if (done.length === 1) { const [x, y] = done[0]; g[y][x] = '.'; cnt['Ť']--; } else if (done.length) patches--;
+        }
+      }
+      // sporlingar ŗ: en hel grupp (3-5) i ett stridsrum (~85 %, djup 3+ ibland två grupper); byts in mot gruppens fiender
+      {
+        const R = fk('sporelings'), mob = FOE_FROM + 'ř';
+        let groups = R.chance(0.85) ? (depth >= 3 && R.chance(0.35) ? 2 : 1) : 0;
+        for (const r of R.shuffle(fight.filter(r => r.arch !== 'nest'))) {
+          if (groups <= 0) break;
+          const c = R.shuffle(r.cells.filter(([x, y]) => mob.includes(g[y][x])));
+          if (c.length < 3) continue;
+          for (const [x, y] of c.slice(0, R.int(3, 5))) swapIn(x, y, 'ŗ');
+          groups--;
+        }
+      }
+      // mycelbestar Ř (djup 2+, ~55 %, 1-2, högst 2): byts in i stora stridsrum (minst 30 rutor)
+      {
+        const R = fk('brutes'), mob = FOE_FROM + 'ř';
+        let n = depth >= 2 && R.chance(0.55) ? (R.chance(0.35) ? 2 : 1) : 0;
+        const open = r => r.cells.reduce((k, [x, y]) => k + (isWall(g[y][x]) ? 0 : 1), 0); // rutor som inte blivit vägg (svampstjälkar o.d.)
+        for (const r of R.shuffle(fight.filter(r => open(r) >= 30 && r.arch !== 'nest'))) {
+          if (n <= 0) break;
+          const c = r.cells.filter(([x, y]) => mob.includes(g[y][x]));
+          if (!c.length) continue;
+          const [x, y] = R.pick(c); swapIn(x, y, 'Ř'); n--;
+        }
+      }
+    }
+
+    // ----- spegelpalatset: spegelväggar, spegelstatyer, teleporterpar, illusionister och glasskärvor -----
+    if (mirror) {
+      // spegelväggar š: hela väggsegment (rak sträcka längs en sida av salen, minst 2 rutor, avbrutna vid dörrkarmarna) tills ~20-35 % av
+      // salarnas väggar är speglar; aldrig på en dörrkarm (ingen dörr/grind/hemlig vägg bland de åtta grannarna) och aldrig vid den hemliga väggen
+      {
+        const R = fk('mirrors'), at = (x, y) => G.at(x, y), segs = [];
+        let tot = 0;
+        for (const r of rooms.filter(mirrorHall)) {
+          const ring = mirrorRing(r.box, at);
+          tot += ring.length;
+          for (let side = 0; side < 4; side++) {
+            let run = [];
+            const flush = () => { if (run.length >= 2) segs.push(run); run = []; };
+            for (const p of ring.filter(q => q[2] === side)) {
+              const [x, y] = p, prev = run[run.length - 1];
+              if (prev && cheb(prev[0], prev[1], x, y) !== 1) flush();
+              const ix = x - DX[side], iy = y - DY[side]; // rutan innanför (salens sida)
+              if (doorNear(x, y) || nearHidden(x, y) || isWall(G.at(ix, iy))) { flush(); continue; }
+              run.push(p);
+            }
+            flush();
+          }
+        }
+        const target = R.range(0.24, 0.31) * tot, cap = MIRROR11[1] * tot;
+        let n = 0;
+        for (const seg of R.shuffle(segs)) {
+          if (n >= target) break;
+          if (n + seg.length > cap) continue;
+          for (const [x, y] of seg) g[y][x] = 'š';
+          n += seg.length;
+        }
+        if (!tot || n < MIRROR11[0] * tot) return null;
+      }
+      // spegelstatyer ŧ (1-3 till utöver salarnas): mot en vägg i salarna, aldrig nära P
+      {
+        const R = fk('statues'), want = R.int(1, 3);
+        const host = R.shuffle(rooms.filter(r => !['guardian', 'vault', 'secret', 'shop'].includes(r.type)));
+        let n = 0;
+        for (const r of host) { if (n >= want) break; n += place(r, 'ŧ', 1, { wall: true, avoid: ['ŧ', 2], pred: (x, y) => safe11(x, y) && cheb(x, y, P[0], P[1]) >= 2, rng: R }).length; }
+      }
+      // teleporterpar ť (1-3): varje par i två olika rum (ett rum har högst en teleporter), helst långt ifrån varandra; aldrig vid
+      // dörrar, P eller x, aldrig enda vägen (localOK: allt nås till fots med teleportrarna som hinder)
+      {
+        const R = fk('teleports'), want = R.int(1, 3);
+        const okT = (x, y) => trapOK(x, y) && !doorNear(x, y) && !inG(x, y) && cheb(x, y, P[0], P[1]) >= 2 && cheb(x, y, X[0], X[1]) >= 2
+          && safe11(x, y) && !touch(x, y, []) && [0, 1, 2, 3].filter(d => !genBlk(g[y + DY[d]][x + DX[d]])).length >= 2;
+        const host = R.shuffle(rooms.filter(r => ['normal', 'elite', 'exit', 'treasure', 'start', 'shrine', 'special'].includes(r.type) && size(r) >= 9));
+        const used = new Set();
+        for (let k = 0; k < want; k++) {
+          const free = host.filter(r => !used.has(r.id));
+          let done = false;
+          for (const ra of free) {
+            const order = free.filter(r => r !== ra).sort((p, q) => Math.hypot(q.cx - ra.cx, q.cy - ra.cy) - Math.hypot(p.cx - ra.cx, p.cy - ra.cy));
+            const a = place(ra, 'ť', 1, { center: true, jit: 2.5, pred: okT, rng: R })[0];
+            if (!a) continue;
+            for (const rb of order.slice(0, 4)) {
+              const bb = place(rb, 'ť', 1, { center: true, jit: 2.5, pred: okT, rng: R })[0];
+              if (!bb) continue;
+              G.teleports.push({ a: { x: a[0], y: a[1] }, b: { x: bb[0], y: bb[1] } });
+              used.add(ra.id); used.add(rb.id); done = true; break;
+            }
+            if (done) break;
+            g[a[1]][a[0]] = '.'; cnt['ť']--;
+          }
+          if (!done) break;
+        }
+        if (!G.teleports.length) return null;
+      }
+      // illusionister ś (djup 2+, ~55 %, 1-2, högst 2): byts in mot redan utplacerade fiender i stridsrummen
+      {
+        const R = fk('illusionists'), mob = FOE_FROM + 'Ś';
+        let n = depth >= 2 && R.chance(0.55) ? (R.chance(0.35) ? 2 : 1) : 0;
+        for (const r of R.shuffle(fight.filter(r => r.arch !== 'nest'))) {
+          if (n <= 0) break;
+          const c = r.cells.filter(([x, y]) => mob.includes(g[y][x]));
+          if (!c.length) continue;
+          const [x, y] = R.pick(c); swapIn(x, y, 'ś'); n--;
+        }
+      }
+      // glasskärvor Ŝ: en hel grupp (2-4) i ett stridsrum (~75 %, djup 3+ ibland två grupper)
+      {
+        const R = fk('shards'), mob = FOE_FROM + 'Ś';
+        let groups = R.chance(0.75) ? (depth >= 3 && R.chance(0.3) ? 2 : 1) : 0;
+        for (const r of R.shuffle(fight.filter(r => r.arch !== 'nest' && !r.cells.some(([x, y]) => g[y][x] === 'ś')))) {
+          if (groups <= 0) break;
+          const c = R.shuffle(r.cells.filter(([x, y]) => mob.includes(g[y][x])));
+          if (c.length < 2) continue;
+          for (const [x, y] of c.slice(0, R.int(2, 4))) swapIn(x, y, 'Ŝ');
+          groups--;
+        }
+      }
+    }
+
+    // ----- alla biomer: sporsäckar Ũ (~25 %, svampriket ~45 %, 1-2, högst 2; helst i hemliga rum, valv och skattrum) -----
+    {
+      let added = false;
+      const R = fk('sporesacks'), loot = rooms.filter(r => r.type !== 'guardian' && r.type !== 'shop' && r.type !== 'start');
+      const n = R.chance(fungus ? 0.45 : SPORESACK11_P) ? R.int(1, 2) : 0;
+      for (let k = 0; k < n; k++) for (let t = 0; t < 6; t++) {
+        const r = R.weighted(loot, q => (q.type === 'secret' ? 3 : q.type === 'vault' || q.type === 'treasure' ? 2 : 1)), p = r && place(r, 'Ũ', 1, { rng: R })[0];
+        if (p) { undo.push([p[0], p[1], '.']); added = true; break; }
+      }
+      if (added && opts.v11) opts.v11.added = true;
+    }
+    return true;
+  }
+
+  // ---------- Version 13: biblioteket, gjuteriet och bläckflaskor ----------
+  // Körs allra sist i content med egna slumpflöden (forks av content-slumpens 'v13'): allt från version 11 ligger kvar. Bibliotekets och
+  // gjuteriets egna saker läggs alltid (opts.v13.keep); bläckflaskorna Ƃ i alla biomer läggs med en ångra-lista (opts.v13.undo): underkänns
+  // banan tas de bort igen och banan blir exakt som i version 11 (se build7). Lägger rullbanden i G.belts ([{ x, y, dx, dy }], en post per Ÿ).
+  const INKFLASK13_P = 0.2, INKFLASK13_LIB_P = 0.4, INKFLASK13_CAP = 2, INK13_CAP = 24, LECTERN13_CAP = 3, VENT13_CAP = 5, PRESS13_CAP = 4;
+  const BELT13_LEN = [4, 9], BELT13_MAX = 4;
+  function content13(G, depth, opts, L, H) {
+    const { W, g, lock } = G, { rooms, fight, P, X, cnt, set, place, trapOK, rid, size } = H, b = L.biome;
+    const fk = tag => H.rng.fork(tag);
+    const lib = b === 'library', fou = b === 'foundry';
+    G.belts = [];
+    if (opts.v13) { opts.v13.added = false; opts.v13.undo = []; if (lib || fou) opts.v13.keep = true; }
+    const undo = opts.v13 ? opts.v13.undo : [];
+    const bump = (ch, n) => { cnt[ch] = (cnt[ch] || 0) + n; };
+    // ett nytt hinder (eller en ruta som aldrig får vara enda vägen) får inte stänga in en kruka, spikfälla, lavaruta o.d.
+    const safe13 = (x, y) => [0, 1, 2, 3].every(d => {
+      const nx = x + DX[d], ny = y + DY[d], c = g[ny][nx];
+      if (!genBlk(c) || isBlock(c)) return true;
+      const wet = isWet(c);
+      return [0, 1, 2, 3].some(e => { const mx = nx + DX[e], my = ny + DY[e]; if (mx === x && my === y) return false; const m = G.at(mx, my); return !genBlk(m) || (wet && isWet(m)); });
+    });
+    const gRoom = rooms.find(r => r.type === 'guardian'), inG = (x, y) => !!gRoom && rid[y * W + x] === gRoom.id;
+    const doorNear = (x, y) => RX.some((dx, k) => isDoorCh(G.at(x + dx, y + RY[k]))); // dörr, grind, hemlig/sprucken vägg i de åtta grannarna
+    const nearPX2 = (x, y) => cheb(x, y, P[0], P[1]) <= 1 || cheb(x, y, X[0], X[1]) <= 1;
+    // ingen ny fara intill en annan fara (utom den egna fläckens rutor)
+    const HZ13 = SINK13 + BELT13 + SINK11 + '_z¬¯°<>±¨¹' + WET8 + SINK9 + 'Ńń';
+    const touch = (x, y, own) => RX.some((dx, k) => { const xx = x + dx, yy = y + RY[k]; return HZ13.includes(G.at(xx, yy)) && !own.some(p => p[0] === xx && p[1] === yy); });
+    const hidden = [];
+    for (let y = 1; y < G.H - 1; y++) for (let x = 1; x < W - 1; x++) if (g[y][x] === '*' || g[y][x] === '{') hidden.push([x, y]);
+    const nearHidden = (x, y) => hidden.some(([hx, hy]) => cheb(hx, hy, x, y) <= 2);
+    const swapIn = (x, y, ch) => { cnt[g[y][x]]--; g[y][x] = ch; bump(ch, 1); };
+    const face = (x, y, wc) => x >= 0 && y >= 0 && x < W && y < G.H && g[y][x] === wc && !nearHidden(x, y) && [0, 1, 2, 3].some(d => !isWall(G.at(x + DX[d], y + DY[d])));
+    const nOpen = r => r.cells.reduce((k, [x, y]) => k + (isWall(g[y][x]) ? 0 : 1), 0); // rutor som inte blivit vägg (hyllrader o.d.)
+    // fläckar (bläckpölar): 2-4 fläckar om 2-6 rutor i strids- och skattrummen; aldrig vid dörrar, P eller x, aldrig enda vägen (localOK)
+    const patches = (R, ch, cap, nP) => {
+      const okS = own => (x, y) => trapOK(x, y) && !doorNear(x, y) && !inG(x, y) && localOK(G, x, y) && safe13(x, y) && !touch(x, y, own);
+      const hosts = R.shuffle(rooms.filter(r => H.isCombat(r) || r.type === 'treasure'));
+      let left = nP, tot = 0;
+      for (const r of hosts) {
+        if (left <= 0) break;
+        const s = R.shuffle(r.cells.filter(([x, y]) => okS([])(x, y)))[0];
+        if (!s) continue;
+        const want = R.int(2, 6), done = [], fr = [s], seen = new Set([s[1] * W + s[0]]);
+        while (fr.length && done.length < want && (cnt[ch] || 0) < cap) {
+          const [x, y] = fr.splice(R.int(0, fr.length - 1), 1)[0];
+          if (!okS(done)(x, y)) continue;
+          set(x, y, ch); done.push([x, y]);
+          for (let d = 0; d < 4; d++) { const nx = x + DX[d], ny = y + DY[d], ni = ny * W + nx; if (!seen.has(ni) && rid[ni] === r.id) { seen.add(ni); fr.push([nx, ny]); } }
+        }
+        if (done.length === 1) { const [x, y] = done[0]; g[y][x] = '.'; cnt[ch]--; } else if (done.length) { left--; tot += done.length; }
+      }
+      return tot;
+    };
+    // en hel grupp av ch (lo-hi) i ett stridsrum, byts in mot gruppens fiender; groups grupper
+    const groupIn = (R, ch, mob, groups, lo, hi, minC) => {
+      for (const r of R.shuffle(fight.filter(r => r.arch !== 'nest'))) {
+        if (groups <= 0) break;
+        const c = R.shuffle(r.cells.filter(([x, y]) => mob.includes(g[y][x])));
+        if (c.length < minC) continue;
+        for (const [x, y] of c.slice(0, R.int(lo, hi))) swapIn(x, y, ch);
+        groups--;
+      }
+    };
+    // enstaka fiender ch (n st) inbytta i stridsrummen (big: bara rum med minst 30 gångbara rutor)
+    const singlesIn = (R, ch, mob, n, big) => {
+      for (const r of R.shuffle(fight.filter(r => r.arch !== 'nest' && (!big || nOpen(r) >= 30)))) {
+        if (n <= 0) break;
+        const c = r.cells.filter(([x, y]) => mob.includes(g[y][x]));
+        if (!c.length) continue;
+        const [x, y] = R.pick(c); swapIn(x, y, ch); n--;
+      }
+    };
+
+    // ----- biblioteket: bokhyllor i väggarna, ljuskronor, pulpeter, bläckpölar, flygande böcker och arkivariespöken -----
+    if (lib) {
+      // bokhyllor ũ: sträckor om 1-4 rutor i de synliga panelväggarna (Ū), aldrig vid den hemliga/spruckna väggen
+      {
+        const R = fk('shelfwalls');
+        for (let y = 0; y < G.H; y++) for (let x = 0; x < W; x++) {
+          if (!face(x, y, 'Ū') || !R.chance(0.06)) continue;
+          g[y][x] = 'ũ';
+          let cx = x, cy = y;
+          for (let k = R.int(0, 3); k > 0; k--) {
+            const nb = [0, 1, 2, 3].map(d => [cx + DX[d], cy + DY[d]]).filter(([nx, ny]) => face(nx, ny, 'Ū'));
+            if (!nb.length) break;
+            [cx, cy] = R.pick(nb); g[cy][cx] = 'ũ';
+          }
+        }
+      }
+      // ljuskronor ű i stället för eldfaten (utom i vaktarens sal): ljus som inte blockerar
+      // (bara där eldfatet har en gångbar granne utan fara: rutan blir gångbar och ska nås)
+      const walk = c => !isBlock(c) && !'_z¬¯'.includes(c) && !isWet(c) && !SINK9.includes(c) && !SINK11.includes(c) && !SINK13.includes(c);
+      for (let y = 1; y < G.H - 1; y++) for (let x = 1; x < W - 1; x++) if (g[y][x] === 'f' && !inG(x, y) && [0, 1, 2, 3].some(d => walk(g[y + DY[d]][x + DX[d]]))) { g[y][x] = 'ű'; cnt.f--; bump('ű', 1); }
+      // pulpeter Ű (1-3): mot en vägg med fri framsida (eller med en fri sida), helst i läsesalar och skrivarsalar, högst en per rum;
+      // aldrig i vaktarens sal, valv eller hemliga rum (nås alltid med grindarna stängda)
+      {
+        const R = fk('lecterns'), want = R.int(1, LECTERN13_CAP);
+        const front = (x, y) => [0, 1, 2, 3].some(k => isWall(g[y + DY[k]][x + DX[k]]) && g[y - DY[k]][x - DX[k]] === '.' && lock[(y - DY[k]) * W + x - DX[k]] < 2);
+        const freeSide = (x, y) => [0, 1, 2, 3].some(d => g[y + DY[d]][x + DX[d]] === '.' && lock[(y + DY[d]) * W + x + DX[d]] < 2);
+        const pri = r => (r.arch === 'readingroom' || r.arch === 'scriptorium' ? 0 : ['stacks', 'library', 'archive'].includes(r.arch) ? 1 : 2);
+        const host = R.shuffle(rooms.filter(r => !['guardian', 'vault', 'secret'].includes(r.type))).sort((p, q) => pri(p) - pri(q));
+        let n = 0;
+        for (const r of host) {
+          if (n >= want) break;
+          const ok = (x, y) => safe13(x, y) && cheb(x, y, P[0], P[1]) >= 2;
+          const p = place(r, 'Ű', 1, { wall: true, center: true, jit: 2, pred: (x, y) => front(x, y) && ok(x, y), rng: R })[0]
+            || place(r, 'Ű', 1, { pred: (x, y) => freeSide(x, y) && ok(x, y), rng: R })[0];
+          if (p) n++;
+        }
+        if (!n) return null;
+      }
+      // bläckpölar Ŭ: 2-4 fläckar om 2-6 rutor (högst 24 rutor)
+      { const R = fk('ink'); patches(R, 'Ŭ', INK13_CAP, R.int(2, 4)); }
+      // flygande böcker Ų: en hel grupp (3-5) i ett stridsrum (~85 %, djup 3+ ibland två grupper)
+      { const R = fk('grimoires'); groupIn(R, 'Ų', FOE_FROM + 'ų', R.chance(0.85) ? (depth >= 3 && R.chance(0.35) ? 2 : 1) : 0, 3, 5, 3); }
+      // arkivariespöken Ŵ (djup 2+, ~55 %, 1-2, högst 2): byts in mot redan utplacerade fiender i stridsrummen
+      { const R = fk('archivists'); singlesIn(R, 'Ŵ', FOE_FROM + 'ų', depth >= 2 && R.chance(0.55) ? (R.chance(0.35) ? 2 : 1) : 0, false); }
+    }
+
+    // ----- gjuteriet: smältugnar, kanaler med smält metall, stansar, städ, ångventiler, rullband, smältgolemer och gnistdrönare -----
+    if (fou) {
+      // smältugnar Ŷ: glesa enstaka rutor i de synliga plåtväggarna (ŵ), aldrig vid den hemliga/spruckna väggen, minst 3 rutor isär
+      {
+        const R = fk('furnaces'), got = [];
+        for (let y = 0; y < G.H; y++) for (let x = 0; x < W; x++) {
+          if (!face(x, y, 'ŵ') || !R.chance(0.05) || got.some(p => cheb(p[0], p[1], x, y) < 3)) continue;
+          g[y][x] = 'Ŷ'; got.push([x, y]);
+        }
+      }
+      // kanaler med smält metall Ź (gjuthallarna och ibland smältverken, F.canal): saknas de läggs en rak kanal (1-2 bred) tvärs över en stor sal
+      // med en spång (1-2 rutor) där man går över; varje ruta med localOK (aldrig enda vägen), aldrig vid dörrar, P eller x, aldrig intill en fara
+      if (!cnt['Ź']) { // (gjuthallarna och smältverken har oftast redan fått sina kanaler)
+        const R = fk('canals'), want = 1;
+        const host = R.shuffle(rooms.filter(r => (H.isCombat(r) || r.type === 'treasure') && r.box.w >= 5 && r.box.h >= 5 && !inG(r.cx, r.cy)))
+          .sort((p, q) => (q.arch === 'casting' ? 1 : 0) - (p.arch === 'casting' ? 1 : 0));
+        let n = 0;
+        for (const r of host) for (let t = 0; t < 4; t++) {
+          if (n >= want) break;
+          const bx = r.box, vert = R.chance(0.5), A = vert ? bx.h : bx.w, B = vert ? bx.w : bx.h;
+          const wide = B >= 7 && R.chance(0.5) ? 2 : 1, o = R.int(1, B - 1 - wide), br = R.int(1, A - 3), bw = R.int(1, 2), cells = [];
+          for (let a = 0; a < A; a++) {
+            if (a >= br && a < br + bw) continue; // spången
+            for (let t = 0; t < wide; t++) {
+              const x = vert ? bx.x + o + t : bx.x + a, y = vert ? bx.y + a : bx.y + o + t, i = y * W + x;
+              if (!G.inb(x, y) || rid[i] !== r.id || !trapOK(x, y) || doorNear(x, y) || !localOK(G, x, y) || !safe13(x, y) || touch(x, y, cells)) continue;
+              g[y][x] = 'Ź'; cells.push([x, y]);
+            }
+          }
+          const kept = cells.filter(([x, y]) => cells.some(p => Math.abs(p[0] - x) + Math.abs(p[1] - y) === 1)); // utan lösa rutor
+          for (const [x, y] of cells) if (!kept.some(p => p[0] === x && p[1] === y)) g[y][x] = '.';
+          if (kept.length < 3) { for (const [x, y] of kept) g[y][x] = '.'; continue; }
+          bump('Ź', kept.length); n++;
+        }
+      }
+      // stansar Ż (1-4, ett block): först i korridorerna där det finns plats runt om (localOK: aldrig enda vägen), annars i salarna;
+      // aldrig vid dörrar, P eller x, minst 4 rutor isär
+      {
+        const R = fk('presses'), want = R.int(1, PRESS13_CAP), got = [];
+        const okP = (x, y) => g[y][x] === '.' && !lock[y * W + x] && !doorNear(x, y) && !inG(x, y) && cheb(x, y, P[0], P[1]) >= 2 && cheb(x, y, X[0], X[1]) >= 2
+          && got.every(p => cheb(p[0], p[1], x, y) >= 4) && localOK(G, x, y) && safe13(x, y);
+        for (const [x, y] of R.shuffle((H.corridors || []).slice())) { if (got.length >= Math.min(want, 2)) break; if (okP(x, y)) { set(x, y, 'Ż'); got.push([x, y]); } }
+        const pri = r => (r.arch === 'pressroom' ? 0 : H.isCombat(r) ? 1 : 2);
+        const host = R.shuffle(rooms.filter(r => !['guardian', 'vault', 'secret', 'start', 'shop'].includes(r.type))).sort((p, q) => pri(p) - pri(q));
+        for (let pass = 0; pass < 2 && got.length < want; pass++) for (const r of host) {
+          if (got.length >= want) break;
+          const p = place(r, 'Ż', 1, { pred: (x, y) => okP(x, y) && (pass > 0 || !r.cells.some(([cx, cy]) => g[cy][cx] === 'Ż')), rng: R })[0];
+          if (p) got.push(p);
+        }
+        if (!got.length) return null;
+      }
+      // städ/gjutformar ż: 1-3 till som dekor mot väggarna i salarna
+      {
+        const R = fk('molds'), want = R.int(1, 3);
+        const host = R.shuffle(rooms.filter(r => !['guardian', 'vault', 'secret', 'shop'].includes(r.type)));
+        let n = 0;
+        for (const r of host) { if (n >= want) break; n += place(r, 'ż', 1, { wall: true, avoid: ['ż', 2], pred: (x, y) => safe13(x, y) && cheb(x, y, P[0], P[1]) >= 2 && !doorNear(x, y), rng: R }).length; }
+      }
+      // ångventiler ź (2-5): på öppet golv i salarna (och korridorerna), aldrig vid dörrar, P eller x, aldrig enda vägen, minst 3 rutor isär
+      {
+        const R = fk('vents'), want = R.int(2, VENT13_CAP), got = [];
+        const okV = (x, y) => trapOK(x, y) && !doorNear(x, y) && !inG(x, y) && localOK(G, x, y) && safe13(x, y) && !touch(x, y, []) && got.every(p => cheb(p[0], p[1], x, y) >= 3);
+        const host = R.shuffle(rooms.filter(r => H.isCombat(r) || r.type === 'treasure'));
+        const more = rooms.filter(r => ['start', 'shrine', 'special'].includes(r.type));
+        for (let pass = 0; pass < 3 && got.length < want; pass++) for (const r of pass < 2 ? host : more) {
+          if (got.length >= want) break;
+          if (pass === 0 && r.cells.some(([x, y]) => g[y][x] === 'ź')) continue;
+          const p = place(r, 'ź', 1, { open: pass === 0, pred: okV, rng: R })[0];
+          if (p) got.push(p);
+        }
+        for (const [x, y] of R.shuffle((H.corridors || []).slice())) { if (got.length >= want) break; if (okV(x, y)) { set(x, y, 'ź'); got.push([x, y]); } }
+        if (got.length < 2) return null;
+      }
+      // rullband Ÿ (1-4): raka band om 4-9 rutor i salarna (rullbandshallarna först) och korridorerna; samma riktning längs hela bandet, rutan
+      // efter bandets slut är fritt golv (aldrig vägg, hinder eller fara), aldrig vid dörrar, P eller x, aldrig intill ett annat band
+      {
+        const R = fk('belts'), want = R.int(1, BELT13_MAX), on = new Uint8Array(W * G.H);
+        let nb = 0;
+        // (även på dörrarnas gångar: bandet är golv som går att gå på; hela bandet i samma sal eller i korridorerna, k = rummets id eller -1)
+        const okC = (x, y, k) => G.inb(x, y) && g[y][x] === '.' && rid[y * W + x] === k && !doorNear(x, y) && !inG(x, y) && !nearPX2(x, y)
+          && !RX.some((dx, k) => on[(y + RY[k]) * W + x + dx]);
+        const tryBelt = (x0, y0) => {
+          // längsta raka sträckan med fria rutor från (x0, y0) i varje riktning; den längsta prövas först (hellre långa band)
+          const k0 = rid[y0 * W + x0];
+          const dirs = [0, 1, 2, 3].map(d => { let run = 1; while (run < BELT13_LEN[1] && okC(x0 + DX[d] * run, y0 + DY[d] * run, k0)) run++; return [d, run + R.next() * 0.5]; })
+            .sort((a, b) => b[1] - a[1]);
+          for (const [d, rr] of dirs) {
+            const dx = DX[d], dy = DY[d], run = Math.floor(rr);
+            if (run < BELT13_LEN[0]) continue;
+            for (let len = R.chance(0.6) ? run : R.int(BELT13_LEN[0], run); len >= BELT13_LEN[0]; len--) {
+              const ex = x0 + dx * len, ey = y0 + dy * len, e = G.at(ex, ey);
+              if (isBlock(e) || HAZARD.includes(e) || HZ13.includes(e) || isDoorCh(e) || on[ey * W + ex]) continue;
+              for (let k = 0; k < len; k++) { const x = x0 + dx * k, y = y0 + dy * k; g[y][x] = 'Ÿ'; on[y * W + x] = 1; G.belts.push({ x, y, dx, dy }); }
+              bump('Ÿ', len); G.lockMin(ex, ey, 1); // inget hinder får hamna där bandet slutar
+              return true;
+            }
+          }
+          return false;
+        };
+        // startrutor: i salarna helst intill en vägg (bandet kan gå tvärs över salen), annars var som helst
+        const wallSide = (x, y) => [0, 1, 2, 3].some(d => isWall(G.at(x + DX[d], y + DY[d])));
+        const pri = r => (r.arch === 'beltworks' ? 0 : 1);
+        const host = R.shuffle(rooms.filter(r => (H.isCombat(r) || r.type === 'treasure' || r.type === 'shrine' || r.type === 'special') && Math.max(r.box.w, r.box.h) >= 5))
+          .sort((p, q) => pri(p) - pri(q));
+        for (const r of host) {
+          if (nb >= want) break;
+          for (const [x, y] of R.shuffle(r.cells.slice()).sort((p, q) => (wallSide(q[0], q[1]) ? 1 : 0) - (wallSide(p[0], p[1]) ? 1 : 0))) if (okC(x, y, r.id) && tryBelt(x, y)) { nb++; break; }
+        }
+        if (nb < want) for (const [x, y] of R.shuffle((H.corridors || []).slice())) { if (nb >= want) break; if (okC(x, y, -1) && tryBelt(x, y)) nb++; }
+        if (!nb) return null;
+      }
+      // smältgolemer Ž (djup 2+, ~55 %, 1-2, högst 2): byts in i stora stridsrum (minst 30 gångbara rutor)
+      { const R = fk('golems'); singlesIn(R, 'Ž', FOE_FROM + 'ž', depth >= 2 && R.chance(0.55) ? (R.chance(0.35) ? 2 : 1) : 0, true); }
+      // gnistdrönare ſ: en hel grupp (2-4) i ett stridsrum (~75 %, djup 3+ ibland två grupper)
+      { const R = fk('drones'); groupIn(R, 'ſ', FOE_FROM + 'ž', R.chance(0.75) ? (depth >= 3 && R.chance(0.3) ? 2 : 1) : 0, 2, 4, 2); }
+    }
+
+    // ----- alla biomer: bläckflaskor Ƃ (~20 %, biblioteket ~40 %, 1-2, högst 2; helst i hemliga rum, valv och skattrum) -----
+    {
+      let added = false;
+      const R = fk('inkflasks'), loot = rooms.filter(r => r.type !== 'guardian' && r.type !== 'shop' && r.type !== 'start');
+      const n = R.chance(lib ? INKFLASK13_LIB_P : INKFLASK13_P) ? R.int(1, INKFLASK13_CAP) : 0;
+      for (let k = 0; k < n; k++) for (let t = 0; t < 6; t++) {
+        const r = R.weighted(loot, q => (q.type === 'secret' ? 3 : q.type === 'vault' || q.type === 'treasure' ? 2 : 1)), p = r && place(r, 'Ƃ', 1, { rng: R })[0];
+        if (p) { undo.push([p[0], p[1], '.']); added = true; break; }
+      }
+      if (added && opts.v13) opts.v13.added = true;
+    }
+    return true;
+  }
+
+  // ---------- Version 14: arenarum, nya fiender i de mellersta och sena biomerna, nya handgjorda rumstyper ----------
+  // FOES14: tecken -> { home: biomen, d: första djup, p: andel banor, n: [min, max] per bana, max: tak (validate) }
+  const FOES14 = {
+    'Ƅ': { home: 'frost', d: 1, p: 0.6, n: [1, 3], max: 3 }, // snöfantom
+    'ƅ': { home: 'volcano', d: 2, p: 0.6, n: [1, 2], max: 2 }, // lavaorm (helst nära lava)
+    'Ɔ': { home: 'tomb', d: 2, p: 0.55, n: [1, 2], max: 2 }, // skarabépräst
+    'Ƈ': { home: 'crystal', d: 1, p: 0.6, n: [1, 3], max: 3 }, // kristallspindel
+    'ƈ': { home: 'sunken', d: 1, p: 0.65, n: [1, 2], max: 3 }, // marulk (bara i/vid djupt vatten Đ eller tidvatten Ĕ)
+    'Ɖ': { home: 'sky', d: 2, p: 0.55, n: [1, 2], max: 2 }, // vindande
+  };
+  const FOES14_CH = Object.keys(FOES14).join('');
+  const NATIVE14 = { frost: 'ÉÜ', volcano: 'Æ', tomb: 'ÃÊ', crystal: 'ËÍ', sunken: 'ÏÛÚ', sky: 'Ķķ' }; // biomernas egna (utöver FOE_FROM) som kan bytas
+  const WATER14 = 'ĐĔĜÓ'; // marulkens vatten
+  const ARENA14_P = 0.6, SET14_P = 0.4;
+  // nya handgjorda rumstyper (bara befintliga tecken): id -> { biome, min: minsta antal rutor, fill: mönster }
+  //   mönster: rows (två rader var annan ruta längs långsidan, två rutor från väggarna), grid (var annan ruta x var tredje), ring (runt mitten),
+  //   wall (var annan ruta längs väggarna), blob (en fläck runt mitten), strip (en strimma tvärs över rummet med en bro om 2 rutor i mitten)
+  const SET14 = {
+    pillargallery: { biome: 'dungeon', min: 30, fill: [['rows', 'W'], ['wall', 'j', 3]] }, // pelarsal med galleri (pelare i salens väggtecken)
+    stalagmites: { biome: 'caves', min: 24, fill: [['grid', 'W'], ['wall', 'F', 2]] }, // droppstensgrotta
+    gravevault: { biome: 'graveyard', min: 24, fill: [['grid', 'k'], ['wall', 'n', 3]] }, // gravvalv med kistrader
+    stonecircle: { biome: 'forest', min: 24, fill: [['ring', 'u'], ['wall', 'j', 2]] }, // stencirkel
+    colonnade: { biome: 'courtyard', min: 30, fill: [['rows', 'u'], ['wall', 'T', 2]] }, // pelargång
+    drownedcrypt: { biome: 'swamp', min: 24, fill: [['blob', '-'], ['wall', 'k', 3]] }, // översvämmad krypta
+    icehall: { biome: 'frost', min: 24, fill: [['blob', ':'], ['rows', 'u']] }, // isbelagd sal med frusna statyer
+    lavabridge: { biome: 'volcano', min: 24, fill: [['strip', '_'], ['rows', 'W'], ['wall', 'j', 2]] }, // bro över lava
+    obeliskhall: { biome: 'tomb', min: 24, fill: [['rows', 'u'], ['wall', 'k', 2]] }, // obelisksal med likkistor
+    crystalnave: { biome: 'crystal', min: 24, fill: [['ring', 'i'], ['rows', 'W']] }, // kristallkatedral
+    drownedgallery: { biome: 'sunken', min: 24, fill: [['grid', 'u'], ['wall', 'k', 2]] }, // sjunket galleri
+    assemblyhall: { biome: 'clock', min: 24, fill: [['grid', 'J'], ['wall', 'T', 3]] }, // monteringshall
+    windshrine: { biome: 'sky', min: 24, fill: [['ring', 'u']] }, // vindhelgedom
+    capgarden: { biome: 'fungus', min: 24, fill: [['grid', 'F'], ['wall', 'j', 3]] }, // svampträdgård
+    statuegallery: { biome: 'mirror', min: 24, fill: [['rows', 'u'], ['wall', 'H', 2]] }, // statygalleri
+    readingnook: { biome: 'library', min: 24, fill: [['grid', 'J'], ['wall', 'q', 4]] }, // läsesal med bordsrader
+    crateyard: { biome: 'foundry', min: 24, fill: [['grid', 'T'], ['wall', 'H', 2]] }, // lagerhall
+    // version 15/16: samma mekanism i de nya biomerna (rumstypen läggs av content14, med v14:s ångra-lista)
+    cloister: { biome: 'cathedral', min: 30, fill: [['rows', 'W'], ['wall', 'c', 3]] }, // korsgång (pelarrader i katedralsten)
+    waxpillars: { biome: 'hive', min: 24, fill: [['grid', 'W'], ['wall', 'j', 2]] }, // vaxpelarsal
+    topiary: { biome: 'garden', min: 24, fill: [['grid', 'W'], ['wall', 'ƨ', 2]] }, // klippta häckar (häckblock i ett rutnät) och statyer
+    dreamgallery: { biome: 'dream', min: 24, fill: [['ring', 'u'], ['wall', 'ƪ', 2]] }, // drömgalleri: statyring och drömlyktor
+  };
+  const SET14_ID = Object.keys(SET14);
+  // tecken som rumstypen (arch) licensierar eller som bara får finnas i vissa rum: sådana rum byggs aldrig om
+  const LICENSED14 = '()?;>ũŹżŰ²¯' + 'ƐƏƧƩƣƎ', LIC14_BIOME = { '_': 'volcano', ':': 'frost', 'Ç': 'frost', '-': 'swamp' }; // (lava, is och vatten: bara där biomen tillåter dem i alla rum)
+  // version 14/17: bygger om ett stridsrum (normal/elite, ingen farlig rumstyp, inget spindelbo, inga licensierade tecken; C.hostOK: extra villkor) med en
+  // handgjord rumstyp ur tabellen T (id ur ids, valt med R): mönstret stämplas med C.put på fria golvrutor och ångras om något som nåddes förut tappas
+  function setpiece14(G, L, R, T, ids, C) {
+    const { W, g, lock } = G, { rooms, P, X, cnt, rid, undo, archUndo, put } = C, b = L.biome;
+    const doorNear = (x, y) => RX.some((dx, k) => isDoorCh(G.at(x + dx, y + RY[k])));
+    const nearPX2 = (x, y) => cheb(x, y, P[0], P[1]) <= 2 || cheb(x, y, X[0], X[1]) <= 2;
+    const reach = () => {
+      const seen = new Uint8Array(W * G.H), st = [P[1] * W + P[0]]; seen[st[0]] = 1;
+      while (st.length) {
+        const i = st.pop(), x = i % W, y = (i / W) | 0;
+        for (let d = 0; d < 4; d++) { const nx = x + DX[d], ny = y + DY[d], j = ny * W + nx; if (seen[j] || !G.inb(nx, ny)) continue; const c = g[ny][nx]; if (genBlk(c) || c === '*') { if (!isWall(c)) seen[j] = 2; continue; } seen[j] = 1; st.push(j); }
+      }
+      return seen;
+    };
+    const id = R.pick(ids), S = T[id];
+    const wallCh = r => { const k = {}; let best = null; for (const [x, y] of r.cells) for (let d = 0; d < 4; d++) { const c = G.at(x + DX[d], y + DY[d]); if (isWall(c) && rid[(y + DY[d]) * W + x + DX[d]] < 0) { k[c] = (k[c] || 0) + 1; if (!best || k[c] > k[best]) best = c; } } return best; };
+    const hosts = R.shuffle(rooms.filter(r => (r.type === 'normal' || r.type === 'elite') && r.cells.length >= S.min && !(ARCH[r.arch] && ARCH[r.arch].hazard)
+      && r.arch !== 'nest' && (!C.hostOK || C.hostOK(r)) && !r.cells.some(([x, y]) => { const c = g[y][x]; return LICENSED14.includes(c) || (LIC14_BIOME[c] && LIC14_BIOME[c] !== b); })));
+    for (const r of hosts.slice(0, 6)) {
+      const base = reach(), mark = undo.length, wc = wallCh(r);
+      const bx = r.box, hz = bx.w >= bx.h;
+      const inR = (x, y) => G.inb(x, y) && rid[y * W + x] === r.id;
+      const hazard = ch => ch === '_' || ch === '-' || ch === ':';
+      const okAt = (x, y, ch) => {
+        if (!inR(x, y) || g[y][x] !== '.' || doorNear(x, y) || nearPX2(x, y)) return false;
+        const i = y * W + x, blk = genBlk(ch === 'W' ? '1' : ch);
+        if (hazard(ch)) return !lock[i] && ![0, 1, 2, 3].some(d => isDoorCh(G.at(x + DX[d], y + DY[d])));
+        return blk ? !lock[i] && localOK(G, x, y) : lock[i] < 2;
+      };
+      const stamp = (x, y, ch) => { const c = ch === 'W' ? wc : ch; if (!c || !okAt(x, y, ch)) return 0; put(x, y, c); return 1; };
+      let n = 0;
+      for (const [pat, ch, lim] of S.fill) {
+        if (pat === 'rows' || pat === 'grid') {
+          for (const [x, y] of r.cells) {
+            const a = hz ? x - bx.x : y - bx.y, c = hz ? y - bx.y : x - bx.x, span = hz ? bx.h : bx.w;
+            const on = pat === 'rows' ? (a % 2 === 1 && (c === 2 || c === span - 3) && a >= 2 && a <= (hz ? bx.w : bx.h) - 3)
+              : (a % 2 === 1 && c % 3 === 1 && c > 0 && c < span - 1 && a > 1 && a < (hz ? bx.w : bx.h) - 2);
+            if (on) n += stamp(x, y, ch);
+          }
+        } else if (pat === 'ring') {
+          const rad = Math.max(1.5, Math.min(bx.w, bx.h) / 2 - 1.5);
+          const c = r.cells.filter(([x, y]) => Math.abs(Math.hypot(x - r.cx, y - r.cy) - rad) < 0.55).map(([x, y]) => [x, y, Math.atan2(y - r.cy, x - r.cx)]).sort((p, q) => p[2] - q[2]);
+          const done = [];
+          for (const [x, y] of c) { if (done.some(p => cheb(p[0], p[1], x, y) < 2)) continue; if (stamp(x, y, ch)) { done.push([x, y]); n++; } }
+        } else if (pat === 'wall') {
+          let k = 0;
+          for (const [x, y] of R.shuffle(r.cells.filter(([x, y]) => [0, 1, 2, 3].some(d => isWall(G.at(x + DX[d], y + DY[d])))))) {
+            if (k >= lim) break;
+            if (stamp(x, y, ch)) k++;
+          }
+          n += k;
+        } else if (pat === 'blob') {
+          const rx = Math.max(1.5, bx.w / 2 - 2), ry = Math.max(1.5, bx.h / 2 - 2);
+          for (const [x, y] of r.cells) if (Math.hypot((x - r.cx) / rx, (y - r.cy) / ry) <= 0.85 + 0.25 * R.next()) n += stamp(x, y, ch);
+        } else if (pat === 'strip') { // en strimma tvärs över rummet (tvärs mot långsidan) med en bro om 2 rutor i mitten
+          const mid = Math.round(hz ? r.cx : r.cy), span0 = hz ? bx.y : bx.x, span1 = hz ? bx.y + bx.h - 1 : bx.x + bx.w - 1, brd = Math.round(hz ? r.cy : r.cx);
+          for (const off of [0, 1]) for (let t = span0; t <= span1; t++) {
+            if (Math.abs(t - brd) <= 0 || t - brd === 1) continue; // bron
+            const x = hz ? mid + off : t, y = hz ? t : mid + off;
+            n += stamp(x, y, ch);
+          }
+        }
+      }
+      // allt som nåddes förut nås ändå (de nya rutorna undantagna), annars ångras rumstypen
+      const now = reach(), mine2 = new Set(undo.slice(mark).map(([x, y]) => y * W + x));
+      let ok = n >= 3;
+      for (let i = 0; ok && i < base.length; i++) if (base[i] && !now[i] && !mine2.has(i)) ok = false;
+      if (!ok) {
+        for (let k = undo.length - 1; k >= mark; k--) { const [x, y, o] = undo[k]; cnt[g[y][x]]--; g[y][x] = o; cnt[o] = (cnt[o] || 0) + 1; }
+        undo.length = mark;
+        continue;
+      }
+      archUndo.push([rooms.indexOf(r), r.arch]); r.arch = id;
+      return true;
+    }
+    return false;
+  }
+
+  // Körs allra sist i content med egna slumpflöden (forks av content-slumpens 'v14'): allt från version 13 ligger kvar. Allt på kartan läggs med en
+  // ångra-lista (opts.v14.undo: rutan och tecknet som stod där förut; opts.v14.arch: rummets index och gamla rumstyp): underkänns banan tas det bort
+  // igen, level.arenas töms och banan blir exakt som i version 13 (se build7). Lägger arenarummen i G.arenas.
+  function content14(G, depth, opts, L, H) {
+    const { W, g, lock } = G, { rooms, fight, P, X, cnt, rid } = H, b = L.biome;
+    const fk = tag => H.rng.fork(tag);
+    G.arenas = [];
+    if (opts.v14) { opts.v14.added = false; opts.v14.undo = []; opts.v14.arch = []; }
+    const undo = opts.v14 ? opts.v14.undo : [], archUndo = opts.v14 ? opts.v14.arch : [];
+    let added = false;
+    const put = (x, y, ch) => { const o = g[y][x]; undo.push([x, y, o]); if (cnt[o]) cnt[o]--; g[y][x] = ch; cnt[ch] = (cnt[ch] || 0) + 1; added = true; };
+    const doorNear = (x, y) => RX.some((dx, k) => isDoorCh(G.at(x + dx, y + RY[k])));
+    const nearPX2 = (x, y) => cheb(x, y, P[0], P[1]) <= 2 || cheb(x, y, X[0], X[1]) <= 2;
+    // flood fill från P (hinder, faror, grindar, hemliga väggar som vägg): allt som nåddes förut ska nås efteråt (hinder och faror: en granne nås)
+    const reach = () => {
+      const seen = new Uint8Array(W * G.H), st = [P[1] * W + P[0]]; seen[st[0]] = 1;
+      while (st.length) {
+        const i = st.pop(), x = i % W, y = (i / W) | 0;
+        for (let d = 0; d < 4; d++) { const nx = x + DX[d], ny = y + DY[d], j = ny * W + nx; if (seen[j] || !G.inb(nx, ny)) continue; const c = g[ny][nx]; if (genBlk(c) || c === '*') { if (!isWall(c)) seen[j] = 2; continue; } seen[j] = 1; st.push(j); }
+      }
+      return seen;
+    };
+
+    // ----- nya handgjorda rumstyper (~40 % av banorna, en per bana): ett stridsrum byggs om med biomens rumstyp -----
+    {
+      const R = fk('setpieces'), mine = SET14_ID.filter(id => SET14[id].biome === b);
+      if (mine.length && R.chance(SET14_P)) {
+        if (setpiece14(G, L, R, SET14, mine, { rooms, P, X, cnt, rid, undo, archUndo, put })) added = true;
+      }
+    }
+
+    // ----- nya fiender: infödda i sin biom, byts in mot redan utplacerade fiender i stridsrummen (samma ruta i samma grupp) -----
+    for (const ch of FOES14_CH) {
+      const F = FOES14[ch];
+      if (b !== F.home || depth < F.d) continue;
+      const R = fk('foe-' + ch);
+      if (!R.chance(F.p)) continue;
+      let want = Math.min(F.max, R.int(F.n[0], F.n[1]));
+      const mob = FOE_FROM + (NATIVE14[b] || '');
+      const host = R.shuffle(fight.filter(r => r.arch !== 'nest' && r.type !== 'start'));
+      const lavaNear = (x, y) => { for (let yy = y - 2; yy <= y + 2; yy++) for (let xx = x - 2; xx <= x + 2; xx++) if (G.at(xx, yy) === '_') return true; return false; };
+      const wetNear = (x, y) => RX.some((dx, k) => WATER14.includes(G.at(x + dx, y + RY[k])));
+      for (let pass = 0; pass < 2 && want > 0; pass++) for (const r of host) { // en per rum först, sedan tätare
+        if (want <= 0) break;
+        let c = R.shuffle(r.cells.filter(([x, y]) => mob.includes(g[y][x])));
+        if (ch === 'ƅ') c = c.map(p => [p, lavaNear(p[0], p[1]) ? 0 : 1]).sort((p, q) => p[1] - q[1]).map(p => p[0]);
+        if (ch === 'ƈ') {
+          const wet = c.filter(([x, y]) => wetNear(x, y));
+          if (wet.length) c = wet;
+          else { // marulken: en fiende i rummet flyttas till en golvruta vid vattnet
+            const spots = r.cells.filter(([x, y]) => g[y][x] === '.' && wetNear(x, y) && lock[y * W + x] < 2 && !doorNear(x, y) && !nearPX2(x, y));
+            if (!spots.length || !c.length) continue;
+            const s = R.pick(spots), m = c[0];
+            put(m[0], m[1], '.'); put(s[0], s[1], ch); want--; continue;
+          }
+        }
+        if (!c.length) continue;
+        put(c[0][0], c[0][1], ch); want--;
+      }
+    }
+
+    // ----- arenarum (djup 2+, ~45 % av banorna): ett rektangulärt stridsrum om minst 5x5 inre rutor, väggar runt om utom dörröppningarna -----
+    {
+      const R = fk('arena');
+      if (depth >= 2 && R.chance(ARENA14_P)) {
+        const BAD_IN = 'Px}Z÷ťMŃ' + GATES + '*' + SHIFT16; // (version 16: aldrig glidande väggar i en arena)
+        for (const r of R.shuffle(rooms.filter(r => r.type === 'normal' || r.type === 'elite'))) {
+          let x0 = W, y0 = G.H, x1 = -1, y1 = -1;
+          for (const [x, y] of r.cells) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+          if (x1 - x0 < 4 || y1 - y0 < 4 || x0 < 2 || y0 < 2 || x1 > W - 3 || y1 > G.H - 3) continue;
+          let ok = true;
+          for (let y = y0; y <= y1 && ok; y++) for (let x = x0; x <= x1 && ok; x++) if ((rid[y * W + x] !== r.id && !isWall(g[y][x])) || BAD_IN.includes(g[y][x])) ok = false; // rummets rutor och väggar (pelare, runda hörn)
+          if (!ok) continue;
+          const doors = [];
+          for (let y = y0 - 1; y <= y1 + 1 && ok; y++) for (let x = x0 - 1; x <= x1 + 1 && ok; x++) {
+            if (x >= x0 && x <= x1 && y >= y0 && y <= y1) continue;
+            const c = g[y][x], corner = (x === x0 - 1 || x === x1 + 1) && (y === y0 - 1 || y === y1 + 1);
+            if (isWall(c)) continue;
+            if (corner || GATES.includes(c) || c === '*' || c === 'Ń' || (c !== 'D' && c !== 'G' && genBlk(c))) { ok = false; break; }
+            // dörröppningen och rutan innanför är fria (inga hinder eller rekvisita)
+            const ix = Math.min(x1, Math.max(x0, x)), iy = Math.min(y1, Math.max(y0, y));
+            if (genBlk(g[iy][ix])) { ok = false; break; }
+            doors.push({ x, y });
+          }
+          if (!ok || !doors.length || doors.length > 4) continue;
+          const mx = (x0 + x1 + 1) / 2, my = (y0 + y1 + 1) / 2; // belöningen hamnar i mitten: minst en av rutorna där är fritt golv
+          const xs = [Math.floor(mx - 0.25), Math.floor(mx + 0.25)], ys = [Math.floor(my - 0.25), Math.floor(my + 0.25)];
+          if (!xs.some(x => ys.some(y => !genBlk(g[y][x]) && !HAZARD.includes(g[y][x])))) continue;
+          G.arenas.push({ x0, y0, x1, y1, doors, waves: depth >= 4 ? 3 : 2 });
+          added = true;
+          break;
+        }
+      }
+    }
+    if (added && opts.v14) opts.v14.added = true;
+    return true;
+  }
+
+  // ---------- Version 15 och 16: blodkatedralen, bikupan, den döda trädgården och drömriket ----------
+  // Körs allra sist i content (efter content14) med egna slumpflöden ur gafflarna 'v15' och 'v16'. De nya biomernas egna saker läggs alltid; det
+  // som läggs i de gamla biomerna (inbytta fiender) och föremålen i alla biomer (bikupor ƞ, drömflaskor Ƴ) läggs med ångra-listor (opts.v15.undo,
+  // opts.v16.undo): underkänns banan tas de bort igen och banan blir exakt som i version 14 resp. 15 (se build7). opts.v15off (som också stänger av
+  // version 16) och opts.v16off stänger av dem helt i de gamla biomerna.
+  const BELL15_CAP = 2, FONT15_CAP = 3, SAC15_CAP = 10, HONEY15_CAP = 36, BEAM15_CAP = 40, CHOIR15_CAP = 3, STINGER15_CAP = 2, SWARM15 = [3, 6];
+  const BEEHIVE15_P = 0.2, BEEHIVE15_HIVE_P = 0.4, BEEHIVE15_CAP = 2;
+  const FOUNTAIN16_CAP = 2, FALSEDOOR16_CAP = 4, THORN16_CAP = 30, MIST16_CAP = 30, ANGEL16_CAP = 2, VINE16_CAP = 4, DOPPEL16_CAP = 2, SLEEP16_CAP = 3;
+  const DREAMFLASK16_P = 0.2, DREAMFLASK16_DREAM_P = 0.4, DREAMFLASK16_CAP = 2;
+  // fienderna: tecken -> [biomer där de får finnas (första = hembiomen), första djup, tak per bana] (validate)
+  const FOES1516 = { 'Ƒ': [['cathedral', 'dungeon'], 1, CHOIR15_CAP], 'ƒ': [['cathedral'], 1, 0], 'Ɯ': [['cathedral', 'graveyard'], 1, 0], 'Ƙ': [['hive', 'forest', 'swamp'], 1, 18],
+    'ƙ': [['hive'], 2, STINGER15_CAP], 'ƚ': [['hive'], 1, 0],
+    'ƭ': [['garden'], 1, 0], 'ƫ': [['garden'], 2, ANGEL16_CAP], 'Ƭ': [['garden', 'forest', 'courtyard'], 1, VINE16_CAP], 'Ʈ': [['dream', 'mirror', 'library'], 1, 0],
+    'Ư': [['dream'], 2, DOPPEL16_CAP], 'ư': [['dream', 'graveyard'], 2, SLEEP16_CAP] };
+  const FOES1516_CH = Object.keys(FOES1516).join('');
+  const SHIFT16_CAP = 60, NEW1516_CHARS = [...'ƊƋƌƓƔƕƟƠơƢƣƤƍƖƥƦƎƏƐƗƧƨƩƪƞƳ', ...FOES1516_CH];
+  const NATIVE1516 = { cathedral: 'ƒƜ', hive: 'ƚ', garden: 'ƭX', dream: 'Ʈ', library: 'ų', mirror: 'Ś' }; // biomernas egna (utöver FOE_FROM) som kan bytas
+  const NEW1516 = ['cathedral', 'hive', 'garden', 'dream'];
+  // gemensamma hjälpare för content15 och content16
+  function kit1516(G, L, H, put, native) { // (version 17: native ersätter biomens egna fiender som kan bytas)
+    const { W, g, lock } = G, { rooms, fight, P, X, cnt, trapOK, rid } = H;
+    const doorNear = (x, y) => RX.some((dx, k) => isDoorCh(G.at(x + dx, y + RY[k]))); // dörr, grind, hemlig/sprucken vägg i de åtta grannarna
+    const gRoom = rooms.find(r => r.type === 'guardian'), inG = (x, y) => !!gRoom && rid[y * W + x] === gRoom.id;
+    const nearPX = (x, y, d) => cheb(x, y, P[0], P[1]) <= d || cheb(x, y, X[0], X[1]) <= d;
+    // ett nytt hinder får inte stänga in en kruka, spikfälla, lavaruta o.d.
+    const safe = (x, y) => [0, 1, 2, 3].every(d => {
+      const nx = x + DX[d], ny = y + DY[d], c = g[ny][nx];
+      if (!genBlk(c) || isBlock(c)) return true;
+      const wet = isWet(c);
+      return [0, 1, 2, 3].some(e => { const mx = nx + DX[e], my = ny + DY[e]; if (mx === x && my === y) return false; const m = G.at(mx, my); return !genBlk(m) || (wet && isWet(m)); });
+    });
+    const hidden = [];
+    for (let y = 1; y < G.H - 1; y++) for (let x = 1; x < W - 1; x++) if (g[y][x] === '*' || g[y][x] === '{') hidden.push([x, y]);
+    const nearHidden = (x, y) => hidden.some(([hx, hy]) => cheb(hx, hy, x, y) <= 2);
+    const face = (x, y, wc) => x >= 0 && y >= 0 && x < W && y < G.H && g[y][x] === wc && !nearHidden(x, y) && [0, 1, 2, 3].some(d => !isWall(G.at(x + DX[d], y + DY[d])));
+    // ingen ny fara intill en annan fara (utom den egna fläckens rutor)
+    const HZ = SINK13 + BELT13 + SINK11 + '_z¬¯°<>±¨¹' + WET8 + SINK9 + 'Ńń' + SINK15 + SINK16 + FLOOR16 + SINK17 + FLOOR17 + SINK18 + FLOOR18 + SINK19 + FLOOR19 + SINK20 + FLOOR20 + SINK21 + SINK22 + FLOOR22 + SINK23 + FLOOR23 + SINK30 + FLOOR30; // (version 17/18/19/20/21/22/23/30: skeppets, labbets, cirkusens, djungelns, gruvans och observatoriets faror)
+    const touch = (x, y, own) => RX.some((dx, k) => { const xx = x + dx, yy = y + RY[k]; return HZ.includes(G.at(xx, yy)) && !own.some(p => p[0] === xx && p[1] === yy); });
+    // flood fill från P med generatorns hinder (ƣ räknas som vägg): antal nådda rutor
+    let seen = null, q = null;
+    const reachN = () => {
+      const N = W * G.H; if (!seen) { seen = new Uint8Array(N); q = new Int32Array(N); } else seen.fill(0);
+      let qh = 0, qt = 0, n = 0; const s0 = P[1] * W + P[0]; seen[s0] = 1; q[qt++] = s0;
+      while (qh < qt) {
+        const cur = q[qh++], x = cur % W, y = (cur / W) | 0; n++;
+        for (let d = 0; d < 4; d++) { const nx = x + DX[d], ny = y + DY[d], ni = ny * W + nx; if (nx < 0 || ny < 0 || nx >= W || ny >= G.H || seen[ni] || genBlk(g[ny][nx])) continue; seen[ni] = 1; q[qt++] = ni; }
+      }
+      return n;
+    };
+    // fläckar (honung, taggrankor, sömnens dimma): nP fläckar om 2-6 rutor i värdrummen (i ordning), högst cap rutor; aldrig vid dörrar, P eller x, i
+    // vaktarens sal eller intill en annan fara; sink: aldrig enda vägen (localOK) och stänger aldrig in något
+    const patches = (R, hosts, ch, nP, cap, sink) => {
+      const okS = own => (x, y) => trapOK(x, y) && !doorNear(x, y) && !inG(x, y) && !touch(x, y, own) && (!sink || (localOK(G, x, y) && safe(x, y)));
+      let left = nP, tot = 0;
+      for (const r of hosts) {
+        if (left <= 0 || (cnt[ch] || 0) >= cap) break;
+        const s = R.shuffle(r.cells.filter(([x, y]) => okS([])(x, y)))[0];
+        if (!s) continue;
+        const want = R.int(2, 6), done = [], fr = [s], seenP = new Set([s[1] * W + s[0]]);
+        while (fr.length && done.length < want && (cnt[ch] || 0) < cap) {
+          const [x, y] = fr.splice(R.int(0, fr.length - 1), 1)[0];
+          if (!okS(done)(x, y)) continue;
+          put(x, y, ch); done.push([x, y]);
+          for (let d = 0; d < 4; d++) { const nx = x + DX[d], ny = y + DY[d], ni = ny * W + nx; if (!seenP.has(ni) && rid[ni] === r.id) { seenP.add(ni); fr.push([nx, ny]); } }
+        }
+        if (done.length === 1) { const [x, y] = done[0]; g[y][x] = '.'; cnt[ch]--; } else if (done.length) { left--; tot += done.length; }
+      }
+      return tot;
+    };
+    const mobCh = FOE_FROM + (native !== undefined ? native : NATIVE1516[L.biome] || '');
+    const mobOf = r => r.cells.filter(([x, y]) => mobCh.includes(g[y][x]));
+    // enstaka fiender ch (n st) inbytta i stridsrummen, en per rum först (pref: rummets prioritet, lägre först; minE: minsta gruppstorlek)
+    const singles = (R, ch, n, o) => {
+      o = o || {};
+      const host = R.shuffle(fight.filter(r => r.arch !== 'nest' && r.type !== 'start' && (!o.minE || mobOf(r).length >= o.minE)));
+      if (o.pref) host.sort((a, b) => o.pref(a) - o.pref(b));
+      let k = 0;
+      for (let pass = 0; pass < 2 && k < n; pass++) for (const r of host) {
+        if (k >= n) break;
+        let c = R.shuffle(mobOf(r));
+        if (!c.length || (pass === 0 && r.cells.some(([x, y]) => g[y][x] === ch))) continue;
+        if (o.cell) c = c.map(p => [p, o.cell(p[0], p[1]) ? 0 : 1]).sort((a, b) => a[1] - b[1]).map(p => p[0]);
+        put(c[0][0], c[0][1], ch); k++;
+      }
+      return k;
+    };
+    // föremål (bikupor, drömflaskor): 1-cap st i en viss andel av banorna, helst i hemliga rum, valv och skattrum
+    const loot = (R, ch, p, capN) => {
+      let n0 = 0;
+      const lr = rooms.filter(r => r.type !== 'guardian' && r.type !== 'shop' && r.type !== 'start');
+      const n = R.chance(p) ? R.int(1, capN) : 0;
+      for (let k = 0; k < n; k++) for (let t = 0; t < 6; t++) {
+        const r = R.weighted(lr, q2 => (q2.type === 'secret' ? 3 : q2.type === 'vault' || q2.type === 'treasure' ? 2 : 1));
+        const c = r && R.shuffle(r.cells.filter(([x, y]) => g[y][x] === '.' && lock[y * W + x] < 2 && !H.resv[y * W + x]))[0];
+        if (c) { put(c[0], c[1], ch, true); n0++; break; }
+      }
+      return n0;
+    };
+    return { doorNear, inG, nearPX, safe, face, touch, reachN, patches, mobOf, singles, loot, gRoom };
+  }
+
+  function content15(G, depth, opts, L, H) {
+    const { W, g, lock } = G, { rooms, fight, P, X, cnt, place } = H, b = L.biome;
+    const fk = tag => H.rng.fork(tag);
+    const cat = b === 'cathedral', hiv = b === 'hive', own = cat || hiv;
+    if (opts.v15) { opts.v15.added = false; opts.v15.undo = []; }
+    const undo = opts.v15 ? opts.v15.undo : [];
+    let added = false;
+    // i de gamla biomerna (och för föremålen) med ångra-lista
+    const put = (x, y, ch, u) => { const o = g[y][x]; if (u || !own) { undo.push([x, y, o]); added = true; } if (cnt[o]) cnt[o]--; g[y][x] = ch; cnt[ch] = (cnt[ch] || 0) + 1; };
+    const K = kit1516(G, L, H, put);
+    const roomOK = r => !['guardian', 'secret', 'vault'].includes(r.type);
+
+    // ----- blodkatedralen: blyinfattade fönster med ljusstråk, fler bänkar, blodfuntar, en klocka till och korgossar -----
+    if (cat) {
+      // fönster Ƌ i katedralstenen runt salarna (långhuset tätt, övriga glest), aldrig två intill varandra eller vid den hemliga väggen; ljusstråk ƍ
+      // (1-3 rutor) på golvet framför många av dem: aldrig vid dörrar, P eller x, bara på fritt golv i salen
+      const R = fk('windows');
+      for (const r of R.shuffle(rooms.filter(roomOK))) {
+        const nave = r.arch === 'nave', faces = [];
+        for (const [x, y] of r.cells) for (let d = 0; d < 4; d++) {
+          const xx = x + DX[d], yy = y + DY[d];
+          if (K.face(xx, yy, 'Ɗ') && !faces.some(f => f[0] === xx && f[1] === yy)) faces.push([xx, yy, (d + 2) & 3]);
+        }
+        const p = nave ? 0.5 : r.type === 'shrine' || r.arch === 'chapel' || r.arch === 'baptistery' ? 0.3 : 0.12;
+        for (const [x, y, din] of R.shuffle(faces)) {
+          if (!R.chance(p) || RX.some((dx, k) => G.at(x + dx, y + RY[k]) === 'Ƌ')) continue;
+          g[y][x] = 'Ƌ';
+          if (!R.chance(nave ? 0.75 : 0.5) || (cnt['ƍ'] || 0) >= BEAM15_CAP) continue;
+          const ix = DX[din], iy = DY[din]; // inåt i salen (din pekar från väggen in mot golvet)
+          for (let k = 1, len = R.int(1, nave ? 3 : 2); k <= len; k++) {
+            const bx = x + ix * k, by = y + iy * k;
+            if (!G.inb(bx, by) || g[by][bx] !== '.' || H.rid[by * W + bx] !== r.id || K.doorNear(bx, by) || K.nearPX(bx, by, 1) || H.resv[by * W + bx]) break;
+            put(bx, by, 'ƍ');
+          }
+        }
+      }
+      // bänkar längs väggarna i kapellen
+      { const R2 = fk('pews'); for (const r of rooms.filter(r => r.arch === 'chapel')) place(r, 'Ǝ', R2.int(1, 2), { wall: true, spread: 2, rng: R2, pred: K.safe }); }
+      // blodfuntar: dopkapellen har sina; ibland en till i ett stridsrum (högst tre)
+      {
+        const R2 = fk('fonts');
+        if (R2.chance(0.45)) for (const r of R2.shuffle(fight.filter(r => r.type !== 'start'))) if (place(r, 'Ə', 1, { open: true, rng: R2, pred: (x, y) => K.safe(x, y) && !K.nearPX(x, y, 2) }).length) break;
+      }
+      // klockor: klocktornen har sina (högst två per bana); utan klocktorn ibland en klocka mot en vägg i långhuset eller ett kapell
+      if (!cnt['Ɛ']) {
+        const R2 = fk('bells');
+        if (R2.chance(0.4)) for (const r of R2.shuffle(rooms.filter(r => ['nave', 'chapel', 'baptistery'].includes(r.arch)))) if (place(r, 'Ɛ', 1, { wall: true, rng: R2, pred: (x, y) => K.safe(x, y) && !K.nearPX(x, y, 2) }).length) break;
+      }
+      // korgossar Ƒ (~70 %, 1-2): byts in i en grupp om minst 3 (de läker och skyddar de andra)
+      { const R2 = fk('choir'); if (R2.chance(0.7)) K.singles(R2, 'Ƒ', R2.int(1, 2), { minE: 3 }); }
+    }
+
+    // ----- bikupan: honungskakor i väggarna, honung, larvsäckar, svärmar av arbetsbin och gaddkrigare -----
+    if (hiv) {
+      {
+        const R = fk('combs'); // honungskakor Ɣ: sträckor om 1-3 rutor i de synliga vaxväggarna, aldrig vid den hemliga/spruckna väggen
+        for (let y = 0; y < G.H; y++) for (let x = 0; x < W; x++) {
+          if (!K.face(x, y, 'Ɠ') || !R.chance(0.07)) continue;
+          g[y][x] = 'Ɣ';
+          let cx = x, cy = y;
+          for (let k = R.int(0, 2); k > 0; k--) { const nb = [0, 1, 2, 3].map(d => [cx + DX[d], cy + DY[d]]).filter(([nx, ny]) => K.face(nx, ny, 'Ɠ')); if (!nb.length) break; [cx, cy] = R.pick(nb); g[cy][cx] = 'Ɣ'; }
+        }
+      }
+      // honung Ɩ: 3-5 fläckar om 2-6 rutor (honungssalarna först, två fläckar var), högst HONEY15_CAP rutor; aldrig enda vägen
+      {
+        const R = fk('honey'), halls = R.shuffle(rooms.filter(r => r.arch === 'honeyhall'));
+        const hosts = halls.concat(halls, R.shuffle(rooms.filter(r => (H.isCombat(r) || r.type === 'treasure') && r.arch !== 'honeyhall')));
+        K.patches(R, hosts, 'Ɩ', R.int(3, 5), HONEY15_CAP, true);
+      }
+      // larvsäckar Ɨ: larvkamrarna och vaxcellerna har sina; 1-3 till mot väggarna i stridsrummen (högst SAC15_CAP)
+      { const R = fk('sacs'); let n = R.int(1, 3); for (const r of R.shuffle(fight.filter(r => r.type !== 'start'))) { if (n <= 0) break; n -= place(r, 'Ɨ', 1, { wall: true, rng: R, pred: (x, y) => K.safe(x, y) && !K.nearPX(x, y, 2) }).length; } }
+      // arbetsbin Ƙ: 1 svärm (djup 3+ ibland 2) om 3-6: hela gruppen i ett stridsrum byts mot bin; en grupp om två får ett bi till (högst två extra per bana)
+      {
+        const R = fk('swarms');
+        let want = R.chance(0.9) ? (depth >= 3 && R.chance(0.4) ? 2 : 1) : 0, extra = 2;
+        const host = R.shuffle(fight.filter(r => r.arch !== 'nest' && r.type !== 'start')).sort((p, q) => (K.mobOf(q).length >= 3 ? 1 : 0) - (K.mobOf(p).length >= 3 ? 1 : 0));
+        for (const r of host) {
+          if (want <= 0) break;
+          const c = K.mobOf(r);
+          if (c.length < 2 || c.length > SWARM15[1]) continue;
+          let spot = null;
+          if (c.length < SWARM15[0]) {
+            if (extra <= 0) continue;
+            spot = R.shuffle(r.cells.filter(([x, y]) => g[y][x] === '.' && lock[y * W + x] < 2 && !H.resv[y * W + x] && Math.hypot(x - P[0], y - P[1]) >= 7 && c.some(p => cheb(p[0], p[1], x, y) <= 3)))[0];
+            if (!spot) continue;
+            put(spot[0], spot[1], 'Ƙ'); extra--;
+          }
+          for (const [x, y] of c) put(x, y, 'Ƙ');
+          want--;
+        }
+      }
+      // gaddkrigare ƙ (djup 2+, ~60 %, 1-2, högst 2): byts in i stridsrummen
+      { const R = fk('stingers'); if (depth >= 2 && R.chance(0.6)) K.singles(R, 'ƙ', Math.min(STINGER15_CAP, R.chance(0.35) ? 2 : 1)); }
+    }
+
+    // ----- de gamla biomerna (med ångra-lista): korgossar i fängelsehålans kapell, keruber på kyrkogården, en svärm arbetsbin i skogen/träsket -----
+    if (!own && !opts.v15off) {
+      if (b === 'dungeon') { const R = fk('near-choir'); if (R.chance(0.1)) K.singles(R, 'Ƒ', 1, { minE: 3, pref: r => (r.arch === 'chapel' ? 0 : 1) }); }
+      if (b === 'graveyard') { const R = fk('near-cherub'); if (R.chance(0.1)) K.singles(R, 'Ɯ', 1); }
+      if (b === 'forest' || b === 'swamp') {
+        const R = fk('near-swarm');
+        if (R.chance(0.08)) for (const r of R.shuffle(fight.filter(r => r.arch !== 'nest' && r.type !== 'start'))) {
+          const c = K.mobOf(r); if (c.length < SWARM15[0] || c.length > SWARM15[1]) continue;
+          for (const [x, y] of c) put(x, y, 'Ƙ');
+          break;
+        }
+      }
+    }
+    // ----- alla biomer: bikupor ƞ (ammo till bikastaren; ~20 %, bikupan ~40 %, 1-2) med ångra-lista -----
+    if (!opts.v15off || own) K.loot(fk('beehives'), 'ƞ', hiv ? BEEHIVE15_HIVE_P : BEEHIVE15_P, BEEHIVE15_CAP);
+    if (added && opts.v15) opts.v15.added = true;
+    return true;
+  }
+
+  function content16(G, depth, opts, L, H) {
+    const { W, g, lock } = G, { rooms, fight, P, X, cnt, place } = H, b = L.biome;
+    const fk = tag => H.rng.fork(tag);
+    const gar = b === 'garden', drm = b === 'dream', own = gar || drm;
+    if (opts.v16) { opts.v16.added = false; opts.v16.undo = []; }
+    const undo = opts.v16 ? opts.v16.undo : [];
+    let added = false;
+    const put = (x, y, ch, u) => { const o = g[y][x]; if (u || !own) { undo.push([x, y, o]); added = true; } if (cnt[o]) cnt[o]--; g[y][x] = ch; cnt[ch] = (cnt[ch] || 0) + 1; };
+    const K = kit1516(G, L, H, put);
+
+    // ----- den döda trädgården: taggrankor, statyer, en fontän, taggrankor (fienden) och stenänglar -----
+    if (gar) {
+      // taggrankor ƥ: 2-4 fläckar om 2-6 rutor (häckgångar, murade trädgårdar och gräsmattor först), högst THORN16_CAP; aldrig enda vägen
+      {
+        const R = fk('thorns'), pri = r => (['hedgewalk', 'walledgarden'].includes(r.arch) ? 0 : r.tag === 'yard' ? 1 : 2);
+        const hosts = R.shuffle(rooms.filter(r => (H.isCombat(r) || r.type === 'treasure'))).sort((p, q) => pri(p) - pri(q));
+        K.patches(R, hosts, 'ƥ', R.int(2, 4), THORN16_CAP, true);
+      }
+      // stenstatyer ƨ: 1-2 till mot väggarna
+      { const R = fk('statues'); let n = R.int(1, 2); for (const r of R.shuffle(rooms.filter(r => !['guardian', 'secret', 'vault', 'shop', 'start'].includes(r.type)))) { if (n <= 0) break; n -= place(r, 'ƨ', 1, { wall: true, rng: R, pred: (x, y) => K.safe(x, y) && !K.nearPX(x, y, 2) }).length; } }
+      // fontän Ƨ: fontängårdarna har sina; annars ofta en på en gräsmatta eller i en stor sal (högst två)
+      if (!cnt['Ƨ']) {
+        const R = fk('fountain');
+        if (R.chance(0.6)) for (const r of R.shuffle(rooms.filter(r => (r.tag === 'yard' || r.cells.length >= 30) && !['guardian', 'secret', 'vault', 'shop'].includes(r.type))))
+          if (place(r, 'Ƨ', 1, { open: true, center: true, jit: 2, rng: R, pred: (x, y) => K.safe(x, y) && !K.nearPX(x, y, 2) }).length) break;
+      }
+      // taggrankor Ƭ (fienden, ~75 %, 1-3, högst 4): byts in, helst intill en vägg/häck (de är rotade)
+      { const R = fk('vines'); if (R.chance(0.75)) K.singles(R, 'Ƭ', Math.min(VINE16_CAP, R.int(1, 3)), { cell: (x, y) => [0, 1, 2, 3].some(d => isWall(G.at(x + DX[d], y + DY[d]))) }); }
+      // stenänglar ƫ (djup 2+, ~55 %, 1-2, högst 2)
+      { const R = fk('angels'); if (depth >= 2 && R.chance(0.55)) K.singles(R, 'ƫ', R.chance(0.35) ? 2 : 1); }
+    }
+
+    // ----- drömriket: drömlyktor, glidande väggar i korridorerna, sömnens dimma, falska dörrar, speglingar och sömngångare -----
+    if (drm) {
+      // drömlyktor ƪ i stället för eldfaten (utom i vaktarens sal), bara där eldfatet har en gångbar granne utan fara
+      const walk = c => !isBlock(c) && !HAZARD.includes(c);
+      for (let y = 1; y < G.H - 1; y++) for (let x = 1; x < W - 1; x++) if (g[y][x] === 'f' && !K.inG(x, y) && [0, 1, 2, 3].some(d => walk(g[y + DY[d]][x + DX[d]]))) { g[y][x] = 'ƪ'; cnt.f--; cnt['ƪ'] = (cnt['ƪ'] || 0) + 1; }
+      // glidande väggar ƣ i korridorerna (1-3 sträckor om 1-2 rutor) och, om banan har färre än två, i stridsrummen: aldrig på låsta rutor, intill en
+      // dörr/grind/hemlig vägg eller inom 2 rutor från P och x; varje sträcka bara om allt som nåddes förut nås med väggen uppe (ƣ som vägg)
+      {
+        const R = fk('shifts');
+        let base = K.reachN();
+        const okC = (x, y) => G.inb(x, y) && g[y][x] === '.' && !lock[y * W + x] && !H.resv[y * W + x] && !K.doorNear(x, y) && !K.nearPX(x, y, 2) && K.safe(x, y)
+          && !G.arenas.some(a => x >= a.x0 - 2 && x <= a.x1 + 2 && y >= a.y0 - 2 && y <= a.y1 + 2);
+        const seg = (cells) => {
+          for (const [x, y] of cells) g[y][x] = SHIFT16;
+          const n = K.reachN();
+          if (n !== base - cells.length) { for (const [x, y] of cells) g[y][x] = '.'; return false; }
+          base = n; const ph = R.int(0, 39) / 10;
+          for (const [x, y] of cells) { cnt[SHIFT16] = (cnt[SHIFT16] || 0) + 1; G.shifts.push({ x, y, ph }); }
+          return true;
+        };
+        const tryAt = (x, y, k) => { // en sträcka om 1-2 rutor längs en rak riktning
+          if (!okC(x, y)) return false;
+          const d = R.int(0, 3), x2 = x + DX[d], y2 = y + DY[d];
+          const two = R.chance(0.5) && okC(x2, y2) && (k < 0 ? H.rid[y2 * W + x2] < 0 : H.rid[y2 * W + x2] === k);
+          return seg(two ? [[x, y], [x2, y2]] : [[x, y]]);
+        };
+        let n = 0;
+        const want = R.int(1, 3);
+        for (const [x, y] of R.shuffle((H.corridors || []).filter(([x, y]) => H.rid[y * W + x] < 0))) { if (n >= want) break; if (tryAt(x, y, -1)) n++; }
+        if (G.shifts.length < 2) for (const r of R.shuffle(fight.filter(r => r.type !== 'start' && !G.arenas.some(a => r.cx >= a.x0 && r.cx <= a.x1 && r.cy >= a.y0 && r.cy <= a.y1)))) {
+          if (G.shifts.length >= 2) break;
+          for (const [x, y] of R.shuffle(r.cells.slice())) { if (G.shifts.length >= 2) break; tryAt(x, y, r.id); }
+        }
+      }
+      // sömnens dimma Ʀ: 2-4 fläckar om 2-6 rutor i strids- och skattrummen, högst MIST16_CAP (gångbar, men aldrig vid dörrar, P eller x)
+      { const R = fk('mist'); K.patches(R, R.shuffle(rooms.filter(r => H.isCombat(r) || r.type === 'treasure')), 'Ʀ', R.int(2, 4), MIST16_CAP, false); }
+      // falska dörrar Ʃ: de falska dörrarnas rum har sina; ibland en till mot en vägg i ett stridsrum (högst FALSEDOOR16_CAP)
+      {
+        const R = fk('falsedoors'), front = (x, y) => [0, 1, 2, 3].some(k => isWall(g[y + DY[k]][x + DX[k]]) && g[y - DY[k]][x - DX[k]] === '.' && lock[(y - DY[k]) * W + x - DX[k]] < 2);
+        if (R.chance(0.5)) for (const r of R.shuffle(fight.filter(r => r.type !== 'start'))) if (place(r, 'Ʃ', 1, { wall: true, rng: R, pred: (x, y) => front(x, y) && K.safe(x, y) && !K.nearPX(x, y, 2) }).length) break;
+      }
+      // speglingar Ư (djup 2+, ~50 %, 1-2, högst 2) och sömngångare ư (djup 2+, ~60 %, 1-2): byts in i stridsrummen
+      { const R = fk('doppel'); if (depth >= 2 && R.chance(0.5)) K.singles(R, 'Ư', R.chance(0.3) ? 2 : 1); }
+      { const R = fk('sleepers'); if (depth >= 2 && R.chance(0.6)) K.singles(R, 'ư', R.chance(0.4) ? 2 : 1); }
+    }
+
+    // ----- de gamla biomerna (med ångra-lista): taggrankor i skogen/borggården, drömätare i spegelpalatset/biblioteket, en sömngångare på kyrkogården -----
+    if (!own && !opts.v16off && !opts.v15off) {
+      if (b === 'forest' || b === 'courtyard') { const R = fk('near-vine'); if (R.chance(0.12)) K.singles(R, 'Ƭ', R.int(1, 2), { cell: (x, y) => [0, 1, 2, 3].some(d => isBlock(G.at(x + DX[d], y + DY[d]))) }); }
+      if (b === 'mirror' || b === 'library') { const R = fk('near-eater'); if (R.chance(0.1)) K.singles(R, 'Ʈ', 1); }
+      if (b === 'graveyard' && depth >= 2) { const R = fk('near-sleeper'); if (R.chance(0.08)) K.singles(R, 'ư', 1); }
+    }
+    // ----- alla biomer: drömflaskor Ƴ (ammo till drömstaven; ~20 %, drömriket ~40 %, 1-2) med ångra-lista -----
+    if ((!opts.v16off && !opts.v15off) || own) K.loot(fk('dreamflasks'), 'Ƴ', drm ? DREAMFLASK16_DREAM_P : DREAMFLASK16_P, DREAMFLASK16_CAP);
+    if (added && opts.v16) opts.v16.added = true;
+    return true;
+  }
+
+  // ---------- Version 17: spökskeppet, laboratoriet, den andra nya rumstypen i de gamla biomerna och arenarum i de organiska biomerna ----------
+  // Körs allra sist i content (efter content16) med egna slumpflöden ur gaffeln 'v17'. Skeppets och laboratoriets egna saker läggs alltid; allt i de
+  // gamla biomerna (rumstyperna, gläntorna/grottorna som arenor, inbytta skeppsråttor) och föremålen i alla biomer (kulkistor ǫ, syraflaskor ǭ) läggs
+  // med ångra-listor (opts.v17.undo: rutan och tecknet som stod där förut, opts.v17.arch: rummets index och gamla rumstyp, opts.v17.arenas: antal
+  // arenor som lades till): underkänns banan tas det bort igen och banan blir exakt som i version 16 (se build7). opts.v17off (och v15off/v16off,
+  // som ger version 14/15) stänger av allt i de gamla biomerna.
+  const CANNON17_CAP = 8, ALEMBIC17_CAP = 2, TESLA17_CAP = 3, KEG17_CAP = 6, FLASK17_CAP = 8, TRANS17_CAP = 20, LANTERN17_CAP = 24, JARS17_CAP = 80;
+  const ROT17_CAP = 24, WET17_CAP = 30, ACID17_CAP = 24;
+  const GUNNER17_CAP = 3, PARROT17_CAP = 4, TENTACLE17_CAP = 3, RAT17_CAP = 14, RATS17 = [4, 7], OOZE17_CAP = 4, GOLEM17_CAP = 2, WISP17_CAP = 5, CHIMERA17_CAP = 2;
+  const CHAIN17_P = 0.2, CHAIN17_SHIP_P = 0.4, ACIDF17_P = 0.2, ACIDF17_LAB_P = 0.4, AMMO17_CAP = 2;
+  const SET17_P = 0.35;
+  // andel av banorna (djup 2+) som försöker bygga en glänta/grotta som arena, satt så att ~30 % av banorna får en (grottorna lyckas oftast, molnborgens
+  // öar och träskets vatten sällnast)
+  const ARENA17_P = { caves: 0.36, crystal: 0.38, fungus: 0.42, forest: 0.48, courtyard: 0.5, swamp: 0.62, sky: 0.85 };
+  // fienderna: tecken -> [biomer där de får finnas (första = hembiomen), första djup, tak per bana] (validate)
+  const FOES17 = { 'Ǖ': [['ship'], 1, 0], 'ǖ': [['ship'], 2, GUNNER17_CAP], 'Ǘ': [['ship'], 1, 0], 'ǘ': [['ship'], 1, PARROT17_CAP], 'Ǚ': [['ship'], 2, TENTACLE17_CAP],
+    'ǚ': [['ship', 'sunken', 'dungeon', 'sewer'], 1, RAT17_CAP], // (version 20: råttorna även i kloakerna)
+    'ǣ': [['lab'], 1, 0], 'Ǥ': [['lab'], 1, OOZE17_CAP], 'ǥ': [['lab'], 1, 0], 'Ǧ': [['lab'], 2, GOLEM17_CAP], 'ǧ': [['lab'], 1, WISP17_CAP], 'Ǩ': [['lab'], 2, CHIMERA17_CAP] };
+  const FOES17_CH = Object.keys(FOES17).join('');
+  const NEW17_CHARS = [...(HULL17 + MAST17 + CAPWALL17 + TILE17 + JARS17 + ALCHWALL17 + SINK17 + FLOOR17 + INTER17 + PROPS17 + LANTERN17 + 'ǫǭ'), ...FOES17_CH];
+  const NATIVE17 = { ship: 'ǕǗ', lab: 'ǣǥ', sunken: 'ÏÛÚ' }; // biomernas egna (utöver FOE_FROM) som kan bytas
+  // biomerna med organiska områden där content17 bygger en sluten glänta/grotta som arena (kyrkogården har redan raka murar)
+  const ORGANIC17 = ['caves', 'forest', 'swamp', 'crystal', 'fungus', 'sky', 'courtyard'];
+  // den andra nya rumstypen per gammal biom (samma mekanism och mönster som SET14, egen tabell, egen gaffel och ångra-lista)
+  const SET17 = {
+    guardroom: { biome: 'dungeon', min: 24, fill: [['grid', 'H'], ['wall', 'c', 2]] }, // vaktrum: vapenställ i rader, ljus
+    bonepit: { biome: 'caves', min: 24, fill: [['ring', 'W'], ['wall', 'j', 4]] }, // bengrop: en ring av klippelare, ben längs väggarna
+    mausoleum: { biome: 'graveyard', min: 30, fill: [['rows', 'W'], ['wall', 'c', 3]] }, // mausoleum: pelarrader i muren, gravljus
+    deadgrove: { biome: 'forest', min: 24, fill: [['grid', 't'], ['wall', 'j', 2]] }, // död lund: träd i rader
+    tiltyard: { biome: 'courtyard', min: 30, fill: [['rows', 'H'], ['wall', 'T', 2]] }, // tornerplats: vapenställ längs banan
+    mangrove: { biome: 'swamp', min: 24, fill: [['grid', 't'], ['wall', 'j', 2]] }, // mangrove: träd på styltor i rader
+    frostring: { biome: 'frost', min: 24, fill: [['ring', 'i'], ['wall', 'u', 2]] }, // isring: glödande iskristaller i en ring, frusna statyer
+    basaltcolumns: { biome: 'volcano', min: 24, fill: [['grid', 'W'], ['wall', 'i', 2]] }, // basaltpelare i ett rutnät, glödande kristaller
+    embalmery: { biome: 'tomb', min: 24, fill: [['grid', 'J'], ['wall', 'c', 3]] }, // balsameringssal: bord i rader, ljus
+    crystalgarden: { biome: 'crystal', min: 24, fill: [['grid', 'i'], ['wall', 'W', 2]] }, // kristallträdgård
+    sunkencolonnade: { biome: 'sunken', min: 30, fill: [['rows', 'W'], ['wall', 'u', 2]] }, // sjunken pelargång
+    gearhall: { biome: 'clock', min: 24, fill: [['ring', 'J'], ['wall', 'T', 2]] }, // kugghjulshall: arbetsbänkar i en ring
+    skycolonnade: { biome: 'sky', min: 24, fill: [['rows', 'u'], ['wall', 'c', 2]] }, // himmelsk pelargång: statyrader
+    fairyring: { biome: 'fungus', min: 24, fill: [['ring', 'F'], ['wall', 'j', 2]] }, // älvring av lysande svampar
+    mirrorgrid: { biome: 'mirror', min: 24, fill: [['grid', 'ŧ'], ['wall', 'c', 3]] }, // spegelstatyer i ett rutnät (spegelväggarnas andel står kvar)
+    mapchamber: { biome: 'library', min: 24, fill: [['rows', 'q'], ['wall', 'J', 2]] }, // kartrum: bokhyllor i rader, bord
+    boilerhall: { biome: 'foundry', min: 24, fill: [['rows', 'W'], ['wall', 'T', 2]] }, // pannhall: plåtpelare i rader, lådor
+  };
+  const SET17_ID = Object.keys(SET17);
+
+  function content17(G, depth, opts, L, H) {
+    const { W, g, lock } = G, { rooms, fight, P, X, cnt, place, rid } = H, b = L.biome;
+    const fk = tag => H.rng.fork(tag);
+    const shp = b === 'ship', lab = b === 'lab', own = shp || lab, old = !own && !opts.v15off && !opts.v16off && !opts.v17off;
+    if (opts.v17) { opts.v17.added = false; opts.v17.undo = []; opts.v17.arch = []; opts.v17.arenas = 0; }
+    const undo = opts.v17 ? opts.v17.undo : [], archUndo = opts.v17 ? opts.v17.arch : [];
+    let added = false;
+    // i de gamla biomerna (och för föremålen) med ångra-lista
+    const put = (x, y, ch, u) => { const o = g[y][x]; if (u || !own) { undo.push([x, y, o]); added = true; } if (cnt[o]) cnt[o]--; g[y][x] = ch; cnt[ch] = (cnt[ch] || 0) + 1; };
+    const K = kit1516(G, L, H, put, NATIVE17[b] || '');
+    const okRoom = r => !['guardian', 'secret', 'vault', 'shop', 'start'].includes(r.type);
+    const front = (x, y) => [0, 1, 2, 3].some(k => isWall(g[y + DY[k]][x + DX[k]]) && g[y - DY[k]][x - DX[k]] === '.' && lock[(y - DY[k]) * W + x - DX[k]] < 2);
+    const rail = (x, y) => [0, 1, 2, 3].some(k => g[y + DY[k]][x + DX[k]] === HULL17 && g[y - DY[k]][x - DX[k]] === '.' && lock[(y - DY[k]) * W + x - DX[k]] < 2);
+    const free = (x, y) => g[y][x] === '.' && lock[y * W + x] < 2 && !H.resv[y * W + x];
+    // svärm: en hel fiendegrupp i ett stridsrum byts mot ch och fylls på till lo-hi st med fria rutor nära gruppen (aldrig nära P eller vid dörrar)
+    const swarm = (R, ch, lo, hi) => {
+      for (const r of R.shuffle(fight.filter(r => r.arch !== 'nest' && r.type !== 'start'))) {
+        const c = K.mobOf(r);
+        if (c.length < 2 || c.length > hi) continue;
+        const n = Math.max(c.length, R.int(lo, hi));
+        const spots = R.shuffle(r.cells.filter(([x, y]) => free(x, y) && Math.hypot(x - P[0], y - P[1]) >= 7 && !K.doorNear(x, y) && c.some(p => cheb(p[0], p[1], x, y) <= 3)));
+        if (spots.length < n - c.length) continue;
+        for (const [x, y] of c) put(x, y, ch);
+        for (let k = 0; k < n - c.length; k++) put(spots[k][0], spots[k][1], ch);
+        return n;
+      }
+      return 0;
+    };
+    // en transmutationscirkel (3x3 ǜ, minst fem rutor) kring en fri ruta nära rummets mitt
+    const circleAt = (R, r) => {
+      const c = R.shuffle(r.cells.filter(([x, y]) => g[y][x] === '.' && Math.hypot(x - r.cx, y - r.cy) <= 2.5));
+      for (const [cx, cy] of c) {
+        const cells = [];
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+          const x = cx + dx, y = cy + dy, i = y * W + x;
+          if (G.inb(x, y) && rid[i] === r.id && g[y][x] === '.' && lock[i] < 2 && !H.resv[i] && !K.doorNear(x, y) && !K.nearPX(x, y, 1)) cells.push([x, y]);
+        }
+        if (cells.length < 5 || (cnt[TRANS17] || 0) + cells.length > TRANS17_CAP) continue;
+        for (const [x, y] of cells) put(x, y, TRANS17);
+        return cells.length;
+      }
+      return 0;
+    };
+
+    // ----- spökskeppet: lyktor, ruttna plankor, sköljt däck, kanoner, krutkaggar och besättningen -----
+    if (shp) {
+      // skeppslyktor ǐ i stället för eldfaten (utom i vaktarens sal), bara där eldfatet har en gångbar granne utan fara
+      const walk = c => !isBlock(c) && !HAZARD.includes(c);
+      for (let y = 1; y < G.H - 1; y++) for (let x = 1; x < W - 1; x++) if (g[y][x] === 'f' && !K.inG(x, y) && (cnt[LANTERN17] || 0) < LANTERN17_CAP && [0, 1, 2, 3].some(d => walk(g[y + DY[d]][x + DX[d]]))) put(x, y, LANTERN17);
+      // ruttna plankor Ǎ: 2-4 fläckar om 2-6 rutor (lastrum och kanondäck först, sedan däcken), aldrig enda vägen
+      {
+        const R = fk('rot'), pri = r => (['hold', 'gundeck'].includes(r.arch) ? 0 : r.tag === 'yard' ? 1 : 2);
+        K.patches(R, R.shuffle(rooms.filter(r => H.isCombat(r) || r.type === 'treasure')).sort((p, q) => pri(p) - pri(q)), ROT17, R.int(2, 4), ROT17_CAP, true);
+      }
+      // sköljt däck Ǐ: 2-4 fläckar om 2-6 rutor ute på däcken (under himlen), aldrig enda vägen
+      { const R = fk('wet'); K.patches(R, R.shuffle(rooms.filter(r => r.tag === 'yard' && r.type !== 'guardian')), WET17, R.int(2, 4), WET17_CAP, true); }
+      // kanoner ǎ: däcken har sina; ibland en till längs relingen på ett däck eller i ett kanondäck
+      {
+        const R = fk('cannons');
+        for (const r of R.shuffle(rooms.filter(r => okRoom(r) && (r.tag === 'yard' || r.arch === 'gundeck')))) if (R.chance(0.5)) place(r, CANNON17, 1, { wall: true, spread: 3, rng: R, pred: (x, y) => rail(x, y) && K.safe(x, y) && !K.nearPX(x, y, 2) });
+      }
+      // krutkaggar Ǒ: 0-2 till mot väggarna
+      { const R = fk('kegs'); let n = R.int(0, 2); for (const r of R.shuffle(rooms.filter(okRoom))) { if (n <= 0) break; n -= place(r, KEG17, 1, { wall: true, rng: R, pred: (x, y) => K.safe(x, y) && !K.nearPX(x, y, 2) }).length; } }
+      // besättningen: papegojspöken ǘ (~70 %, 1-3), kanonjärer ǖ (djup 2+, ~60 %, 1-2, helst på däck), tentakler Ǚ (djup 2+, ~50 %, 1-3), skeppsråttor ǚ
+      // (~65 %, en svärm om 4-7, djup 3+ ibland två)
+      { const R = fk('parrots'); if (R.chance(0.7)) K.singles(R, 'ǘ', Math.min(PARROT17_CAP, R.int(1, 3))); }
+      { const R = fk('gunners'); if (depth >= 2 && R.chance(0.6)) K.singles(R, 'ǖ', R.chance(0.35) ? 2 : 1, { pref: r => (r.tag === 'yard' ? 0 : 1) }); }
+      { const R = fk('tentacles'); if (depth >= 2 && R.chance(0.5)) K.singles(R, 'Ǚ', Math.min(TENTACLE17_CAP, R.int(1, 3)), { pref: r => (r.tag === 'yard' ? 0 : 1) }); }
+      { const R = fk('rats'); if (R.chance(0.65)) { swarm(R, 'ǚ', RATS17[0], RATS17[1]); if (depth >= 3 && R.chance(0.35)) swarm(R, 'ǚ', RATS17[0], RATS17[1]); } }
+    }
+
+    // ----- laboratoriet: burkhyllor i kaklet, syrakar, transmutationscirklar, teslaspolar, alembiker, flaskhyllor och alkemistens skapelser -----
+    if (lab) {
+      { // hyllor med burkar ǡ: sträckor om 1-3 rutor i de synliga kakelväggarna, aldrig vid den hemliga/spruckna väggen
+        const R = fk('jars');
+        for (let y = 0; y < G.H; y++) for (let x = 0; x < W; x++) {
+          if (!K.face(x, y, TILE17) || !R.chance(0.06) || (cnt[JARS17] || 0) >= JARS17_CAP) continue;
+          put(x, y, JARS17);
+          let cx = x, cy = y;
+          for (let k = R.int(0, 2); k > 0; k--) { const nb = [0, 1, 2, 3].map(d => [cx + DX[d], cy + DY[d]]).filter(([nx, ny]) => K.face(nx, ny, TILE17)); if (!nb.length) break; [cx, cy] = R.pick(nb); put(cx, cy, JARS17); }
+        }
+      }
+      // syrakar Ǜ: 2-4 fläckar om 2-6 rutor (verkstäderna först, två fläckar var), aldrig enda vägen
+      {
+        const R = fk('acid'), ws = R.shuffle(rooms.filter(r => r.arch === 'stillroom'));
+        K.patches(R, ws.concat(ws, R.shuffle(rooms.filter(r => (H.isCombat(r) || r.type === 'treasure') && r.arch !== 'stillroom'))), ACID17, R.int(2, 4), ACID17_CAP, true);
+      }
+      // transmutationscirklar ǜ: transmutationssalarna har sina; annars ofta en i ett stridsrum
+      if (!cnt[TRANS17]) { const R = fk('circles'); if (R.chance(0.6)) for (const r of R.shuffle(fight.filter(r => r.type !== 'start' && r.cells.length >= 16))) if (circleAt(R, r)) break; }
+      // teslaspolar Ǟ (högst tre): 0-2 till på öppet golv i stridsrummen, aldrig intill en dörr (de åtta grannarna) eller i en korridor
+      {
+        const R = fk('teslas'); let n = R.int(0, 2);
+        for (const r of R.shuffle(fight.filter(r => r.type !== 'start' && r.cells.length >= 16))) {
+          if (n <= 0 || (cnt[TESLA17] || 0) >= TESLA17_CAP) break;
+          if (r.cells.some(([x, y]) => g[y][x] === TESLA17)) continue;
+          n -= place(r, TESLA17, 1, { open: true, rng: R, pred: (x, y) => !K.doorNear(x, y) && K.safe(x, y) && !K.nearPX(x, y, 3) }).length;
+        }
+      }
+      // alembik ǟ (högst två): verkstaden har sin; finns ingen ställs en mot en vägg i ett rum med fri framsida
+      if (!cnt[ALEMBIC17]) { const R = fk('alembic'); for (const r of R.shuffle(rooms.filter(r => okRoom(r) && r.cells.length >= 9))) if (place(r, ALEMBIC17, 1, { wall: true, rng: R, pred: (x, y) => front(x, y) && K.safe(x, y) && !K.nearPX(x, y, 2) }).length) break; }
+      // flaskhyllor ǝ: 1-2 till mot väggarna
+      { const R = fk('flasks'); let n = R.int(1, 2); for (const r of R.shuffle(rooms.filter(okRoom))) { if (n <= 0) break; n -= place(r, FLASKS17, 1, { wall: true, rng: R, pred: (x, y) => K.safe(x, y) && !K.nearPX(x, y, 2) }).length; } }
+      // alkemistens skapelser: slem Ǥ (~65 %, 1-2), flaskgaster ǧ (~60 %, 1-3), kvicksilvergolem Ǧ (djup 2+, ~50 %), kimärer Ǩ (djup 2+, ~45 %, 1-2)
+      { const R = fk('oozes'); if (R.chance(0.65)) K.singles(R, 'Ǥ', R.int(1, 2)); }
+      { const R = fk('wisps'); if (R.chance(0.6)) K.singles(R, 'ǧ', R.int(1, 3)); }
+      { const R = fk('golems'); if (depth >= 2 && R.chance(0.5)) K.singles(R, 'Ǧ', 1); }
+      { const R = fk('chimeras'); if (depth >= 2 && R.chance(0.45)) K.singles(R, 'Ǩ', R.chance(0.3) ? 2 : 1); }
+    }
+
+    // ----- de gamla biomerna (med ångra-lista): skeppsråttor, den andra nya rumstypen, gläntor och grottor som arenor -----
+    if (old) {
+      if (b === 'sunken' || b === 'dungeon') { const R = fk('near-rats'); if (R.chance(0.08)) swarm(R, 'ǚ', RATS17[0], RATS17[1]); }
+      // den andra nya rumstypen (~35 % av banorna försöker, högst en): aldrig i ett rum som redan fått en rumstyp ur SET14 eller i en arena
+      {
+        const R = fk('setpieces'), mine = SET17_ID.filter(id => SET17[id].biome === b);
+        if (mine.length && R.chance(SET17_P)) {
+          const inArena = r => G.arenas.some(a => r.cells.some(([x, y]) => x >= a.x0 && x <= a.x1 && y >= a.y0 && y <= a.y1));
+          if (setpiece14(G, L, R, SET17, mine, { rooms, P, X, cnt, rid, undo, archUndo, put, hostOK: r => !SET14[r.arch] && !inArena(r) && !r.cells.some(([x, y]) => g[y][x] === 'ð') })) added = true; // (köttet hör till lägret)
+        }
+      }
+      // arenarum i de organiska biomerna (djup 2+, när banan inte redan har ett)
+      if (ORGANIC17.includes(b) && depth >= 2 && !G.arenas.length) {
+        const R = fk('glade');
+        if (R.chance(ARENA17_P[b]) && glade17(G, L, R, { rooms, P, X, rid, put, resv: H.resv, undo, depth })) { added = true; if (opts.v17) opts.v17.arenas = 1; }
+      }
+    }
+    // ----- alla biomer: kulkistor ǫ (ammo till kedjekulekanonen; ~20 %, skeppet ~40 %) och syraflaskor ǭ (ammo till syrasprutan; ~20 %, laboratoriet
+    // ~40 %), 1-2 av varje, med ångra-lista -----
+    if (old || own) {
+      K.loot(fk('chainballs'), 'ǫ', shp ? CHAIN17_SHIP_P : CHAIN17_P, AMMO17_CAP);
+      K.loot(fk('acidflasks'), 'ǭ', lab ? ACIDF17_LAB_P : ACIDF17_P, AMMO17_CAP);
+    }
+    if (added && opts.v17) opts.v17.added = true;
+    return true;
+  }
+
+  // version 17: en sluten glänta/grotta som arena i ett stort stridsområde i de organiska biomerna. Rektangeln (5-8 x 5-8 inre rutor) ligger helt i
+  // områdets rutor och väggar (minst 65 % golv, fri mitt, inga P/x/Z/}/portaler); kanten runt om blir vägg (biomens väggtecken; molnborgens tomrum blir
+  // stormmur) utom 2-3 öppningar (en per sträcka av golv i kanten, aldrig i hörnen, fria på båda sidor). Bara vanliga, olåsta och oreserverade
+  // golvrutor muras igen, och allt som nåddes från P förut nås ändå (annars ångras det). Lägger arenan i G.arenas.
+  function glade17(G, L, R, C) {
+    const { W, g, lock } = G, { rooms, P, X, rid, put, resv, undo, depth } = C, b = L.biome;
+    const wc = b === 'sky' ? 'Ľ' : L.vaultWall || '1';
+    const BAD_IN = 'Px}Z÷ťMŃ' + GATES + '*' + SHIFT16;
+    // hinder som får stå kvar i arenan; det som får muras in i kanten: träd, gravstenar, vatten, spindelväv och kristallspikar (inte rummets
+    // rekvisita), och rekvisita (statyer, ljus, ben, kristaller, lådor ...) så länge rummet den står i har kvar någon annan rekvisita
+    const OBST17 = 'tnTuqkHJvo', DECOR17 = 'tn-"Ē', PROPC17 = 'ucjiFqkTHJvĘ';
+    const propsLeft = new Map(); // rum -> antal rekvisita som finns kvar
+    const propsOf = k => { if (!propsLeft.has(k)) { let n = 0; for (const [x, y] of rooms[k].cells) if (PROP_CHARS.includes(g[y][x])) n++; propsLeft.set(k, n); } return propsLeft.get(k); }; // hinder som får stå kvar i arenan / rekvisita som får muras in i kanten
+    const reach = () => {
+      const seen = new Uint8Array(W * G.H), st = [P[1] * W + P[0]]; seen[st[0]] = 1;
+      while (st.length) {
+        const i = st.pop(), x = i % W, y = (i / W) | 0;
+        for (let d = 0; d < 4; d++) { const nx = x + DX[d], ny = y + DY[d], j = ny * W + nx; if (seen[j] || !G.inb(nx, ny)) continue; const c = g[ny][nx]; if (genBlk(c) || c === '*') { if (!isWall(c)) seen[j] = 2; continue; } seen[j] = 1; st.push(j); }
+      }
+      return seen;
+    };
+    let floods = 0, base = null;
+    const okI = new Int32Array((W + 1) * (G.H + 1)), flI = new Int32Array((W + 1) * (G.H + 1)); // prefixsummor (inre rutor som duger, golv)
+    const sum = (A, x0, y0, x1, y1) => A[(y1 + 1) * (W + 1) + x1 + 1] - A[y0 * (W + 1) + x1 + 1] - A[(y1 + 1) * (W + 1) + x0] + A[y0 * (W + 1) + x0];
+    for (const r of R.shuffle(rooms.filter(r => (r.type === 'normal' || r.type === 'elite') && r.cells.length >= 40))) {
+      if (floods >= 8) break;
+      // inre rutor: områdets rutor, väggar eller hinder (träd, gravstenar, lådor), inga förbjudna tecken; alla rektanglar 5-8 x 5-8 med minst 55 % golv
+      const bx = r.box, X0 = Math.max(0, bx.x - 1), Y0 = Math.max(0, bx.y - 1), X1 = Math.min(W - 1, bx.x + bx.w), Y1 = Math.min(G.H - 1, bx.y + bx.h);
+      for (let y = Y0; y <= Y1; y++) for (let x = X0; x <= X1; x++) { // (bara kring områdets ruta: summorna läses aldrig utanför den)
+        const c = g[y][x], i = y * W + x, mine = rid[i] === r.id;
+        const ok = !BAD_IN.includes(c) && (mine || isWall(c) || (rid[i] < 0 && OBST17.includes(c)));
+        const k = (y + 1) * (W + 1) + x + 1;
+        okI[k] = okI[k - 1] + okI[k - W - 1] - okI[k - W - 2] + (ok ? 1 : 0);
+        flI[k] = flI[k - 1] + flI[k - W - 1] - flI[k - W - 2] + (mine ? 1 : 0);
+      }
+      const cand = [];
+      for (let h = 5; h <= Math.min(8, bx.h); h++) for (let w = 5; w <= Math.min(8, bx.w); w++)
+        for (let y0 = Math.max(2, bx.y); y0 + h - 1 <= Math.min(G.H - 3, bx.y + bx.h - 1); y0++) for (let x0 = Math.max(2, bx.x); x0 + w - 1 <= Math.min(W - 3, bx.x + bx.w - 1); x0++) {
+          const x1 = x0 + w - 1, y1 = y0 + h - 1;
+          if (sum(okI, x0, y0, x1, y1) === w * h && sum(flI, x0, y0, x1, y1) >= w * h * 0.55) cand.push([x0, y0, x1, y1]);
+        }
+      for (const [x0, y0, x1, y1] of R.shuffle(cand).slice(0, 40)) {
+        if (floods >= 8) break;
+        let ok = true;
+        const mx = (x0 + x1 + 1) / 2, my = (y0 + y1 + 1) / 2;
+        const xs = [Math.floor(mx - 0.25), Math.floor(mx + 0.25)], ys = [Math.floor(my - 0.25), Math.floor(my + 0.25)];
+        if (!xs.some(x => ys.some(y => !genBlk(g[y][x]) && !HAZARD.includes(g[y][x])))) continue;
+        // kanten i ordning runt rektangeln; gångbara rutor (utom hörnen) bildar sträckor, var och en får en öppning
+        const ring = [];
+        for (let x = x0 - 1; x <= x1 + 1; x++) ring.push([x, y0 - 1, 0, -1]);
+        for (let y = y0; y <= y1; y++) ring.push([x1 + 1, y, 1, 0]);
+        for (let x = x1 + 1; x >= x0 - 1; x--) ring.push([x, y1 + 1, 0, 1]);
+        for (let y = y1; y >= y0; y--) ring.push([x0 - 1, y, -1, 0]);
+        const corner = (x, y) => (x === x0 - 1 || x === x1 + 1) && (y === y0 - 1 || y === y1 + 1);
+        const open = ring.map(([x, y]) => !isWall(g[y][x]) && g[y][x] !== 'Ń');
+        // (låsta rutor får muras igen bara om ingen dörr, P, x, Z, nyckel eller fri framsida står intill: flood fill-provet nedan avgör resten)
+        const conv = (x, y) => (g[y][x] === '.' || DECOR17.includes(g[y][x]) || (PROPC17.includes(g[y][x]) && (rid[y * W + x] < 0 || propsOf(rid[y * W + x]) > 1))) && !resv[y * W + x]
+          && (!lock[y * W + x] || ![0, 1, 2, 3].some(d => { const c = G.at(x + DX[d], y + DY[d]); return isDoorCh(c) || isInter(c) || 'PxZ}'.includes(c); }));
+        const doorOK = (x, y, dx, dy) => (g[y][x] === '.' || g[y][x] === 'D') && !genBlk(g[y - dy][x - dx]) && !genBlk(g[y + dy][x + dx]) && !isDoorCh(g[y + dy][x + dx]);
+        let s0 = open.findIndex(o => !o); // börja i en sluten ruta så att sträckorna inte delas
+        if (s0 < 0) continue;
+        const runs = [];
+        let cur = null;
+        for (let k = 1; k <= ring.length; k++) {
+          const i = (s0 + k) % ring.length, [x, y] = ring[i];
+          if (open[i] && !corner(x, y)) { if (!cur) runs.push(cur = []); cur.push(i); } else cur = null;
+          if (open[i] && corner(x, y) && !conv(x, y)) { ok = false; break; }
+        }
+        if (!ok || runs.length < 1 || runs.length > 4) continue;
+        // öppningar: mitten av varje sträcka (de tre längsta), en sträcka ensam får två öppningar om den är lång nog
+        runs.sort((p, q) => q.length - p.length);
+        const doors = [];
+        for (const run of runs.slice(0, 3)) {
+          const order = run.map((i, k) => [i, Math.abs(k - (run.length - 1) / 2)]).sort((p, q) => p[1] - q[1]).map(p => p[0]);
+          const d = order.find(i => { const [x, y, dx, dy] = ring[i]; return doorOK(x, y, dx, dy); });
+          if (d === undefined) { ok = false; break; }
+          doors.push(d);
+        }
+        if (ok && doors.length === 1) {
+          const run = runs[0], k0 = run.indexOf(doors[0]);
+          const d2 = run.find((i, k) => Math.abs(k - k0) >= 3 && (() => { const [x, y, dx, dy] = ring[i]; return doorOK(x, y, dx, dy); })());
+          if (d2 === undefined) ok = false; else doors.push(d2);
+        }
+        if (!ok) continue;
+        // arenan hänger ihop: från mitten nås alla gångbara inre rutor och öppningarnas innerrutor (inga fickor där spelaren kan stängas in)
+        {
+          const sx = xs.find(x => ys.some(y => !isBlock(g[y][x]))), sy = ys.find(y => !isBlock(g[y][sx]));
+          const inR = new Set([sy * W + sx]), st = [[sx, sy]];
+          while (st.length) { const [x, y] = st.pop(); for (let d = 0; d < 4; d++) { const nx = x + DX[d], ny = y + DY[d], j = ny * W + nx; if (nx < x0 || nx > x1 || ny < y0 || ny > y1 || inR.has(j) || isBlock(g[ny][nx])) continue; inR.add(j); st.push([nx, ny]); } }
+          for (let y = y0; y <= y1 && ok; y++) for (let x = x0; x <= x1 && ok; x++) if (!isBlock(g[y][x]) && !inR.has(y * W + x)) ok = false;
+          for (const i of doors) { const [x, y, dx, dy] = ring[i]; if (!inR.has((y - dy) * W + x - dx)) ok = false; }
+          if (!ok) continue;
+        }
+        // allt annat gångbart i kanten muras igen (golv, hinder och rekvisita enligt conv; varje rum behåller någon rekvisita)
+        const dset = new Set(doors), wallUp = [], lost = new Map();
+        for (let i = 0; i < ring.length && ok; i++) {
+          const [x, y] = ring[i], k = rid[y * W + x];
+          if (dset.has(i) || isWall(g[y][x])) continue;
+          if (g[y][x] === 'Ń' || conv(x, y)) wallUp.push([x, y]); else ok = false;
+          if (ok && k >= 0 && PROP_CHARS.includes(g[y][x])) { lost.set(k, (lost.get(k) || 0) + 1); if (lost.get(k) >= propsOf(k)) ok = false; }
+        }
+        if (!ok) continue;
+        floods++;
+        if (!base) base = reach(); // (oförändrad tills en arena läggs: misslyckade försök ångras)
+        const mark = undo.length;
+        for (const [x, y] of wallUp) put(x, y, wc);
+        const now = reach(), mine = new Set(wallUp.map(([x, y]) => y * W + x));
+        let keep = true;
+        for (let i = 0; keep && i < base.length; i++) if (base[i] && !now[i] && !mine.has(i)) keep = false;
+        // öppningarna leder någonstans: rutan utanför nås fortfarande
+        for (const i of doors) { const [x, y, dx, dy] = ring[i]; if (!now[(y + dy) * W + x + dx] || !now[(y - dy) * W + x - dx]) keep = false; }
+        if (!keep) {
+          for (let k = undo.length - 1; k >= mark; k--) { const [x, y, o] = undo[k]; g[y][x] = o; }
+          undo.length = mark;
+          continue;
+        }
+        G.arenas.push({ x0, y0, x1, y1, doors: doors.map(i => ({ x: ring[i][0], y: ring[i][1] })), waves: depth >= 4 ? 3 : 2 });
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // ---------- Version 18: den övergivna cirkusen och djungeltemplet ----------
+  // Körs allra sist i content (efter content17) med egna slumpflöden ur gaffeln 'v18'. Cirkusens och djungelns egna saker läggs alltid; föremålen i
+  // alla biomer (kägellådor Ǿ, pilkoger ȏ) läggs med ångra-lista (opts.v18.undo: rutan och tecknet som stod där förut): underkänns banan tas de bort
+  // igen och banan blir exakt som i version 17 (se build7). opts.v18off (och v15off/v16off/v17off) stänger av dem i de gamla biomerna.
+  const KNIFE18_CAP = 3, PRIZE18_CAP = 2, GIDOL18_CAP = 1, DIDOL18_CAP = 4, FLOWER18_CAP = 6, BALLOON18_CAP = 10, MARQUEE18_CAP = 24, TIKI18_CAP = 24, CAGE18_CAP = 70;
+  const TRAP18_CAP = 16, SPOT18_CAP = 12, PIRANHA18_CAP = 30, VINES18_CAP = 30;
+  const STILT18_CAP = 3, KNIFER18_CAP = 3, LION18_CAP = 2, MARIO18_CAP = 4, BLOWGUN18_CAP = 4, JAGUAR18_CAP = 2, MOSQ18_CAP = 10, MOSQ18 = [3, 5], TGUARD18_CAP = 2;
+  const PINS18_P = 0.2, PINS18_CIRCUS_P = 0.4, DARTS18_P = 0.2, DARTS18_JUNGLE_P = 0.4, AMMO18_CAP = 2;
+  const DART18_NEAR = 3; // pilidolen: ingen dörr/grind/hemlig vägg inom så många rutor i fri rak linje (fyra riktningar)
+  // fienderna: tecken -> [biomer där de får finnas, första djup, tak per bana] (validate)
+  const FOES18 = { 'Ƿ': [['circus'], 1, 0], 'Ǹ': [['circus'], 1, 0], 'ǹ': [['circus'], 2, STILT18_CAP], 'Ǻ': [['circus'], 1, KNIFER18_CAP], 'ǻ': [['circus'], 2, LION18_CAP],
+    'Ǽ': [['circus'], 1, MARIO18_CAP], 'Ȉ': [['jungle'], 1, 0], 'ȉ': [['jungle'], 1, BLOWGUN18_CAP], 'Ȋ': [['jungle'], 1, 0], 'ȋ': [['jungle'], 2, JAGUAR18_CAP],
+    'Ȍ': [['jungle'], 1, MOSQ18_CAP], 'ȍ': [['jungle'], 2, TGUARD18_CAP] };
+  const FOES18_CH = Object.keys(FOES18).join('');
+  const NEW18_CHARS = [...(TENT18 + CAGE18 + RMWALL18 + JSTONE18 + JUNGLE18 + SERPWALL18 + SINK18 + FLOOR18 + INTER18 + PROPS18 + BALLOON18 + MARQUEE18 + FLOWER18 + 'Ǿȏ'), ...FOES18_CH];
+  const NATIVE18 = { circus: 'ǷǸ', jungle: 'ȈȊ' }; // biomernas egna (utöver FOE_FROM) som kan bytas
+  // pilidolen vid (x, y) täcker en dörröppning på nära håll: en dörr, grind eller hemlig vägg, eller en öppning utan dörr (en gångbar ruta utanför
+  // rummen, out(x, y)), inom DART18_NEAR rutor i fri rak linje
+  function dartBad18(at, x, y, out) {
+    for (let d = 0; d < 4; d++) for (let k = 1; k <= DART18_NEAR; k++) {
+      const xx = x + DX[d] * k, yy = y + DY[d] * k, c = at(xx, yy);
+      if (isDoorCh(c)) return true;
+      if (isBlock(c)) break;
+      if (out && out(xx, yy)) return true;
+    }
+    return false;
+  }
+
+  function content18(G, depth, opts, L, H) {
+    const { W, g, lock } = G, { rooms, fight, P, X, cnt, place } = H, b = L.biome;
+    const fk = tag => H.rng.fork(tag);
+    const cir = b === 'circus', jun = b === 'jungle', own = cir || jun, old = !own && !opts.v15off && !opts.v16off && !opts.v17off && !opts.v18off;
+    if (opts.v18) { opts.v18.added = false; opts.v18.undo = []; }
+    const undo = opts.v18 ? opts.v18.undo : [];
+    let added = false;
+    // i de gamla biomerna (och för föremålen) med ångra-lista
+    const put = (x, y, ch, u) => { const o = g[y][x]; if (u || !own) { undo.push([x, y, o]); added = true; } if (cnt[o]) cnt[o]--; g[y][x] = ch; cnt[ch] = (cnt[ch] || 0) + 1; };
+    const K = kit1516(G, L, H, put, NATIVE18[b] || '');
+    const okRoom = r => !['guardian', 'secret', 'vault', 'shop', 'start'].includes(r.type);
+    const front = (x, y) => [0, 1, 2, 3].some(k => isWall(g[y + DY[k]][x + DX[k]]) && g[y - DY[k]][x - DX[k]] === '.' && lock[(y - DY[k]) * W + x - DX[k]] < 2);
+    const free = (x, y) => g[y][x] === '.' && lock[y * W + x] < 2 && !H.resv[y * W + x];
+    const walk = c => !isBlock(c) && !HAZARD.includes(c);
+    // svärm: en hel fiendegrupp i ett stridsrum byts mot ch och fylls på till lo-hi st med fria rutor nära gruppen (aldrig nära P eller vid dörrar)
+    const swarm = (R, ch, lo, hi) => {
+      for (const r of R.shuffle(fight.filter(r => r.arch !== 'nest' && r.type !== 'start'))) {
+        const c = K.mobOf(r);
+        if (c.length < 2 || c.length > hi) continue;
+        const n = Math.max(c.length, R.int(lo, hi));
+        const spots = R.shuffle(r.cells.filter(([x, y]) => free(x, y) && Math.hypot(x - P[0], y - P[1]) >= 7 && !K.doorNear(x, y) && c.some(p => cheb(p[0], p[1], x, y) <= 3)));
+        if (spots.length < n - c.length) continue;
+        for (const [x, y] of c) put(x, y, ch);
+        for (let k = 0; k < n - c.length; k++) put(spots[k][0], spots[k][1], ch);
+        return n;
+      }
+      return 0;
+    };
+    const wallRuns = (R, wc, ch, p, cap) => { // sträckor om 1-2 rutor av ch i de synliga väggarna wc, aldrig vid den hemliga/spruckna väggen
+      for (let y = 0; y < G.H; y++) for (let x = 0; x < W; x++) {
+        if (!K.face(x, y, wc) || !R.chance(p) || (cnt[ch] || 0) >= cap) continue;
+        put(x, y, ch);
+        if (R.chance(0.5)) { const nb = [0, 1, 2, 3].map(d => [x + DX[d], y + DY[d]]).filter(([nx, ny]) => K.face(nx, ny, wc)); if (nb.length) { const [nx, ny] = R.pick(nb); put(nx, ny, ch); } }
+      }
+    };
+
+    // ----- cirkusen: girlanger, burar i duken, fallluckor, strålkastare, hjul, ballonger och artisterna -----
+    if (cir) {
+      // glödlampsgirlanger Ƕ i stället för eldfaten (utom i vaktarens sal), bara där eldfatet har en gångbar granne utan fara
+      for (let y = 1; y < G.H - 1; y++) for (let x = 1; x < W - 1; x++) if (g[y][x] === 'f' && !K.inG(x, y) && (cnt[MARQUEE18] || 0) < MARQUEE18_CAP && [0, 1, 2, 3].some(d => walk(g[y + DY[d]][x + DX[d]]))) put(x, y, MARQUEE18);
+      wallRuns(fk('cages'), TENT18, CAGE18, 0.04, CAGE18_CAP); // djurburar ǯ i tältduken
+      // fallluckor Ǳ: 2-4 fläckar om 2-6 rutor (manegen och nöjesfältet först), aldrig enda vägen
+      {
+        const R = fk('trapdoors'), pri = r => (r.arch === 'bigtop' ? 0 : r.arch === 'midway' ? 1 : 2);
+        K.patches(R, R.shuffle(rooms.filter(r => H.isCombat(r) || r.type === 'treasure')).sort((p, q) => pri(p) - pri(q)), TRAP18, R.int(2, 4), TRAP18_CAP, true);
+      }
+      // strålkastare ǲ: 1-3 ljuskäglor om 2-6 rutor (manegen först, två där), får ligga på vägen
+      {
+        const R = fk('spotlights'), tops = R.shuffle(rooms.filter(r => r.arch === 'bigtop'));
+        K.patches(R, tops.concat(tops, R.shuffle(fight.filter(r => r.type !== 'start' && r.arch !== 'bigtop'))), SPOT18, R.int(1, 3), SPOT18_CAP, false);
+      }
+      // knivkastarhjul ǳ (högst tre): 0-1 till på öppet golv i ett stridsrum, aldrig vid dörrar, P eller x (aldrig i korridorer)
+      { const R = fk('knifewheels'); if (R.chance(0.5)) for (const r of R.shuffle(fight.filter(r => r.type !== 'start' && r.cells.length >= 16))) if (place(r, KNIFE18, 1, { open: true, rng: R, pred: (x, y) => !K.doorNear(x, y) && K.safe(x, y) && !K.nearPX(x, y, 3) }).length) break; }
+      // lyckohjul Ǵ: nöjesfältet har sitt; annars ofta ett mot en vägg (fri framsida)
+      if (!cnt[PRIZE18]) { const R = fk('prizewheel'); if (R.chance(0.6)) for (const r of R.shuffle(rooms.filter(r => okRoom(r) && r.cells.length >= 9))) if (place(r, PRIZE18, 1, { wall: true, rng: R, pred: (x, y) => front(x, y) && K.safe(x, y) && !K.nearPX(x, y, 2) }).length) break; }
+      // ballongklasar ǵ: 1-3 till mot väggarna
+      { const R = fk('balloons'); let n = R.int(1, 3); for (const r of R.shuffle(rooms.filter(okRoom))) { if (n <= 0) break; n -= place(r, BALLOON18, 1, { wall: true, rng: R, pred: (x, y) => !K.nearPX(x, y, 1) }).length; } }
+      // artisterna: styltgångare ǹ (djup 2+, ~55 %, 1-2), knivkastare Ǻ (~60 %, 1-2), lejon ǻ (djup 2+, ~45 %, 1-2, helst i burgången), marionetter Ǽ (~60 %, 1-3)
+      { const R = fk('stilts'); if (depth >= 2 && R.chance(0.55)) K.singles(R, 'ǹ', R.chance(0.35) ? 2 : 1, { pref: r => (r.cells.length >= 25 ? 0 : 1) }); }
+      { const R = fk('knifers'); if (R.chance(0.6)) K.singles(R, 'Ǻ', R.int(1, 2)); }
+      { const R = fk('lions'); if (depth >= 2 && R.chance(0.45)) K.singles(R, 'ǻ', R.chance(0.3) ? 2 : 1, { pref: r => (r.arch === 'cagerow' || r.arch === 'bigtop' ? 0 : 1) }); }
+      { const R = fk('marionettes'); if (R.chance(0.6)) K.singles(R, 'Ǽ', Math.min(MARIO18_CAP, R.int(1, 3))); }
+    }
+
+    // ----- djungeltemplet: facklor, pirayavatten, lianer, idoler, giftblommor och djungelns invånare -----
+    if (jun) {
+      for (let y = 1; y < G.H - 1; y++) for (let x = 1; x < W - 1; x++) if (g[y][x] === 'f' && !K.inG(x, y) && (cnt[TIKI18] || 0) < TIKI18_CAP) put(x, y, TIKI18); // tikifacklor
+      wallRuns(fk('moss'), JUNGLE18, JSTONE18, 0.03, 60); // ruinstenar i snåren
+      // pirayavatten Ȃ: 1-3 fläckar om 2-6 rutor ute i gläntorna (flodbädden först), aldrig enda vägen
+      {
+        const R = fk('piranhas'), pri = r => (r.arch === 'riverbed' ? 0 : 1);
+        K.patches(R, R.shuffle(rooms.filter(r => r.tag === 'yard' && r.type !== 'guardian')).sort((p, q) => pri(p) - pri(q)), PIRANHA18, R.int(1, 3), PIRANHA18_CAP, true);
+      }
+      // lianer ȃ: 2-4 fläckar om 2-6 rutor (den rasade trappan först), aldrig enda vägen
+      {
+        const R = fk('vines'), pri = r => (r.arch === 'collapsedstair' ? 0 : 1);
+        K.patches(R, R.shuffle(rooms.filter(r => H.isCombat(r) || r.type === 'treasure')).sort((p, q) => pri(p) - pri(q)), VINES18, R.int(2, 4), VINES18_CAP, true);
+      }
+      // pilidoler ȅ (högst fyra): 0-2 till mot väggarna i templets salar, aldrig så att de täcker en dörröppning på nära håll
+      {
+        const R = fk('dartidols'); let n = R.int(0, 2);
+        for (const r of R.shuffle(fight.filter(r => r.type !== 'start' && r.tag !== 'yard'))) {
+          if (n <= 0 || (cnt[DIDOL18] || 0) >= DIDOL18_CAP) break;
+          n -= place(r, DIDOL18, 1, { wall: true, rng: R, pred: (x, y) => !dartBad18((xx, yy) => G.at(xx, yy), x, y, (xx, yy) => G.inb(xx, yy) && H.rid[yy * W + xx] < 0) && K.safe(x, y) && !K.nearPX(x, y, 3) }).length;
+        }
+      }
+      // guldidol Ȅ (högst en): offeraltaret har sin; annars ofta en i mitten av en sal (fri runt om)
+      if (!cnt[GIDOL18]) { const R = fk('goldidol'); if (R.chance(0.6)) for (const r of R.shuffle(fight.filter(r => r.type !== 'start' && r.cells.length >= 12))) if (place(r, GIDOL18, 1, { open: true, center: true, jit: 1.5, rng: R, pred: (x, y) => !K.doorNear(x, y) && K.safe(x, y) && !K.nearPX(x, y, 3) }).length) break; }
+      // giftblommor Ȇ: 1-2 till i gläntorna (aldrig vid dörrar, P eller x)
+      { const R = fk('flowers'); let n = R.int(1, 2); for (const r of R.shuffle(rooms.filter(r => r.tag === 'yard' && okRoom(r)))) { if (n <= 0) break; n -= place(r, FLOWER18, 1, { rng: R, pred: (x, y) => !K.doorNear(x, y) && !K.nearPX(x, y, 2) }).length; } }
+      // invånarna: blåsrörsjägare ȉ (~65 %, 1-3), jaguarer ȋ (djup 2+, ~45 %, 1-2, helst i gläntorna), myggsvärmar Ȍ (~60 %, en svärm om 3-5, djup 3+
+      // ibland två), tempelväktare ȍ (djup 2+, ~50 %, 1-2, helst i templets salar)
+      { const R = fk('blowgunners'); if (R.chance(0.65)) K.singles(R, 'ȉ', R.int(1, 3)); }
+      { const R = fk('jaguars'); if (depth >= 2 && R.chance(0.45)) K.singles(R, 'ȋ', R.chance(0.3) ? 2 : 1, { pref: r => (r.tag === 'yard' ? 0 : 1) }); }
+      { const R = fk('mosquitoes'); if (R.chance(0.6)) { swarm(R, 'Ȍ', MOSQ18[0], MOSQ18[1]); if (depth >= 3 && R.chance(0.35)) swarm(R, 'Ȍ', MOSQ18[0], MOSQ18[1]); } }
+      { const R = fk('guardians'); if (depth >= 2 && R.chance(0.5)) K.singles(R, 'ȍ', R.chance(0.3) ? 2 : 1, { pref: r => (r.tag !== 'yard' ? 0 : 1) }); }
+    }
+
+    // ----- alla biomer: kägellådor Ǿ (ammo till käglekastaren; ~20 %, cirkusen ~40 %) och pilkoger ȏ (ammo till blåsröret; ~20 %, djungeln ~40 %), 1-2
+    // av varje, med ångra-lista -----
+    if (old || own) {
+      K.loot(fk('pins'), 'Ǿ', cir ? PINS18_CIRCUS_P : PINS18_P, AMMO18_CAP);
+      K.loot(fk('darts'), 'ȏ', jun ? DARTS18_JUNGLE_P : DARTS18_P, AMMO18_CAP);
+    }
+    if (added && opts.v18) opts.v18.added = true;
+    return true;
+  }
+
+  // ---------- Version 19: den övergivna gruvan och stjärnobservatoriet ----------
+  // Körs allra sist i content (efter content18) med egna slumpflöden ur gaffeln 'v19'. Gruvans och observatoriets egna saker läggs alltid; föremålen i
+  // alla biomer (stjärnstoftsflaskor ȫ) läggs med ångra-lista (opts.v19.undo): underkänns banan tas de bort igen och banan blir exakt som i version 18
+  // (se build7). opts.v19off (och v15off-v18off) stänger av dem i de gamla biomerna.
+  const CART19_CAP = 3, DYNA19_CAP = 6, ORRERY19_CAP = 2, SCOPE19_CAP = 2, LAMP19_CAP = 24, ORE19_CAP = 70, CHART19_CAP = 70;
+  const RAIL19_CAP = 90, TRACK19_CAP = 3, GAS19_CAP = 16, CAVE19_CAP = 16, SLIT19_CAP = 16, STARMAP19_CAP = 24, PORT19_PAIRS = 2;
+  const COAL19_CAP = 2, WISP19_CAP = 4, OWL19_CAP = 4, VOID19_CAP = 2;
+  const STARS19_P = 0.2, STARS19_OBS_P = 0.4, AMMO19_CAP = 2;
+  // fienderna: tecken -> [biomer där de får finnas, första djup, tak per bana] (validate)
+  const FOES19 = { 'ȡ': [['mine'], 1, 0], 'ȣ': [['mine'], 1, 0], 'Ȣ': [['mine'], 2, COAL19_CAP], 'Ȥ': [['mine'], 1, WISP19_CAP],
+    'ȥ': [['observatory'], 1, 0], 'Ȧ': [['observatory'], 1, 0], 'ȧ': [['observatory'], 1, OWL19_CAP], 'Ȩ': [['observatory'], 2, VOID19_CAP] };
+  const FOES19_CH = Object.keys(FOES19).join('');
+  const NEW19_CHARS = [...(TIMBER19 + ORE19 + FOREWALL19 + BRASS19 + CHART19 + SEERWALL19 + SINK19 + FLOOR19 + INTER19 + PROPS19 + LAMP19 + 'ȫ'), ...FOES19_CH];
+  const NATIVE19 = { mine: 'ȡȣ', observatory: 'ȥȦ' }; // biomernas egna (utöver FOE_FROM) som kan bytas
+
+  // version 19: lägger en vagnbana i rummet r (G.carts): helst (loopFirst) en slinga runt en ö om 1-3 x 1-2 rutor timmer eller lådor med ett varv fritt
+  // golv utanför, annars en rak sträcka om minL-10 rutor (fram och tillbaka). okR(x, y): rutan får bli räls (eller ö); reachN(): antal rutor som nås
+  // från P med generatorns hinder: banan läggs bara om inget annat stängs av (aldrig enda vägen)
+  function track19(G, R, r, okR, reachN, put, unput, loopFirst, minL) {
+    const lay = (cells, island, loop, isl) => {
+      const before = reachN();
+      for (const [x, y] of island) put(x, y, isl);
+      for (const [x, y] of cells) put(x, y, RAIL19);
+      if (reachN() !== before - cells.length - island.length) { for (const [x, y] of cells.concat(island)) unput(x, y); return false; }
+      G.carts.push({ path: cells.map(([x, y]) => ({ x, y })), loop, speed: Math.round(R.range(2, 3.4) * 10) / 10, ph: Math.round(R.next() * 100) / 100 });
+      return true;
+    };
+    const ring = () => {
+      const ok = r.cells.filter(([x, y]) => okR(x, y));
+      if (!ok.length) return false;
+      for (let t = 0; t < 14; t++) {
+        const iw = R.int(1, 3), ih = R.int(1, 2), [cx0, cy0] = t < 4 ? [Math.round(r.cx), Math.round(r.cy)] : R.pick(ok), ix = cx0 - (iw >> 1), iy = cy0 - (ih >> 1);
+        const island = [], cells = [];
+        let good = true;
+        for (let y = iy; y < iy + ih && good; y++) for (let x = ix; x < ix + iw; x++) { if (!okR(x, y)) { good = false; break; } island.push([x, y]); }
+        if (!good) continue;
+        const x0 = ix - 1, y0 = iy - 1, x1 = ix + iw, y1 = iy + ih;
+        for (let x = x0; x <= x1; x++) cells.push([x, y0]);
+        for (let y = y0 + 1; y <= y1; y++) cells.push([x1, y]);
+        for (let x = x1 - 1; x >= x0; x--) cells.push([x, y1]);
+        for (let y = y1 - 1; y > y0; y--) cells.push([x0, y]);
+        if (!cells.every(([x, y]) => okR(x, y))) continue;
+        for (let y = y0 - 1; y <= y1 + 1 && good; y++) for (let x = x0 - 1; x <= x1 + 1; x++) if ((x === x0 - 1 || x === x1 + 1 || y === y0 - 1 || y === y1 + 1) && genBlk(G.at(x, y))) { good = false; break; }
+        if (!good) continue;
+        if (lay(cells, island, true, R.chance(0.5) ? TIMBER19 : 'T')) return true;
+      }
+      return false;
+    };
+    const line = () => {
+      const starts = R.shuffle(r.cells.filter(([x, y]) => okR(x, y)));
+      for (const [sx, sy] of starts.slice(0, 16)) {
+        for (const hz of R.chance(0.5) ? [true, false] : [false, true]) {
+          const dx = hz ? 1 : 0, dy = hz ? 0 : 1, cells = [];
+          let x = sx, y = sy;
+          while (okR(x - dx, y - dy)) { x -= dx; y -= dy; }
+          for (let k = 0; okR(x + dx * k, y + dy * k); k++) cells.push([x + dx * k, y + dy * k]);
+          while (cells.length > 10) cells.splice(R.chance(0.5) ? 0 : cells.length - 1, 1);
+          if (cells.length < minL) continue;
+          const [ax, ay] = cells[0], [bx, by] = cells[cells.length - 1];
+          if (genBlk(G.at(ax - dx, ay - dy)) && genBlk(G.at(bx + dx, by + dy))) { cells.shift(); cells.pop(); } // (mot väggar i båda ändar: kortare)
+          if (cells.length < minL) continue;
+          if (lay(cells, [], false)) return true;
+        }
+      }
+      return false;
+    };
+    return (loopFirst && ring()) || line();
+  }
+
+  function content19(G, depth, opts, L, H) {
+    const { W, g, lock } = G, { rooms, fight, P, X, cnt, place, rid } = H, b = L.biome;
+    const fk = tag => H.rng.fork(tag);
+    const mne = b === 'mine', obs = b === 'observatory', own = mne || obs;
+    const old = !own && !opts.v15off && !opts.v16off && !opts.v17off && !opts.v18off && !opts.v19off;
+    if (opts.v19) { opts.v19.added = false; opts.v19.undo = []; }
+    const undo = opts.v19 ? opts.v19.undo : [];
+    let added = false;
+    const put = (x, y, ch, u) => { const o = g[y][x]; if (u || !own) { undo.push([x, y, o]); added = true; } if (cnt[o]) cnt[o]--; g[y][x] = ch; cnt[ch] = (cnt[ch] || 0) + 1; };
+    const unput = (x, y) => { const o = g[y][x]; if (cnt[o]) cnt[o]--; g[y][x] = '.'; };
+    const K = kit1516(G, L, H, put, NATIVE19[b] || '');
+    const okRoom = r => !['guardian', 'secret', 'vault', 'shop', 'start'].includes(r.type);
+    const front = (x, y) => [0, 1, 2, 3].some(k => isWall(g[y + DY[k]][x + DX[k]]) && g[y - DY[k]][x - DX[k]] === '.' && lock[(y - DY[k]) * W + x - DX[k]] < 2);
+    const wallRuns = (R, wc, ch, p, cap) => { // sträckor om 1-2 rutor av ch i de synliga väggarna wc, aldrig vid den hemliga/spruckna väggen
+      for (let y = 0; y < G.H; y++) for (let x = 0; x < W; x++) {
+        if (!K.face(x, y, wc) || !R.chance(p) || (cnt[ch] || 0) >= cap) continue;
+        put(x, y, ch);
+        if (R.chance(0.5)) { const nb = [0, 1, 2, 3].map(d => [x + DX[d], y + DY[d]]).filter(([nx, ny]) => K.face(nx, ny, wc)); if (nb.length) { const [nx, ny] = R.pick(nb); put(nx, ny, ch); } }
+      }
+    };
+
+    // ----- gruvan: karbidlampor, malmådror, räls med vagnbanor, gas, ras, dynamit, gruvvagnar och gruvans invånare -----
+    if (mne) {
+      for (let y = 1; y < G.H - 1; y++) for (let x = 1; x < W - 1; x++) if (g[y][x] === 'f' && !K.inG(x, y) && (cnt[LAMP19] || 0) < LAMP19_CAP) put(x, y, LAMP19); // karbidlampor
+      wallRuns(fk('ore'), TIMBER19, ORE19, 0.04, ORE19_CAP); // malmådror ȑ i timret
+      // räls Ȗ med vagnbanor (level.carts): en rak sträcka (fram och tillbaka) eller en slinga runt en stapel av timmer/lådor i ett rum; rälsen ligger på
+      // fritt golv, aldrig intill en dörr, P, x eller interaktiv rekvisita, och är aldrig enda vägen (allt som nåddes nås ändå med rälsen som hinder)
+      {
+        const R = fk('rails');
+        const okR = (x, y, r) => G.inb(x, y) && rid[y * W + x] === r.id && g[y][x] === '.' && lock[y * W + x] < 2 && !K.nearPX(x, y, 2) && !K.inG(x, y)
+          && !RX.some((dx, k) => { const c = G.at(x + dx, y + RY[k]); return isDoorCh(c) || isInter(c) || c === 'P' || c === 'x' || (HAZARD.includes(c) && c !== RAIL19); });
+        const lay = (r, loopFirst, minL) => track19(G, R, r, (x, y) => okR(x, y, r), K.reachN, put, unput, loopFirst, minL);
+        const want = R.int(1, TRACK19_CAP), pri = r => (r.arch === 'loadingdock' ? 0 : H.isCombat(r) ? 1 : 2);
+        const host = R.shuffle(rooms.filter(r => okRoom(r) && r.cells.length >= 12)).sort((p, q) => pri(p) - pri(q));
+        let made = G.carts.length;
+        for (const r of host) {
+          if (made >= want || (cnt[RAIL19] || 0) >= RAIL19_CAP - 12) break;
+          if (lay(r, r.arch === 'loadingdock' && !G.carts.length, 5)) made++;
+        }
+        if (!G.carts.length) for (const r of host) if (lay(r, false, 4)) break; // reserv: nästan alla gruvor får en vagn
+      }
+      // gasfickor ȗ: 1-3 fläckar om 2-6 rutor (schaktet och sprängkammaren först), aldrig enda vägen
+      {
+        const R = fk('gas'), pri = r => (r.arch === 'shaft' || r.arch === 'blastchamber' ? 0 : 1);
+        K.patches(R, R.shuffle(rooms.filter(r => H.isCombat(r) || r.type === 'treasure')).sort((p, q) => pri(p) - pri(q)), GAS19, R.int(1, 3), GAS19_CAP, true);
+      }
+      // ras Ș: 1-3 fläckar om 2-6 rutor (den rasade stollen först), aldrig enda vägen, aldrig i dörröppningar
+      {
+        const R = fk('cavein'), pri = r => (r.arch === 'collapsedgallery' ? 0 : 1);
+        K.patches(R, R.shuffle(rooms.filter(r => H.isCombat(r) || r.type === 'treasure')).sort((p, q) => pri(p) - pri(q)), CAVE19, R.int(1, 3), CAVE19_CAP, true);
+      }
+      // dynamitlådor Ȝ: 0-2 till mot väggarna i stridsrummen (aldrig vid P och x)
+      { const R = fk('dynamite'); let n = R.int(0, 2); for (const r of R.shuffle(fight.filter(r => r.type !== 'start'))) { if (n <= 0) break; n -= place(r, DYNA19, 1, { wall: true, rng: R, pred: (x, y) => K.safe(x, y) && !K.nearPX(x, y, 3) && !K.doorNear(x, y) }).length; } }
+      // gruvvagn i vila ț: lastplatsen har sin; annars ofta en mot en vägg (fri framsida)
+      if (!cnt[CART19]) { const R = fk('minecart'); if (R.chance(0.6)) for (const r of R.shuffle(rooms.filter(r => okRoom(r) && r.cells.length >= 12))) if (place(r, CART19, 1, { wall: true, rng: R, pred: (x, y) => front(x, y) && K.safe(x, y) && !K.nearPX(x, y, 2) && !K.doorNear(x, y) }).length) break; }
+      // invånarna: kolgolemer Ȣ (djup 2+, ~45 %, 1-2), gnistlyktor Ȥ (~55 %, 1-2)
+      { const R = fk('coalgolems'); if (depth >= 2 && R.chance(0.45)) K.singles(R, 'Ȣ', R.chance(0.3) ? 2 : 1, { pref: r => (r.cells.length >= 25 ? 0 : 1) }); }
+      { const R = fk('sparkwisps'); if (R.chance(0.55)) K.singles(R, 'Ȥ', R.int(1, 2)); }
+    }
+
+    // ----- observatoriet: stjärnkartor, kupolspringor, stjärnkartegolv, stjärnportar, orrerier, teleskop och observatoriets invånare -----
+    if (obs) {
+      wallRuns(fk('charts'), BRASS19, CHART19, 0.05, CHART19_CAP); // stjärnkartor Ȕ i mässingen
+      // kupolspringor Ț: 1-3 fläckar om 2-6 rutor (stora kupolen först), aldrig enda vägen
+      {
+        const R = fk('slits'), pri = r => (r.arch === 'greatdome' ? 0 : 1);
+        K.patches(R, R.shuffle(rooms.filter(r => H.isCombat(r) || r.type === 'treasure')).sort((p, q) => pri(p) - pri(q)), SLIT19, R.int(1, 3), SLIT19_CAP, true);
+      }
+      // stjärnkartegolv ș: 1-3 fläckar om 2-6 rutor (planetariet och kupolen först), får ligga på vägen
+      {
+        const R = fk('starmap'), pri = r => (r.arch === 'planetarium' || r.arch === 'greatdome' ? 0 : 1);
+        K.patches(R, R.shuffle(rooms.filter(r => okRoom(r) && r.type !== 'guardian')).sort((p, q) => pri(p) - pri(q)), STARMAP19, R.int(1, 3), STARMAP19_CAP, false);
+      }
+      // stjärnportar Ƞ (1-2 par, level.starports): varje par i två olika rum (ett rum har högst en port), helst långt ifrån varandra; aldrig vid
+      // dörrar, P eller x, aldrig enda vägen
+      {
+        const R = fk('starports'), want = R.int(1, PORT19_PAIRS);
+        const okT = (x, y) => H.trapOK(x, y) && !K.doorNear(x, y) && !K.inG(x, y) && cheb(x, y, P[0], P[1]) >= 2 && cheb(x, y, X[0], X[1]) >= 2
+          && localOK(G, x, y) && K.safe(x, y) && !K.touch(x, y, []) && [0, 1, 2, 3].filter(d => !genBlk(g[y + DY[d]][x + DX[d]])).length >= 2;
+        const host = R.shuffle(rooms.filter(r => ['normal', 'elite', 'exit', 'treasure', 'start', 'shrine', 'special'].includes(r.type) && r.cells.length >= 9));
+        const used = new Set();
+        for (let k = 0; k < want; k++) {
+          const free = host.filter(r => !used.has(r.id));
+          let done = false;
+          for (const ra of free) {
+            const order = free.filter(r => r !== ra).sort((p, q) => Math.hypot(q.cx - ra.cx, q.cy - ra.cy) - Math.hypot(p.cx - ra.cx, p.cy - ra.cy));
+            const a = place(ra, PORT19, 1, { center: true, jit: 2.5, pred: okT, rng: R })[0];
+            if (!a) continue;
+            for (const rb of order.slice(0, 4)) {
+              const bb = place(rb, PORT19, 1, { center: true, jit: 2.5, pred: okT, rng: R })[0];
+              if (!bb) continue;
+              G.starports.push([{ x: a[0], y: a[1] }, { x: bb[0], y: bb[1] }]);
+              used.add(ra.id); used.add(rb.id); done = true; break;
+            }
+            if (done) break;
+            unput(a[0], a[1]);
+          }
+          if (!done) break;
+        }
+      }
+      // orrery Ȟ: planetariet har sin; annars ofta en i mitten av en sal (fri runt om). Teleskop ȟ: kupolen/galleriet har sitt; annars ofta ett mot en vägg
+      if (!cnt[ORRERY19]) { const R = fk('orrery'); if (R.chance(0.5)) for (const r of R.shuffle(fight.filter(r => r.type !== 'start' && r.cells.length >= 12))) if (place(r, ORRERY19, 1, { open: true, center: true, jit: 1.5, rng: R, pred: (x, y) => !K.doorNear(x, y) && K.safe(x, y) && !K.nearPX(x, y, 3) }).length) break; }
+      if (!cnt[SCOPE19]) { const R = fk('telescope'); if (R.chance(0.6)) for (const r of R.shuffle(rooms.filter(r => okRoom(r) && r.cells.length >= 9))) if (place(r, SCOPE19, 1, { wall: true, rng: R, pred: (x, y) => front(x, y) && K.safe(x, y) && !K.nearPX(x, y, 2) && !K.doorNear(x, y) }).length) break; }
+      // invånarna: urverksugglor ȧ (~60 %, 1-2), tomrumsväktare Ȩ (djup 2+, ~45 %, 1-2)
+      { const R = fk('clockowls'); if (R.chance(0.6)) K.singles(R, 'ȧ', R.int(1, 2)); }
+      { const R = fk('voidwatchers'); if (depth >= 2 && R.chance(0.45)) K.singles(R, 'Ȩ', R.chance(0.3) ? 2 : 1, { pref: r => (r.cells.length >= 25 ? 0 : 1) }); }
+    }
+
+    // ----- alla biomer: stjärnstoftsflaskor ȫ (ammo till stjärnlansen; ~20 %, observatoriet ~40 %), 1-2, med ångra-lista -----
+    if (old || own) K.loot(fk('stars'), 'ȫ', obs ? STARS19_OBS_P : STARS19_P, AMMO19_CAP);
+    if (added && opts.v19) opts.v19.added = true;
+    return true;
+  }
+
+  // ---------- Version 20: kloakerna och öknen ----------
+  // Körs allra sist i content (efter content19) med egna slumpflöden ur gaffeln 'v20'. Kloakernas och öknens egna saker läggs alltid; fällådorna Ɇ i
+  // alla biomer läggs med ångra-lista (opts.v20.undo): underkänns banan tas de bort igen och banan blir exakt som i version 19 (se build7).
+  const NEST20_CAP = 3, CACTUS20_CAP = 16, AMPHORA20_CAP = 6, BRAZIER20_CAP = 24, PIPES20_CAP = 70;
+  const SLUDGE20_CAP = 24, SPRAY20_CAP = 12, SLUICE20_CAP = 6, OASIS20_CAP = 2, MIRAGE20_CAP = 12, QS20_CAP = 24;
+  const GATOR20_CAP = 2, LEECH20_CAP = 4, WRAITH20_CAP = 2, VULTURE20_CAP = 3;
+  const TRAPS20_P = 0.2, TRAPS20_OWN_P = 0.35, AMMO20_CAP = 2;
+  // fienderna: tecken -> [biomer där de får finnas, första djup, tak per bana] (validate)
+  const FOES20 = { 'ȼ': [['sewer'], 2, GATOR20_CAP], 'Ƚ': [['sewer'], 1, 0], 'Ⱦ': [['sewer'], 1, 0], 'ȿ': [['sewer'], 1, LEECH20_CAP],
+    'ɀ': [['desert'], 1, 0], 'Ɂ': [['desert'], 1, 0], 'ɂ': [['desert'], 2, WRAITH20_CAP], 'Ƀ': [['desert'], 1, VULTURE20_CAP] };
+  const FOES20_CH = Object.keys(FOES20).join('');
+  const NEW20_CHARS = [...(SEWER20 + PIPES20 + RATWALL20 + DUNE20 + MESA20 + SPHWALL20 + SINK20 + FLOOR20 + INTER20 + PROPS20 + 'Ɇ'), ...FOES20_CH];
+  const NATIVE20 = { sewer: 'ȽȾ', desert: 'ɀɁ' }; // biomernas egna (utöver FOE_FROM) som kan bytas
+
+  function content20(G, depth, opts, L, H) {
+    const { W, g, lock } = G, { rooms, fight, P, X, cnt, place, rid } = H, b = L.biome;
+    const fk = tag => H.rng.fork(tag);
+    const sew = b === 'sewer', des = b === 'desert', own = sew || des;
+    const old = !own && !opts.v15off && !opts.v16off && !opts.v17off && !opts.v18off && !opts.v19off && !opts.v20off;
+    if (opts.v20) { opts.v20.added = false; opts.v20.undo = []; }
+    const undo = opts.v20 ? opts.v20.undo : [];
+    let added = false;
+    const put = (x, y, ch, u) => { const o = g[y][x]; if (u || !own) { undo.push([x, y, o]); added = true; } if (cnt[o]) cnt[o]--; g[y][x] = ch; cnt[ch] = (cnt[ch] || 0) + 1; };
+    const unput = (x, y) => { const o = g[y][x]; if (cnt[o]) cnt[o]--; g[y][x] = '.'; };
+    const K = kit1516(G, L, H, put, NATIVE20[b] || '');
+    const okRoom = r => !['guardian', 'secret', 'vault', 'shop', 'start'].includes(r.type);
+    const front = (x, y) => [0, 1, 2, 3].some(k => isWall(g[y + DY[k]][x + DX[k]]) && g[y - DY[k]][x - DX[k]] === '.' && lock[(y - DY[k]) * W + x - DX[k]] < 2);
+    const hosts = (R, archs) => R.shuffle(rooms.filter(r => H.isCombat(r) || r.type === 'treasure')).sort((p, q) => (archs.includes(p.arch) ? 0 : 1) - (archs.includes(q.arch) ? 0 : 1));
+    const nearCh = (x, y, ch) => RX.some((dx, k) => G.at(x + dx, y + RY[k]) === ch);
+
+    // ----- kloakerna: rörväggar, slam, sprutrör, slussar med en slussratt, råttbon, alligatorer och iglar -----
+    if (sew) {
+      { // rörväggar ȭ: sträckor om 1-2 rutor i valvteglet, aldrig vid den hemliga/spruckna väggen
+        const R = fk('pipes');
+        for (let y = 0; y < G.H; y++) for (let x = 0; x < W; x++) {
+          if (!K.face(x, y, SEWER20) || !R.chance(0.05) || (cnt[PIPES20] || 0) >= PIPES20_CAP) continue;
+          put(x, y, PIPES20);
+          if (R.chance(0.5)) { const nb = [0, 1, 2, 3].map(d => [x + DX[d], y + DY[d]]).filter(([nx, ny]) => K.face(nx, ny, SEWER20)); if (nb.length) { const [nx, ny] = R.pick(nb); put(nx, ny, PIPES20); } }
+        }
+      }
+      { const R = fk('sludge'); K.patches(R, hosts(R, ['canalhall']), SLUDGE20, R.int(2, 4), SLUDGE20_CAP, true); } // slam Ȳ (kanalsalen först)
+      { const R = fk('spray'); K.patches(R, hosts(R, ['pumproom']), SPRAY20, R.int(1, 2), SPRAY20_CAP, true); } // sprutrör ȳ (pumprummet först)
+      // slussar ȷ (level.sluices): 1-2 sträckor om 1-3 rutor ut från en vägg (slussgången först); med slussarna som vägg nås allt som nåddes förut
+      // (aldrig enda vägen), aldrig vid dörrar, P eller x; sedan exakt en slussratt ȶ mot en vägg med fri framsida (annars inga slussar)
+      {
+        const R = fk('sluices'), want = R.int(1, 2), laid = [];
+        const okS = (x, y, own2) => G.inb(x, y) && g[y][x] === '.' && H.trapOK(x, y) && !K.doorNear(x, y) && !K.inG(x, y) && !K.nearPX(x, y, 2) && localOK(G, x, y) && K.safe(x, y) && !K.touch(x, y, own2);
+        const host = R.shuffle(rooms.filter(r => okRoom(r) && r.cells.length >= 12)).sort((p, q) => (p.arch === 'sluicegallery' ? 0 : 1) - (q.arch === 'sluicegallery' ? 0 : 1));
+        for (const r of host) {
+          if (laid.length >= want || laid.flat().length >= SLUICE20_CAP - 2) break;
+          let ok = false;
+          for (const [sx, sy] of R.shuffle(r.cells.slice()).slice(0, 20)) {
+            const ds = [0, 1, 2, 3].filter(d => isWall(G.at(sx + DX[d], sy + DY[d])));
+            if (!ds.length) continue;
+            const d = R.pick(ds), len = R.int(1, 3), cells = [];
+            for (let k = 0; k < len; k++) { const x = sx - DX[d] * k, y = sy - DY[d] * k; if (!okS(x, y, cells)) break; cells.push([x, y]); }
+            if (!cells.length) continue;
+            const before = K.reachN();
+            for (const [x, y] of cells) put(x, y, SLUICE20);
+            if (K.reachN() !== before - cells.length) { for (const [x, y] of cells) unput(x, y); continue; }
+            laid.push(cells); ok = true; break;
+          }
+          if (ok && laid.length >= want) break;
+        }
+        if (laid.length) {
+          let wheel = null;
+          for (const r of R.shuffle(rooms.filter(r => okRoom(r) && r.cells.length >= 9)).sort((p, q) => (p.arch === 'sluicegallery' ? 0 : 1) - (q.arch === 'sluicegallery' ? 0 : 1))) {
+            wheel = place(r, WHEEL20, 1, { wall: true, rng: R, pred: (x, y) => front(x, y) && K.safe(x, y) && !K.nearPX(x, y, 2) && !K.doorNear(x, y) && !nearCh(x, y, SLUICE20) })[0];
+            if (wheel) break;
+          }
+          if (wheel) for (const cells of laid) for (const [x, y] of cells) G.sluices.push({ x, y, open: false });
+          else for (const cells of laid) for (const [x, y] of cells) unput(x, y);
+        }
+      }
+      // råttbon ȸ: råttboet har sina; annars ofta ett mot en vägg i ett stridsrum
+      if (!cnt[NEST20]) { const R = fk('nests'); if (R.chance(0.6)) for (const r of R.shuffle(fight.filter(r => r.type !== 'start' && r.cells.length >= 12))) if (place(r, NEST20, 1, { wall: true, rng: R, pred: (x, y) => K.safe(x, y) && !K.nearPX(x, y, 3) && !K.doorNear(x, y) }).length) break; }
+      // invånarna: alligatorer ȼ (djup 2+, ~50 %, 1-2, helst intill slammet), iglar ȿ (~55 %, 1-2)
+      { const R = fk('alligators'); if (depth >= 2 && R.chance(0.5)) K.singles(R, 'ȼ', R.chance(0.3) ? 2 : 1, { cell: (x, y) => nearCh(x, y, SLUDGE20) }); }
+      { const R = fk('leeches'); if (R.chance(0.55)) K.singles(R, 'ȿ', R.int(1, 2)); }
+    }
+
+    // ----- öknen: kokpannor, kvicksand, oaser, hägringar, kaktusar, amforor, sandvålnader och gamar -----
+    if (des) {
+      for (let y = 1; y < G.H - 1; y++) for (let x = 1; x < W - 1; x++) if (g[y][x] === 'f' && !K.inG(x, y) && (cnt[BRAZIER20] || 0) < BRAZIER20_CAP) put(x, y, BRAZIER20); // kokpannor
+      { const R = fk('quicksand'); K.patches(R, hosts(R, ['dunefield']), '¯', R.int(1, 3), QS20_CAP, true); } // kvicksand ¯ (dynfältet först)
+      { // oaser ȴ: 1-2 rutor (aldrig intill varandra eller en annan fara; oasen först), ~85 %
+        const R = fk('oases');
+        if (R.chance(0.85)) {
+          let n = R.int(1, OASIS20_CAP);
+          for (const r of hosts(R, ['oasis'])) {
+            if (n <= 0) break;
+            const c = R.shuffle(r.cells.filter(([x, y]) => H.trapOK(x, y) && lock[y * W + x] < 2 && !K.doorNear(x, y) && !K.inG(x, y) && !K.nearPX(x, y, 3) && !K.touch(x, y, [])))[0];
+            if (c) { put(c[0], c[1], OASIS20); n--; }
+          }
+        }
+      }
+      { const R = fk('mirages'); K.patches(R, hosts(R, ['dunefield', 'oasis']), MIRAGE20, R.int(1, 2), MIRAGE20_CAP, false); } // hägringar ȵ
+      { // kaktusar ȹ ute på gårdarna, amforor Ⱥ mot väggarna
+        const R = fk('cacti');
+        for (const r of R.shuffle(rooms.filter(r => r.tag === 'yard' && okRoom(r)))) place(r, CACTUS20, R.int(0, 2), { rng: R, spread: 2, pred: (x, y) => K.safe(x, y) && !K.nearPX(x, y, 2) && !K.doorNear(x, y) });
+        const R2 = fk('amphorae'); let n = R2.int(0, 2);
+        for (const r of R2.shuffle(rooms.filter(r => okRoom(r)))) { if (n <= 0) break; n -= place(r, AMPHORA20, 1, { wall: true, rng: R2, pred: (x, y) => K.safe(x, y) && !K.nearPX(x, y, 2) && !K.doorNear(x, y) }).length; }
+      }
+      // invånarna: sandvålnader ɂ (djup 2+, ~45 %, 1-2), gamar Ƀ (~55 %, 1-2, helst på gårdarna)
+      { const R = fk('sandwraiths'); if (depth >= 2 && R.chance(0.45)) K.singles(R, 'ɂ', R.chance(0.3) ? 2 : 1, { pref: r => (r.cells.length >= 25 ? 0 : 1) }); }
+      { const R = fk('vultures'); if (R.chance(0.55)) K.singles(R, 'Ƀ', R.int(1, 2), { pref: r => (r.tag === 'yard' ? 0 : 1) }); }
+    }
+
+    // ----- alla biomer: fällådor Ɇ (ammo till fällkastaren; ~20 %, kloakerna/öknen ~35 %), 1-2, med ångra-lista -----
+    if (old || own) K.loot(fk('traps'), 'Ɇ', own ? TRAPS20_OWN_P : TRAPS20_P, AMMO20_CAP);
+    if (added && opts.v20) opts.v20.added = true;
+    return true;
+  }
+
+  // ---------- Version 21: järnfängelset och fiskeläget ----------
+  // Körs allra sist i content (efter content20) med egna slumpflöden ur gaffeln 'v21'. Fängelsets och fiskelägets egna saker läggs alltid (allt efter
+  // bästa förmåga: content21 underkänner aldrig en bana); skrotpåsarna ɟ i alla biomer läggs med ångra-lista (opts.v21.undo): underkänns banan tas de
+  // bort igen och banan blir exakt som i version 20 (se build7).
+  const CELLS21_CAP = 60, ALARM21_CAP = 3, NET21_CAP = 16, CAGE21_CAP = 6, RACK21_CAP = 4, GALLOWS21_CAP = 2, HLAMP21_CAP = 24, FBARREL21_CAP = 10, ANCHOR21_CAP = 6;
+  const WATER21_CAP = 60, QUAY21_CAP = 400;
+  const TORTURER21_CAP = 2, HOUND21_CAP = 4, FISHMAN21_CAP = 3, GULLS21_CAP = 6;
+  const SCRAP21_P = 0.2, SCRAP21_OWN_P = 0.35, AMMO21_CAP = 2;
+  // fienderna: tecken -> [biomer där de får finnas, första djup, tak per bana] (validate)
+  const FOES21 = { 'ɕ': [['prison'], 1, 0], 'ɖ': [['prison'], 1, 0], 'ɗ': [['prison'], 3, TORTURER21_CAP], 'ɘ': [['prison'], 1, HOUND21_CAP],
+    'ə': [['harbor'], 1, 0], 'ɚ': [['harbor'], 1, FISHMAN21_CAP], 'ɛ': [['harbor'], 1, 0], 'ɜ': [['harbor'], 1, GULLS21_CAP] };
+  const FOES21_CH = Object.keys(FOES21).join('');
+  const NEW21_CHARS = [...(PSTONE21 + CELLS21 + EXECWALL21 + SHACK21 + QUAY21 + TIDEWALL21 + SINK21 + CAGE21 + PROPS21 + 'ɟ'), ...FOES21_CH];
+  const NATIVE21 = { prison: 'ɕɖ', harbor: 'əɛ' }; // biomernas egna (utöver FOE_FROM) som kan bytas
+
+  function content21(G, depth, opts, L, H) {
+    const { W, g, lock, fm } = G, { rooms, fight, P, X, cnt, place, rid } = H, b = L.biome;
+    const fk = tag => H.rng.fork(tag);
+    const pri = b === 'prison', har = b === 'harbor', own = pri || har;
+    const old = !own && !opts.v15off && !opts.v16off && !opts.v17off && !opts.v18off && !opts.v19off && !opts.v20off && !opts.v21off;
+    if (opts.v21) { opts.v21.added = false; opts.v21.undo = []; }
+    const undo = opts.v21 ? opts.v21.undo : [];
+    let added = false;
+    const put = (x, y, ch, u) => { const o = g[y][x]; if (u || !own) { undo.push([x, y, o]); added = true; } if (cnt[o]) cnt[o]--; g[y][x] = ch; cnt[ch] = (cnt[ch] || 0) + 1; };
+    const K = kit1516(G, L, H, put, NATIVE21[b] || '');
+    const okRoom = r => !['guardian', 'secret', 'vault', 'shop', 'start'].includes(r.type);
+    const hosts = (R, archs) => R.shuffle(rooms.filter(r => H.isCombat(r) || r.type === 'treasure')).sort((p, q) => (archs.includes(p.arch) ? 0 : 1) - (archs.includes(q.arch) ? 0 : 1));
+    const N4 = (x, y, f) => [0, 1, 2, 3].filter(d => f(G.at(x + DX[d], y + DY[d]), x + DX[d], y + DY[d])).length;
+    // en flock/ett par: n fiender ch inbytta i samma stridsrum (som har minst n att byta)
+    const group = (R, ch, n, pref) => {
+      const host = R.shuffle(fight.filter(r => r.arch !== 'nest' && r.type !== 'start' && K.mobOf(r).length >= n));
+      if (pref) host.sort((p, q) => pref(p) - pref(q));
+      for (const r of host) { if (r.cells.some(([x, y]) => g[y][x] === ch)) continue; for (const [x, y] of R.shuffle(K.mobOf(r)).slice(0, n)) put(x, y, ch); return true; }
+      return false;
+    };
+    // enstaka golvrutor ch (larmplattor): aldrig vid dörrar, P eller x, aldrig enda vägen, aldrig intill en annan fara
+    const singleTiles = (R, ch, n, cells) => {
+      let k = 0;
+      for (const [x, y] of R.shuffle(cells)) {
+        if (k >= n) break;
+        if (g[y][x] !== '.' || !H.trapOK(x, y) || lock[y * W + x] >= 2 || K.doorNear(x, y) || K.inG(x, y) || K.nearPX(x, y, 3) || !localOK(G, x, y) || !K.safe(x, y) || K.touch(x, y, [])) continue;
+        put(x, y, ch); k++;
+      }
+      return k;
+    };
+
+    // ----- järnfängelset: cellgaller, larmplattor, hängande burar, tortyrmästare och vakthundar -----
+    if (pri) {
+      { // cellgaller Ɉ i fängelsestenen (cellraden tätt, övriga glest), aldrig vid den hemliga/spruckna väggen
+        const R = fk('cellbars');
+        for (const r of R.shuffle(rooms.filter(okRoom))) {
+          const p = r.arch === 'cellrow' ? 0.45 : r.arch === 'guardpost' || r.arch === 'prison' ? 0.12 : 0.05;
+          for (const [x, y] of r.cells) for (let d = 0; d < 4; d++) {
+            const xx = x + DX[d], yy = y + DY[d];
+            if (K.face(xx, yy, PSTONE21) && (cnt[CELLS21] || 0) < CELLS21_CAP && R.chance(p)) put(xx, yy, CELLS21);
+          }
+        }
+      }
+      { // larmplattor ɍ: 1-3 (korridorerna och stridsrummen)
+        const R = fk('alarms'), c = (H.corridors || []).slice();
+        for (const r of fight) if (r.type !== 'start') for (const p of r.cells) c.push(p);
+        singleTiles(R, ALARM21, R.int(1, ALARM21_CAP), c);
+      }
+      { // hängande burar ɏ (blockerar inte): 1-2 till om cellraden/galggården inte har några
+        const R = fk('cages');
+        let n = (cnt[CAGE21] || 0) ? R.int(0, 1) : R.int(1, 2);
+        for (const r of R.shuffle(fight.filter(r => r.type !== 'start'))) { if (n <= 0 || (cnt[CAGE21] || 0) >= CAGE21_CAP) break; n -= place(r, CAGE21, 1, { rng: R, spread: 3, pred: (x, y) => !K.doorNear(x, y) && !K.nearPX(x, y, 2) }).length; }
+      }
+      // invånarna: tortyrmästare ɗ (djup 3+, ~45 %, 1-2, helst i tortyrkammaren), vakthundar ɘ i par (~60 %, 1-2 par)
+      { const R = fk('torturers'); if (depth >= 3 && R.chance(0.45)) K.singles(R, 'ɗ', R.chance(0.3) ? 2 : 1, { pref: r => (r.arch === 'torturechamber' ? 0 : 1) }); }
+      { const R = fk('hounds'); if (R.chance(0.6)) for (let k = R.chance(0.35) ? 2 : 1; k > 0; k--) group(R, 'ɘ', 2); }
+    }
+
+    // ----- fiskeläget: fyrlyktor, djupt vatten med bryggor, fisknät, tunnor och ankare, fiskmän och måsar -----
+    if (har) {
+      for (let y = 1; y < G.H - 1; y++) for (let x = 1; x < W - 1; x++) if (g[y][x] === 'f' && !K.inG(x, y) && (cnt[HLAMP21] || 0) < HLAMP21_CAP) put(x, y, HLAMP21); // fyrlyktor
+      { // djupt vatten Đ: fläckar på gårdarna (bryggan först, med fler fläckar), aldrig enda vägen; rutorna runt vattnet blir bryggor (bryggplank)
+        const R = fk('water'), yards = R.shuffle(rooms.filter(r => r.tag === 'yard' && H.isCombat(r))).sort((p, q) => (p.arch === 'pier' ? 0 : 1) - (q.arch === 'pier' ? 0 : 1));
+        const pier = yards.filter(r => r.arch === 'pier');
+        // bryggan: en vik av djupt vatten i gårdens inre med en bryggplanka tvärs över (rad och kolumn genom mitten); varje vattenruta läggs bara om
+        // allt annat fortfarande nås utan att simma (aldrig enda vägen)
+        for (const r of pier) {
+          const inR = (x, y) => rid[y * W + x] === r.id, mx = r.box.x + (r.box.w >> 1), my = r.box.y + (r.box.h >> 1);
+          const HZW = (x, y) => RX.some((dx, k) => { const c = G.at(x + dx, y + RY[k]); return c !== 'Đ' && c !== '.' && (HAZARD.includes(c) || c === 'o'); });
+          let before = K.reachN(), n = 0;
+          const cand = R.shuffle(r.cells.filter(([x, y]) => x !== mx && y !== my && RX.every((dx, k) => inR(x + dx, y + RY[k])))), tried = new Set();
+          for (let t = 0; t < 90 && cand.length; t++) { // vattnet växer som en sammanhängande vik (grannar till lagt vatten först)
+            if (n >= 24 || (cnt['Đ'] || 0) >= WATER21_CAP) break;
+            let k = n ? cand.findIndex(([x, y]) => !tried.has(y * W + x) && [0, 1, 2, 3].some(d => G.at(x + DX[d], y + DY[d]) === 'Đ')) : -1;
+            if (k < 0) k = cand.findIndex(([x, y]) => !tried.has(y * W + x));
+            if (k < 0) break;
+            const [x, y] = cand[k]; tried.add(y * W + x);
+            if (g[y][x] !== '.' || !H.trapOK(x, y) || lock[y * W + x] >= 2 || K.doorNear(x, y) || K.inG(x, y) || K.nearPX(x, y, 3) || HZW(x, y) || !K.safe(x, y)) continue;
+            put(x, y, 'Đ');
+            const now = K.reachN();
+            if (now !== before - 1) { g[y][x] = '.'; cnt['Đ']--; continue; }
+            before = now; n++;
+          }
+        }
+        K.patches(R, pier, 'Đ', pier.length, WATER21_CAP, true);
+        K.patches(R, yards, 'Đ', R.int(1, 3), WATER21_CAP, true);
+        const dw = H.floorIdx('floor_deepwater'), dock = H.floorIdx('floor_dock');
+        for (let y = 1; y < G.H - 1; y++) for (let x = 1; x < W - 1; x++) {
+          if (g[y][x] === 'Đ') { if (dw >= 0) fm[y * W + x] = dw; continue; }
+          if (dock >= 0 && !isWall(g[y][x]) && !K.inG(x, y) && RX.some((dx, k) => G.at(x + dx, y + RY[k]) === 'Đ')) fm[y * W + x] = dock;
+        }
+      }
+      { const R = fk('nets'); K.patches(R, hosts(R, ['quayside', 'pier']), NET21, R.int(1, 3), NET21_CAP, true); } // fisknät Ɏ (kajen och bryggan först)
+      { // fisktunnor ɓ mot väggarna, ankare ɔ ute på gårdarna
+        const R = fk('barrels'); let n = R.int(0, 2);
+        for (const r of R.shuffle(rooms.filter(okRoom))) { if (n <= 0 || (cnt[FBARREL21] || 0) >= FBARREL21_CAP) break; n -= place(r, FBARREL21, 1, { wall: true, rng: R, pred: (x, y) => K.safe(x, y) && !K.nearPX(x, y, 2) && !K.doorNear(x, y) }).length; }
+        const R2 = fk('anchors'); let m = R2.int(0, 2);
+        for (const r of R2.shuffle(rooms.filter(r => r.tag === 'yard' && okRoom(r)))) { if (m <= 0 || (cnt[ANCHOR21] || 0) >= ANCHOR21_CAP) break; m -= place(r, ANCHOR21, 1, { rng: R2, spread: 2, pred: (x, y) => K.safe(x, y) && !K.nearPX(x, y, 2) && !K.doorNear(x, y) }).length; }
+      }
+      { // fiskmän ɚ (~65 %, 1-3): gömda i djupt vatten intill gångbart golv i ett stridsrum (minst två vattengrannar), långt från P
+        const R = fk('fishmen');
+        if (R.chance(0.65)) {
+          let n = R.int(1, FISHMAN21_CAP);
+          const c = [];
+          for (const r of fight) if (r.type !== 'start') for (const [x, y] of r.cells)
+            if (g[y][x] === 'Đ' && !K.nearPX(x, y, 4) && Math.hypot(x - P[0], y - P[1]) >= 7 && N4(x, y, ch => ch === 'Đ') >= 2 && N4(x, y, (ch, xx, yy) => !genBlk(ch) && rid[yy * W + xx] === r.id) >= 1) c.push([x, y]);
+          for (const [x, y] of R.shuffle(c)) { if (n <= 0) break; if (RX.some((dx, k) => G.at(x + dx, y + RY[k]) === 'ɚ')) continue; put(x, y, 'ɚ'); n--; }
+        }
+      }
+      // måsar ɜ: en flock om 3 (~55 %, helst på gårdarna; ibland två flockar)
+      { const R = fk('gulls'); if (R.chance(0.55)) for (let k = R.chance(0.25) ? 2 : 1; k > 0; k--) group(R, 'ɜ', 3, r => (r.tag === 'yard' ? 0 : 1)); }
+    }
+
+    // ----- alla biomer: skrotpåsar ɟ (ammo till trombonen; ~20 %, fängelset/fiskeläget ~35 %), 1-2, med ångra-lista -----
+    if (old || own) K.loot(fk('scrap'), 'ɟ', own ? SCRAP21_OWN_P : SCRAP21_P, AMMO21_CAP);
+    if (added && opts.v21) opts.v21.added = true;
+    return true;
+  }
+
+  // ---------- Version 22: badhuset och skärselden ----------
+  // Körs allra sist i content (efter content21) med egna slumpflöden ur gaffeln 'v22'. Badhusets och skärseldens egna saker läggs alltid (efter bästa
+  // förmåga: content22 underkänner aldrig en bana); svavelklumparna ɻ i alla biomer läggs med ångra-lista (opts.v22.undo): underkänns banan tas de bort
+  // igen och banan blir exakt som i version 21 (se build7).
+  const COLUMN22_CAP = 60, HOTPOOL22_CAP = 24, COLDPOOL22_CAP = 12, VENT22_CAP = 12, FIRE22_CAP = 30, RUNE22_CAP = 3;
+  const BSTATUE22_CAP = 6, FOUNT22_CAP = 3, BENCH22_CAP = 8, SOUL22_CAP = 10, BPILLAR22_CAP = 16, BRIMPOT22_CAP = 24;
+  const STEAMGHOST22_CAP = 3, MOLD22_CAP = 4, LOSTSOUL22_CAP = 4, BRUTE22_CAP = 2;
+  // köttbjässen: kontraktet säger djup 6+, men Gen.floor (och spelet) går bara till djup 5 – precis som skärseldens djup [5, 8] blir det djup 5
+  const BRUTE22_DEPTH = 5;
+  const BRIM22_P = 0.2, BRIM22_OWN_P = 0.35, AMMO22_CAP = 2;
+  // fienderna: tecken -> [biomer där de får finnas, första djup, tak per bana] (validate)
+  const FOES22 = { 'ɩ': [['bathhouse'], 1, 0], 'ɪ': [['bathhouse'], 3, STEAMGHOST22_CAP], 'ɫ': [['bathhouse'], 1, 0], 'ɬ': [['bathhouse'], 1, MOLD22_CAP],
+    'ɵ': [['purgatory'], 1, 0], 'ɶ': [['purgatory'], 1, LOSTSOUL22_CAP], 'ɷ': [['purgatory'], BRUTE22_DEPTH, BRUTE22_CAP], 'ɸ': [['purgatory'], 1, 0] };
+  const FOES22_CH = Object.keys(FOES22).join('');
+  const NEW22_CHARS = [...(MOSAIC22 + COLUMN22 + BATHWALL22 + FLESH22 + BONE22 + PYREWALL22 + SINK22 + FLOOR22 + PROPS22 + 'ɻ'), ...FOES22_CH];
+  const NATIVE22 = { bathhouse: 'ɩɫ', purgatory: 'ɵɸ' }; // biomernas egna (utöver FOE_FROM) som kan bytas
+
+  function content22(G, depth, opts, L, H) {
+    const { W, g, lock } = G, { rooms, fight, P, X, cnt, place, rid } = H, b = L.biome;
+    const fk = tag => H.rng.fork(tag);
+    const bat = b === 'bathhouse', pur = b === 'purgatory', own = bat || pur;
+    const old = !own && !opts.v15off && !opts.v16off && !opts.v17off && !opts.v18off && !opts.v19off && !opts.v20off && !opts.v21off && !opts.v22off;
+    if (opts.v22) { opts.v22.added = false; opts.v22.undo = []; }
+    const undo = opts.v22 ? opts.v22.undo : [];
+    let added = false;
+    const put = (x, y, ch, u) => { const o = g[y][x]; if (u || !own) { undo.push([x, y, o]); added = true; } if (cnt[o]) cnt[o]--; g[y][x] = ch; cnt[ch] = (cnt[ch] || 0) + 1; };
+    const unput = (x, y) => { const o = g[y][x]; if (cnt[o]) cnt[o]--; g[y][x] = '.'; };
+    const K = kit1516(G, L, H, put, NATIVE22[b] || '');
+    const okRoom = r => !['guardian', 'secret', 'vault', 'shop', 'start'].includes(r.type);
+    const hosts = (R, archs) => R.shuffle(rooms.filter(r => H.isCombat(r) || r.type === 'treasure')).sort((p, q) => (archs.includes(p.arch) ? 0 : 1) - (archs.includes(q.arch) ? 0 : 1));
+    const freeOK = (x, y) => K.safe(x, y) && !K.nearPX(x, y, 2) && !K.doorNear(x, y);
+
+    // ----- badhuset: pelargångar, heta bassänger, kallbad, ånggaller, fontäner, ångvålnader och mögelkrypare -----
+    if (bat) {
+      { // pelare ɡ i mosaikmarmorn (pelargången tätt, övriga glest), aldrig vid den hemliga/spruckna väggen
+        const R = fk('columns');
+        for (const r of R.shuffle(rooms.filter(okRoom))) {
+          const p = r.arch === 'peristyle' ? 0.35 : r.arch === 'poolhall' ? 0.12 : 0.04;
+          for (const [x, y] of r.cells) for (let d = 0; d < 4; d++) {
+            const xx = x + DX[d], yy = y + DY[d];
+            if (K.face(xx, yy, MOSAIC22) && (cnt[COLUMN22] || 0) < COLUMN22_CAP && R.chance(p)) put(xx, yy, COLUMN22);
+          }
+        }
+      }
+      { const R = fk('hotpools'); K.patches(R, hosts(R, ['poolhall']), HOTPOOL22, R.int(2, 3), HOTPOOL22_CAP, true); } // heta bassänger ɣ (bassänghallen först)
+      { const R = fk('coldpools'); if (R.chance(0.8)) K.patches(R, hosts(R, ['poolhall', 'peristyle']), COLDPOOL22, R.int(1, 2), COLDPOOL22_CAP, false); } // kallbad ɥ
+      { const R = fk('vents'); K.patches(R, hosts(R, ['steamroom', 'hypocaust']), VENT22, R.int(1, 2), VENT22_CAP, false); } // ånggaller ɤ (ångrummet först)
+      { // fontäner ɧ: en i ett stridsrum om bassänghallen inte fick någon (~50 %)
+        const R = fk('fountains');
+        if (!cnt[FOUNT22] && R.chance(0.5)) for (const r of R.shuffle(fight.filter(r => r.type !== 'start' && r.cells.length >= 16))) if (place(r, FOUNT22, 1, { open: true, rng: R, pred: (x, y) => freeOK(x, y) && F8(G, x, y) }).length) break;
+      }
+      // invånarna: ångvålnader ɪ (djup 3+, ~50 %, 1-2, helst i ångrummet), mögelkrypare ɬ (~55 %, 1-2)
+      { const R = fk('steamghosts'); if (depth >= 3 && R.chance(0.5)) K.singles(R, 'ɪ', R.chance(0.3) ? 2 : 1, { pref: r => (r.arch === 'steamroom' ? 0 : 1) }); }
+      { const R = fk('moldcrawlers'); if (R.chance(0.55)) K.singles(R, 'ɬ', R.int(1, 2), { pref: r => (r.arch === 'hypocaust' ? 0 : 1) }); }
+    }
+
+    // ----- skärselden: svavelgrytor, eldfloder (level.streams), runcirklar, kedjade själar, plågade själar och köttbjässar -----
+    if (pur) {
+      for (let y = 1; y < G.H - 1; y++) for (let x = 1; x < W - 1; x++) if (g[y][x] === 'f' && !K.inG(x, y) && (cnt[BRIMPOT22] || 0) < BRIMPOT22_CAP) put(x, y, BRIMPOT22); // svavelgrytor
+      { // eldfloder ɰ: raka sträckor om 3-9 rutor över gårdarna (eldfloden först); varje ruta läggs bara om allt annat fortfarande nås (aldrig enda vägen),
+        // aldrig vid dörrar, P eller x eller intill en annan fara; strömmen flyter i sträckans riktning (level.streams)
+        const R = fk('streams'), yards = R.shuffle(rooms.filter(r => r.tag === 'yard' && H.isCombat(r))).sort((p, q) => (p.arch === 'fireriver' ? 0 : 1) - (q.arch === 'fireriver' ? 0 : 1));
+        let want = R.int(1, 3);
+        const okF = (x, y, own2) => G.inb(x, y) && g[y][x] === '.' && H.trapOK(x, y) && lock[y * W + x] < 2 && !K.doorNear(x, y) && !K.inG(x, y) && !K.nearPX(x, y, 3) && K.safe(x, y) && !K.touch(x, y, own2);
+        for (const r of yards) {
+          if (want <= 0 || (cnt[FIRE22] || 0) >= FIRE22_CAP) break;
+          for (let t = r.arch === 'fireriver' ? 2 : 1; t > 0 && want > 0; t--) {
+            let laid = null;
+            for (const [sx, sy] of R.shuffle(r.cells.slice()).slice(0, 12)) {
+              const d = R.int(0, 3), len = R.int(3, 9), cells = [];
+              let before = K.reachN();
+              for (let k = 0; k < len && (cnt[FIRE22] || 0) < FIRE22_CAP; k++) {
+                const x = sx + DX[d] * k, y = sy + DY[d] * k;
+                if (!G.inb(x, y) || rid[y * W + x] !== r.id || !okF(x, y, cells)) break;
+                put(x, y, FIRE22);
+                const now = K.reachN();
+                if (now !== before - 1) { unput(x, y); break; }
+                before = now; cells.push([x, y]);
+              }
+              if (cells.length >= 3) { laid = { cells, d }; break; }
+              for (const [x, y] of cells) unput(x, y);
+            }
+            if (!laid) break;
+            for (const [x, y] of laid.cells) G.streams.push({ x, y, dx: DX[laid.d], dy: DY[laid.d] });
+            want--;
+          }
+        }
+      }
+      { // runcirklar ɱ: 1-3 i stridsrummen (runplatsen först), aldrig nära start, aldrig enda vägen, aldrig intill en annan fara
+        const R = fk('runes');
+        let n = R.int(1, RUNE22_CAP);
+        for (const r of hosts(R, ['runeground']).filter(r => r.type !== 'start')) {
+          if (n <= 0) break;
+          const c = R.shuffle(r.cells.filter(([x, y]) => g[y][x] === '.' && H.trapOK(x, y) && lock[y * W + x] < 2 && !K.doorNear(x, y) && !K.inG(x, y) && cheb(x, y, P[0], P[1]) >= 6 && !K.nearPX(x, y, 3)
+            && localOK(G, x, y) && K.safe(x, y) && !K.touch(x, y, [])))[0];
+          if (c) { put(c[0], c[1], RUNE22); n--; }
+        }
+      }
+      { // kedjade själar ɲ och benpelare ɳ ute på gårdarna
+        const R = fk('souls');
+        for (const r of R.shuffle(rooms.filter(r => r.tag === 'yard' && okRoom(r)))) {
+          if ((cnt[SOUL22] || 0) < SOUL22_CAP) place(r, SOUL22, R.int(0, 1), { rng: R, spread: 2, pred: (x, y) => freeOK(x, y) && F8(G, x, y) });
+          if ((cnt[BPILLAR22] || 0) < BPILLAR22_CAP) place(r, BPILLAR22, R.int(0, 2), { rng: R, spread: 2, pred: (x, y) => freeOK(x, y) && F8(G, x, y) });
+        }
+      }
+      // invånarna: plågade själar ɶ (~60 %, 1-3), köttbjässar ɷ (djup BRUTE22_DEPTH+, ~45 %, 1-2)
+      { const R = fk('lostsouls'); if (R.chance(0.6)) K.singles(R, 'ɶ', R.int(1, 3), { pref: r => (r.tag === 'yard' ? 0 : 1) }); }
+      { const R = fk('brutes'); if (depth >= BRUTE22_DEPTH && R.chance(0.45)) K.singles(R, 'ɷ', R.chance(0.3) ? 2 : 1, { pref: r => (r.cells.length >= 25 ? 0 : 1) }); }
+    }
+
+    // ----- alla biomer: svavelklumpar ɻ (ammo till svavelmortern; ~20 %, badhuset/skärselden ~35 %), 1-2, med ångra-lista -----
+    if (old || own) K.loot(fk('brimstone'), 'ɻ', own ? BRIM22_OWN_P : BRIM22_P, AMMO22_CAP);
+    if (added && opts.v22) opts.v22.added = true;
+    return true;
+  }
+  // åtta fria grannar (golv) runt en ruta: för fristående rekvisita
+  function F8(G, x, y) { for (let k = 0; k < 8; k++) if (G.at(x + RX[k], y + RY[k]) !== '.') return false; return true; }
+
+  // ---------- Version 23: slakteriet och slagfältet ----------
+  // Körs allra sist i content (efter content22) med egna slumpflöden ur gaffeln 'v23'. Slakteriets och slagfältets egna saker läggs alltid (efter bästa
+  // förmåga: content23 underkänner aldrig en bana); kulpåsarna ʖ i alla biomer läggs med ångra-lista (opts.v23.undo): underkänns banan tas de bort igen
+  // och banan blir exakt som i version 22 (se build7).
+  const COLD23_CAP = 60, SLICK23_CAP = 24, GRIND23_CAP = 12, MUD23_CAP = 24, TARGET23_CAP = 8;
+  const HOOK23_CAP = 10, BLOCK23_CAP = 6, SAW23_CAP = 3, CATA23_CAP = 4, BANNER23_CAP = 8, STAKES23_CAP = 10;
+  const FLIES23_CAP = 6, CRAWLER23_CAP = 4, SOLDIER23_CAP = 9, RIDER23_CAP = 2, CROWS23_CAP = 6, RIDER23_LINE = 7;
+  const BALLS23_P = 0.2, BALLS23_OWN_P = 0.35, AMMO23_CAP = 2;
+  // fienderna: tecken -> [biomer där de får finnas, första djup, tak per bana] (validate)
+  const FOES23 = { 'ʄ': [['abattoir'], 1, 0], 'ʅ': [['abattoir'], 1, 0], 'ʆ': [['abattoir'], 1, FLIES23_CAP], 'ʇ': [['abattoir'], 3, CRAWLER23_CAP],
+    'ʐ': [['battlefield'], 1, SOLDIER23_CAP], 'ʑ': [['battlefield'], 1, 0], 'ʒ': [['battlefield'], 1, RIDER23_CAP], 'ʓ': [['battlefield'], 1, CROWS23_CAP] };
+  const FOES23_CH = Object.keys(FOES23).join('');
+  const NEW23_CHARS = [...(TILE23 + COLD23 + BUTCHWALL23 + PALI23 + EARTH23 + WARWALL23 + SINK23 + FLOOR23 + HOOK23 + PROPS23 + 'ʖ'), ...FOES23_CH];
+  const NATIVE23 = { abattoir: 'ʄʅ', battlefield: 'ʑ' }; // biomernas egna (utöver FOE_FROM) som kan bytas
+  // längsta fria raka linjen genom (x, y) (vågrätt eller lodrätt, rutor som inte blockerar och inte är faror): för spökryttarna
+  const freeLine = (at, x, y) => {
+    const ok = c => !isBlock(c) && !HAZARD.includes(c);
+    let best = 0;
+    for (const [dx, dy] of [[1, 0], [0, 1]]) {
+      let n = 1;
+      for (let k = 1; ok(at(x + dx * k, y + dy * k)); k++) n++;
+      for (let k = 1; ok(at(x - dx * k, y - dy * k)); k++) n++;
+      best = Math.max(best, n);
+    }
+    return best;
+  };
+
+  function content23(G, depth, opts, L, H) {
+    const { W, g, lock } = G, { rooms, fight, P, X, cnt, place } = H, b = L.biome;
+    const fk = tag => H.rng.fork(tag);
+    const aba = b === 'abattoir', btl = b === 'battlefield', own = aba || btl;
+    const old = !own && !opts.v15off && !opts.v16off && !opts.v17off && !opts.v18off && !opts.v19off && !opts.v20off && !opts.v21off && !opts.v22off && !opts.v23off;
+    if (opts.v23) { opts.v23.added = false; opts.v23.undo = []; }
+    const undo = opts.v23 ? opts.v23.undo : [];
+    let added = false;
+    const put = (x, y, ch, u) => { const o = g[y][x]; if (u || !own) { undo.push([x, y, o]); added = true; } if (cnt[o]) cnt[o]--; g[y][x] = ch; cnt[ch] = (cnt[ch] || 0) + 1; };
+    const K = kit1516(G, L, H, put, NATIVE23[b] || '');
+    const okRoom = r => !['guardian', 'secret', 'vault', 'shop', 'start'].includes(r.type);
+    const hosts = (R, archs) => R.shuffle(rooms.filter(r => H.isCombat(r) || r.type === 'treasure')).sort((p, q) => (archs.includes(p.arch) ? 0 : 1) - (archs.includes(q.arch) ? 0 : 1));
+    const freeOK = (x, y) => K.safe(x, y) && !K.nearPX(x, y, 2) && !K.doorNear(x, y);
+    // en flock/grupp: n fiender ch inbytta i samma stridsrum (som har minst n att byta)
+    const group = (R, ch, n, pref) => {
+      const host = R.shuffle(fight.filter(r => r.arch !== 'nest' && r.type !== 'start' && K.mobOf(r).length >= n));
+      if (pref) host.sort((p, q) => pref(p) - pref(q));
+      for (const r of host) { if (r.cells.some(([x, y]) => g[y][x] === ch)) continue; for (const [x, y] of R.shuffle(K.mobOf(r)).slice(0, n)) put(x, y, ch); return true; }
+      return false;
+    };
+
+    // ----- slakteriet: kylrumsväggar, blodhalt golv, köttkvarnar, köttkrokar, flugsvärmar och styckade -----
+    if (aba) {
+      { // kylrumsväggar ɽ i slaktkaklet (kylrummet tätt, övriga glest), aldrig vid den hemliga/spruckna väggen
+        const R = fk('coldwalls');
+        for (const r of R.shuffle(rooms.filter(okRoom))) {
+          const p = r.arch === 'coldroom' ? 0.45 : 0.04;
+          for (const [x, y] of r.cells) for (let d = 0; d < 4; d++) {
+            const xx = x + DX[d], yy = y + DY[d];
+            if (K.face(xx, yy, TILE23) && (cnt[COLD23] || 0) < COLD23_CAP && R.chance(p)) put(xx, yy, COLD23);
+          }
+        }
+      }
+      { const R = fk('slick'); K.patches(R, hosts(R, ['slaughterhall', 'cuttingroom']), SLICK23, R.int(2, 4), SLICK23_CAP, false); } // blodhalt golv ɿ
+      { const R = fk('grinders'); K.patches(R, hosts(R, ['grinderroom']), GRIND23, R.int(1, 2), GRIND23_CAP, true); } // köttkvarnar ʀ (kvarnrummet först)
+      { // köttkrokar ʁ (blockerar inte): 1-2 till om slakthallen/kylrummet inte har några
+        const R = fk('hooks');
+        let n = (cnt[HOOK23] || 0) ? R.int(0, 1) : R.int(1, 2);
+        for (const r of R.shuffle(fight.filter(r => r.type !== 'start'))) { if (n <= 0 || (cnt[HOOK23] || 0) >= HOOK23_CAP) break; n -= place(r, HOOK23, 1, { rng: R, spread: 2, pred: (x, y) => !K.doorNear(x, y) && !K.nearPX(x, y, 2) }).length; }
+      }
+      // invånarna: flugsvärmar ʆ i moln om 3 (~60 %, helst i slakthallen), styckade ʇ (djup 3+, ~50 %, 1-2)
+      { const R = fk('flies'); if (R.chance(0.6)) for (let k = R.chance(0.25) ? 2 : 1; k > 0; k--) group(R, 'ʆ', 3, r => (r.arch === 'slaughterhall' || r.arch === 'coldroom' ? 0 : 1)); }
+      { const R = fk('crawlers'); if (depth >= 3 && R.chance(0.5)) K.singles(R, 'ʇ', R.chance(0.3) ? 2 : 1); }
+    }
+
+    // ----- slagfältet: djup lera, katapultmål, fanor och pålar, spöksoldater i formation, spökryttare och kråkor -----
+    if (btl) {
+      { const R = fk('mud'); K.patches(R, hosts(R, ['trench']), MUD23, R.int(2, 3), MUD23_CAP, true); } // djup lera ʋ (skyttegraven först)
+      { // katapultmål ʌ: 3-8 enstaka rutor i stridsrummen (katapultfältet först), aldrig närmare P än 6 rutor, aldrig enda vägen, aldrig intill en annan fara
+        const R = fk('targets');
+        let n = R.int(3, TARGET23_CAP);
+        for (const r of hosts(R, ['catapultfield', 'riderplain']).filter(r => r.type !== 'start')) {
+          if (n <= 0) break;
+          for (const [x, y] of R.shuffle(r.cells.slice()).slice(0, 30)) {
+            if (n <= 0 || (cnt[TARGET23] || 0) >= TARGET23_CAP) break;
+            if (g[y][x] !== '.' || !H.trapOK(x, y) || lock[y * W + x] >= 2 || K.doorNear(x, y) || K.inG(x, y) || cheb(x, y, P[0], P[1]) < 6 || K.nearPX(x, y, 3)
+              || !localOK(G, x, y) || !K.safe(x, y) || K.touch(x, y, [])) continue;
+            put(x, y, TARGET23); n--;
+            if (r.arch !== 'catapultfield' && R.chance(0.5)) break;
+          }
+        }
+      }
+      { // krigsfanor ʎ och spjutpålar ʏ ute på fälten
+        const R = fk('banners');
+        for (const r of R.shuffle(rooms.filter(r => r.tag === 'yard' && okRoom(r)))) {
+          if ((cnt[BANNER23] || 0) < BANNER23_CAP) place(r, BANNER23, R.int(0, 1), { rng: R, spread: 2, pred: (x, y) => freeOK(x, y) && F8(G, x, y) });
+          if ((cnt[STAKES23] || 0) < STAKES23_CAP) place(r, STAKES23, R.int(0, 1), { wall: true, rng: R, spread: 2, pred: freeOK });
+        }
+      }
+      // invånarna: spöksoldater ʐ i formationer om 3 (~85 %, 1-2 formationer), spökryttare ʒ (~55 %, 1-2) där det finns en lång fri rak linje,
+      // kråkor ʓ i flockar om 3 (~50 %)
+      { const R = fk('soldiers'); if (R.chance(0.85)) for (let k = R.chance(0.4) ? 2 : 1; k > 0; k--) group(R, 'ʐ', 3, r => (r.tag === 'yard' ? 0 : 1)); }
+      { // spökryttare: en fiende i ett stridsrum byts mot en ryttare där den fria linjen är minst RIDER23_LINE rutor (ryttarslätten först)
+        const R = fk('riders');
+        if (R.chance(0.55)) {
+          let n = R.chance(0.3) ? 2 : 1;
+          for (const r of R.shuffle(fight.filter(r => r.type !== 'start')).sort((p, q) => (p.arch === 'riderplain' ? 0 : 1) - (q.arch === 'riderplain' ? 0 : 1))) {
+            if (n <= 0) break;
+            const c = R.shuffle(K.mobOf(r)).find(([x, y]) => freeLine(G.at, x, y) >= RIDER23_LINE);
+            if (c) { put(c[0], c[1], 'ʒ'); n--; }
+          }
+        }
+      }
+      { const R = fk('crows'); if (R.chance(0.5)) group(R, 'ʓ', 3, r => (r.tag === 'yard' ? 0 : 1)); }
+    }
+
+    // ----- alla biomer: kulpåsar ʖ (ammo till bombarden; ~20 %, slakteriet/slagfältet ~35 %), 1-2, med ångra-lista -----
+    if (old || own) K.loot(fk('cannonballs'), 'ʖ', own ? BALLS23_OWN_P : BALLS23_P, AMMO23_CAP);
+    if (added && opts.v23) opts.v23.added = true;
+    return true;
+  }
+
+  // ---------- Version 30: ruinstaden och glasbruket ----------
+  // Körs allra sist i content (efter content23) med egna slumpflöden ur gaffeln 'v30', och bara i ruinstaden och glasbruket (de gamla biomerna får
+  // ingenting nytt: stenpåsarna ʴ och glasbitarna ʵ ligger bara här). Allt läggs efter bästa förmåga: content30 underkänner aldrig en bana.
+  const BRICK30_CAP = 40, ROOF30_CAP = 18, RUBBLE30_CAP = 30, MOLTEN30_CAP = 24, SHARDS30_CAP = 24, VENT30_CAP = 6, SHELF30_CAP = 60;
+  const COLUMN30_CAP = 12, BEAM30_CAP = 8, STATUE30_CAP = 4, FURNACE30_CAP = 8, RACK30_CAP = 30, GBENCH30_CAP = 6;
+  const GOLEM30_CAP = 2, GOLEM30_DEPTH = 4, DUST30_CAP = 4, GGOLEM30_CAP = 3, CRAWLER30_CAP = 3;
+  const AMMO30_P = 0.45, AMMO30_OTHER_P = 0.15, AMMO30_CAP = 2;
+  // fienderna: tecken -> [biomer där de får finnas, första djup, tak per bana] (validate)
+  const FOES30 = { 'ʨ': [['ruins'], 1, 0], 'ʩ': [['ruins'], GOLEM30_DEPTH, GOLEM30_CAP], 'ʪ': [['ruins'], 1, 0], 'ʫ': [['ruins'], 1, DUST30_CAP],
+    'ʮ': [['glassworks'], 1, 0], 'ʯ': [['glassworks'], 1, GGOLEM30_CAP], 'ʰ': [['glassworks'], 1, CRAWLER30_CAP], 'ʱ': [['glassworks'], 1, 0] };
+  const FOES30_CH = Object.keys(FOES30).join('');
+  const NEW30_CHARS = [...(RBRICK30 + PLASTER30 + MAYORWALL30 + KILN30 + SHELF30 + GMWALL30 + SINK30 + FLOOR30 + PROPS30 + 'ʴʵ'), ...FOES30_CH];
+  const NATIVE30 = { ruins: 'ʨʪ', glassworks: 'ʮʱ' }; // biomernas egna (utöver FOE_FROM) som kan bytas
+  // ugnsmunnens hetta når 1,5 rutor: rutan och dess åtta grannar (validate: när de nio blockeras nås allt annat ändå utan faror)
+  const VENT30_RING = [[0, 0]].concat(RX.map((dx, k) => [dx, RY[k]]));
+  // rutorna som ugnsmunnarnas hetta når (version 27/28 räknar dem som faror i det säkra flödet; tomt i alla gamla biomer)
+  const heat30 = (g, W, H) => { const s = new Set(); for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (g[y][x] === VENT30) for (const [dx, dy] of VENT30_RING) { const xx = x + dx, yy = y + dy; if (xx >= 0 && yy >= 0 && xx < W && yy < H) s.add(yy * W + xx); } return s; };
+
+  function content30(G, depth, opts, L, H) {
+    const { W, g, lock } = G, { rooms, fight, P, X, cnt, place } = H, b = L.biome;
+    const fk = tag => H.rng.fork(tag);
+    const rui = b === 'ruins', gla = b === 'glassworks';
+    if (!rui && !gla) return true;
+    const put = (x, y, ch) => { const o = g[y][x]; if (cnt[o]) cnt[o]--; g[y][x] = ch; cnt[ch] = (cnt[ch] || 0) + 1; };
+    const K = kit1516(G, L, H, put, NATIVE30[b]);
+    const okRoom = r => !['guardian', 'secret', 'vault', 'shop', 'start'].includes(r.type);
+    const hosts = (R, archs, pred) => R.shuffle(rooms.filter(r => (H.isCombat(r) || r.type === 'treasure') && (!pred || pred(r))))
+      .sort((p, q) => (archs.includes(p.arch) ? 0 : 1) - (archs.includes(q.arch) ? 0 : 1));
+    // väggrutor from -> to längs rummens kanter (rumstyperna i archs tätt, övriga glest), aldrig vid den hemliga/spruckna väggen
+    const faces = (R, archs, pIn, pOut, from, to, cap) => {
+      let n = 0;
+      for (const r of R.shuffle(rooms.filter(okRoom))) {
+        const p = archs.includes(r.arch) ? pIn : pOut;
+        for (const [x, y] of r.cells) for (let d = 0; d < 4; d++) {
+          const xx = x + DX[d], yy = y + DY[d];
+          if (n < cap && K.face(xx, yy, from) && R.chance(p)) { put(xx, yy, to); n++; }
+        }
+      }
+      return n;
+    };
+    const sky = (x, y) => !!(G.sky && G.sky[y * W + x]);
+
+    // ----- ruinstaden: bar tegel i putsen, rasande tak (bara under tak), grus, pelare, stengolemer och dammvirvlar -----
+    if (rui) {
+      faces(fk('brick'), ['ruinhouse'], 0.18, 0.04, PLASTER30, RBRICK30, BRICK30_CAP);
+      { // rasande tak ʝ: 2-4 fläckar i husen (aldrig under bar himmel, aldrig enda vägen)
+        const R = fk('roofs');
+        K.patches(R, hosts(R, ['ruinhouse'], r => r.tag !== 'yard' && r.cells.every(([x, y]) => !sky(x, y))), ROOF30, R.int(2, 4), ROOF30_CAP, true);
+      }
+      { const R = fk('rubble'); K.patches(R, hosts(R, ['ruinhouse', 'alleys', 'townsquare']), RUBBLE30, R.int(2, 4), RUBBLE30_CAP, false); } // grushögar ʞ
+      { // raserade pelare ute på gårdarna som inte fick några
+        const R = fk('columns');
+        for (const r of R.shuffle(rooms.filter(r => r.tag === 'yard' && okRoom(r))))
+          if (!r.cells.some(([x, y]) => g[y][x] === COLUMN30)) place(r, COLUMN30, R.int(0, 2), { rng: R, open: true, spread: 3, pred: (x, y) => K.safe(x, y) && !K.nearPX(x, y, 2) && !K.doorNear(x, y) && F8(G, x, y) });
+      }
+      // invånarna: stengolemer ʩ (djup 4+, ~55 %, 1-2, helst ute), dammvirvlar ʫ (~60 %, 1-3, helst ute)
+      { const R = fk('golems'); if (depth >= GOLEM30_DEPTH && R.chance(0.55)) K.singles(R, 'ʩ', R.chance(0.3) ? 2 : 1, { pref: r => (r.tag === 'yard' ? 0 : 1) }); }
+      { const R = fk('dust'); if (R.chance(0.6)) K.singles(R, 'ʫ', R.int(1, 3), { pref: r => (r.tag === 'yard' ? 0 : 1) }); }
+    }
+
+    // ----- glasbruket: hyllpaneler, smält glas, skärvor, ugnsmunnar, fler ugnar, glasgolemer och slaggkrypare -----
+    if (gla) {
+      faces(fk('shelves'), ['blowshop', 'glassstore'], 0.35, 0.05, KILN30, SHELF30, SHELF30_CAP);
+      { // ugnsmunnar ʡ: 2-4 st (högst 2 per sal), helst i ugnshallen; rutan och alla åtta grannar fritt golv, långt från P och x, inte vid dörrar,
+        // aldrig intill en annan fara, och när de nio rutorna blockeras nås allt annat ändå (hettan når 1,5 rutor); före det smälta glaset och skärvorna
+        const R = fk('vents');
+        let n = R.int(2, 5);
+        // grannrutorna: fritt golv, eller en fiende/ett föremål som står där (inget som blockerar, ingen fara, inget interaktivt)
+        const ringOK = c => c === '.' || (!genBlk(c) && !HAZARD.includes(c) && !isDoorCh(c) && !isInter(c) && c !== 'P' && c !== 'x' && c !== 'Z' && c !== '}');
+        const okV = (x, y) => {
+          if (g[y][x] !== '.' || lock[y * W + x] >= 2 || K.doorNear(x, y) || K.inG(x, y) || K.nearPX(x, y, 3) || H.resv[y * W + x] || K.touch(x, y, [])) return false;
+          for (let k = 0; k < 8; k++) { const xx = x + RX[k], yy = y + RY[k]; if (!ringOK(g[yy][xx]) || lock[yy * W + xx] >= 2 || K.doorNear(xx, yy) || K.touch(xx, yy, [])) return false; }
+          for (let yy = y - 3; yy <= y + 3; yy++) for (let xx = x - 3; xx <= x + 3; xx++) if (G.at(xx, yy) === VENT30) return false;
+          return true;
+        };
+        // flood fill från P med generatorns hinder: allt som nåddes förut (utom de nio rutorna) ska nås när de nio blockeras
+        const flood = () => {
+          const seen = new Uint8Array(W * G.H), q = [P[1] * W + P[0]]; seen[q[0]] = 1;
+          for (let h = 0; h < q.length; h++) { const i = q[h], x = i % W, y = (i / W) | 0; for (let d = 0; d < 4; d++) { const nx = x + DX[d], ny = y + DY[d], ni = ny * W + nx; if (nx < 0 || ny < 0 || nx >= W || ny >= G.H || seen[ni] || genBlk(g[ny][nx])) continue; seen[ni] = 1; q.push(ni); } }
+          return seen;
+        };
+        let S0 = null;
+        for (const r of hosts(R, ['furnacehall'], r => r.type !== 'start')) {
+          if (n <= 0 || (cnt[VENT30] || 0) >= VENT30_CAP) break;
+          let inRoom = 0;
+          for (const [x, y] of R.shuffle(r.cells.slice())) {
+            if (n <= 0 || inRoom >= 2 || (cnt[VENT30] || 0) >= VENT30_CAP) break;
+            if (!okV(x, y)) continue;
+            if (!S0) S0 = flood();
+            if (!S0[y * W + x]) continue;
+            const was = VENT30_RING.map(([dx, dy]) => g[y + dy][x + dx]);
+            for (const [dx, dy] of VENT30_RING) g[y + dy][x + dx] = VENT30;
+            const S1 = flood();
+            VENT30_RING.forEach(([dx, dy], k) => { g[y + dy][x + dx] = was[k]; });
+            let ok = true;
+            for (let i = 0; i < S0.length && ok; i++) if (S0[i] && !S1[i] && !VENT30_RING.some(([dx, dy]) => (y + dy) * W + x + dx === i)) ok = false;
+            if (!ok) continue;
+            put(x, y, VENT30); n--; inRoom++; S0 = null;
+            if (r.arch !== 'furnacehall' && R.chance(0.5)) break;
+          }
+        }
+      }
+      { const R = fk('molten'); K.patches(R, hosts(R, ['furnacehall']), MOLTEN30, R.int(2, 3), MOLTEN30_CAP, true); } // smält glas ʟ (ugnshallen först)
+      { const R = fk('shards'); K.patches(R, hosts(R, ['glassstore', 'blowshop']), SHARDS30, R.int(1, 3), SHARDS30_CAP, true); } // skärvor ʠ (lagret först)
+      { // minst två smältugnar (ugnsandarna dyker in i en och kommer ut ur en annan)
+        const R = fk('furnaces');
+        for (const r of R.shuffle(fight.filter(r => r.type !== 'start'))) { if ((cnt[FURNACE30] || 0) >= 2) break; place(r, FURNACE30, 1, { rng: R, wall: true, pred: (x, y) => K.safe(x, y) && !K.nearPX(x, y, 2) && !K.doorNear(x, y) }); }
+      }
+      // invånarna: glasgolemer ʯ (~60 %, 1-2), slaggkrypare ʰ (~55 %, 1-3)
+      { const R = fk('glassgolems'); if (R.chance(0.6)) K.singles(R, 'ʯ', R.chance(0.35) ? 2 : 1); }
+      { const R = fk('crawlers'); if (R.chance(0.55)) K.singles(R, 'ʰ', R.int(1, CRAWLER30_CAP), { pref: r => (r.arch === 'furnacehall' ? 0 : 1) }); }
+    }
+
+    // ----- ammo: stenpåsar ʴ (slungan) och glasbitar ʵ (glasbössan), 1-2, mest i den egna biomen -----
+    K.loot(fk('stones'), 'ʴ', rui ? AMMO30_P : AMMO30_OTHER_P, AMMO30_CAP);
+    K.loot(fk('glass'), 'ʵ', gla ? AMMO30_P : AMMO30_OTHER_P, AMMO30_CAP);
     return true;
   }
 
@@ -2689,7 +7783,7 @@
     // lerfläckar
     const M = fbm(rng, W, H, 5);
     for (let i = 0; i < N; i++) if (M[i] < 0.3 && !G.res[i]) G.fm[i] = 1;
-    return populate(G, rng, depth, opts, { biome: 'caves', gid: K.id, floors: K.floors, guardian: { cells: lair.cells, center: [gx, gy], doors: gaps.map(c => c.out) },
+    return populate(G, rng, depth, opts, { biome: look.biome || 'caves', gid: K.id, floors: K.floors, guardian: { cells: lair.cells, center: [gx, gy], doors: gaps.map(c => c.out) },
       areaCells: 75, barrels: { p: 0.45, min: 3 }, secretWall: wc, secretChance: 0.55, spikes: rng.int(1, 3), vaultWall: wc });
   }
 
@@ -3307,6 +8401,8 @@
   LOOKS.graveyard.build = buildGraveyard;
   LOOKS.forest.build = buildForest;
   LOOKS.courtyard.build = buildCourtyard;
+  LOOKS.crystal.build = buildCaves; // version 8: kristallgrottorna byggs som grottan
+  LOOKS.fungus.build = buildCaves; // version 11: svampriket byggs som grottan
 
   // ---------- Bossarena ----------
   const ARENAS = {
@@ -3328,6 +8424,124 @@
     // med fyra passager, guldplattor på golvet (floors [0]) och sand i gropen (floors [1])
     tomb: { biome: 'tomb', wall: 'È', floors: ['floor_gold_tiles', 'floor_sand'], ceil: 'floor_sand', outdoor: false, ambient: [0.2, 0.26],
       fog: TOMB_FOG, names: ['FARAONENS TEMPEL', 'SOLGUDENS HALL', 'DEN SJUNKNA HELGEDOMEN'] },
+    // kristalltronen (version 8): grottarenans form i kristallvägg Ą med ådror Ć, kristallpelare i speglade par, en ring av brytande
+    // kristaller (Ė) runt den fria mitten, glödkristaller Ę i stället för eldfat
+    crystal: { biome: 'crystal', wall: 'Ą', floors: ['floor_crystal', 'floor_cave'], ceil: 'ceil_cave', outdoor: false, ambient: [0.12, 0.17],
+      fog: CRYSTAL_FOG, names: ['KRISTALLTRONEN', 'DROTTNINGENS GEOD', 'SPEGELSALEN'] },
+    // leviatans bassäng (version 8): raka ruinmurar Ċ, en stor bassäng (Đ) i mitten som når fram till bossen, gångar runt om med pelare,
+    // korall och statyer, tidvatten (Ĕ) längs stranden och luftbubblor (Ĝ); floors [0] plattor, [1] djupt vatten, [2] tidvatten
+    sunken: { biome: 'sunken', wall: 'Ċ', floors: ['floor_sunken_tiles', 'floor_deepwater', 'floor_shallow'], ceil: 'floor_stone', outdoor: true, ambient: [0.18, 0.24],
+      fog: SUNKEN_FOG, names: ['LEVIATANS BASSÄNG', 'DEN SJUNKNA TRONEN', 'DJUPETS KATEDRAL'] },
+    // urverkshallen (version 9): raka mässingsväggar Ĺ med kuggväggar ĺ, sågspår (Ŀ, level.saws) längs väggarna, två tidsbubblor (ŀ)
+    // på var sin sida om den fria mitten, urverk Ņ och mässingspelare i speglade par; inomhus
+    clock: { biome: 'clock', wall: 'Ĺ', floors: ['floor_brass'], ceil: 'floor_brass', outdoor: false, ambient: [0.16, 0.22],
+      fog: CLOCK_FOG, names: ['URMAKARENS HALL', 'DET STORA URVERKET', 'TIDENS HJÄRTA'] },
+    // stormfågelns näste (version 9): en stor ö (molngolv) omgiven av tomrum (Ń), en terrass vid bossen och grinden, startön i söder via
+    // en bro, 2-3 speglade par små öar via broar (1-2 breda), blixtstänger ņ, vindbyar (ń, level.winds) på ett par broar; utomhus
+    sky: { biome: 'sky', wall: 'Ľ', floors: ['floor_cloud', 'floor_void', 'floor_wind'], ceil: 'floor_cloud', outdoor: true, ambient: [0.26, 0.32],
+      fog: SKY_FOG, names: ['STORMFÅGELNS NÄSTE', 'ÅSKANS TRON', 'DEN HÖGSTA TINNEN'] },
+    // mycelmoderns grotta (version 11): grottarenans form i svampvägg ŝ med glödande svamphattar Ş, studsplattor (ţ) i speglade par och
+    // sporpölar (Ť) utanför den fria mitten, glödsvampar Ŧ i stället för eldfat; floors [0] mossa, [1] grottberg; inomhus
+    fungus: { biome: 'fungus', wall: 'ŝ', floors: ['floor_moss', 'floor_cave'], ceil: 'ceil_cave', outdoor: false, ambient: [0.13, 0.18],
+      fog: FUNGUS_FOG, names: ['MYCELMODERNS LYA', 'SPORHJÄRTAT', 'DEN STORA RÖTAN'] },
+    // spegelkungens sal (version 11): raka marmorväggar Š med spegelväggar š (hela segment, speglade väster/öster och på var sida om P),
+    // ett teleporterpar (ť, level.teleports) speglat på var sida om den fria mitten, marmorpelare, spegelpelare och spegelstatyer; inomhus
+    mirror: { biome: 'mirror', wall: 'Š', floors: ['floor_marble'], ceil: 'floor_marble', outdoor: false, ambient: [0.2, 0.26],
+      fog: MIRROR_FOG, names: ['SPEGELKUNGENS SAL', 'DEN KRISTALLKLARA TRONEN', 'TUSEN SPEGLARS HALL'] },
+    // bibliotekariens läsesal (version 13): raka panelväggar Ū med bokhyllor ũ, rader av fristående hyllor (ũ) som skydd i speglade par längs
+    // väster- och östsidan, två pulpeter (Ű) speglade utanför den fria mitten, ljuskronor ű i stället för eldfat; floors [0] matta, [1] parkett
+    // (längs väggarna); inomhus
+    library: { biome: 'library', wall: 'Ū', floors: ['floor_carpet', 'floor_wood_planks'], ceil: 'floor_wood_planks', outdoor: false, ambient: [0.14, 0.2],
+      fog: LIBRARY_FOG, names: ['BIBLIOTEKARIENS LÄSESAL', 'DEN FÖRBJUDNA AVDELNINGEN', 'DE TUSEN BÖCKERNAS SAL'] },
+    // smideskolossens gjuterihall (version 13): raka plåtväggar ŵ med smältugnar Ŷ, rullband (Ÿ, level.belts) i speglade par längs väster- och
+    // östsidan, kanaler med smält metall (Ź) med spänger i sydväst/sydost, ångventiler (ź) och stansar (Ż) i speglade par utanför den fria
+    // mitten, städ ż och plåtpelare som skydd; floors [0] järngaller; inomhus
+    foundry: { biome: 'foundry', wall: 'ŵ', floors: ['floor_irongrate'], ceil: 'floor_irongrate', outdoor: false, ambient: [0.17, 0.23],
+      fog: FOUNDRY_FOG, names: ['SMIDESKOLOSSENS GJUTERIHALL', 'DEN STORA ÄSSJAN', 'JÄRNETS TRON'] },
+    // kardinalens kor (version 15): raka väggar av katedralsten Ɗ med blyinfattade fönster Ƌ, bänkrader (Ǝ) i speglade par längs väster- och östsidan,
+    // två blodfuntar (Ə) vid norrväggen, pelare, bänkar och statyer som skydd, röd matta från P till grinden; floors [0] marmor, [1] matta; inomhus
+    cathedral: { biome: 'cathedral', wall: 'Ɗ', floors: ['floor_cathedral', 'floor_carpet'], ceil: 'floor_stone_pattern', outdoor: false, ambient: [0.14, 0.2],
+      fog: CATHEDRAL_FOG, names: ['KARDINALENS KOR', 'BLODMÄSSANS KATEDRAL', 'DEN RÖDA ALTARSALEN'] },
+    // bidrottningens kammare (version 15): vaxväggar Ɠ med honungskakor Ɣ och ojämna kanter, honungspölar (Ɩ) och larvsäckar (Ɨ) i speglade par,
+    // vaxpelare och honungskakor som skydd; floors [0] vaxgolv; inomhus
+    hive: { biome: 'hive', wall: 'Ɠ', floors: ['floor_hivefloor'], ceil: 'floor_hivefloor', outdoor: false, ambient: [0.16, 0.22],
+      fog: HIVE_FOG, names: ['BIDROTTNINGENS KAMMARE', 'DEN STORA KAKAN', 'SVÄRMENS HJÄRTA'] },
+    // trädgårdsmästarens rabatter (version 16): häckar Ɵ (med trädgårdsmur Ơ) och ojämna kanter under öppen himmel, taggrankor (ƥ) och stenstatyer (ƨ)
+    // i speglade par, häckar, träd och statyer som skydd, grusgång från P till grinden; floors [0] gräs, [1] grus, [2] vissnat gräs; utomhus
+    garden: { biome: 'garden', wall: 'Ɵ', floors: ['floor_ground_grass', 'floor_garden', 'floor_grass_dead'], ceil: 'floor_wood_planks', outdoor: true, ambient: [0.24, 0.3],
+      fog: GARDEN_FOG, names: ['TRÄDGÅRDSMÄSTARENS RABATTER', 'DEN STORA HÄCKEN', 'DE VISSNA ROSORNAS GÅRD'] },
+    // Jon Blunds sovkammare (version 16): raka drömväggar Ƣ, glidande väggar (ƣ, level.shifts: 2-3 speglade par lodräta sträckor om 2-3 rutor, en fas
+    // per par), sömnens dimma (Ʀ) i speglade fläckar, två falska dörrar (Ʃ) vid väster- och östväggen, drömlyktor ƪ i stället för eldfat, schackbräde
+    // (floors [0] drömruta, [1] marmor); inomhus
+    dream: { biome: 'dream', wall: 'Ƣ', floors: ['floor_dream', 'floor_marble'], ceil: 'floor_dream', outdoor: false, ambient: [0.15, 0.21],
+      fog: DREAM_FOG, names: ['JON BLUNDS SOVKAMMARE', 'MARDRÖMMENS SCHACKBRÄDE', 'DEN EVIGA NATTEN'] },
+    // spökkaptenens däck (version 17): raka skrovväggar ǒ (relingen) under natthimlen, kanoner (ǎ) i speglade par längs väster- och östrelingen, master
+    // (Ǔ) i speglade par som skydd, sköljt däck (Ǐ) och ruttna plankor (Ǎ) i speglade fläckar, krutkaggar och lådor, skeppslyktor ǐ i stället för eldfat;
+    // floors [0] däcksplankor, [1] lastrummets golv; utomhus
+    ship: { biome: 'ship', wall: HULL17, floors: ['floor_deck', 'floor_hold'], ceil: 'floor_deck', outdoor: true, ambient: [0.19, 0.25],
+      fog: SHIP_FOG, names: ['SPÖKKAPTENENS DÄCK', 'DEN SISTA ENTRINGEN', 'STORMENS SKANSDÄCK'] },
+    // alkemistens laboratorium (version 17): raka kakelväggar Ǡ med hyllor med burkar ǡ, syrakar (Ǜ) och transmutationscirklar (ǜ) i speglade par, två
+    // teslaspolar (Ǟ) och två alembiker (ǟ, vid norrväggen) speglade utanför den fria mitten, flaskhyllor, bord och kakelpelare som skydd; floors [0]
+    // kakel; inomhus
+    lab: { biome: 'lab', wall: TILE17, floors: ['floor_labtile'], ceil: 'floor_labtile', outdoor: false, ambient: [0.16, 0.22],
+      fog: LAB_FOG, names: ['ALKEMISTENS LABORATORIUM', 'DE VISES STENS KAMMARE', 'DEN GRÖNA ELDENS SAL'] },
+    // cirkusdirektörens manege (version 18): raka tältdukväggar Ǯ med djurburar ǯ, fallluckor (Ǳ) och strålkastare (ǲ) i speglade fläckar, ett speglat par
+    // knivkastarhjul (ǳ), burar och lådor som skydd, glödlampsgirlanger Ƕ i stället för eldfat; floors [0] manegens matta, [1] sågspån; inomhus
+    circus: { biome: 'circus', wall: TENT18, floors: ['floor_ring', 'floor_sawdust'], ceil: 'floor_ring', outdoor: false, ambient: [0.16, 0.22],
+      fog: CIRCUS_FOG, names: ['CIRKUSDIREKTÖRENS MANEGE', 'DEN SISTA FÖRESTÄLLNINGEN', 'DET STORA TÄLTETS MITT'] },
+    // den fjädrade ormens tempelgård (version 18): tät djungel Ȁ med ruinstenar ǿ (ojämna kanter), pirayavatten (Ȃ) och lianer (ȃ) i speglade fläckar,
+    // stenpelare, träd och statyer som skydd, tikifacklor ȇ i stället för eldfat; floors [0] djungeljord, [1] tempelsten (stigen), [2] jord; utomhus
+    jungle: { biome: 'jungle', wall: JUNGLE18, floors: ['floor_jungle', 'floor_templestone', 'floor_ground_dirt'], ceil: 'floor_templestone', outdoor: true, ambient: [0.21, 0.27],
+      fog: JUNGLE_FOG, names: ['DEN FJÄDRADE ORMENS TEMPELGÅRD', 'OFFERSTENEN I DJUNGELN', 'ORMENS NÄSTE'] },
+    // förmannens schakt (version 19): timrade väggar med malmådror och ojämna kanter, två speglade rälssträckor med vagnar (level.carts), gas (ȗ) och
+    // ras (Ș) i speglade fläckar, timmerstöttor, lådor och malmklippor som skydd, karbidlampor ȝ i stället för eldfat; floors [0] jord, [1] plankor; inomhus
+    mine: { biome: 'mine', wall: TIMBER19, floors: ['floor_minedirt', 'floor_planks2'], ceil: 'floor_planks2', outdoor: false, ambient: [0.14, 0.2],
+      fog: MINE_FOG, names: ['FÖRMANNENS SCHAKT', 'DEN DJUPASTE ORTEN', 'GRUVANS HJÄRTA'] },
+    // stjärnskådarens kupol (version 19): mässing med stjärnkartor, kupolspringor (Ț) och stjärnkartegolv (ș) i speglade fläckar, ett speglat
+    // stjärnportpar (Ƞ, level.starports), mässingspelare, statyer och bord som skydd; floors [0] mässingskakel, [1] stjärnkartegolvets textur; inomhus
+    observatory: { biome: 'observatory', wall: BRASS19, floors: ['floor_brasstile', 'floor_starmap'], ceil: 'floor_brasstile', outdoor: false, ambient: [0.17, 0.23],
+      fog: OBS_FOG, names: ['STJÄRNSKÅDARENS KUPOL', 'HIMLAVALVETS TRON', 'DEN STORA KIKAREN'] },
+    // råttkungens kloak (version 20): raka valvtegelväggar med rör, slam (Ȳ) och sprutrör (ȳ) i speglade fläckar, rörpelare och lådor som skydd;
+    // floors [0] kloaksten, [1] galler; inomhus
+    sewer: { biome: 'sewer', wall: SEWER20, floors: ['floor_sewer', 'floor_grate'], ceil: 'floor_sewer', outdoor: false, ambient: [0.14, 0.2],
+      fog: SEWER_FOG, names: ['RÅTTKUNGENS KLOAK', 'DEN STORA SLAMBASSÄNGEN', 'RÅTTORNAS TRONSAL'] },
+    // sfinxens öken (version 20): klippor Ȱ med ojämna kanter och ruinsten ȯ, kvicksand (¯) och hägringar (ȵ) i speglade fläckar, ruinpelare,
+    // kaktusar och statyer som skydd, kokpannor Ȼ i stället för eldfat; floors [0] sand, [1] ruinplattor (stigen), [2] sand; utomhus
+    desert: { biome: 'desert', wall: MESA20, floors: ['floor_desertsand', 'floor_ruintile', 'floor_sand'], ceil: 'floor_ruintile', outdoor: true, ambient: [0.22, 0.28],
+      fog: DESERT_FOG, names: ['SFINXENS ÖKEN', 'GÅTORNAS PLATÅ', 'DEN BEGRAVDA STADENS PORT'] },
+    // bödelns fängelsegård (version 21): raka väggar av fängelsesten med cellgaller, pelare av cellgaller, sträckbänkar och galgar som skydd, hängande
+    // burar; floors [0] smutsig sten, [1] halm; inomhus
+    prison: { biome: 'prison', wall: PSTONE21, floors: ['floor_prison', 'floor_straw'], ceil: 'floor_prison', outdoor: false, ambient: [0.14, 0.2],
+      fog: PRISON_FOG, names: ['BÖDELNS GÅRD', 'STUPSTOCKENS SAL', 'DEN SISTA CELLEN'] },
+    // tidvattenprästens vik (version 21): kajsten ɋ med ojämna kanter och bodväggar, djupt vatten (Đ) och fisknät (Ɏ) i speglade fläckar, kajpelare,
+    // fisktunnor och ankare som skydd, fyrlyktor ɒ i stället för eldfat; floors [0] kullersten, [1] bryggplank (stigen och vattnets kant), [2] djupvatten; utomhus
+    harbor: { biome: 'harbor', wall: QUAY21, floors: ['floor_cobble', 'floor_dock', 'floor_deepwater'], ceil: 'floor_dock', outdoor: true, ambient: [0.2, 0.26],
+      fog: HARBOR_FOG, names: ['TIDVATTENPRÄSTENS VIK', 'DE DRUNKNADES KAJ', 'FYRENS FOT'] },
+    // badmästarens termer (version 22): raka väggar av mosaikmarmor med pelare, heta bassänger (ɣ), ånggaller (ɤ) och kallbad (ɥ) i speglade fläckar,
+    // pelare, statyer och fontäner som skydd; floors [0] badkakel, [1] mosaik; inomhus
+    bathhouse: { biome: 'bathhouse', wall: MOSAIC22, floors: ['floor_bathtile', 'floor_mosaic'], ceil: 'floor_bathtile', outdoor: false, ambient: [0.16, 0.22],
+      fog: BATH_FOG, names: ['BADMÄSTARENS TERMER', 'DEN STORA BASSÄNGEN', 'KEJSARBADET'] },
+    // eldfurstens krets (version 22): benmurar ɮ med ojämna kanter och köttmurar, eldfloder (ɰ, level.streams: flyter söderut) i speglade fläckar,
+    // benpelare och kedjade själar som skydd, svavelgrytor ɴ i stället för eldfat; floors [0] askfält, [1] svavel (stigen); utomhus
+    purgatory: { biome: 'purgatory', wall: BONE22, floors: ['floor_ashfield', 'floor_brimstone'], ceil: 'floor_brimstone', outdoor: true, ambient: [0.2, 0.26],
+      fog: PURG_FOG, names: ['ELDFURSTENS KRETS', 'DEN BRINNANDE TRONEN', 'HELVETETS PORT'] },
+    // slaktmästarens hall (version 23): raka väggar av slaktkakel med kylrumsväggar, blodhalt golv (ɿ) och köttkvarnar (ʀ) i speglade fläckar,
+    // kylrumspelare, slaktbänkar och bandsågar som skydd; floors [0] slakteriets golv, [1] blodgaller; inomhus
+    abattoir: { biome: 'abattoir', wall: TILE23, floors: ['floor_abattoir', 'floor_bloodgrate'], ceil: 'floor_abattoir', outdoor: false, ambient: [0.15, 0.21],
+      fog: ABAT_FOG, names: ['SLAKTMÄSTARENS HALL', 'DEN STORA KVARNEN', 'KROKARNAS SAL'] },
+    // krigsherrens fält (version 23): jordvallar ʉ med ojämna kanter och palissader, djup lera (ʋ) i speglade fläckar, palissadpelare, katapulter och
+    // krigsfanor som skydd, spjutpålar; floors [0] lera, [1] skyttegrav (stigen); utomhus (katapultsalvorna beordras av bossen i spelet)
+    battlefield: { biome: 'battlefield', wall: EARTH23, floors: ['floor_battlemud', 'floor_trench'], ceil: 'floor_trench', outdoor: true, ambient: [0.2, 0.26],
+      fog: BATTLE_FOG, names: ['KRIGSHERRENS FÄLT', 'DET SISTA SLAGETS KULLE', 'FANORNAS SLÄTT'] },
+    // borgmästarens rådhus (version 30): raserade tegelmurar ʗ med ojämna kanter och sprucken puts, grus (ʞ) i speglade fläckar, husrester (puts),
+    // raserade pelare och huvudlösa statyer som skydd, takbjälkar; floors [0] torgplattor, [1] kullersten (stigen); utomhus (taken river bossen i spelet,
+    // inga ʝ i arenan)
+    ruins: { biome: 'ruins', wall: RBRICK30, floors: ['floor_ruinplaza', 'floor_ruincobble'], ceil: 'floor_ruinplaza', outdoor: true, ambient: [0.2, 0.26],
+      fog: RUINS_FOG, names: ['DET RASERADE RÅDHUSET', 'BORGMÄSTARENS TORG', 'DEN STÖRTADE STADENS HJÄRTA'] },
+    // glasmästarens ugnshall (version 30): raka väggar av ugnstegel med hyllpaneler, smält glas (ʟ) i speglade fläckar, ett speglat par ugnsmunnar (ʡ),
+    // ugnstegelpelare, glashyllor och bänkar som skydd, smältugnar ʥ i stället för eldfat; floors [0] glasbrukets golv, [1] slagg; inomhus
+    glassworks: { biome: 'glassworks', wall: KILN30, floors: ['floor_glassworks', 'floor_slag'], ceil: 'floor_glassworks', outdoor: false, ambient: [0.17, 0.23],
+      fog: GLASS_FOG, names: ['GLASMÄSTARENS UGNSHALL', 'DEN STORA SMÄLTUGNEN', 'KRISTALLVERKSTADEN'] },
   };
   // tempelhallens fyra passager över kvicksandsringen (norr vid bossen, söder mot P, väster och öster), 3 rutor breda
   const tombGap = (x, y) => (Math.abs(x - 12) <= 1 && (y <= 11 || y >= 17)) || (Math.abs(y - 14) <= 1 && (x <= 8 || x >= 16));
@@ -3403,7 +8617,8 @@
       name: rng.pick(theme.names), biome: 'dungeon', floor: theme.floor, floors, floorMask: rowsOf(W, H, G.fm),
       ceil: theme.ceil, sky: null, secretWall: wc, fog: theme.fog.slice(), ambient: roundAmb(rng, theme.ambient),
       map: g.map(r => r.join('')), depth: opts.depth || 6, seed, arena: 'hall',
-      rooms: [{ x: AX0, y: AY0, w: AX1 - AX0 + 1, h: AY1 - AY0 + 1, type: 'boss' }, { x: cx - 1, y: 1, w: 3, h: 2, type: 'exit' }],
+      rooms: [{ x: AX0, y: AY0, w: AX1 - AX0 + 1, h: AY1 - AY0 + 1, type: 'boss' }, { x: cx - 1, y: 1, w: 3, h: 2, type: 'exit' }], saws: [], winds: [], teleports: [], belts: [], arenas: [], shifts: [],
+      carts: [], starports: [], sluices: [], streams: [],
     };
     if (gid) level.boss = gid;
     level.features = features(level.map);
@@ -3419,16 +8634,32 @@
     const PX = cx, PY = AY1 - 1, BX = cx, BY = AY0 + 3;
     const mid = (x, y) => x >= cx - 4 && x <= cx + 4 && y >= 10 && y <= 18;
     const lrng = root.fork('look'), name = lrng.pick(A.names), fog = A.fog(lrng), ambient = roundAmb(lrng, A.ambient);
+    const tide = arena === 'sunken' ? { period: lrng.int(24, 40) } : null; // version 8: tidvattnets period
     for (let attempt = 0; attempt < 20; attempt++) {
       const rng = root.fork('a' + attempt);
       const G = Grid(W, H, wc), { g, fm } = G;
       for (let y = AY0; y <= AY1; y++) for (let x = AX0; x <= AX1; x++) { g[y][x] = '.'; G.sky[y * W + x] = A.outdoor ? 1 : 0; }
-      for (let y = 1; y <= 2; y++) for (let x = cx - 1; x <= cx + 1; x++) { g[y][x] = '.'; G.sky[y * W + x] = arena === 'forest' || arena === 'swamp' ? 1 : 0; }
+      for (let y = 1; y <= 2; y++) for (let x = cx - 1; x <= cx + 1; x++) { g[y][x] = '.'; G.sky[y * W + x] = arena === 'forest' || arena === 'swamp' || arena === 'sunken' || arena === 'sky' || arena === 'garden' || arena === 'ship' || arena === 'jungle' || arena === 'desert' || arena === 'harbor' || arena === 'purgatory' || arena === 'battlefield' || arena === 'ruins' ? 1 : 0; }
       g[1][cx] = 'x'; g[3][cx] = 'G';
       markDoor(G, cx, 3, cx, 4, cx, 2);
       for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) G.lockMin(BX + dx, BY + dy, 1); // bossen är stor
       for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) G.lockMin(PX + dx, PY + dy, 1);
       for (let y = 10; y <= 18; y++) for (let x = cx - 4; x <= cx + 4; x++) G.lockMin(x, y, 1);
+      if (arena === 'sunken') { // stor bassäng (ojämn ellips) i mitten som når fram till bossen; tidvatten längs stranden, luftbubblor
+        const NB = fbm(rng, W, H, 3);
+        for (let y = 8; y <= 21; y++) for (let x = 4; x <= 20; x++) {
+          const e = Math.sqrt(((x - cx) / 6.6) ** 2 + ((y - 14.5) / 6.2) ** 2) + (NB[y * W + x] - 0.5) * 0.18;
+          if (e <= 1 && cheb(x, y, PX, PY) > 3) g[y][x] = 'Đ';
+        }
+        g[BY + 1][BX] = 'Đ'; g[BY + 2][BX] = 'Đ'; // vattnet når fram till bossen (precis söder om B)
+        const sh = [];
+        for (let y = AY0; y <= AY1; y++) for (let x = AX0; x <= AX1; x++)
+          if (g[y][x] === '.' && [0, 1, 2, 3].some(d => g[y + DY[d]][x + DX[d]] === 'Đ') && cheb(x, y, PX, PY) > 2 && cheb(x, y, BX, BY) > 1) sh.push([x, y]);
+        for (const [x, y] of rng.shuffle(sh)) if (rng.chance(0.7) && localOK(G, x, y)) g[y][x] = 'Ĕ';
+        const inner = [], bub = [], nB = rng.int(2, 3);
+        for (let y = AY0; y <= AY1; y++) for (let x = AX0; x <= AX1; x++) if (g[y][x] === 'Đ' && cheb(x, y, BX, BY) > 2 && [0, 1, 2, 3].every(d => g[y + DY[d]][x + DX[d]] === 'Đ')) inner.push([x, y]);
+        for (const [x, y] of rng.shuffle(inner)) { if (bub.length >= nB) break; if (bub.some(p => cheb(p[0], p[1], x, y) < 4)) continue; g[y][x] = 'Ĝ'; bub.push([x, y]); }
+      }
       if (arena === 'volcano') { // vallgrav: ring (2 rutor bred) mellan mitten och väggarna, broar i norr (bred, vid bossen), söder, väster och öster
         const NM = fbm(rng, W, H, 3);
         const bridge = (x, y) => (y <= 9 && x >= cx - 2 && x <= cx + 2) || (y >= 20 && x >= cx - 1 && x <= cx + 1) || ((x <= 6 || x >= 18) && y >= 13 && y <= 15);
@@ -3451,13 +8682,360 @@
           g[y][x] = '¯';
         }
       }
+      const saws = [], winds = [];
+      if (arena === 'clock') { // sågspår längs väggarna (speglade par: väster/öster, söder och ibland norr) och två tidsbubblor
+        const track = (x0, y0, dx, dy, len) => {
+          const cells = [];
+          for (let k = 0; k < len; k++) {
+            const x = x0 + dx * k, y = y0 + dy * k;
+            if (g[y][x] !== '.' || G.lock[y * W + x] || cheb(x, y, PX, PY) <= 2 || cheb(x, y, BX, BY) <= 2 || cheb(x, y, cx, AY0) <= 2 || !localOK(G, x, y)) break;
+            g[y][x] = 'Ŀ'; cells.push([x, y]);
+          }
+          if (cells.length >= 3) { const z = cells[cells.length - 1]; saws.push({ x0: cells[0][0], y0: cells[0][1], x1: z[0], y1: z[1] }); return true; }
+          for (const [x, y] of cells) g[y][x] = '.';
+          return false;
+        };
+        const ly = rng.int(7, 11), ll = rng.int(5, 7), sl = rng.int(4, 6), sx0 = rng.int(3, 4);
+        track(AX0, ly, 0, 1, ll); track(AX1, ly, 0, 1, ll); // väster och öster
+        const ly2 = rng.int(15, 17), ll2 = rng.int(4, 6);
+        track(AX0, ly2, 0, 1, ll2); track(AX1, ly2, 0, 1, ll2);
+        track(sx0, AY1, 1, 0, sl); track(W - 1 - sx0, AY1, -1, 0, sl); // söder, på var sida om P
+        if (rng.chance(0.5)) { const nl = rng.int(3, 5); track(AX0 + 1, AY0, 1, 0, nl); track(AX1 - 1, AY0, -1, 0, nl); } // norr, en bit från bossen
+        if (saws.length < 4) continue;
+        const by = rng.int(12, 16), bx = rng.int(4, 6);
+        for (const x of [bx, W - 1 - bx]) { if (g[by][x] !== '.' || !localOK(G, x, by)) continue; g[by][x] = 'ŀ'; }
+        if ([...g[by]].filter(c => c === 'ŀ').length !== 2) continue;
+        for (const x of [bx, W - 1 - bx]) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) G.lockMin(x + dx, by + dy, 1); // fritt runt bubblorna
+      }
+      if (arena === 'sky') { // öar över tomrummet: stor ö i mitten, terrass vid bossen, startön i söder, små öar i speglade par via broar
+        const NI = fbm(rng, W, H, 3), rx = rng.range(6.8, 7.4), ry = rng.range(6.0, 6.5), isl = new Uint8Array(W * H);
+        const mark = (x, y) => { if (x >= AX0 && x <= AX1 && y >= AY0 && y <= AY1) isl[y * W + x] = 1; };
+        for (let y = AY0; y <= AY1; y++) for (let x = AX0; x <= AX1; x++) {
+          const e = Math.sqrt(((x - cx) / rx) ** 2 + ((y - 14.5) / ry) ** 2) + (NI[y * W + x] - 0.5) * 0.22;
+          if (e <= 1 || mid(x, y)) mark(x, y);
+        }
+        for (let y = AY0; y <= 9; y++) for (let x = cx - 3; x <= cx + 3; x++) mark(x, y); // terrassen vid bossen och grinden
+        for (let y = AY1 - 2; y <= AY1; y++) for (let x = cx - 3; x <= cx + 3; x++) mark(x, y); // startön
+        const bw = rng.chance(0.5) ? 2 : 1;
+        for (let y = 19; y <= AY1 - 2; y++) for (let x = cx; x < cx + bw; x++) mark(x, y); // bron till startön
+        // små öar (2-3 speglade par) med broar in mot den stora ön
+        const spots = rng.shuffle([[3, 6, 0], [3, 20, 0], [2, 14, 0]]).slice(0, rng.int(2, 3)), small = [];
+        for (const [ix, iy] of spots) {
+          const r = rng.range(1.3, 1.9), w2 = rng.chance(0.5) ? 2 : 1;
+          for (const sx of [ix, W - 1 - ix]) {
+            for (let y = iy - 2; y <= iy + 2; y++) for (let x = sx - 2; x <= sx + 2; x++) if (Math.hypot(x - sx, y - iy) <= r + 0.15) mark(x, y);
+            const dir = sx < cx ? 1 : -1, cells = [];
+            for (let x = sx + dir; x !== cx; x += dir) { // bron: rakt in mot mitten tills den når den stora ön
+              if (isl[iy * W + x] && Math.abs(x - sx) > 2) break;
+              for (let t = 0; t < w2; t++) if (!isl[(iy + t) * W + x]) { mark(x, iy + t); cells.push([x, iy + t]); }
+            }
+            small.push({ sx, iy, dir, cells });
+          }
+        }
+        for (let y = AY0; y <= AY1; y++) for (let x = AX0; x <= AX1; x++) if (!isl[y * W + x]) g[y][x] = 'Ń';
+        // vindbyar på ett par broar (om de är minst 2 rutor långa): vinden blåser in mot den stora ön
+        const wp = small.filter(s => s.cells.length >= 2);
+        if (wp.length >= 2 && rng.chance(0.75)) {
+          const k = rng.int(0, (wp.length >> 1) - 1) * 2;
+          for (const s of [wp[k], wp[k + 1]]) for (const [x, y] of s.cells) {
+            if (g[y][x] !== '.' || isBlock(G.at(x + s.dir, y))) continue;
+            g[y][x] = 'ń'; winds.push({ x, y, dx: s.dir, dy: 0 });
+          }
+        }
+      }
+      const teleports = [], carts = [], starports = [], streams = []; // (version 19: vagnbanor och stjärnportpar) (version 22: eldfloder)
+      if (arena === 'mirror') { // spegelväggar: hela segment längs väster- och östväggen (speglade) och södra väggen på var sida om P; ett teleporterpar
+        const segs = [[0, rng.int(5, 7), 0, 1, rng.int(5, 7)], [0, rng.int(14, 16), 0, 1, rng.int(5, 7)], [rng.int(2, 3), H - 1, 1, 0, rng.int(5, 7)]];
+        for (const [x0, y0, dx, dy, len] of segs) for (let k = 0; k < len; k++) for (const x of [x0 + dx * k, W - 1 - x0 - dx * k]) {
+          const y = y0 + dy * k;
+          if (y >= 4 && y <= H - 1 && cheb(x, y, cx, 3) > 2 && cheb(x, y, PX, PY) > 3 && g[y][x] === wc) g[y][x] = 'š';
+        }
+        const ty = rng.int(12, 16), tx = rng.int(3, 5);
+        for (const x of [tx, W - 1 - tx]) { if (g[ty][x] !== '.' || !localOK(G, x, ty)) break; g[ty][x] = 'ť'; }
+        if (g[ty][tx] !== 'ť' || g[ty][W - 1 - tx] !== 'ť') continue;
+        teleports.push({ a: { x: tx, y: ty }, b: { x: W - 1 - tx, y: ty } });
+        for (const x of [tx, W - 1 - tx]) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) G.lockMin(x + dx, ty + dy, 1); // fritt runt teleportrarna
+      }
+      if (arena === 'fungus') { // studsplattor i speglade par utanför mitten (väster/öster, och ibland vid P:s sida), sporpölar i speglade fläckar
+        const pads = [[rng.int(4, 6), rng.int(11, 13)], [rng.int(3, 5), rng.int(19, 21)]];
+        let np = 0;
+        for (const [px0, py0] of pads) for (const x of [px0, W - 1 - px0]) {
+          if (g[py0][x] !== '.' || G.lock[py0 * W + x] || cheb(x, py0, PX, PY) <= 2 || !localOK(G, x, py0)) continue;
+          g[py0][x] = 'ţ'; np++;
+          for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) G.lockMin(x + dx, py0 + dy, 1);
+        }
+        if (np < 2) continue;
+        const NS = fbm(rng, W, H, 3);
+        let ns = 0;
+        for (let t = 0; t < 40 && ns < 3; t++) { // 2-3 speglade fläckar om 2-5 rutor
+          const sx = rng.int(2, 7), sy = rng.int(6, 23), want = rng.int(2, 5), cells = [];
+          if (mid(sx, sy) || mid(W - 1 - sx, sy)) continue;
+          for (let k = 0; k < 9 && cells.length < want; k++) {
+            const x = sx + (k % 3) - 1, y = sy + ((k / 3) | 0) - 1;
+            if (NS[y * W + x] < 0.35 && cells.length) continue;
+            const ok = xx => g[y][xx] === '.' && !G.lock[y * W + xx] && !mid(xx, y) && cheb(xx, y, PX, PY) > 2 && cheb(xx, y, BX, BY) > 2 && cheb(xx, y, cx, 3) > 2
+              && !RX.some((ddx, q) => 'ţ'.includes(G.at(xx + ddx, y + RY[q]))) && localOK(G, xx, y);
+            if (!ok(x) || !ok(W - 1 - x)) continue;
+            g[y][x] = 'Ť'; g[y][W - 1 - x] = 'Ť'; cells.push([x, y]);
+          }
+          if (cells.length >= 2) ns++; else for (const [x, y] of cells) { g[y][x] = '.'; g[y][W - 1 - x] = '.'; }
+        }
+        if (ns < 2) continue;
+      }
+      const belts = [], shifts = [];
+      if (arena === 'library') { // läsesal: hyllrader i speglade par längs väster- och östsidan (skydd), två pulpeter speglade utanför mitten
+        const rows = [], nR = rng.int(3, 4);
+        for (let t = 0; t < 60 && rows.length < nR; t++) {
+          const y = rng.int(6, 22), x0 = rng.int(1, 3), len = rng.int(3, 4);
+          if (rows.some(ry => Math.abs(ry - y) < 3) || cheb(x0, y, PX, PY) <= 3) continue;
+          let n = 0;
+          for (let k = 0; k < len; k++) { const x = x0 + k; if (mid(x, y) || mid(W - 1 - x, y)) break; if (plant(G, x, y, 'ũ')) { if (plant(G, W - 1 - x, y, 'ũ')) n++; else { g[y][x] = '.'; break; } } else break; }
+          if (n >= 2) rows.push(y);
+        }
+        if (rows.length < 2) continue;
+        const ly = rng.int(19, 22), lx = rng.int(4, 6);
+        for (const x of [lx, W - 1 - lx]) { if (!plant(G, x, ly, 'Ű')) break; }
+        if (g[ly][lx] !== 'Ű' || g[ly][W - 1 - lx] !== 'Ű') continue;
+        for (const x of [lx, W - 1 - lx]) for (let d = 0; d < 4; d++) G.lockMin(x + DX[d], ly + DY[d], 1); // fri framsida
+      }
+      if (arena === 'foundry') { // gjuterihall: rullband, kanaler, stansar och ångventiler i speglade par utanför mitten
+        const free = (x, y) => G.inb(x, y) && g[y][x] === '.' && !G.lock[y * W + x] && !mid(x, y) && cheb(x, y, PX, PY) > 2 && cheb(x, y, BX, BY) > 2 && cheb(x, y, cx, AY0) > 2;
+        const lay = (x0, y0, dx, dy, len) => { // ett rakt band; rutan efter slutet hålls fri (lock)
+          const ex = x0 + dx * len, ey = y0 + dy * len;
+          for (let k = 0; k < len; k++) if (!free(x0 + dx * k, y0 + dy * k)) return false;
+          if (!G.inb(ex, ey) || g[ey][ex] !== '.') return false;
+          for (let k = 0; k < len; k++) { const x = x0 + dx * k, y = y0 + dy * k; g[y][x] = 'Ÿ'; belts.push({ x, y, dx, dy }); }
+          G.lockMin(ex, ey, 1);
+          return true;
+        };
+        // lodräta band (x 2-3, y 6-12): det västra går söderut, det östra norrut
+        const bx = rng.int(2, 3), by0 = rng.int(6, 7), bl = rng.int(5, 6);
+        if (!lay(bx, by0, 0, 1, bl) || !lay(W - 1 - bx, by0 + bl - 1, 0, -1, bl)) continue;
+        // kanaler med smält metall (y 19-22, x 1-6, 1-2 breda) med en spång; varje ruta med localOK
+        const cy0 = rng.int(19, 21), wide = rng.chance(0.5) ? 2 : 1, brx = rng.int(2, 4);
+        let nc = 0;
+        for (let y = cy0; y < cy0 + wide; y++) for (let x = 1; x <= 6; x++) {
+          if (x === brx) continue;
+          for (const xx of [x, W - 1 - x]) {
+            if (!free(xx, y) || RX.some((ddx, q) => G.at(xx + ddx, y + RY[q]) === 'Ÿ') || !localOK(G, xx, y)) continue;
+            g[y][xx] = 'Ź'; nc++;
+          }
+        }
+        if (nc < 6) continue;
+        // stansar: ett speglat par (x 5-7, y 6-9)
+        const sx = rng.int(5, 7), sy = rng.int(6, 9);
+        for (const x of [sx, W - 1 - sx]) { if (!free(x, sy) || RX.some((ddx, q) => 'ŸŹ'.includes(G.at(x + ddx, sy + RY[q]))) || !plant(G, x, sy, 'Ż')) break; }
+        if (g[sy][sx] !== 'Ż' || g[sy][W - 1 - sx] !== 'Ż') continue;
+        // ångventiler: 1-2 speglade par (x 4-7, y 12-17), inte intill band, kanaler eller varandra
+        let nv = 0;
+        for (let t = 0; t < 30 && nv < 2; t++) {
+          const vx = rng.int(4, 7), vy = rng.int(12, 17);
+          const okV = x => free(x, vy) && !RX.some((ddx, q) => 'ŸŹźŻ'.includes(G.at(x + ddx, vy + RY[q]))) && localOK(G, x, vy);
+          if (!okV(vx) || !okV(W - 1 - vx)) continue;
+          g[vy][vx] = 'ź'; g[vy][W - 1 - vx] = 'ź'; nv++;
+        }
+        if (!nv) continue;
+      }
       const N2 = fbm(rng, W, H, 4);
       // ojämna kanter: berg/bryn växer in från väggen (inte i kyrkogårdens raka mur)
-      if (arena !== 'graveyard' && arena !== 'frost' && arena !== 'volcano' && arena !== 'tomb') {
+      if (arena !== 'graveyard' && arena !== 'frost' && arena !== 'volcano' && arena !== 'tomb' && arena !== 'sunken' && arena !== 'clock' && arena !== 'sky' && arena !== 'mirror'
+        && arena !== 'library' && arena !== 'foundry' && arena !== 'cathedral' && arena !== 'dream' && arena !== 'ship' && arena !== 'lab' && arena !== 'circus' && arena !== 'observatory' && arena !== 'sewer' && arena !== 'prison' && arena !== 'bathhouse' && arena !== 'abattoir' && arena !== 'glassworks') { // (version 15/16: kupan och trädgården får ojämna kanter)
         for (let y = AY0; y <= AY1; y++) for (let x = AX0; x <= AX1; x++) {
           const e = Math.min(x - AX0, AX1 - x, y - AY0, AY1 - y), v = N2[y * W + x];
           if ((e === 0 && v > 0.3) || (e === 1 && v > 0.6) || (e === 2 && v > 0.85)) plant(G, x, y, ic);
         }
+      }
+      // kristalltronen: en ring av brytande kristaller runt den fria mitten (6-8 st, fri från bossen, P och mitten)
+      if (arena === 'crystal') {
+        let n = 0;
+        for (let k = 0; k < 8; k++) { const a = (k + 0.5) * Math.PI / 4; if (plantNear(G, rng, Math.round(cx + 7 * Math.cos(a)), Math.round(14 + 6 * Math.sin(a)), 'Ė', 1)) n++; }
+        if (n < 6) continue;
+      }
+      // version 15/16: katedralens kor, bidrottningens kammare, trädgårdsmästarens rabatter och Jon Blunds sovkammare (allt i speglade par, utanför den
+      // fria mitten och minst tre rutor från P, bossen och grinden)
+      const away = (x, y) => !mid(x, y) && cheb(x, y, PX, PY) > 2 && cheb(x, y, BX, BY) > 2 && cheb(x, y, cx, AY0) > 2;
+      const free2 = (x, y) => G.inb(x, y) && g[y][x] === '.' && !G.lock[y * W + x] && away(x, y);
+      // speglade fläckar (honung, taggrankor, dimma): want fläckar om 2-5 rutor; sink: aldrig enda vägen (localOK)
+      const mirrorPatches = (ch, want, sink) => {
+        let ns = 0;
+        for (let t = 0; t < 40 && ns < want; t++) {
+          const sx = rng.int(2, 8), sy = rng.int(6, 23), size = rng.int(2, 5), cells = [];
+          for (let k = 0; k < 9 && cells.length < size; k++) {
+            const x = sx + (k % 3) - 1, y = sy + ((k / 3) | 0) - 1;
+            const ok = xx => free2(xx, y) && !RX.some((ddx, q) => { const c = G.at(xx + ddx, y + RY[q]); return HAZARD.includes(c) && c !== ch; }) && (!sink || localOK(G, xx, y));
+            if (!ok(x) || !ok(W - 1 - x) || x === W - 1 - x) continue;
+            g[y][x] = ch; g[y][W - 1 - x] = ch; cells.push([x, y]);
+          }
+          if (cells.length >= 2) ns++; else for (const [x, y] of cells) { g[y][x] = '.'; g[y][W - 1 - x] = '.'; }
+        }
+        return ns;
+      };
+      // speglade par av ett hinder (plant: aldrig enda vägen); pred: extra villkor
+      const mirrorPair = (x, y, ch, pred) => {
+        if (x === W - 1 - x || !free2(x, y) || !free2(W - 1 - x, y) || (pred && (!pred(x, y) || !pred(W - 1 - x, y)))) return false;
+        if (!plant(G, x, y, ch)) return false;
+        if (!plant(G, W - 1 - x, y, ch)) { g[y][x] = '.'; return false; }
+        return true;
+      };
+      if (arena === 'cathedral') { // bänkrader längs väster- och östsidan (skydd), två blodfuntar vid norrväggen
+        const rows = [], nR = rng.int(3, 4);
+        for (let t = 0; t < 60 && rows.length < nR; t++) {
+          const y = rng.int(6, 22), x0 = rng.int(2, 3), len = rng.int(2, 3);
+          if (rows.some(ry => Math.abs(ry - y) < 2)) continue;
+          let n = 0;
+          for (let k = 0; k < len; k++) { if (mirrorPair(x0 + k, y, 'Ǝ')) n++; else break; }
+          if (n >= 2) rows.push(y); else for (let k = 0; k < n; k++) { g[y][x0 + k] = '.'; g[y][W - 1 - x0 - k] = '.'; }
+        }
+        if (rows.length < 2) continue;
+        const fx = rng.int(3, 6), fy = rng.int(6, 8);
+        if (!mirrorPair(fx, fy, 'Ə')) continue;
+        for (const x of [fx, W - 1 - fx]) for (let d = 0; d < 4; d++) G.lockMin(x + DX[d], fy + DY[d], 1); // fri framsida
+      }
+      if (arena === 'hive') { // honungspölar och larvsäckar i speglade par
+        if (mirrorPatches('Ɩ', rng.int(2, 3), true) < 2) continue;
+        let ns = 0;
+        for (let t = 0; t < 30 && ns < 2; t++) if (mirrorPair(rng.int(2, 7), rng.int(7, 22), 'Ɨ')) ns++;
+        if (!ns) continue;
+      }
+      if (arena === 'garden') { // taggrankor och stenstatyer i speglade par
+        if (mirrorPatches('ƥ', rng.int(2, 3), true) < 2) continue;
+        let ns = 0;
+        for (let t = 0; t < 30 && ns < 2; t++) if (mirrorPair(rng.int(3, 8), rng.int(7, 22), 'ƨ')) ns++;
+        if (!ns) continue;
+      }
+      if (arena === 'dream') { // glidande väggar (2-3 rutor, lodräta, ett speglat par per fas), sömnens dimma, två falska dörrar vid väster- och östväggen
+        let np = 0;
+        for (let t = 0; t < 50 && np < 3; t++) {
+          const x = rng.int(3, 8), y0 = rng.int(6, 20), len = rng.int(2, 3), ph = rng.int(0, 39) / 10, cells = [];
+          for (let k = 0; k < len; k++) {
+            const y = y0 + k, xs = [x, W - 1 - x];
+            if (!xs.every(xx => free2(xx, y) && !RX.some((ddx, q) => isDoorCh(G.at(xx + ddx, y + RY[q])) || (G.at(xx + ddx, y + RY[q]) === SHIFT16 && ddx !== 0)))) break;
+            if (!plant(G, x, y, SHIFT16)) break;
+            if (!plant(G, W - 1 - x, y, SHIFT16)) { g[y][x] = '.'; break; }
+            cells.push([x, y]);
+          }
+          if (cells.length < 2) { for (const [xx, y] of cells) { g[y][xx] = '.'; g[y][W - 1 - xx] = '.'; } continue; }
+          for (const [xx, y] of cells) { shifts.push({ x: xx, y, ph }); shifts.push({ x: W - 1 - xx, y, ph }); }
+          np++;
+        }
+        if (np < 2) continue;
+        if (mirrorPatches('Ʀ', 2, false) < 1) continue;
+        const dy = rng.int(12, 17);
+        if (!mirrorPair(AX0, dy, 'Ʃ', (x, y) => [0, 1, 2, 3].some(d => isWall(G.at(x + DX[d], y + DY[d]))))) continue;
+        for (const x of [AX0, AX1]) for (let d = 0; d < 4; d++) G.lockMin(x + DX[d], dy + DY[d], 1); // fri framsida
+      }
+      // version 17: spökkaptenens däck och alkemistens laboratorium (allt i speglade par utanför den fria mitten)
+      if (arena === 'ship') { // kanoner längs väster- och östrelingen (fri framsida), sköljt däck och ruttna plankor i speglade fläckar
+        let nc = 0;
+        for (let t = 0; t < 40 && nc < 3; t++) {
+          const y = rng.int(7, 22);
+          if (G.at(AX0, y - 1) === CANNON17 || G.at(AX0, y + 1) === CANNON17 || G.at(AX0, y - 2) === CANNON17 || G.at(AX0, y + 2) === CANNON17) continue;
+          if (!mirrorPair(AX0, y, CANNON17, (x, yy) => G.at(x === AX0 ? x - 1 : x + 1, yy) === HULL17 && free2(x === AX0 ? x + 1 : x - 1, yy))) continue;
+          for (const x of [AX0 + 1, AX1 - 1]) G.lockMin(x, y, 1); // fri framsida
+          nc++;
+        }
+        if (nc < 2) continue;
+        if (mirrorPatches(WET17, rng.int(2, 3), true) < 1) continue;
+        if (mirrorPatches(ROT17, rng.int(1, 2), true) < 1) continue;
+      }
+      if (arena === 'lab') { // syrakar och transmutationscirklar i speglade fläckar, två teslaspolar, två alembiker vid norrväggen
+        if (mirrorPatches(ACID17, rng.int(2, 3), true) < 2) continue;
+        if (mirrorPatches(TRANS17, rng.int(1, 2), false) < 1) continue;
+        let nt = 0;
+        for (let t = 0; t < 30 && !nt; t++) if (mirrorPair(rng.int(4, 8), rng.int(8, 21), TESLA17)) nt++;
+        if (!nt) continue;
+        const ax = rng.int(4, 8);
+        if (!mirrorPair(ax, AY0, ALEMBIC17, (x, y) => isWall(G.at(x, y - 1)) && free2(x, y + 1))) continue;
+        for (const x of [ax, W - 1 - ax]) G.lockMin(x, AY0 + 1, 1); // fri framsida
+      }
+      // version 18: cirkusdirektörens manege och ormens tempelgård (allt i speglade par utanför den fria mitten)
+      if (arena === 'circus') { // fallluckor och strålkastare i speglade fläckar, ett par knivkastarhjul
+        if (mirrorPatches(TRAP18, rng.int(2, 3), true) < 1) continue;
+        if (mirrorPatches(SPOT18, rng.int(1, 2), false) < 1) continue;
+        let nk = 0;
+        for (let t = 0; t < 30 && !nk; t++) if (mirrorPair(rng.int(3, 7), rng.int(8, 21), KNIFE18)) nk++;
+        if (!nk) continue;
+      }
+      if (arena === 'jungle') { // pirayavatten och lianer i speglade fläckar
+        if (mirrorPatches(PIRANHA18, rng.int(2, 3), true) < 1) continue;
+        if (mirrorPatches(VINES18, rng.int(1, 2), true) < 1) continue;
+      }
+      // version 19: förmannens schakt (två speglade lodräta rälssträckor med var sin vagn, gas och ras) och stjärnskådarens kupol (kupolspringor,
+      // stjärnkartegolv och ett speglat stjärnportpar)
+      if (arena === 'mine') {
+        let nr = 0;
+        for (let t = 0; t < 30 && !nr; t++) {
+          const tx = rng.int(3, 6), y0 = rng.int(6, 9), len = rng.int(6, 10), cells = [];
+          for (let k = 0; k < len; k++) {
+            const y = y0 + k;
+            if (y > 22 || !free2(tx, y) || !free2(W - 1 - tx, y) || isBlock(G.at(tx, y + 1)) || !localOK(G, tx, y) || !localOK(G, W - 1 - tx, y)) break;
+            g[y][tx] = RAIL19; g[y][W - 1 - tx] = RAIL19; cells.push(y);
+          }
+          if (cells.length < 5 || genBlk(G.at(tx, y0 - 1)) || genBlk(G.at(tx, y0 + cells.length))) { for (const y of cells) { g[y][tx] = '.'; g[y][W - 1 - tx] = '.'; } continue; }
+          const sp = Math.round(rng.range(2.4, 3.4) * 10) / 10, ph = Math.round(rng.next() * 100) / 100;
+          for (const x of [tx, W - 1 - tx]) carts.push({ path: cells.map(y => ({ x, y })), loop: false, speed: sp, ph });
+          for (const y of cells) for (const x of [tx, W - 1 - tx]) for (let d = 0; d < 4; d++) G.lockMin(x + DX[d], y + DY[d], 1); // fritt runt rälsen
+          nr++;
+        }
+        if (!nr) continue;
+        if (mirrorPatches(GAS19, rng.int(1, 2), true) < 1) continue;
+        if (mirrorPatches(CAVE19, rng.int(1, 2), true) < 1) continue;
+      }
+      if (arena === 'observatory') {
+        if (mirrorPatches(SLIT19, rng.int(2, 3), true) < 1) continue;
+        if (mirrorPatches(STARMAP19, rng.int(1, 2), false) < 1) continue;
+        const ty = rng.int(12, 16), tx = rng.int(3, 5);
+        for (const x of [tx, W - 1 - tx]) { if (g[ty][x] !== '.' || !localOK(G, x, ty) || RX.some((dx, k) => HAZARD.includes(G.at(x + dx, ty + RY[k])))) break; g[ty][x] = PORT19; }
+        if (g[ty][tx] !== PORT19 || g[ty][W - 1 - tx] !== PORT19) continue;
+        starports.push([{ x: tx, y: ty }, { x: W - 1 - tx, y: ty }]);
+        for (const x of [tx, W - 1 - tx]) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) G.lockMin(x + dx, ty + dy, 1); // fritt runt portarna
+      }
+      // version 20: råttkungens kloak (slam och sprutrör) och sfinxens öken (kvicksand och hägringar), i speglade fläckar
+      if (arena === 'sewer') {
+        if (mirrorPatches(SLUDGE20, rng.int(2, 3), true) < 1) continue;
+        if (mirrorPatches(SPRAY20, rng.int(1, 2), true) < 1) continue;
+      }
+      // version 21: tidvattenprästens vik (djupt vatten och fisknät i speglade fläckar)
+      // version 22: badmästarens termer (heta bassänger, ånggaller, kallbad) och eldfurstens krets (eldfloder), i speglade fläckar
+      if (arena === 'bathhouse') {
+        if (mirrorPatches(HOTPOOL22, rng.int(2, 3), true) < 1) continue;
+        if (mirrorPatches(VENT22, rng.int(1, 2), false) < 1) continue;
+        mirrorPatches(COLDPOOL22, 1, false);
+      }
+      if (arena === 'purgatory') {
+        if (mirrorPatches(FIRE22, rng.int(2, 3), true) < 1) continue;
+      }
+      // version 23: slaktmästarens hall (blodhalt golv, köttkvarnar) och krigsherrens fält (djup lera), i speglade fläckar
+      if (arena === 'abattoir') {
+        if (mirrorPatches(SLICK23, rng.int(2, 3), false) < 1) continue;
+        if (mirrorPatches(GRIND23, rng.int(1, 2), true) < 1) continue;
+      }
+      if (arena === 'battlefield') {
+        if (mirrorPatches(MUD23, rng.int(2, 3), true) < 1) continue;
+      }
+      // version 30: borgmästarens rådhus (grus) och glasmästarens ugnshall (smält glas och ett speglat par ugnsmunnar med fritt runt om), i speglade fläckar
+      if (arena === 'ruins') {
+        if (mirrorPatches(RUBBLE30, rng.int(2, 4), false) < 1) continue;
+      }
+      if (arena === 'glassworks') {
+        if (mirrorPatches(MOLTEN30, rng.int(2, 3), true) < 1) continue;
+        let nv = 0;
+        for (let t = 0; t < 40 && !nv; t++) {
+          const vx = rng.int(3, 8), vy = rng.int(7, 21);
+          if (!VENT30_RING.every(([dx, dy]) => free2(vx + dx, vy + dy) && free2(W - 1 - vx - dx, vy + dy) && !RX.some((ddx, q) => HAZARD.includes(G.at(vx + dx + ddx, vy + dy + RY[q])) || HAZARD.includes(G.at(W - 1 - vx - dx + ddx, vy + dy + RY[q]))))) continue;
+          if (!mirrorPair(vx, vy, VENT30)) continue;
+          for (const x of [vx, W - 1 - vx]) for (const [dx, dy] of VENT30_RING) G.lockMin(x + dx, vy + dy, 1); // fritt runt ugnsmunnarna
+          nv++;
+        }
+        if (!nv) continue;
+      }
+      if (arena === 'harbor') {
+        if (mirrorPatches('\u0110', rng.int(2, 4), true) < 1) continue;
+        if (mirrorPatches(NET21, rng.int(1, 2), true) < 1) continue;
+      }
+      if (arena === 'desert') {
+        if (mirrorPatches('\u00af', rng.int(2, 3), true) < 1) continue;
+        if (mirrorPatches(MIRAGE20, rng.int(1, 2), false) < 1) continue;
       }
       // skydd i speglade par
       const covers = [];
@@ -3467,7 +9045,34 @@
         if (mid(x, y) || covers.some(c => cheb(c[0], c[1], x, y) < 4)) continue;
         const kind = rng.next();
         const cellsK = arena === 'graveyard' ? (kind < 0.45 ? [[0, 0, 'n'], [2, 0, 'n'], [4, 0, 'n']] : kind < 0.75 ? [[0, 0, 't']] : [[0, 0, ic], [1, 0, ic]])
-          : arena === 'cave' ? (kind < 0.6 ? [[0, 0, ic], [1, 0, ic], [0, 1, ic], [1, 1, ic]].filter(() => rng.chance(0.85)) : [[0, 0, ic]])
+          : arena === 'cave' || arena === 'crystal' ? (kind < 0.6 ? [[0, 0, ic], [1, 0, ic], [0, 1, ic], [1, 1, ic]].filter(() => rng.chance(0.85)) : [[0, 0, ic]])
+            : arena === 'fungus' ? (kind < 0.45 ? [[0, 0, ic], [1, 0, ic], [0, 1, ic], [1, 1, ic]].filter(() => rng.chance(0.85)) : kind < 0.75 ? [[0, 0, 'Ş']] : [[0, 0, 'Ŧ']]) // svampstjälkar, svamphattar, glödsvampar
+            : arena === 'mirror' ? (kind < 0.4 ? [[0, 0, ic], [1, 0, ic], [0, 1, ic], [1, 1, ic]] : kind < 0.7 ? [[0, 0, 'š']] : [[0, 0, 'ŧ']]) // marmorpelare, spegelpelare, spegelstatyer
+            : arena === 'library' ? (kind < 0.45 ? [[0, 0, 'ũ'], [0, 1, 'ũ']] : kind < 0.75 ? [[0, 0, 'q']] : [[0, 0, 'u']]) // korta hyllor, bokhyllor (rekvisita), statyer
+            : arena === 'foundry' ? (kind < 0.4 ? [[0, 0, ic], [1, 0, ic], [0, 1, ic], [1, 1, ic]] : kind < 0.75 ? [[0, 0, 'ż']] : [[0, 0, 'Ŷ']]) // plåtpelare, städ, smältugnar
+            : arena === 'cathedral' ? (kind < 0.45 ? [[0, 0, ic], [1, 0, ic], [0, 1, ic], [1, 1, ic]] : kind < 0.75 ? [[0, 0, 'Ǝ'], [1, 0, 'Ǝ']] : [[0, 0, 'u']]) // pelare, bänkar, statyer
+            : arena === 'hive' ? (kind < 0.55 ? [[0, 0, ic], [1, 0, ic], [0, 1, ic], [1, 1, ic]].filter(() => rng.chance(0.85)) : kind < 0.8 ? [[0, 0, 'Ɣ']] : [[0, 0, 'Ɨ']]) // vaxpelare, honungskakor, larvsäckar
+            : arena === 'garden' ? (kind < 0.45 ? [[0, 0, ic], [1, 0, ic]] : kind < 0.75 ? [[0, 0, 't']] : [[0, 0, 'ƨ']]) // häckar, träd, stenstatyer
+            : arena === 'dream' ? (kind < 0.5 ? [[0, 0, ic], [1, 0, ic], [0, 1, ic], [1, 1, ic]] : [[0, 0, 'u']]) // drömpelare, statyer
+            : arena === 'ship' ? (kind < 0.4 ? [[0, 0, MAST17]] : kind < 0.75 ? [[0, 0, 'T'], [1, 0, 'T']] : [[0, 0, KEG17]]) // master, lådor, krutkaggar
+            : arena === 'lab' ? (kind < 0.4 ? [[0, 0, ic], [1, 0, ic], [0, 1, ic], [1, 1, ic]] : kind < 0.75 ? [[0, 0, FLASKS17]] : [[0, 0, 'J'], [1, 0, 'J']]) // kakelpelare, flaskhyllor, bord
+            : arena === 'circus' ? (kind < 0.45 ? [[0, 0, CAGE18], [1, 0, CAGE18]] : kind < 0.8 ? [[0, 0, 'T'], [1, 0, 'T']] : [[0, 0, 'k']]) // burar, lådor, kistor
+            : arena === 'jungle' ? (kind < 0.4 ? [[0, 0, JSTONE18], [1, 0, JSTONE18], [0, 1, JSTONE18], [1, 1, JSTONE18]] : kind < 0.75 ? [[0, 0, 't']] : [[0, 0, 'u']]) // stenpelare, träd, statyer
+            : arena === 'mine' ? (kind < 0.4 ? [[0, 0, TIMBER19], [1, 0, TIMBER19], [0, 1, TIMBER19], [1, 1, TIMBER19]] : kind < 0.75 ? [[0, 0, 'T'], [1, 0, 'T']] : [[0, 0, ORE19]]) // timmerstöttor, lådor, malmklippor
+            : arena === 'abattoir' ? (kind < 0.4 ? [[0, 0, COLD23], [1, 0, COLD23], [0, 1, COLD23], [1, 1, COLD23]] : kind < 0.75 ? [[0, 0, BLOCK23]] : [[0, 0, SAW23]]) // kylrumspelare, slaktbänkar, bandsågar
+            : arena === 'battlefield' ? (kind < 0.4 ? [[0, 0, PALI23], [1, 0, PALI23], [0, 1, PALI23], [1, 1, PALI23]] : kind < 0.75 ? [[0, 0, CATA23]] : [[0, 0, BANNER23]]) // palissader, katapulter, fanor
+            : arena === 'ruins' ? (kind < 0.4 ? [[0, 0, PLASTER30], [1, 0, PLASTER30], [0, 1, PLASTER30]] : kind < 0.75 ? [[0, 0, COLUMN30]] : [[0, 0, STATUE30]]) // husrester, pelare, statyer
+            : arena === 'glassworks' ? (kind < 0.4 ? [[0, 0, KILN30], [1, 0, KILN30], [0, 1, KILN30], [1, 1, KILN30]] : kind < 0.75 ? [[0, 0, RACK30], [1, 0, RACK30]] : [[0, 0, GBENCH30]]) // ugnstegelpelare, glashyllor, bänkar
+            : arena === 'bathhouse' ? (kind < 0.4 ? [[0, 0, COLUMN22], [1, 0, COLUMN22], [0, 1, COLUMN22], [1, 1, COLUMN22]] : kind < 0.75 ? [[0, 0, BSTATUE22]] : [[0, 0, FOUNT22]]) // pelare, statyer, fontäner
+            : arena === 'purgatory' ? (kind < 0.4 ? [[0, 0, BONE22], [1, 0, BONE22], [0, 1, BONE22], [1, 1, BONE22]] : kind < 0.75 ? [[0, 0, BPILLAR22]] : [[0, 0, SOUL22]]) // benmurar, benpelare, kedjade själar
+            : arena === 'prison' ? (kind < 0.4 ? [[0, 0, CELLS21], [1, 0, CELLS21], [0, 1, CELLS21], [1, 1, CELLS21]] : kind < 0.75 ? [[0, 0, RACK21]] : [[0, 0, GALLOWS21]]) // gallerpelare, sträckbänkar, galgar
+            : arena === 'harbor' ? (kind < 0.4 ? [[0, 0, QUAY21], [1, 0, QUAY21], [0, 1, QUAY21], [1, 1, QUAY21]] : kind < 0.75 ? [[0, 0, FBARREL21], [1, 0, FBARREL21]] : [[0, 0, ANCHOR21]]) // kajpelare, fisktunnor, ankare
+            : arena === 'sewer' ? (kind < 0.4 ? [[0, 0, PIPES20], [1, 0, PIPES20], [0, 1, PIPES20], [1, 1, PIPES20]] : kind < 0.75 ? [[0, 0, 'T'], [1, 0, 'T']] : [[0, 0, 'T']]) // rörpelare, lådor
+            : arena === 'desert' ? (kind < 0.4 ? [[0, 0, DUNE20], [1, 0, DUNE20], [0, 1, DUNE20], [1, 1, DUNE20]] : kind < 0.75 ? [[0, 0, CACTUS20]] : [[0, 0, 'u']]) // ruinpelare, kaktusar, statyer
+            : arena === 'observatory' ? (kind < 0.4 ? [[0, 0, BRASS19], [1, 0, BRASS19], [0, 1, BRASS19], [1, 1, BRASS19]] : kind < 0.75 ? [[0, 0, 'u']] : [[0, 0, 'J'], [1, 0, 'J']]) // mässingspelare, statyer, bord
+            : arena === 'sunken' ? (kind < 0.45 ? [[0, 0, ic], [1, 0, ic], [0, 1, ic], [1, 1, ic]] : kind < 0.75 ? [[0, 0, 'Č']] : [[0, 0, 'u']]) // ruinpelare, korall, statyer
+            : arena === 'clock' ? (kind < 0.45 ? [[0, 0, ic], [1, 0, ic], [0, 1, ic], [1, 1, ic]] : kind < 0.75 ? [[0, 0, 'Ņ']] : [[0, 0, 'ĺ'], [1, 0, 'ĺ']]) // mässingspelare, urverk, kuggväggar
+            : arena === 'sky' ? (kind < 0.4 ? [[0, 0, 'ļ']] : kind < 0.7 ? [[0, 0, 'Ľ'], [1, 0, 'Ľ']] : [[0, 0, 'u']]) // molnstenspelare, låga stormmurar, statyer
             : arena === 'swamp' ? (kind < 0.5 ? [[0, 0, 't']] : kind < 0.8 ? [[0, 0, 't'], [1, 1, 't']] : [[0, 0, ic], [1, 0, ic]]) // döda träd och vasstuvor
               : arena === 'frost' ? (kind < 0.6 ? [[0, 0, 'Ø'], [1, 0, 'Ø'], [0, 1, 'Ø'], [1, 1, 'Ø']] : kind < 0.85 ? [[0, 0, 'Ø']] : [[0, 0, 'u']]) // ispelare och statyer
               : arena === 'volcano' ? (kind < 0.6 ? [[0, 0, 'Ò'], [1, 0, 'Ò'], [0, 1, 'Ò'], [1, 1, 'Ò']] : kind < 0.85 ? [[0, 0, 'Ò']] : [[0, 0, 'u']]) // obsidianpelare
@@ -3484,14 +9089,38 @@
       }
       // strödda gravstenar / träd / droppstenar
       const loose = arena === 'graveyard' ? 'n' : arena === 'forest' || arena === 'swamp' ? 't' : arena === 'frost' ? 'i' : arena === 'volcano' ? (rng.chance(0.5) ? 'i' : 'Ò')
-        : arena === 'tomb' ? (rng.chance(0.5) ? 'u' : ic) : ic; // ishallen: glödande iskristaller
+        : arena === 'tomb' ? (rng.chance(0.5) ? 'u' : ic) : arena === 'crystal' ? 'i' : arena === 'sunken' ? (rng.chance(0.5) ? 'u' : 'Č')
+          : arena === 'clock' ? (rng.chance(0.5) ? 'Ņ' : 'ĺ') : arena === 'sky' ? (rng.chance(0.5) ? 'ņ' : 'ļ')
+            : arena === 'fungus' ? (rng.chance(0.5) ? 'F' : 'Ş') : arena === 'mirror' ? (rng.chance(0.5) ? 'ŧ' : 'u')
+              : arena === 'library' ? (rng.chance(0.5) ? 'q' : 'c') : arena === 'foundry' ? (rng.chance(0.5) ? 'ż' : 'T')
+                : arena === 'cathedral' ? (rng.chance(0.5) ? 'c' : 'Ǝ') : arena === 'hive' ? (rng.chance(0.5) ? 'j' : 'T') : arena === 'garden' ? (rng.chance(0.5) ? 't' : 'ƨ')
+                  : arena === 'dream' ? (rng.chance(0.5) ? 'u' : 'k') : arena === 'ship' ? (rng.chance(0.5) ? 'T' : 'o') : arena === 'lab' ? (rng.chance(0.5) ? 'J' : 'o')
+                    : arena === 'circus' ? (rng.chance(0.5) ? 'T' : BALLOON18) : arena === 'jungle' ? (rng.chance(0.5) ? 't' : 'o')
+                      : arena === 'mine' ? (rng.chance(0.5) ? 'T' : 'o') : arena === 'observatory' ? (rng.chance(0.5) ? 'u' : 'J')
+                        : arena === 'sewer' ? (rng.chance(0.5) ? 'T' : 'o') : arena === 'desert' ? (rng.chance(0.5) ? 'u' : 'o')
+                          : arena === 'abattoir' ? (rng.chance(0.5) ? 'T' : 'o') : arena === 'battlefield' ? (rng.chance(0.5) ? STAKES23 : 'o')
+                          : arena === 'ruins' ? (rng.chance(0.5) ? BEAM30 : 'o') : arena === 'glassworks' ? (rng.chance(0.5) ? 'T' : 'o')
+                          : arena === 'bathhouse' ? (rng.chance(0.5) ? BENCH22 : 'o') : arena === 'purgatory' ? (rng.chance(0.5) ? BPILLAR22 : 'j')
+                          : arena === 'prison' ? (rng.chance(0.5) ? 'T' : 'o') : arena === 'harbor' ? (rng.chance(0.5) ? FBARREL21 : 'o')
+                    : ic; // ishallen: glödande iskristaller
       for (let k = rng.int(5, 9); k > 0; k--) { const x = rng.int(2, 22), y = rng.int(6, 23); if (!mid(x, y)) plant(G, x, y, loose); }
       // eldfat runt kanterna
       const jit = () => rng.int(-1, 1), spots = [];
-      for (const x of [3, 7, 17, 21]) spots.push([x + jit(), AY0 + 1], [x + jit(), AY1 - 1]);
-      for (const y of [7, 12, 17, 22]) spots.push([AX0 + 1, y + jit()], [AX1 - 1, y + jit()]);
+      if (arena === 'sky') { // stormfågelns näste: eldfat runt den stora öns kant, blixtstänger vid kanten (speglade par)
+        for (let k = 0; k < 8; k++) { const a = (k + 0.5) * Math.PI / 4; spots.push([Math.round(cx + 5.8 * Math.cos(a)), Math.round(14.5 + 5.2 * Math.sin(a))]); }
+        let nr = 0;
+        for (let t = 0; t < 40 && nr < 4; t++) {
+          const x = rng.int(3, 9), y = rng.int(6, 22);
+          if (!RX.some((dx, k) => G.at(x + dx, y + RY[k]) === 'Ń') || G.at(W - 1 - x, y) !== '.') continue;
+          if (plant(G, x, y, 'ņ')) { if (plant(G, W - 1 - x, y, 'ņ')) nr += 2; else g[y][x] = '.'; }
+        }
+        if (nr < 2) continue;
+      } else {
+        for (const x of [3, 7, 17, 21]) spots.push([x + jit(), AY0 + 1], [x + jit(), AY1 - 1]);
+        for (const y of [7, 12, 17, 22]) spots.push([AX0 + 1, y + jit()], [AX1 - 1, y + jit()]);
+      }
       let nf = 0;
-      for (const [x, y] of spots) if (cheb(x, y, cx, AY0) > 2 && cheb(x, y, PX, PY) > 2 && plantNear(G, rng, x, y, 'f', 2)) nf++;
+      for (const [x, y] of spots) if (cheb(x, y, cx, AY0) > 2 && cheb(x, y, PX, PY) > 2 && plantNear(G, rng, x, y, 'f', arena === 'sky' ? 1 : 2)) nf++;
       if (nf < 6) continue;
       g[PY][PX] = 'P'; g[BY][BX] = 'B';
       const fc = [];
@@ -3500,9 +9129,22 @@
       const nh = rng.int(3, 4), na = rng.int(3, 4);
       for (let i = 0; i < nh + na && i < fc.length; i++) g[fc[i][1]][fc[i][0]] = i < nh ? 'h' : 'a';
       // golv: grus-/jordstig från start till grinden, annars lera eller vissnat gräs i fläckar
-      const hall = arena === 'cave' || arena === 'frost' || arena === 'volcano' || arena === 'tomb'; // ingen stig; grottan: lera, ishallen: snödrivor, obsidianhallen: aska, tempelhallen: sand (floors[1])
-      for (let y = 2; y <= AY1; y++) for (let x = cx - 1; x <= cx + 1; x++) if (!hall && (x === cx || N2[y * W + x] > 0.4)) fm[y * W + x] = 1;
-      for (let i = 0; i < W * H; i++) if (!fm[i] && N2[i] < 0.3) fm[i] = hall ? 1 : 2;
+      const hall = arena === 'cave' || arena === 'frost' || arena === 'volcano' || arena === 'tomb' || arena === 'crystal' || arena === 'fungus'; // ingen stig; mycelmoderns grotta: berg (floors[1]); grottan: lera, ishallen: snödrivor, obsidianhallen: aska, tempelhallen: sand, kristalltronen: berg (floors[1])
+      const wetA = arena === 'sunken'; // leviatans bassäng: golven följer vattnet
+      const plainA = arena === 'clock' || arena === 'sky' || arena === 'mirror' || arena === 'library' || arena === 'foundry' || arena === 'cathedral' || arena === 'hive' || arena === 'dream'
+        || arena === 'ship' || arena === 'lab' || arena === 'circus' || arena === 'mine' || arena === 'observatory' || arena === 'sewer' || arena === 'prison' || arena === 'bathhouse' || arena === 'abattoir' || arena === 'glassworks'; // (version 30: ugnshallen) (version 23: slakthallen) (version 22: termerna) (version 21: bödelns gård) (version 20: kloaken) (version 19: schaktet och kupolen) (version 18: manegen) (version 17: däcket och laboratoriet) (version 15/16: kor, kammare och sovkammare) spegelkungens sal: marmor överallt; urverkshallen: mässing överallt; stormfågelns näste: moln, tomrum och vind
+      for (let y = 2; y <= AY1; y++) for (let x = cx - 1; x <= cx + 1; x++) if (!hall && !wetA && !plainA && (x === cx || N2[y * W + x] > 0.4)) fm[y * W + x] = 1;
+      for (let i = 0; i < W * H; i++) if (!wetA && !plainA && !fm[i] && N2[i] < 0.3) fm[i] = hall ? 1 : 2;
+      if (arena === 'sky') for (let i = 0; i < W * H; i++) { const c = g[(i / W) | 0][i % W]; if (c === 'Ń') fm[i] = 1; else if (c === 'ń') fm[i] = 2; }
+      if (arena === 'purgatory' || arena === 'battlefield' || arena === 'ruins') for (let i = 0; i < W * H; i++) if (fm[i] === 2) fm[i] = 0; // (version 23: lerfältet, skyttegravsstigen) // (version 22: askfält, svavelstigen)
+      if (arena === 'harbor') for (let i = 0; i < W * H; i++) { // (version 21: djupvatten under vattnet, bryggplank runt det, kullersten annars)
+        const x = i % W, y = (i / W) | 0;
+        if (g[y][x] === '\u0110') fm[i] = 2; else if (fm[i] === 2 || RX.some((dx, k) => G.at(x + dx, y + RY[k]) === '\u0110')) fm[i] = 1;
+      }
+      if (arena === 'library') for (let y = AY0; y <= AY1; y++) for (let x = AX0; x <= AX1; x++) if (Math.min(x - AX0, AX1 - x, y - AY0, AY1 - y) <= 1) fm[y * W + x] = 1; // parkett längs väggarna
+      if (arena === 'cathedral') for (let y = 2; y <= AY1; y++) for (let x = cx - 1; x <= cx + 1; x++) fm[y * W + x] = 1; // röd matta från P till grinden
+      if (arena === 'dream') for (let y = AY0; y <= AY1; y++) for (let x = AX0; x <= AX1; x++) if ((x + y) & 1) fm[y * W + x] = 1; // schackbräde
+      if (wetA) for (let i = 0; i < W * H; i++) { const c = g[(i / W) | 0][i % W]; if (c === 'Đ' || c === 'Ĝ') fm[i] = 1; else if (c === 'Ĕ') fm[i] = 2; }
       if (arena === 'volcano') for (let i = 0; i < W * H; i++) if (g[(i / W) | 0][i % W] === '_') fm[i] = 0;
       if (arena === 'tomb') for (let y = 7; y <= 21; y++) for (let x = 4; x <= 20; x++) if (((x - cx) / 6.2) ** 2 + ((y - 14) / 5.2) ** 2 <= 1.02) fm[y * W + x] = 1; // gropen och ringen: sand
       if (arena === 'swamp') { // vattenkanaler och gölar runt öarna; spången i mitten, P, bossen och grinden står torrt
@@ -3531,16 +9173,48 @@
       if (gid) {
         // bossens golv i en cirkel kring arenans mitt (hela grottan), bakväggen i bossens väggtecken, dekor längs kanterna
         floors.push(GUARDIANS[gid].floor);
-        const rr = arena === 'cave' ? 7.5 : 5.5, bi = floors.length - 1;
-        for (let y = AY0; y <= AY1; y++) for (let x = AX0; x <= AX1; x++) if (Math.hypot(x - cx, y - 14) <= rr) fm[y * W + x] = bi;
+        const rr = arena === 'cave' || arena === 'crystal' || arena === 'fungus' ? 7.5 : wetA ? 9.5 : 5.5, bi = floors.length - 1;
+        for (let y = AY0; y <= AY1; y++) for (let x = AX0; x <= AX1; x++) if (Math.hypot(x - cx, y - 14) <= rr && !(wetA && WATER8.includes(g[y][x])) && !(arena === 'harbor' && g[y][x] === 'Đ') && g[y][x] !== 'Ń' && g[y][x] !== 'ń') fm[y * W + x] = bi;
+        if (wetA) fm[BY * W + BX] = bi; // leviatans bassäng: bossens golv på gångarna runt vattnet och där bossen står
         for (let y = 1; y <= 3; y++) for (let x = 1; x <= W - 2; x++) if (g[y][x] === wc) g[y][x] = ic;
         bossDecor(G, root.fork('decor' + attempt), gid, { cx, PX, PY, BX, BY, AX0, AX1, AY0, AY1 });
+      }
+      // kristalltronen: glödkristaller i stället för eldfat och kristallådror; leviatans bassäng: korall i murarna; urverkshallen: kuggväggar
+      if (arena === 'crystal' || arena === 'sunken' || arena === 'clock' || arena === 'fungus' || arena === 'library' || arena === 'foundry'
+        || arena === 'cathedral' || arena === 'hive' || arena === 'garden' || arena === 'dream' || arena === 'ship' || arena === 'lab' || arena === 'circus' || arena === 'jungle' || arena === 'mine' || arena === 'observatory' || arena === 'sewer' || arena === 'desert' || arena === 'prison' || arena === 'harbor' || arena === 'bathhouse' || arena === 'purgatory' || arena === 'abattoir' || arena === 'battlefield' || arena === 'ruins' || arena === 'glassworks') { // mycelmoderns grotta: glödsvampar och svamphattar
+        // (version 13: läsesalen får bokhyllor i panelväggarna och ljuskronor i stället för eldfat, gjuterihallen smältugnar i plåtväggarna)
+        // (version 15/16: koret får blyinfattade fönster, kammaren honungskakor, rabatterna trädgårdsmur i häcken och sovkammaren drömlyktor)
+        const vr = root.fork('veins' + attempt), from = arena === 'crystal' ? 'Ą' : arena === 'clock' ? 'Ĺ' : arena === 'fungus' ? 'ŝ' : arena === 'library' ? 'Ū' : arena === 'foundry' ? 'ŵ'
+          : arena === 'cathedral' ? 'Ɗ' : arena === 'hive' ? 'Ɠ' : arena === 'garden' ? 'Ɵ' : arena === 'dream' ? 'Ƣ' : arena === 'ship' ? HULL17 : arena === 'lab' ? TILE17 : arena === 'circus' ? TENT18 : arena === 'jungle' ? JUNGLE18 : arena === 'mine' ? TIMBER19 : arena === 'observatory' ? BRASS19 : arena === 'sewer' ? SEWER20 : arena === 'desert' ? MESA20 : arena === 'prison' ? PSTONE21 : arena === 'harbor' ? QUAY21 : arena === 'bathhouse' ? MOSAIC22 : arena === 'purgatory' ? BONE22 : arena === 'abattoir' ? TILE23 : arena === 'battlefield' ? EARTH23 : arena === 'ruins' ? RBRICK30 : arena === 'glassworks' ? KILN30 : 'Ċ';
+        const to = arena === 'crystal' ? 'Ć' : arena === 'clock' ? 'ĺ' : arena === 'fungus' ? 'Ş' : arena === 'library' ? 'ũ' : arena === 'foundry' ? 'Ŷ'
+          : arena === 'cathedral' ? 'Ƌ' : arena === 'hive' ? 'Ɣ' : arena === 'garden' ? 'Ơ' : arena === 'dream' ? 'Ƣ' : arena === 'ship' ? HULL17 : arena === 'lab' ? JARS17 : arena === 'circus' ? CAGE18 : arena === 'jungle' ? JSTONE18 : arena === 'mine' ? ORE19 : arena === 'observatory' ? CHART19 : arena === 'sewer' ? PIPES20 : arena === 'desert' ? DUNE20 : arena === 'prison' ? CELLS21 : arena === 'harbor' ? SHACK21 : arena === 'bathhouse' ? COLUMN22 : arena === 'purgatory' ? FLESH22 : arena === 'abattoir' ? COLD23 : arena === 'battlefield' ? PALI23 : arena === 'ruins' ? PLASTER30 : arena === 'glassworks' ? SHELF30 : 'Č', faces = [];
+        for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+          if (arena === 'crystal' && g[y][x] === 'f') g[y][x] = 'Ę';
+          if (arena === 'fungus' && g[y][x] === 'f') g[y][x] = 'Ŧ';
+          if (arena === 'library' && g[y][x] === 'f') g[y][x] = 'ű';
+          if (arena === 'dream' && g[y][x] === 'f') g[y][x] = 'ƪ';
+          if (arena === 'ship' && g[y][x] === 'f') g[y][x] = LANTERN17; // (version 17: skeppslyktor)
+          if (arena === 'circus' && g[y][x] === 'f') g[y][x] = MARQUEE18; // (version 18: glödlampsgirlanger och tikifacklor)
+          if (arena === 'jungle' && g[y][x] === 'f') g[y][x] = TIKI18;
+          if (arena === 'mine' && g[y][x] === 'f') g[y][x] = LAMP19; // (version 19: karbidlampor)
+          if (arena === 'desert' && g[y][x] === 'f') g[y][x] = BRAZIER20; // (version 20: kokpannor)
+          if (arena === 'purgatory' && g[y][x] === 'f') g[y][x] = BRIMPOT22; // (version 22: svavelgrytor)
+          if (arena === 'glassworks' && g[y][x] === 'f') g[y][x] = FURNACE30; // (version 30: smältugnar)
+          if (arena === 'harbor' && g[y][x] === 'f') g[y][x] = HLAMP21; // (version 21: fyrlyktor)
+          if (g[y][x] === from && [0, 1, 2, 3].some(d => !isWall(G.at(x + DX[d], y + DY[d])))) faces.push([x, y]);
+        }
+        let nv = 0;
+        const pv = arena === 'foundry' ? 0.12 : arena === 'library' || arena === 'hive' ? 0.3 : arena === 'cathedral' ? 0.25 : 0.2;
+        for (const [x, y] of faces) if (vr.chance(pv)) { g[y][x] = to; nv++; }
+        if (!nv && faces.length) { const [x, y] = vr.pick(faces); g[y][x] = to; }
       }
       const level = {
         name, biome: A.biome, floor: floors[0], floors, floorMask: rowsOf(W, H, fm), ceil: A.ceil, sky: A.outdoor ? rowsOf(W, H, G.sky) : null,
         secretWall: wc, fog, ambient, map: g.map(r => r.join('')), depth: opts.depth || 6, seed, arena,
         rooms: [{ x: AX0, y: AY0, w: AX1 - AX0 + 1, h: AY1 - AY0 + 1, type: 'boss' }, { x: cx - 1, y: 1, w: 3, h: 2, type: 'exit' }],
+        tide: tide ? { period: tide.period } : null, saws, winds, teleports, belts, arenas: [], shifts, carts, starports, sluices: [], streams,
       };
+      if (arena === 'purgatory') for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (g[y][x] === FIRE22) streams.push({ x, y, dx: 0, dy: 1 }); // (version 22: eldfloderna flyter söderut)
       if (gid) level.boss = gid;
       level.features = features(level.map);
       if (!validate(level).length) return level;
@@ -3561,6 +9235,34 @@
     frost: { wall: 'Ø', floors: ['floor_frost_stone', 'floor_snow'], ceil: 'floor_frost_stone', names: ['DEN FRUSNA SKATTEN', 'ISKUNGENS GÖMMA'] },
     volcano: { wall: 'Ò', floors: ['floor_basalt', 'floor_ash'], ceil: 'floor_basalt', names: ['GULDSMEDJAN', 'DEN SMÄLTA SKATTEN', 'DRAKENS GULDHÖG'] },
     tomb: { wall: 'Ì', floors: ['floor_sand', 'floor_gold_tiles'], ceil: 'floor_sand', names: ['FARAONENS SKATTKAMMARE', 'DEN GYLLENE GRAVEN', 'SOLKUNGENS GÖMMA'] },
+    crystal: { wall: 'Ą', floors: ['floor_crystal', 'floor_cave'], ceil: 'ceil_cave', names: ['KRISTALLSKATTEN', 'GEODENS HJÄRTA', 'DEN GLITTRANDE GÖMMAN'] },
+    sunken: { wall: 'Ċ', floors: ['floor_sunken_tiles', 'floor_wood_planks'], ceil: 'floor_stone', names: ['VRAKETS LASTRUM', 'DEN SJUNKNA SKATTKAMMAREN', 'PIRATERNAS GÖMMA'] },
+    clock: { wall: 'Ĺ', floors: ['floor_brass', 'floor_gold_tiles'], ceil: 'floor_brass', names: ['URMAKARENS SKATTKAMMARE', 'DET GYLLENE URVERKET', 'TIDENS GÖMMA'] }, // version 9
+    sky: { wall: 'ļ', floors: ['floor_cloud', 'floor_gold_tiles'], ceil: 'floor_cloud', names: ['MOLNSKATTEN', 'STORMFÅGELNS BO', 'DEN SVÄVANDE SKATTKAMMAREN'] }, // version 9
+    fungus: { wall: 'ŝ', floors: ['floor_moss', 'floor_cave'], ceil: 'ceil_cave', names: ['SPORVALVET', 'DEN GLÖDANDE GÖMMAN', 'MYCELETS SKATTKAMMARE'] }, // version 11
+    mirror: { wall: 'Š', floors: ['floor_marble', 'floor_gold_tiles'], ceil: 'floor_marble', names: ['SPEGELKUNGENS SKATTKAMMARE', 'DEN FÖRGYLLDA SPEGELN', 'GLASVALVET'] }, // version 11
+    library: { wall: 'Ū', floors: ['floor_carpet', 'floor_wood_planks'], ceil: 'floor_wood_planks', names: ['DET FÖRBJUDNA VALVET', 'DE SÄLLSYNTA BÖCKERNAS KAMMARE', 'BIBLIOTEKARIENS GÖMMA'] }, // version 13
+    foundry: { wall: 'ŵ', floors: ['floor_irongrate', 'floor_gold_tiles'], ceil: 'floor_irongrate', names: ['GJUTERIETS SKATTKAMMARE', 'DET GYLLENE GJUTVALVET', 'SMIDESKOLOSSENS GÖMMA'] },
+    cathedral: { wall: 'Ɗ', floors: ['floor_cathedral', 'floor_gold_tiles'], ceil: 'floor_stone_pattern', names: ['RELIKKAMMAREN', 'KARDINALENS SKATTKAMMARE', 'DET HELIGA VALVET'] }, // version 15
+    hive: { wall: 'Ɠ', floors: ['floor_hivefloor', 'floor_gold_tiles'], ceil: 'floor_hivefloor', names: ['HONUNGSFÖRRÅDET', 'DROTTNINGENS SKATTCELL', 'DEN GYLLENE KAKAN'] },
+    garden: { wall: 'Ơ', floors: ['floor_garden', 'floor_gold_tiles'], ceil: 'floor_wood_planks', names: ['DET GÖMDA LUSTHUSET', 'TRÄDGÅRDSMÄSTARENS BOD', 'ORANGERIETS SKATT'] }, // version 16
+    dream: { wall: 'Ƣ', floors: ['floor_dream', 'floor_gold_tiles'], ceil: 'floor_dream', names: ['DEN GYLLENE DRÖMMEN', 'JON BLUNDS GÖMMA', 'SKATTEN BAKOM ÖGONLOCKEN'] },
+    ship: { wall: HULL17, floors: ['floor_hold', 'floor_gold_tiles'], ceil: 'floor_deck', names: ['KAPTENENS SKATTKISTA', 'DET SJUNKNA GULDET', 'PIRATERNAS GÖMMA'] }, // version 17
+    lab: { wall: TILE17, floors: ['floor_labtile', 'floor_gold_tiles'], ceil: 'floor_labtile', names: ['DE VISES STENS VALV', 'TRANSMUTATIONENS GULD', 'ALKEMISTENS GÖMMA'] },
+    circus: { wall: TENT18, floors: ['floor_sawdust', 'floor_gold_tiles'], ceil: 'floor_ring', names: ['DIREKTÖRENS KASSAKISTA', 'BILJETTLUCKANS GULD', 'DEN GÖMDA VAGNEN'] }, // version 18
+    jungle: { wall: JSTONE18, floors: ['floor_templestone', 'floor_gold_tiles'], ceil: 'floor_templestone', names: ['DEN GYLLENE IDOLENS KAMMARE', 'TEMPLETS SKATTKAMMARE', 'ORMENS GULD'] },
+    mine: { wall: TIMBER19, floors: ['floor_minedirt', 'floor_gold_tiles'], ceil: 'floor_planks2', names: ['DEN RIKA ÅDERN', 'FÖRMANNENS GULDKAMMARE', 'DEN GLÖMDA ORTEN'] }, // version 19
+    observatory: { wall: BRASS19, floors: ['floor_brasstile', 'floor_gold_tiles'], ceil: 'floor_brasstile', names: ['STJÄRNSKÅDARENS SKATTKAMMARE', 'DET GYLLENE HIMLAVALVET', 'KOMETENS GULD'] },
+    sewer: { wall: SEWER20, floors: ['floor_sewer', 'floor_gold_tiles'], ceil: 'floor_sewer', names: ['RÅTTKUNGENS SKATT', 'DET GLÖMDA AVLOPPETS GULD', 'SMUGGLARNAS GÖMMA'] }, // version 20
+    desert: { wall: DUNE20, floors: ['floor_ruintile', 'floor_gold_tiles'], ceil: 'floor_ruintile', names: ['SFINXENS SKATTKAMMARE', 'DEN BEGRAVDA KARAVANENS GULD', 'ÖKENKUNGENS GRAV'] },
+    prison: { wall: PSTONE21, floors: ['floor_prison', 'floor_gold_tiles'], ceil: 'floor_prison', names: ['BÖDELNS SKATTKAMMARE', 'DE BESLAGTAGNA RIKEDOMARNA', 'FÅNGVAKTARENS GÖMMA'] }, // version 21
+    harbor: { wall: SHACK21, floors: ['floor_dock', 'floor_gold_tiles'], ceil: 'floor_dock', names: ['SMUGGLARNAS BOD', 'DEN SJUNKNA LASTENS GULD', 'TIDVATTENPRÄSTENS OFFERGÅVOR'] },
+    bathhouse: { wall: MOSAIC22, floors: ['floor_mosaic', 'floor_gold_tiles'], ceil: 'floor_bathtile', names: ['BADMÄSTARENS KASSAKISTA', 'KEJSARENS PRIVATA BAD', 'DE SJUNKNA MYNTENS BASSÄNG'] }, // version 22
+    purgatory: { wall: FLESH22, floors: ['floor_brimstone', 'floor_gold_tiles'], ceil: 'floor_brimstone', names: ['ELDFURSTENS SKATTKAMMARE', 'DE FÖRDÖMDAS GULD', 'GIRIGHETENS KRETS'] },
+    abattoir: { wall: TILE23, floors: ['floor_abattoir', 'floor_gold_tiles'], ceil: 'floor_abattoir', names: ['SLAKTMÄSTARENS KASSAKISTA', 'DET FRUSNA VALVET', 'KÖTTBARONENS GULD'] }, // version 23
+    battlefield: { wall: PALI23, floors: ['floor_trench', 'floor_gold_tiles'], ceil: 'floor_trench', names: ['KRIGSKASSAN', 'FÄLTHERRENS TÄLT', 'DE STUPADES BYTE'] },
+    ruins: { wall: PLASTER30, floors: ['floor_ruinplaza', 'floor_gold_tiles'], ceil: 'floor_ruinplaza', names: ['BORGMÄSTARENS KASSAKISTA', 'STADSKISTAN', 'DE RIKAS KÄLLARE'] }, // version 30
+    glassworks: { wall: KILN30, floors: ['floor_glassworks', 'floor_gold_tiles'], ceil: 'floor_glassworks', names: ['GLASMÄSTARENS SKATTKAMMARE', 'KRISTALLVALVET', 'DET GYLLENE GLASETS RUM'] },
   };
   const GOLD_FOG = rng => [rng.int(24, 28), rng.int(19, 23), rng.int(8, 12)]; // varmt guldskimmer
   function secret(seed, opts) {
@@ -3573,7 +9275,8 @@
       if (!lv) continue;
       const level = {
         name, biome: bid, floor: look.floors[0], floors: look.floors.slice(), floorMask: lv.floorMask, ceil: look.ceil, sky: null,
-        secretWall: look.wall, fog, ambient, map: lv.map, depth, seed, rooms: lv.rooms, roomMask: lv.roomMask, theme: 'secret', secret: true,
+        secretWall: look.wall, fog, ambient, map: lv.map, depth, seed, rooms: lv.rooms, roomMask: lv.roomMask, theme: 'secret', secret: true, saws: [], winds: [], teleports: [], belts: [], arenas: [], shifts: [],
+        carts: [], starports: [], sluices: [], streams: [],
       };
       level.features = features(level.map);
       if (!validate(level).length) return level;
@@ -3649,6 +9352,47 @@
     frost: { wall: 'Ø', floors: ['floor_frost_stone', 'floor_snow'], ceil: 'floor_frost_stone', sky: false, fog: [19, 24, 32], ambient: [0.18, 0.24], names: ['ISLABYRINTEN', 'DE FRUSNA GÅNGARNA'] },
     volcano: { wall: 'Ò', floors: ['floor_basalt', 'floor_ash'], ceil: 'floor_basalt', sky: false, fog: [32, 14, 9], ambient: [0.17, 0.23], names: ['OBSIDIANLABYRINTEN', 'DE GLÖDANDE GÅNGARNA'] },
     tomb: { wall: 'È', floors: ['floor_sand', 'floor_gold_tiles'], ceil: 'floor_sand', sky: false, fog: [32, 26, 16], ambient: [0.18, 0.24], names: ['FARAONENS LABYRINT', 'DE BEGRAVDAS IRRGÅNG'] },
+    crystal: { wall: 'Ą', floors: ['floor_crystal', 'floor_cave'], ceil: 'ceil_cave', sky: false, fog: [16, 12, 31], ambient: [0.11, 0.15], names: ['KRISTALLABYRINTEN', 'DE SPEGLANDE GÅNGARNA'] },
+    sunken: { wall: 'Ċ', floors: ['floor_sunken_tiles', 'floor_stone'], ceil: 'floor_stone', sky: true, fog: [9, 20, 25], ambient: [0.18, 0.24], names: ['DEN SJUNKNA LABYRINTEN', 'DE DRUNKNADES IRRGÅNG'] },
+    // version 9: urverkslabyrinten (mässing, kuggväggar runt rummen) och molnlabyrinten (murar av molnsten under öppen himmel, inget tomrum)
+    clock: { wall: 'Ĺ', floors: ['floor_brass', 'floor_wood_planks'], ceil: 'floor_brass', sky: false, fog: [30, 23, 12], ambient: [0.15, 0.2], names: ['URVERKSLABYRINTEN', 'KUGGARNAS IRRGÅNG'] },
+    sky: { wall: 'ļ', floors: ['floor_cloud', 'floor_cloud'], ceil: 'floor_cloud', sky: true, fog: [28, 31, 36], ambient: [0.24, 0.3], names: ['MOLNLABYRINTEN', 'VINDARNAS IRRGÅNG'] },
+    // version 11: myceltrasslet (svampvägg, glödande svamphattar runt rummen) och spegellabyrinten (marmor, spegelväggar runt rummen)
+    fungus: { wall: 'ŝ', floors: ['floor_moss', 'floor_cave'], ceil: 'ceil_cave', sky: false, fog: [19, 27, 23], ambient: [0.12, 0.17], names: ['MYCELTRASSLET', 'SPORERNAS IRRGÅNG'] },
+    mirror: { wall: 'Š', floors: ['floor_marble', 'floor_gold_tiles'], ceil: 'floor_marble', sky: false, fog: [25, 24, 32], ambient: [0.18, 0.24], names: ['SPEGELLABYRINTEN', 'DE TUSEN SPEGLARNAS IRRGÅNG'] },
+    // version 13: hyllabyrinten (panelväggar, bokhyllor runt rummen) och gjuterilabyrinten (järnplåt, smältugnar runt rummen)
+    library: { wall: 'Ū', floors: ['floor_carpet', 'floor_wood_planks'], ceil: 'floor_wood_planks', sky: false, fog: [24, 18, 13], ambient: [0.13, 0.18], names: ['HYLLABYRINTEN', 'DE DAMMIGA GÅNGARNAS IRRGÅNG'] },
+    foundry: { wall: 'ŵ', floors: ['floor_irongrate', 'floor_stone'], ceil: 'floor_irongrate', sky: false, fog: [32, 19, 11], ambient: [0.16, 0.22], names: ['GJUTERILABYRINTEN', 'RÖRENS IRRGÅNG'] },
+    // version 15: katedralens irrgång (blyinfattade fönster runt rummen) och vaxlabyrinten (honungskakor runt rummen)
+    cathedral: { wall: 'Ɗ', floors: ['floor_cathedral', 'floor_stone_pattern'], ceil: 'floor_stone_pattern', sky: false, fog: [28, 10, 12], ambient: [0.14, 0.19], names: ['KATAKOMBERNA UNDER KORET', 'MARTYRERNAS IRRGÅNG'] },
+    hive: { wall: 'Ɠ', floors: ['floor_hivefloor', 'floor_hivefloor'], ceil: 'floor_hivefloor', sky: false, fog: [32, 23, 8], ambient: [0.15, 0.21], names: ['VAXLABYRINTEN', 'DE TUSEN CELLERNA'] },
+    // version 16: häcklabyrinten (häckar under öppen himmel, trädgårdsmur runt rummen) och drömlabyrinten (drömväggar)
+    garden: { wall: 'Ɵ', floors: ['floor_garden', 'floor_ground_grass'], ceil: 'floor_wood_planks', sky: true, fog: [14, 18, 16], ambient: [0.22, 0.28], names: ['DEN DÖDA HÄCKLABYRINTEN', 'TRÄDGÅRDSMÄSTARENS IRRGÅNG'] },
+    dream: { wall: 'Ƣ', floors: ['floor_dream', 'floor_marble'], ceil: 'floor_dream', sky: false, fog: [22, 11, 30], ambient: [0.14, 0.2], names: ['DRÖMLABYRINTEN', 'DEN ÄNDLÖSA KORRIDOREN'] },
+    // version 17: skeppets irrgång (lastrummens gångar under däck, skeppslyktor) och laboratoriets glasgångar (hyllor med burkar runt rummen)
+    ship: { wall: HULL17, floors: ['floor_hold', 'floor_deck'], ceil: 'floor_deck', sky: false, fog: [9, 14, 20], ambient: [0.14, 0.2], names: ['LASTRUMMENS IRRGÅNG', 'SKROVETS GÅNGAR'] },
+    lab: { wall: TILE17, floors: ['floor_labtile', 'floor_labtile'], ceil: 'floor_labtile', sky: false, fog: [13, 24, 15], ambient: [0.15, 0.21], names: ['GLASGÅNGARNAS LABYRINT', 'DE TUSEN FLASKORNAS IRRGÅNG'] },
+    // version 18: spegeltältet (tältduk med djurburar runt rummen) och djungelns irrgångar (tät djungel under himlen, ruinsten runt rummen)
+    circus: { wall: TENT18, floors: ['floor_sawdust', 'floor_ring'], ceil: 'floor_ring', sky: false, fog: [20, 14, 12], ambient: [0.15, 0.21], names: ['DET STORA IRRTÄLTET', 'CLOWNERNAS LABYRINT'] },
+    jungle: { wall: JUNGLE18, floors: ['floor_jungle', 'floor_templestone'], ceil: 'floor_templestone', sky: true, fog: [10, 19, 11], ambient: [0.2, 0.26], names: ['DJUNGELNS IRRGÅNGAR', 'DET FÖRVUXNA TEMPLETS LABYRINT'] },
+    // version 19: stollarnas irrgång (timmer med malmådror runt rummen) och mässingsgångarna (stjärnkartor runt rummen)
+    mine: { wall: TIMBER19, floors: ['floor_minedirt', 'floor_planks2'], ceil: 'floor_planks2', sky: false, fog: [15, 12, 9], ambient: [0.14, 0.2], names: ['STOLLARNAS IRRGÅNG', 'DE ÖVERGIVNA ORTERNA'] },
+    observatory: { wall: BRASS19, floors: ['floor_brasstile', 'floor_starmap'], ceil: 'floor_brasstile', sky: false, fog: [9, 11, 22], ambient: [0.16, 0.22], names: ['MÄSSINGSGÅNGARNAS LABYRINT', 'STJÄRNORNAS IRRGÅNG'] },
+    // version 20: kloakernas irrgång (valvtegel med rör runt rummen) och ruinstadens labyrint (ruinsten under himlen, klippor runt rummen)
+    sewer: { wall: SEWER20, floors: ['floor_sewer', 'floor_grate'], ceil: 'floor_sewer', sky: false, fog: [11, 14, 10], ambient: [0.14, 0.2], names: ['KLOAKERNAS IRRGÅNG', 'DE TUSEN AVLOPPEN'] },
+    desert: { wall: DUNE20, floors: ['floor_desertsand', 'floor_ruintile'], ceil: 'floor_ruintile', sky: true, fog: [29, 25, 17], ambient: [0.22, 0.28], names: ['RUINSTADENS LABYRINT', 'DYNERNAS IRRGÅNG'] },
+    // version 21: fängelsets irrgång (fängelsesten med cellgaller runt rummen) och kajernas labyrint (bodväggar under dimhimlen, kajsten runt rummen)
+    prison: { wall: PSTONE21, floors: ['floor_prison', 'floor_straw'], ceil: 'floor_prison', sky: false, fog: [13, 12, 11], ambient: [0.14, 0.2], names: ['FÄNGELSETS IRRGÅNG', 'DE TUSEN CELLERNA'] },
+    harbor: { wall: SHACK21, floors: ['floor_cobble', 'floor_dock'], ceil: 'floor_dock', sky: true, fog: [24, 27, 30], ambient: [0.2, 0.26], names: ['KAJERNAS LABYRINT', 'DIMMANS GRÄND'] },
+    // version 22: badhusets irrgång (mosaikmarmor med pelare runt rummen) och skärseldens labyrint (köttmurar under den röda himlen, benmurar runt rummen)
+    bathhouse: { wall: MOSAIC22, floors: ['floor_bathtile', 'floor_mosaic'], ceil: 'floor_bathtile', sky: false, fog: [17, 18, 19], ambient: [0.16, 0.22], names: ['TERMERNAS IRRGÅNG', 'DE TUSEN BASSÄNGERNA'] },
+    purgatory: { wall: FLESH22, floors: ['floor_ashfield', 'floor_brimstone'], ceil: 'floor_brimstone', sky: true, fog: [28, 10, 7], ambient: [0.2, 0.26], names: ['SKÄRSELDENS LABYRINT', 'DE FÖRLORADES IRRGÅNG'] },
+    // version 23: slakteriets irrgång (slaktkakel med kylrumsväggar runt rummen) och skyttegravarnas labyrint (palissader under den grå himlen, jordvallar runt rummen)
+    abattoir: { wall: TILE23, floors: ['floor_abattoir', 'floor_bloodgrate'], ceil: 'floor_abattoir', sky: false, fog: [15, 11, 11], ambient: [0.15, 0.21], names: ['SLAKTERIETS IRRGÅNG', 'DE TUSEN KROKARNA'] },
+    battlefield: { wall: PALI23, floors: ['floor_battlemud', 'floor_trench'], ceil: 'floor_trench', sky: true, fog: [21, 20, 19], ambient: [0.2, 0.26], names: ['SKYTTEGRAVARNAS LABYRINT', 'DE STUPADES IRRGÅNG'] },
+    // version 30: ruinstadens gränder (sprucken puts under den gråockra himlen, tegelmurar runt rummen) och glasbrukets irrgång (ugnstegel med hyllpaneler runt rummen)
+    ruins: { wall: PLASTER30, floors: ['floor_ruincobble', 'floor_ruinplaza'], ceil: 'floor_ruinplaza', sky: true, fog: [27, 24, 17], ambient: [0.2, 0.26], names: ['RUINSTADENS GRÄNDER', 'DE RASADE KVARTEREN'] },
+    glassworks: { wall: KILN30, floors: ['floor_glassworks', 'floor_slag'], ceil: 'floor_glassworks', sky: false, fog: [24, 15, 11], ambient: [0.16, 0.22], names: ['GLASBRUKETS IRRGÅNG', 'DE TUSEN HYLLORNA'] },
   };
   function maze(seed, opts) {
     opts = opts || {};
@@ -3661,7 +9405,7 @@
       const level = {
         name, biome: bid, floor: look.floors[0], floors: look.floors.slice(), floorMask: lv.floorMask, ceil: look.ceil, sky: look.sky ? lv.sky : null,
         secretWall: look.wall, fog: look.fog.slice(), ambient, map: lv.map, depth, seed, rooms: lv.rooms, roomMask: lv.roomMask, theme: 'maze', maze: true,
-        boulders: [], beams: [],
+        boulders: [], beams: [], saws: [], winds: [], teleports: [], belts: [], arenas: [], shifts: [], carts: [], starports: [], sluices: [], streams: [],
       };
       level.features = features(level.map, level.beams);
       if (!validate(level).length) return level;
@@ -3773,6 +9517,45 @@
     if (foes.length < 8) return null;
     // gravkammarens labyrint: hieroglyfer runt rummen
     if (bid === 'tomb') for (const r of rms) for (let y = r.y - 1; y <= r.y + r.h; y++) for (let x = r.x - 1; x <= r.x + r.w; x++) if (G.inb(x, y) && g[y][x] === 'È') g[y][x] = 'Ì';
+    // kristallabyrinten: lysande ådror runt rummen; sjunkna labyrinten: korall runt rummen (version 8)
+    if (bid === 'crystal' || bid === 'sunken') for (const r of rms) for (let y = r.y - 1; y <= r.y + r.h; y++) for (let x = r.x - 1; x <= r.x + r.w; x++)
+      if (G.inb(x, y) && g[y][x] === wc && (x + y) % 3 === 0) g[y][x] = bid === 'crystal' ? 'Ć' : 'Č';
+    // urverkslabyrinten: kuggväggar runt rummen; molnlabyrinten: stormmur runt rummen (version 9)
+    if (bid === 'clock' || bid === 'sky') for (const r of rms) for (let y = r.y - 1; y <= r.y + r.h; y++) for (let x = r.x - 1; x <= r.x + r.w; x++)
+      if (G.inb(x, y) && g[y][x] === wc && (x + y) % 3 === 0) g[y][x] = bid === 'clock' ? 'ĺ' : 'Ľ';
+    // myceltrasslet: glödande svamphattar runt rummen; spegellabyrinten: spegelväggar runt rummen (version 11)
+    if (bid === 'fungus' || bid === 'mirror') for (const r of rms) for (let y = r.y - 1; y <= r.y + r.h; y++) for (let x = r.x - 1; x <= r.x + r.w; x++)
+      if (G.inb(x, y) && g[y][x] === wc && (x + y) % 3 === 0) g[y][x] = bid === 'fungus' ? 'Ş' : 'š';
+    // hyllabyrinten: bokhyllor runt rummen; gjuterilabyrinten: smältugnar runt rummen (version 13)
+    if (bid === 'library' || bid === 'foundry') for (const r of rms) for (let y = r.y - 1; y <= r.y + r.h; y++) for (let x = r.x - 1; x <= r.x + r.w; x++)
+      if (G.inb(x, y) && g[y][x] === wc && (x + y) % 3 === 0) g[y][x] = bid === 'library' ? 'ũ' : 'Ŷ';
+    // katedralens irrgång: blyinfattade fönster runt rummen; vaxlabyrinten: honungskakor; häcklabyrinten: trädgårdsmur (version 15/16)
+    if (bid === 'cathedral' || bid === 'hive' || bid === 'garden') for (const r of rms) for (let y = r.y - 1; y <= r.y + r.h; y++) for (let x = r.x - 1; x <= r.x + r.w; x++)
+      if (G.inb(x, y) && g[y][x] === wc && (bid === 'garden' || (x + y) % 3 === 0)) g[y][x] = bid === 'cathedral' ? 'Ƌ' : bid === 'hive' ? 'Ɣ' : 'Ơ';
+    // laboratoriets glasgångar: hyllor med burkar runt rummen (version 17)
+    if (bid === 'lab') for (const r of rms) for (let y = r.y - 1; y <= r.y + r.h; y++) for (let x = r.x - 1; x <= r.x + r.w; x++)
+      if (G.inb(x, y) && g[y][x] === wc && (x + y) % 3 === 0) g[y][x] = JARS17;
+    // version 18: burar runt rummen i irrtältet, ruinsten runt rummen i djungeln
+    if (bid === 'circus' || bid === 'jungle') for (const r of rms) for (let y = r.y - 1; y <= r.y + r.h; y++) for (let x = r.x - 1; x <= r.x + r.w; x++)
+      if (G.inb(x, y) && g[y][x] === wc && (bid === 'jungle' || (x + y) % 3 === 0)) g[y][x] = bid === 'circus' ? CAGE18 : JSTONE18;
+    // version 19: malmådror runt rummen i stollarnas irrgång, stjärnkartor runt rummen i mässingsgångarna
+    if (bid === 'mine' || bid === 'observatory') for (const r of rms) for (let y = r.y - 1; y <= r.y + r.h; y++) for (let x = r.x - 1; x <= r.x + r.w; x++)
+      if (G.inb(x, y) && g[y][x] === wc && (x + y) % 3 === 0) g[y][x] = bid === 'mine' ? ORE19 : CHART19;
+    // version 20: rör runt rummen i kloakernas irrgång, klippor runt rummen i ruinstadens labyrint
+    // version 21: cellgaller runt rummen i fängelsets irrgång, kajsten runt rummen i kajernas labyrint
+    // version 22: pelare runt rummen i badhusets irrgång, benmurar runt rummen i skärseldens labyrint
+    // version 23: kylrumsväggar runt rummen i slakteriets irrgång, jordvallar runt rummen i skyttegravarnas labyrint
+    // version 30: tegelmurar runt rummen i ruinstadens gränder, hyllpaneler runt rummen i glasbrukets irrgång
+    if (bid === 'ruins' || bid === 'glassworks') for (const r of rms) for (let y = r.y - 1; y <= r.y + r.h; y++) for (let x = r.x - 1; x <= r.x + r.w; x++)
+      if (G.inb(x, y) && g[y][x] === wc && (x + y) % 3 === 0) g[y][x] = bid === 'ruins' ? RBRICK30 : SHELF30;
+    if (bid === 'abattoir' || bid === 'battlefield') for (const r of rms) for (let y = r.y - 1; y <= r.y + r.h; y++) for (let x = r.x - 1; x <= r.x + r.w; x++)
+      if (G.inb(x, y) && g[y][x] === wc && (x + y) % 3 === 0) g[y][x] = bid === 'abattoir' ? COLD23 : EARTH23;
+    if (bid === 'bathhouse' || bid === 'purgatory') for (const r of rms) for (let y = r.y - 1; y <= r.y + r.h; y++) for (let x = r.x - 1; x <= r.x + r.w; x++)
+      if (G.inb(x, y) && g[y][x] === wc && (x + y) % 3 === 0) g[y][x] = bid === 'bathhouse' ? COLUMN22 : BONE22;
+    if (bid === 'prison' || bid === 'harbor') for (const r of rms) for (let y = r.y - 1; y <= r.y + r.h; y++) for (let x = r.x - 1; x <= r.x + r.w; x++)
+      if (G.inb(x, y) && g[y][x] === wc && (x + y) % 3 === 0) g[y][x] = bid === 'prison' ? CELLS21 : QUAY21;
+    if (bid === 'sewer' || bid === 'desert') for (const r of rms) for (let y = r.y - 1; y <= r.y + r.h; y++) for (let x = r.x - 1; x <= r.x + r.w; x++)
+      if (G.inb(x, y) && g[y][x] === wc && (x + y) % 3 === 0) g[y][x] = bid === 'sewer' ? PIPES20 : MESA20;
     const mask = new Array(N);
     for (let i = 0; i < N; i++) mask[i] = rid[i] < 0 ? '-' : String.fromCharCode(48 + rid[i]);
     const sky = new Array(N).fill('1');
@@ -3782,9 +9565,1026 @@
     };
   }
 
+  // ---------- Version 24: bandesign ----------
+  // En pass ovanpå den färdiga, validerade banan (Gen.floor), med eget slumpflöde RNG(seed).fork('v24'). Grundlayouten är exakt densamma;
+  // opts.v24off (och alla äldre vNNoff) stänger av passet helt (inga nya fält). Varje del valideras för sig och tas bort igen om banan underkänns.
+  const V24_OFFS = ['v7off', 'v8off', 'v9off', 'v10off', 'v11off', 'v13off', 'v14off', 'v15off', 'v16off', 'v17off', 'v18off', 'v19off', 'v20off', 'v21off', 'v22off', 'v23off', 'v24off'];
+  const V24_FIELDS = ['shortcuts', 'ambushes', 'landmarks', 'breadcrumbs', 'secretHints', 'cover', 'pacing'];
+  const V24_AMB_DENY = 'EQZB+ÖÓÞōʐʒÑÐÎÔĀĂ'; // aldrig i ett bakhåll: eliter, vilande, vattenbundna, formationer och de unika
+  const V24_BEATS = ['hard', 'reward'];
+  function floor(seed, depth, opts) {
+    const level = floor23(seed, depth, opts);
+    if (opts && V24_OFFS.some(k => opts[k])) return level;
+    // först allt på en gång och en enda validering; underkänns banan görs passet om (samma slumpflöde) med validering efter varje steg
+    const map0 = level.map, feat0 = level.features;
+    content24(level, RNG(seed).fork('v24'), false);
+    if (validate(level).length) { level.map = map0; level.features = feat0; content24(level, RNG(seed).fork('v24'), true); }
+    return level;
+  }
+  function content24(L, rng, careful) {
+    const H = L.map.length, W = L.map[0].length, N = W * H, g = L.map.map(r => r.split(''));
+    const rooms = L.rooms || [], rm = Array.isArray(L.roomMask) && L.roomMask.length === H ? L.roomMask : null;
+    for (const k of V24_FIELDS) L[k] = [];
+    let P = null; const X = [];
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { if (g[y][x] === 'P') P = [x, y]; else if (g[y][x] === 'x') X.push([x, y]); }
+    if (!P || L.arena || L.maze || L.secret) return;
+    const inb = (x, y) => x >= 0 && y >= 0 && x < W && y < H;
+    const roomOf = (x, y) => (rm && rm[y][x] !== '-' ? rm[y].charCodeAt(x) - 48 : -1);
+    // väggtecknet: det vanligaste väggtecknet och det hemliga väggtecknet (dörrar och nischer bara i "vanlig" vägg)
+    const wc = {}; for (const row of g) for (const c of row) if (isWall(c)) wc[c] = (wc[c] || 0) + 1;
+    const plain = new Set([Object.keys(wc).sort((a, b) => wc[b] - wc[a])[0], String(L.secretWall)]);
+    const plainW = c => plain.has(c) && isWall(c);
+    // spärrade rutor: valv, hemliga rum, vaktarens sal, arenor (med ring), och allt som andra listor pekar på
+    const ban = new Uint8Array(N);
+    const banRect = (x0, y0, x1, y1, m) => { for (let y = y0 - m; y <= y1 + m; y++) for (let x = x0 - m; x <= x1 + m; x++) if (inb(x, y)) ban[y * W + x] = 1; };
+    rooms.forEach(r => { if (['vault', 'secret', 'guardian', 'shop'].includes(r.type)) banRect(r.x, r.y, r.x + r.w - 1, r.y + r.h - 1, 2); });
+    for (const a of L.arenas || []) banRect(a.x0, a.y0, a.x1, a.y1, 2);
+    const pts = o => { if (!o || typeof o !== 'object') return; for (const [kx, ky] of [['x', 'y'], ['tx', 'ty'], ['sx', 'sy']]) if (Number.isInteger(o[kx]) && Number.isInteger(o[ky])) banRect(o[kx], o[ky], o[kx], o[ky], 2); for (const k of ['a', 'b']) if (o[k] && typeof o[k] === 'object') pts(o[k]); if (Array.isArray(o.cells)) o.cells.forEach(pts); };
+    for (const k of ['boulders', 'beams', 'saws', 'winds', 'teleports', 'belts', 'shifts', 'carts', 'starports', 'sluices', 'streams']) if (Array.isArray(L[k])) L[k].forEach(pts);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if ('Zx'.includes(g[y][x])) banRect(x, y, x, y, 2);
+    // avstånd från P med grindarna/låsen stängda och hemliga väggar som vägg (stängda enkelriktade dörrar räknas som vägg)
+    const closedOW = new Set();
+    const bfs = (sx, sy, thru) => { // (thru: hemliga väggar räknas som gångbara)
+      const d = new Int32Array(N).fill(-1), q = [sy * W + sx]; d[q[0]] = 0;
+      for (let h = 0; h < q.length; h++) {
+        const c = q[h], x = c % W, y = (c / W) | 0;
+        for (let k = 0; k < 4; k++) {
+          const nx = x + DX[k], ny = y + DY[k]; if (!inb(nx, ny)) continue;
+          const n = ny * W + nx, ch = g[ny][nx];
+          if (d[n] >= 0 || isBlock(ch) || (ch === '*' && !thru) || closedOW.has(n)) continue;
+          d[n] = d[c] + 1; q.push(n);
+        }
+      }
+      return d;
+    };
+    let dist = bfs(P[0], P[1]);
+    const distTo = (d, list) => list.reduce((m, [x, y]) => Math.min(m, d[y * W + x] < 0 ? 1e9 : d[y * W + x]), 1e9);
+    const Zs = []; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (g[y][x] === 'Z') Zs.push([x, y]);
+    const px0 = distTo(dist, X), pz0 = Zs.length ? distTo(dist, Zs) : 0, px0s = distTo(bfs(P[0], P[1], true), X);
+    const nearCh = (x, y, r, test) => { for (let yy = y - r; yy <= y + r; yy++) for (let xx = x - r; xx <= x + r; xx++) if (inb(xx, yy) && test(g[yy][xx])) return true; return false; };
+    // ett steg: ändringarna görs, banan valideras och allt tas bort igen om den underkänns
+    const step = fn => {
+      const undo = [], lens = V24_FIELDS.map(k => L[k].length), set = (x, y, c) => { undo.push([x, y, g[y][x]]); g[y][x] = c; };
+      fn(set);
+      if (!undo.length || !careful) return true;
+      L.map = g.map(r => r.join(''));
+      const errs = validate(L);
+      if (!errs.length) return true;
+      const st = floor.stats.v24 = floor.stats.v24 || { rejected: 0, last: '' }; st.rejected++; st.last = errs[0];
+      for (let k = undo.length - 1; k >= 0; k--) { const [x, y, c] = undo[k]; g[y][x] = c; }
+      V24_FIELDS.forEach((k, i) => { L[k].length = lens[i]; });
+      L.map = g.map(r => r.join(''));
+      return false;
+    };
+    const doorish = c => isDoorCh(c) || c === 'P' || c === 'x';
+    const odd = c => !isWall(c) && c !== '.' && !ENEMY_CHARS.includes(c) && !'ah$'.includes(c); // (rekvisita, fällor, föremål: aldrig intill en ny dörr)
+    // 1) genvägar: en dörr i en tunn vägg mellan två rutor som ligger nära på kartan men långt isär längs vägen. En del är enkelriktade:
+    //    låsta från den sida man når först och öppnas från den bortre sidan (sx, sy), så att banan slingrar tillbaka
+    if (g.some(r => r.includes('D')) && rng.chance(0.95) && !step(set => {
+      const nMax = N > 2200 ? 3 : 2, cand = [], minGap = Math.max(7, Math.round(0.12 * Math.min(px0, 200))); // (genvägen sparar minst så många steg)
+      for (let y = 2; y < H - 2; y++) for (let x = 2; x < W - 2; x++) {
+        if (!plainW(g[y][x]) || ban[y * W + x]) continue;
+        for (const [ax, ay] of [[1, 0], [0, 1]]) for (const th of [1, 2, 3]) { // väggen är 1-3 rutor tjock (rutorna efter dörren blir golv)
+          const a = [x - ax, y - ay], b = [x + th * ax, y + th * ay], ws = [];
+          for (let k = 1; k < th; k++) ws.push([x + k * ax, y + k * ay]);
+          if (!inb(b[0], b[1]) || g[a[1]][a[0]] !== '.' || g[b[1]][b[0]] !== '.' || !isWall(g[y - ax][x - ay]) || !isWall(g[y + ax][x + ay])) continue;
+          const da = dist[a[1] * W + a[0]], db = dist[b[1] * W + b[0]];
+          if (da < 0 || db < 0 || Math.abs(da - db) - th < minGap) continue; // (billigast först)
+          if (ws.some(([wx, wy]) => !plainW(g[wy][wx]) || ban[wy * W + wx] || !isWall(g[wy - ax][wx - ay]) || !isWall(g[wy + ax][wx + ay]) || nearCh(wx, wy, 1, odd) || nearCh(wx, wy, 1, doorish))) continue;
+          if (nearCh(x, y, 1, doorish) || nearCh(x, y, 1, odd)) continue;
+          cand.push({ x, y, a, b, ws, gap: Math.abs(da - db) - th });
+        }
+      }
+      const chosen = [];
+      for (let n = 0; n < nMax && cand.length; n++) {
+        const pool = cand.filter(c => chosen.every(o => cheb(o.x, o.y, c.x, c.y) >= 7)).sort((p, q) => q.gap - p.gap).slice(0, 6);
+        if (!pool.length) break;
+        const c = rng.weighted(pool, o => o.gap), da = dist[c.a[1] * W + c.a[0]], db = dist[c.b[1] * W + c.b[0]];
+        const sb = c.ws.length ? c.ws[0] : c.b, far = da > db ? c.a : sb, near = far === c.a ? sb : c.a; // (rutorna intill dörren på var sin sida)
+        set(c.x, c.y, 'D'); for (const [wx, wy] of c.ws) set(wx, wy, '.'); chosen.push(c);
+        let oneway = rng.chance(0.5);
+        if (!oneway) { // en dubbelriktad genväg får inte korta vägen till utgången/vaktaren för mycket
+          // (och utgången ska ligga minst 0,8 kartbredder bort även genom hemliga väggar)
+          const d2 = bfs(P[0], P[1]), pxs = distTo(bfs(P[0], P[1], true), X);
+          if (distTo(d2, X) < 0.75 * px0 || pxs < Math.max(0.75 * px0s, 0.8 * Math.max(W, H) + 2) || (Zs.length && distTo(d2, Zs) < 0.75 * pz0)) oneway = true; else dist = d2;
+        }
+        if (oneway) closedOW.add(c.y * W + c.x);
+        L.shortcuts.push({ x: c.x, y: c.y, oneway, sx: far[0], sy: far[1], nx: near[0], ny: near[1], gap: c.gap, carved: c.ws.map(([wx, wy]) => ({ x: wx, y: wy })) });
+        for (let i = cand.length - 1; i >= 0; i--) if (cand[i] === c) cand.splice(i, 1);
+      }
+      // de enkelriktade dörrarna vänds efter de slutliga avstånden (en senare dubbelriktad genväg kan ha gjort den bortre sidan närmare)
+      if (chosen.length) {
+        dist = bfs(P[0], P[1]);
+        for (const s of L.shortcuts) {
+          if (!s.oneway) continue;
+          const ds = dist[s.sy * W + s.sx], dn = dist[s.ny * W + s.nx];
+          if (ds < dn) [s.sx, s.sy, s.nx, s.ny] = [s.nx, s.ny, s.sx, s.sy];
+        }
+      }
+    })) { closedOW.clear(); dist = bfs(P[0], P[1]); } // (underkändes genvägarna gäller avstånden utan dem)
+    // 2) bakhåll: när man tar nyckeln (eller öppnar kistan i ett skattrum) öppnas en dold nisch i väggen med 2-4 fiender (de skapas först då).
+    //    Nischen står kvar som vägg på kartan; level.ambushes = [{ trigger: { x, y, kind }, from: { x, y }, cells: [{ x, y }], enemies: [{ ch, x, y }] }]
+    {
+      const cnt = {}; for (const row of g) for (const c of row) if (ENEMY_CHARS.includes(c) && !V24_AMB_DENY.includes(c)) cnt[c] = (cnt[c] || 0) + 1;
+      const basic = Object.keys(cnt).filter(c => cnt[c] >= 2 && 'SKVILNORW'.includes(c)), common = Object.keys(cnt).filter(c => cnt[c] >= 2);
+      const types = basic.length ? basic : common;
+      const trig = [];
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const c = g[y][x];
+        if (c === '}' && dist[y * W + x] >= 0) trig.push({ x, y, kind: 'key', p: 0.8 });
+        else if (c === 'C' && dist[y * W + x] >= 0 && roomOf(x, y) >= 0 && rooms[roomOf(x, y)].type === 'treasure') trig.push({ x, y, kind: 'chest', p: 0.4 });
+      }
+      // nischen är sluten: runt varje ruta bara vägg (eller nischen), utom rummet framför öppningen (f och dess två grannar längs väggen)
+      const sealed = (cells, f) => {
+        const set = new Set(cells.map(([x, y]) => y * W + x));
+        for (const [x, y] of cells) for (let k = 0; k < 8; k++) {
+          const nx = x + RX[k], ny = y + RY[k];
+          if (set.has(ny * W + nx) || Math.abs(nx - f[0]) + Math.abs(ny - f[1]) <= 1) continue;
+          if (!inb(nx, ny) || !isWall(g[ny][nx])) return false;
+        }
+        return true;
+      };
+      for (const t of trig.slice(0, 2)) {
+        if (!types.length || L.ambushes.length >= 2 || !rng.chance(t.p)) continue;
+        const tr = roomOf(t.x, t.y), opts = [];
+        for (let y = t.y - 5; y <= t.y + 5; y++) for (let x = t.x - 5; x <= t.x + 5; x++) {
+          if (!inb(x, y) || g[y][x] !== '.' || dist[y * W + x] < 0 || roomOf(x, y) !== tr || cheb(x, y, P[0], P[1]) < 6 || (x === t.x && y === t.y)) continue;
+          for (let k = 0; k < 4; k++) {
+            const dx = DX[k], dy = DY[k], o = [x + dx, y + dy], n1 = [x + 2 * dx, y + 2 * dy], n2 = [x + 3 * dx, y + 3 * dy];
+            const line = [o, n1, n2];
+            if (!line.every(([cx, cy]) => cx >= 1 && cy >= 1 && cx < W - 1 && cy < H - 1 && plainW(g[cy][cx]) && !ban[cy * W + cx])) continue;
+            if (nearCh(o[0], o[1], 2, doorish)) continue;
+            // gärna en bredare nisch (2x2 bakom öppningen)
+            const wide = [[1, -1], [-1, 1]].map(([s]) => [[n1[0] + s * dy, n1[1] + s * dx], [n2[0] + s * dy, n2[1] + s * dx]]).find(ex => ex.every(([cx, cy]) => cx >= 1 && cy >= 1 && cx < W - 1 && cy < H - 1 && plainW(g[cy][cx]) && !ban[cy * W + cx]) && sealed(line.concat(ex), [x, y]));
+            const cells = wide ? line.concat(wide) : line;
+            if (!wide && !sealed(cells, [x, y])) continue;
+            opts.push({ f: [x, y], cells, wide: !!wide, d: cheb(x, y, t.x, t.y) });
+          }
+        }
+        if (!opts.length) continue;
+        const best = opts.filter(o => o.wide).length ? opts.filter(o => o.wide) : opts, pick = rng.pick(best);
+        const spots = pick.cells.slice(1), nE = Math.min(spots.length, Math.max(2, Math.min(4, rng.int(2, 2 + Math.floor((L.depth || 1) / 2)))));
+        const enemies = rng.shuffle(spots.slice()).slice(0, nE).map(([x, y]) => ({ ch: rng.pick(types), x, y }));
+        L.ambushes.push({ trigger: { x: t.x, y: t.y, kind: t.kind }, from: { x: pick.f[0], y: pick.f[1] }, cells: pick.cells.map(([x, y]) => ({ x, y })), enemies });
+        for (const [x, y] of pick.cells) ban[y * W + x] = 1;
+      }
+    }
+    // 3) landmärke: en staty i mitten av en central sal, omgiven av fyra eldfat (eller glödkristaller/kandelabrar) – syns och lyser långt
+    if (rng.chance(0.75)) step(set => {
+      // (i första hand fyra blockerande ljus två rutor ut; annars, i mindre eller möblerade salar, fyra kandelabrar c alldeles intill)
+      // ljuset: det vanligaste fristående ljuset som redan finns utanför vaktarens sal (biomerna har egna regler: glödkristaller i
+      // kristallgrottorna, glödsvampar i svampriket, ljuskronor i biblioteket ...)
+      const gi = rooms.findIndex(r => r.type === 'guardian'), lcnt = {};
+      for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
+        const c = g[y][x];
+        if ('fcĘŦűiF'.includes(c) && (gi < 0 || roomOf(x, y) !== gi) && [0, 1, 2, 3].some(k => !isBlock(g[y + DY[k]][x + DX[k]]))) lcnt[c] = (lcnt[c] || 0) + 1;
+      }
+      const lights = Object.keys(lcnt).sort((a, b) => lcnt[b] - lcnt[a] || (a < b ? -1 : 1));
+      for (const [R, lc, mn] of [[2, lights[0], 6], [1, lights.find(c => !isBlock(c)), 5]]) {
+        if (!lc) continue;
+        const ok = [];
+        rooms.forEach((r, i) => {
+          if (!['normal', 'elite', 'special', 'treasure'].includes(r.type) || r.w < mn || r.h < mn) return;
+          for (const [ox, oy] of [[0, 0], [-1, 0], [0, -1], [-1, -1], [1, 0], [0, 1]]) { // mitten, annars en ruta bredvid
+            const cx = r.x + (r.w >> 1) + ox, cy = r.y + (r.h >> 1) + oy;
+            if (!inb(cx, cy) || ban[cy * W + cx] || dist[cy * W + cx] < 0 || nearCh(cx, cy, R + 1, doorish)) continue;
+            let bad = false;
+            for (let y = cy - R; y <= cy + R; y++) for (let x = cx - R; x <= cx + R; x++) if (!inb(x, y) || isBlock(g[y][x]) || isDoorCh(g[y][x]) || roomOf(x, y) !== i) bad = true;
+            if (bad || [[0, 0], [-R, -R], [R, -R], [-R, R], [R, R]].some(([ax, ay]) => g[cy + ay][cx + ax] !== '.')) continue;
+            ok.push({ i, cx, cy, s: Math.hypot(cx - W / 2, cy - H / 2) - 0.5 * Math.min(r.w, r.h) });
+            break;
+          }
+        });
+        if (!ok.length) continue;
+        const b = ok.sort((p, q) => p.s - q.s)[0];
+        set(b.cx, b.cy, 'u'); for (const [ax, ay] of [[-R, -R], [R, -R], [-R, R], [R, R]]) set(b.cx + ax, b.cy + ay, lc);
+        L.landmarks.push({ x: b.cx, y: b.cy, kind: 'statue', light: lc, r: R, room: b.i });
+        break;
+      }
+    });
+    // 4) brödsmulor: ammo (och ibland hälsa) var sjunde-åttonde ruta i gångarna längs vägen från P mot nyckeln (eller utgången)
+    if (rng.chance(0.7)) step(set => {
+      const keyC = []; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (g[y][x] === '}' && dist[y * W + x] >= 0) keyC.push([x, y]);
+      const T = keyC.length ? keyC[0] : X.find(([x, y]) => dist[y * W + x] >= 0);
+      if (!T) return;
+      const back = bfs(T[0], T[1]), path = [];
+      let cur = P[1] * W + P[0];
+      if (back[cur] < 20) return;
+      while (back[cur] > 0) { const x = cur % W, y = (cur / W) | 0; path.push([x, y]); let nx2 = -1; for (let k = 0; k < 4; k++) { const n = (y + DY[k]) * W + x + DX[k]; if (inb(x + DX[k], y + DY[k]) && back[n] === back[cur] - 1) { nx2 = n; break; } } if (nx2 < 0) break; cur = nx2; }
+      let last = -99;
+      for (let i = 6; i < path.length - 3 && L.breadcrumbs.length < 4; i++) {
+        const [x, y] = path[i];
+        if (i - last < 7 || g[y][x] !== '.' || (rm && rm[y][x] !== '-' && path.length > 40) || nearCh(x, y, 1, doorish) || cheb(x, y, P[0], P[1]) < 5 || ban[y * W + x]) continue;
+        // (brödsmulorna ligger inte på kartan: spelet lägger ut dem, så att spelets slumpflöde för våningen inte förskjuts av nya ammolådor)
+        const ch = rng.chance(0.3) ? 'h' : 'a'; L.breadcrumbs.push({ x, y, ch }); ban[y * W + x] = 1; last = i;
+      }
+    });
+    // 5) skydd och takt: kistor/lådor T som skydd i stridsrum med minst tre fiender och inget skydd, och en belöning (hälsa, ammo) i det
+    //    första lugna rummet efter en svår sal (elitrum eller arena)
+    step(set => {
+      const foes = rooms.map(() => 0), blocks = rooms.map(() => 0);
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const i = roomOf(x, y); if (i < 0) continue; const c = g[y][x]; if (ENEMY_CHARS.includes(c) || c === 'Z') foes[i]++; else if (isBlock(c)) blocks[i]++; }
+      const inArena = r => (L.arenas || []).some(a => r.x <= a.x1 && r.x + r.w - 1 >= a.x0 && r.y <= a.y1 && r.y + r.h - 1 >= a.y0);
+      let crates = 0;
+      rooms.forEach((r, i) => {
+        if (crates >= 3 || !['normal', 'elite'].includes(r.type) || foes[i] < 3 || blocks[i] >= 4 || r.w * r.h < 24 || inArena(r)) return;
+        const spots = [];
+        for (let y = r.y + 1; y < r.y + r.h - 1; y++) for (let x = r.x + 1; x < r.x + r.w - 1; x++) {
+          if (g[y][x] !== '.' || ban[y * W + x] || nearCh(x, y, 1, c => c !== '.' && !ENEMY_CHARS.includes(c)) || nearCh(x, y, 2, doorish)) continue;
+          if (!nearCh(x, y, 2, c => ENEMY_CHARS.includes(c)) || nearCh(x, y, 0, c => c !== '.')) continue;
+          let adjFoe = false; for (let k = 0; k < 8; k++) if (ENEMY_CHARS.includes(g[y + RY[k]][x + RX[k]])) adjFoe = true;
+          if (!adjFoe) spots.push([x, y]);
+        }
+        const n = Math.min(2, spots.length);
+        for (let k = 0; k < n; k++) {
+          const s = rng.pick(spots.filter(([x, y]) => g[y][x] === '.' && !nearCh(x, y, 1, c => c === 'T')));
+          if (!s) break;
+          set(s[0], s[1], 'T'); L.cover.push({ x: s[0], y: s[1] }); crates++;
+        }
+      });
+      // belöningar efter svåra salar
+      const ctr = r => [r.x + (r.w >> 1), r.y + (r.h >> 1)], dOf = r => { const [x, y] = ctr(r); return dist[y * W + x]; };
+      const hard = rooms.map((r, i) => i).filter(i => (rooms[i].type === 'elite' || inArena(rooms[i])) && dOf(rooms[i]) >= 0);
+      const used = new Set();
+      for (const hi of hard.slice(0, 2)) {
+        const dh = dOf(rooms[hi]), calm = rooms.map((r, i) => i).filter(i => i !== hi && !used.has(i) && ['normal', 'special', 'treasure', 'exit'].includes(rooms[i].type) && foes[i] === 0 && !inArena(rooms[i]) && dOf(rooms[i]) > dh);
+        if (!calm.length) continue;
+        const ri = calm.sort((p, q) => dOf(rooms[p]) - dOf(rooms[q]))[0], r = rooms[ri], free = [];
+        for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) if (g[y][x] === '.' && !ban[y * W + x] && !nearCh(x, y, 1, doorish) && dist[y * W + x] >= 0) free.push([x, y]);
+        if (!free.length) continue;
+        const s = rng.pick(free); set(s[0], s[1], 'h'); used.add(ri);
+        L.pacing.push({ room: hi, beat: 'hard' }, { room: ri, beat: 'reward', x: s[0], y: s[1] });
+      }
+    });
+    // 6) hemligheter med ledtrådar: rutan framför varje hemlig vägg * (spelet låter damm sila och ett svagt ljus sippra ut där)
+    for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
+      if (g[y][x] !== '*') continue;
+      for (let k = 0; k < 4; k++) { const fx = x + DX[k], fy = y + DY[k]; if (dist[fy * W + fx] >= 0 && !isBlock(g[fy][fx])) { L.secretHints.push({ x, y, fx, fy }); break; } }
+    }
+    L.map = g.map(r => r.join(''));
+    if (careful && validate(L).length) { L.ambushes = []; L.secretHints = []; L.breadcrumbs = []; } // (de ändrar inte kartan; underkänns de tas de bort)
+    L.features = features(L.map, L.beams, L.arenas, L.rooms);
+  }
+
+  // ---------- Version 27: fler banor (planritningar, scener och handgjorda rumsmallar) ----------
+  // Ett pass ovanpå Gen.floor från version 24 med eget slumpflöde RNG(seed).fork('v27'). opts.v27off (och alla äldre vNNoff) stänger av det helt:
+  // då är banan exakt som i version 26. opts.v27 = { plan, scenes: [id, ...], noScenes } tvingar fram en planritning/scener (tester, förhandsvisning).
+  const V27_OFFS = V24_OFFS.concat(['v27off']);
+  const V27_PLANS = ['ring', 'cross', 'gauntlet', 'court'];
+  const V27_PLAN_P = 0.24; // andel vanliga våningar (i biomerna som byggs av build) som får en planritning
+  const V27_PLAN_BIOMES = ['dungeon', 'frost', 'volcano', 'tomb', 'sunken', 'clock', 'sky', 'mirror', 'library', 'foundry', 'hive', 'garden', 'dream', 'ship', 'lab',
+    'circus', 'jungle', 'mine', 'observatory', 'sewer', 'desert', 'prison', 'harbor', 'bathhouse', 'purgatory', 'abattoir', 'battlefield', 'ruins', 'glassworks']; // (inte katedralen: långhuset)
+  const V27_NAMES = { ring: 'RINGBORGEN', cross: 'KORSFÄSTNINGEN', gauntlet: 'STORMLÖPET', court: 'BORGGÅRDEN' };
+  // handgjorda rumsmallar: # vägg (rummets väggtecken), . fri gång (får inte blockeras), ? vad som helst, övrigt rekvisita (stämplas på tomt golv)
+  const V27_PREFABS = {
+    altarring: ['c.u.c', '.....', 'u.J.u', '.....', 'c.u.c'],
+    guardpost: ['#T.T#', '.....', '#H.H#'],
+    readingnook: ['qq.qq', '.....', '..J..', '.....'],
+    cryptrow: ['k.k.k', '.....', 'k.k.k'],
+    armory: ['H.H.H', '.....', 'T...T'],
+    feast: ['.c.c.', 'JJ.JJ', '.c.c.'],
+    bonepit: ['j.j', '.j.', 'j.j'],
+    colonnade: ['u.u.u.u', '.......', 'u.u.u.u'],
+    shrine: ['c.c', '.u.', 'c.c'],
+    fourpillars: ['#..#', '....', '....', '#..#'],
+    barricade: ['TT.TT', '.....', '.T.T.'],
+    statuehall: ['u...u', '..c..', 'u...u'],
+    storage: ['TT.', 'T..', '...'],
+    ossuary: ['k.j.k', '.....', 'j.c.j'],
+    candlewalk: ['c...c', '.....', 'c...c', '.....', 'c...c'],
+    wallcorner: ['##.', '#..', '...'],
+  };
+  const V27_PREFAB_IDS = Object.keys(V27_PREFABS);
+  const V27_SCENES = ['pillarhall', 'cloister', 'stacks', 'throne', 'lavabridge'].concat(V27_PREFAB_IDS.map(id => 'prefab:' + id));
+  const V27_PROPS = 'uTcjJHkq';
+  const V27_SCENE_ROOMS = ['normal', 'elite', 'treasure', 'exit'], V27_ROOMTYPES = V27_SCENE_ROOMS.concat(['start', 'special', 'shrine']); // (rumsmallarna även i start-, special- och helgedomsrum) // allt som version 27 får lägga ut utöver väggar (vanlig rekvisita som finns i alla biomer)
+
+  // planritningar: build() anropar plan27 när opts.plan27 = { kind } är satt. Rummen byts mot planens rum om allt får plats (P27.ok = true),
+  // annars står de slumpade rummen kvar. Rum 0 är alltid vaktarens sal (minst 9x9), alla rum har 3 rutors mellanrum (korridorerna).
+  function plan27(R, P27, rooms, mk, W, H, depth, frost, cath, gapOK) {
+    P27.ok = false; P27.hub = -1; P27.edges = []; P27.calls = (P27.calls || 0) + 1;
+    if (cath || P27.calls > 6) return; // (högst sex byggförsök med planritningen: sedan byggs våningen som vanligt och kastas)
+    const split = (L, spec) => { // längden L (från ruta 2) i delar med 3 rutors mellanrum: minsta längd + resten efter vikt
+      const free = L - 3 * (spec.length - 1), min = spec.reduce((a, s) => a + s[0], 0), tw = spec.reduce((a, s) => a + s[1], 0);
+      if (min > free) return null;
+      let rest = free - min, pos = 2; const out = [];
+      spec.forEach((s, i) => { const add = i === spec.length - 1 ? rest : Math.floor((free - min) * s[1] / (tw || 1)); rest -= add; out.push([pos, s[0] + add]); pos += s[0] + add + 3; });
+      return out;
+    };
+    const A = W - 4, B = H - 4, rects = [], edges = [];
+    const lo = Math.min(12, 8 + Math.floor((depth - 1) * 1.25)), maxR = Math.min(14, lo + (frost ? 0 : 1)), need = Math.max(frost ? 6 : 7, lo - (frost ? 3 : 2)) + 1; // (lika många rum som en vanlig våning)
+    const add = (x, y, w, h, o) => { rects.push(Object.assign({ x, y, w, h }, o || {})); return rects.length - 1; };
+    const shrink = (c, r, mn) => { // cellen c x r, krympt slumpvis högst en ruta per sida
+      let [x, w] = c, [y, h] = r;
+      if (w > mn + 1 && R.chance(0.5)) { x++; w--; } if (w > mn && R.chance(0.5)) w--;
+      if (h > mn + 1 && R.chance(0.5)) { y++; h--; } if (h > mn && R.chance(0.5)) h--;
+      return [x, y, w, h];
+    };
+    const guard = (x0, w0, y0, h0) => { // vaktarens sal centrerad i ytan (9-11 rutor per sida)
+      const w = Math.min(11, w0), h = Math.min(11, h0);
+      if (w < 9 || h < 9) return false;
+      const x = x0 + R.int(0, w0 - w), y = y0 + R.int(0, h0 - h);
+      add(x, y, w, h, { type: 'guardian' }); return true;
+    };
+    const k = P27.kind;
+    if (k === 'ring') { // en ring av salar runt vaktarens sal i mitten, förbundna runt om
+      const n = W >= 38 && H >= 38 ? 4 : 3, spec = n === 3 ? [[5, 1], [9, 1.5], [5, 1]] : [[5, 1], [5, 1], [5, 1], [5, 1]];
+      const C = split(A, spec), Rw = split(B, spec);
+      if (!C || !Rw) return;
+      const bx = C[1][0], bw = C[n - 2][0] + C[n - 2][1] - bx, by = Rw[1][0], bh = Rw[n - 2][0] + Rw[n - 2][1] - by;
+      if (!guard(bx, bw, by, bh)) return;
+      const ring = [];
+      for (let i = 0; i < n; i++) ring.push([i, 0]);
+      for (let j = 1; j < n; j++) ring.push([n - 1, j]);
+      for (let i = n - 2; i >= 0; i--) ring.push([i, n - 1]);
+      for (let j = n - 2; j >= 1; j--) ring.push([0, j]);
+      // för många rum för djupet: två grannceller på samma sida slås ihop till en lång sal (ringen förblir sluten)
+      const cells = ring.map(([i, j]) => ({ i0: i, i1: i, j0: j, j1: j }));
+      for (let t = 0; t < 20 && 1 + cells.length > maxR; t++) {
+        const k = R.int(0, cells.length - 1), a = cells[k], b = cells[(k + 1) % cells.length];
+        if (!((a.j0 === a.j1 && b.j0 === b.j1 && a.j0 === b.j0) || (a.i0 === a.i1 && b.i0 === b.i1 && a.i0 === b.i0))) continue; // (samma rad eller kolumn)
+        cells.splice(k, 1, { i0: Math.min(a.i0, b.i0), i1: Math.max(a.i1, b.i1), j0: Math.min(a.j0, b.j0), j1: Math.max(a.j1, b.j1), long: true });
+        cells.splice((k + 1) % (cells.length), 1);
+      }
+      const span = (Q, a0, a1) => [Q[a0][0], Q[a1][0] + Q[a1][1] - Q[a0][0]];
+      const ids = cells.map(c => (c.long ? add(span(C, c.i0, c.i1)[0], span(Rw, c.j0, c.j1)[0], span(C, c.i0, c.i1)[1], span(Rw, c.j0, c.j1)[1]) : add(...shrink(C[c.i0], Rw[c.j0], 4))));
+      ids.forEach((id, i) => edges.push([id, ids[(i + 1) % ids.length]]));
+      const mids = ids.filter((id, i) => { const c = cells[i]; return c.long || (c.i0 > 0 && c.i0 < n - 1) || (c.j0 > 0 && c.j0 < n - 1); });
+      edges.push([R.pick(mids), 0]);
+    } else if (k === 'cross') { // korsformad fästning: mittgård, fyra flyglar, vaktarens torn i ett hörn och små torn i de andra
+      const C = split(A, [[9, 0], [7, 2], [5, 1]]), Rw = split(B, [[9, 0], [7, 2], [5, 1]]);
+      if (!C || !Rw) return;
+      if (!guard(C[0][0], C[0][1], Rw[0][0], Rw[0][1])) return;
+      const yard = add(C[1][0], Rw[1][0], C[1][1], Rw[1][1], { hub: true });
+      const wing = (c, r) => { // en flygel: en lång sal, eller två i rad om cellen är lång nog (den inre förbunden med gården, den yttre med den inre)
+        const [x, w] = c, [y, h] = r, cx = C[1][0] + C[1][1] / 2, cy = Rw[1][0] + Rw[1][1] / 2;
+        let out;
+        const split2 = rects.length + 4 < maxR - 3; // (fyra flyglar och tre torn ska få plats inom rumstaket)
+        if (!split2) out = [add(x, y, w, h)];
+        else if (h >= 11 && h >= w) { const h1 = (h - 3) >> 1; out = [add(x, y, w, h1), add(x, y + h1 + 3, w, h - h1 - 3)]; }
+        else if (w >= 11) { const w1 = (w - 3) >> 1; out = [add(x, y, w1, h), add(x + w1 + 3, y, w - w1 - 3, h)]; }
+        else out = [add(x, y, w, h)];
+        const dc = id => Math.abs(rects[id].x + rects[id].w / 2 - cx) + Math.abs(rects[id].y + rects[id].h / 2 - cy);
+        out.sort((a, b) => dc(a) - dc(b));
+        edges.push([yard, out[0]]); if (out[1] !== undefined) edges.push([out[0], out[1]]);
+        return out;
+      };
+      const N = wing(C[1], Rw[0]), Wg = wing(C[0], Rw[1]), E = wing(C[2], Rw[1]), S = wing(C[1], Rw[2]);
+      const tNE = add(...shrink(C[2], Rw[0], 4)), tSW = add(...shrink(C[0], Rw[2], 4)), tSE = add(...shrink(C[2], Rw[2], 4));
+      const last = a => a[a.length - 1];
+      edges.push([R.chance(0.5) ? last(N) : last(Wg), 0], [tNE, R.chance(0.5) ? last(N) : last(E)], [tSW, R.chance(0.5) ? last(Wg) : last(S)], [tSE, R.chance(0.5) ? last(E) : last(S)]);
+      P27.hub = yard;
+    } else if (k === 'gauntlet') { // stormlöpet: en lång slingrande kedja av salar fram till vaktarens sal
+      const nr = 3, n = [5, 4, 3].find(k => 3 * k - 1 <= maxR && 3 * k - 1 >= need && split(A, Array.from({ length: k }, () => [4, 1]))); // (lika många rum som en vanlig våning)
+      if (!n) return;
+      const C = split(A, Array.from({ length: n }, () => [4, 1])), Rw = split(B, [[9, 0]].concat(Array.from({ length: nr - 1 }, () => [4, 1])));
+      if (!C || !Rw) return;
+      const right = nr % 2 === 1; // (den översta raden går åt höger när antalet rader är udda: vaktarens sal i den änden)
+      if (!guard(right ? C[n - 2][0] : C[0][0], right ? C[n - 1][0] + C[n - 1][1] - C[n - 2][0] : C[1][0] + C[1][1] - C[0][0], Rw[0][0], Rw[0][1])) return;
+      const order = [];
+      for (let j = nr - 1, dir = 1; j >= 0; j--, dir = -dir) {
+        const row = Array.from({ length: j === 0 ? n - 2 : n }, (_, i) => (j === 0 && !right ? i + 2 : i));
+        if (dir < 0) row.reverse();
+        for (const i of row) order.push([i, j]);
+      }
+      const ids = order.map(([i, j]) => add(...shrink(C[i], Rw[j], 4)));
+      for (let i = 1; i < ids.length; i++) edges.push([ids[i - 1], ids[i]]);
+      edges.push([ids[ids.length - 1], 0]);
+    } else if (k === 'court') { // borggården: en stor öppen gård med vaktarens hall ovanför och byggnader runt om
+      const C = split(A, [[5, 1], [11, 3], [5, 1]]), Rw = split(B, [[9, 0], [7, 3], [5, 1]]);
+      if (!C || !Rw) return;
+      if (!guard(C[1][0], C[1][1], Rw[0][0], Rw[0][1])) return;
+      const yard = add(C[1][0], Rw[1][0], C[1][1], Rw[1][1], { hub: true });
+      edges.push([0, yard]);
+      const stack = (c, r, toward) => { // en byggnad i cellen, eller två om cellen är lång nog
+        const [x, w] = c, [y, h] = r, out = [];
+        left--;
+        if (rects.length + left + 2 > maxR) out.push(add(...shrink(c, r, 4)));
+        else if (h >= 11) { const h1 = (h - 3) >> 1; out.push(add(x, y, w, h1), add(x, y + h1 + 3, w, h - h1 - 3)); }
+        else if (w >= 11) { const w1 = (w - 3) >> 1; out.push(add(x, y, w1, h), add(x + w1 + 3, y, w - w1 - 3, h)); }
+        else out.push(add(...shrink(c, r, 4)));
+        for (const id of out) if (toward !== undefined) edges.push([id, toward]);
+        if (out.length === 2) edges.push([out[0], out[1]]);
+        return out;
+      };
+      let left = 7;
+      const L1 = stack(C[0], Rw[1], yard), R1 = stack(C[2], Rw[1], yard), S1 = stack(C[1], Rw[2], yard);
+      const nw = stack(C[0], Rw[0]), ne = stack(C[2], Rw[0]), sw = stack(C[0], Rw[2]), se = stack(C[2], Rw[2]);
+      edges.push([nw[nw.length - 1], L1[0]], [ne[ne.length - 1], R1[0]], [sw[0], R.chance(0.5) ? L1[L1.length - 1] : S1[0]], [se[0], R.chance(0.5) ? R1[R1.length - 1] : S1[S1.length - 1]]);
+      P27.hub = yard;
+    } else return;
+    // fyllnadsrum i det som blev över (så många som djupet kräver), var och en förbunden med närmaste rum
+    const ok = r => r.x >= 2 && r.y >= 2 && r.x + r.w <= W - 2 && r.y + r.h <= H - 2 && r.w >= 4 && r.h >= 4;
+    if (!rects.every(ok)) return;
+    for (let i = 0; i < rects.length; i++) for (let j = i + 1; j < rects.length; j++) if (!gapOK(rects[i], rects[j], 3)) return;
+    for (let t = 0; t < 400 && rects.length < need + 1; t++) {
+      const w = R.int(4, 5), h = R.int(4, 5), r = { x: R.int(2, W - 2 - w), y: R.int(2, H - 2 - h), w, h };
+      if (!rects.every(o => gapOK(o, r, 3))) continue;
+      const cx = r.x + w / 2, cy = r.y + h / 2;
+      let best = -1, bd = 1e9; rects.forEach((o, i) => { if (i === 0) return; const d = Math.abs(o.x + o.w / 2 - cx) + Math.abs(o.y + o.h / 2 - cy); if (d < bd) { bd = d; best = i; } });
+      rects.push(r); edges.push([rects.length - 1, best]);
+    }
+    if (rects.length < need || rects.length > maxR) return;
+    // frostfästets bygge: gårdar under himlen (de största rummen, tills de är minst 40 % av rumsytan)
+    if (frost) {
+      const tot = rects.reduce((a, r, i) => a + (i ? r.w * r.h : 0), 0);
+      let yard = 0;
+      for (const i of rects.map((r, i) => i).filter(i => i > 0).sort((a, b) => rects[b].w * rects[b].h - rects[a].w * rects[a].h || a - b)) {
+        if (yard >= 0.45 * tot) break;
+        if (rects[i].w < 5 || rects[i].h < 5) continue;
+        rects[i].yard = true; yard += rects[i].w * rects[i].h;
+      }
+    }
+    rooms.length = 0;
+    for (const r of rects) {
+      const m = mk(r.x, r.y, r.w, r.h, r.type || 'normal');
+      if (r.yard) m.yard = true; else if (r.hub || r.w * r.h >= 56) m.big = true;
+      rooms.push(m);
+    }
+    P27.edges = edges; P27.ok = true; P27.any = true; P27.n = rects.length;
+  }
+
+  function floor27(seed, depth, opts) {
+    opts = opts || {};
+    if (V27_OFFS.some(k => opts[k])) return floor(seed, depth, opts);
+    const R = RNG(seed).fork('v27'), F = opts.v27 || {}, st = floor27.stats.v27 = floor27.stats.v27 || { plans: 0, planFail: 0, rejected: 0, last: '' };
+    const d = Math.max(1, Math.min(5, Math.round(depth || 1)));
+    const biome = pickBiome(RNG(seed).fork('biome'), d, opts).id, pr = R.fork('grundplan');
+    let kind = F.plan !== undefined ? F.plan : (d >= 2 && V27_PLAN_BIOMES.includes(biome) && pr.chance(V27_PLAN_P) ? pr.pick(V27_PLANS) : null); // (första våningen byggs alltid som förut)
+    if (kind && !V27_PLAN_BIOMES.includes(biome)) kind = null;
+    let level = null;
+    if (kind) {
+      const P27 = { kind };
+      try { level = floor(seed, depth, Object.assign({}, opts, { plan27: P27 })); } catch (e) { level = null; }
+      const why = !level ? 'throw' : !P27.ok ? 'fit' : plan27OK(level) ? '' : 'check';
+      if (why) { if (why !== 'fit' || P27.any) level = null; st.why = st.why || {}; st.why[kind + ':' + why] = (st.why[kind + ':' + why] || 0) + 1; } // (passade planen aldrig är banan exakt den vanliga)
+      if (level && why) { st.planFail++; kind = null; level.plan27 = null; level.planName27 = null; }
+      if (level && kind) { st.plans++; level.hub27 = P27.hub; level.plan27 = kind; level.planName27 = V27_NAMES[kind]; } else if (!level) { st.planFail++; kind = null; }
+    }
+    if (!level) { level = floor(seed, depth, opts); level.plan27 = null; level.planName27 = null; }
+    level.scenes27 = [];
+    if (!F.noScenes) content27(level, R.fork('scene'), F, st);
+    return level;
+  }
+  floor27.stats = floor.stats;
+  // planritningens bana ska vara lika bra som en vanlig: utgången långt bort (minst 0,55 kartbredder, enkelriktade dörrar stängda), vaktaren inte
+  // för nära start (minst 0,32 av den längsta vägen) och tillräckligt med himmel utomhus
+  function plan27OK(L) { // (banan är redan validerad av build7 och version 24)
+    const m = L.map, H = m.length, W = m[0].length, ow = new Set((L.shortcuts || []).filter(s => s.oneway).map(s => s.y * W + s.x));
+    let P = null, X = null, Z = null;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const c = m[y][x]; if (c === 'P') P = [x, y]; else if (c === 'x') X = [x, y]; else if (c === 'Z') Z = [x, y]; }
+    if (!P || !X || !Z) return false;
+    // (version 6: kött bara i lägret, barackerna och smedjan; en rumstyp från version 14 kan på en ovanlig planritning ha byggt om ett sådant rum)
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (m[y][x] === 'ð') { const k = L.roomMask[y][x] === '-' ? -1 : L.roomMask[y].charCodeAt(x) - 48, r = L.rooms[k]; if (!r || !['camp', 'barracks', 'forge'].includes(r.arch)) return false; }
+    const bfs = shut => { const dd = new Int32Array(W * H).fill(-1), q = [P[1] * W + P[0]]; dd[q[0]] = 0;
+      for (let h = 0; h < q.length; h++) { const c = q[h], x = c % W, y = (c / W) | 0; for (let k = 0; k < 4; k++) { const nx = x + DX[k], ny = y + DY[k], n = ny * W + nx; if (nx < 0 || ny < 0 || nx >= W || ny >= H || dd[n] >= 0 || isBlock(m[ny][nx]) || (shut && ow.has(n))) continue; dd[n] = dd[c] + 1; q.push(n); } }
+      return dd; };
+    const d1 = bfs(true), d2 = bfs(false);
+    if (d1[X[1] * W + X[0]] < 0.55 * Math.max(W, H)) return false;
+    let mx = 0; for (let i = 0; i < W * H; i++) if (d2[i] > mx) mx = d2[i];
+    if (!(d2[Z[1] * W + Z[0]] >= 0.32 * mx)) return false;
+    if (L.sky) { let walk = 0, sky = 0; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (!isWall(m[y][x])) { walk++; if (L.sky[y][x] === '1') sky++; } if (sky < 0.27 * walk) return false; }
+    return true;
+  }
+
+  // scener och rumsmallar i den färdiga banan (bara väggar i rummets väggtecken och vanlig rekvisita V27_PROPS; fiender, föremål och fällor
+  // ligger kvar, utom i korsgången där 1-2 av rummets egna fiender flyttas in i nischerna). Allt som nåddes förut nås efteråt.
+  function content27(L, rng, F, st) {
+    const H = L.map.length, W = L.map[0].length, N = W * H, g = L.map.map(r => r.split(''));
+    const rooms = L.rooms || [], rm = Array.isArray(L.roomMask) && L.roomMask.length === H ? L.roomMask : null;
+    if (!rm || L.arena || L.maze || L.secret) return;
+    const inb = (x, y) => x >= 0 && y >= 0 && x < W && y < H;
+    const roomOf = (x, y) => (rm[y][x] !== '-' ? rm[y].charCodeAt(x) - 48 : -1);
+    const wc = {}; for (const row of g) for (const c of row) if (isWall(c)) wc[c] = (wc[c] || 0) + 1;
+    const wall = Object.keys(wc).sort((a, b) => wc[b] - wc[a] || (a < b ? -1 : 1))[0];
+    const candle = ['crystal', 'fungus'].includes(L.biome) ? 'j' : 'c'; // (kristallgrottorna och svampriket har inga kandelabrar utanför vaktarens sal)
+    const wallOK = wall && wall !== SHIFT16 && !['mirror', 'sky'].includes(L.biome); // (spegelpalatsets och molnborgens murar har egna andelar)
+    // spärrade rutor: allt som version 24 pekar ut, runt dörrar, P, x, Z, nyckeln, interaktiva saker och grindar
+    const ban = new Uint8Array(N);
+    const banR = (x, y, r) => { for (let yy = y - r; yy <= y + r; yy++) for (let xx = x - r; xx <= x + r; xx++) if (inb(xx, yy)) ban[yy * W + xx] = 1; };
+    const pt = (o, r) => { if (o && Number.isInteger(o.x) && Number.isInteger(o.y)) banR(o.x, o.y, r); };
+    for (const s of L.shortcuts || []) { pt(s, 1); banR(s.sx, s.sy, 1); banR(s.nx, s.ny, 1); (s.carved || []).forEach(c => pt(c, 1)); }
+    for (const a of L.ambushes || []) { pt(a.trigger, 1); pt(a.from, 1); (a.cells || []).forEach(c => pt(c, 1)); }
+    for (const l of L.landmarks || []) banR(l.x, l.y, (l.r || 1) + 1);
+    for (const k of ['breadcrumbs', 'cover', 'pacing']) for (const o of L[k] || []) pt(o, 1);
+    for (const s of L.secretHints || []) { pt(s, 1); banR(s.fx, s.fy, 1); }
+    const pts = o => { if (!o || typeof o !== 'object') return; for (const [kx, ky] of [['x', 'y'], ['tx', 'ty'], ['sx', 'sy']]) if (Number.isInteger(o[kx]) && Number.isInteger(o[ky])) banR(o[kx], o[ky], 2); for (const k of ['a', 'b']) if (o[k] && typeof o[k] === 'object') pts(o[k]); if (Array.isArray(o.cells)) o.cells.forEach(pts); if (Array.isArray(o)) o.forEach(pts); };
+    for (const k of ['boulders', 'beams', 'saws', 'winds', 'teleports', 'belts', 'shifts', 'carts', 'starports', 'sluices', 'streams']) if (Array.isArray(L[k])) L[k].forEach(pts); // (som version 24: allt som de listorna pekar ut)
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const c = g[y][x];
+      if ('PxZ}'.includes(c) || c === '|' || c === ']' || c === '{' || c === '*' || c === '±') banR(x, y, 2);
+      else if (isDoorCh(c) || isInter(c) || c === 'M' || c === 'Q' || HAZARD.includes(c)) banR(x, y, c === VENT30 ? 2 : 1);
+      if (c === '<' || c === 'ʒ' || c === 'ǎ') for (let k = 0; k < 4; k++) for (let j = 1; j <= 8; j++) if (inb(x + DX[k] * j, y + DY[k] * j)) ban[(y + DY[k] * j) * W + x + DX[k] * j] = 1; // (pilplattan, spökryttaren och kanonen behöver fri linje)
+    }
+    for (const a of L.arenas || []) for (let y = a.y0 - 1; y <= a.y1 + 1; y++) for (let x = a.x0 - 1; x <= a.x1 + 1; x++) if (inb(x, y)) ban[y * W + x] = 1;
+    const used = new Set();
+    const elig = rooms.map((r, i) => i).filter(i => {
+      const r = rooms[i];
+      return V27_ROOMTYPES.includes(r.type) && !SET14[r.arch] && !SET17[r.arch] && !['nest', 'flooded', 'frozen', 'frozenlake', 'lava', 'gas', 'mudflat'].includes(r.arch) && r.w >= 5 && r.h >= 5;
+    });
+    // nåbarhet: alla gångbara rutor som nåddes från P förut ska nås efteråt (rutorna som blev hinder undantagna)
+    let P = null; for (let y = 0; y < H && !P; y++) for (let x = 0; x < W; x++) if (g[y][x] === 'P') { P = [x, y]; break; }
+    if (!P) return;
+    // (två flöden: över allt som inte blockerar, och utan faror – lava, vatten, smulande golv ... – som generatorn räknar som hinder)
+    //  seen: 1 = nås, 2 = grannruta till en ruta som nås (saker som blockerar ska ha en fri sida); grindar och låsta dörrar är stängda
+    //  (de enkelriktade genvägsdörrarna från version 24 räknas som stängda)
+    const ow = new Set((L.shortcuts || []).filter(o => o.oneway).map(o => o.y * W + o.x));
+    const heat = heat30(g, W, H); // (version 30: ugnsmunnarnas hetta)
+    const reach = safe => { const seen = new Uint8Array(N), q = [P[1] * W + P[0]]; seen[q[0]] = 1;
+      for (let h = 0; h < q.length; h++) { const c = q[h], x = c % W, y = (c / W) | 0; for (let k = 0; k < 4; k++) { const nx = x + DX[k], ny = y + DY[k], n = ny * W + nx; if (!inb(nx, ny) || seen[n] === 1) continue; if ((safe ? genBlk(g[ny][nx]) || heat.has(n) : isBlock(g[ny][nx])) || ow.has(n)) { seen[n] = 2; continue; } seen[n] = 1; q.push(n); } }
+      return seen; };
+    let base = reach(false), baseS = reach(true);
+    // ett steg: ändringarna görs och tas bort igen om något som nåddes förut tappas (och, i försiktigt läge, om validate underkänner banan)
+    const step = (kind, room, box, fn, careful) => {
+      const undo = [], set = (x, y, c) => { undo.push([x, y, g[y][x]]); g[y][x] = c; };
+      if (!fn(set) || !undo.length) { for (let k = undo.length - 1; k >= 0; k--) { const [x, y, c] = undo[k]; g[y][x] = c; } return false; }
+      const now = reach(false), nowS = reach(true); let bad = false;
+      const chg = new Set(undo.map(([x, y]) => y * W + x));
+      for (const i of chg) { const c = g[(i / W) | 0][i % W]; if ((!isBlock(c) && now[i] !== 1) || (!genBlk(c) && nowS[i] !== 1) || (!isWall(c) && !now[i])) bad = true; } // (det som lades ut nås, eller har en fri sida)
+      for (let i = 0; i < N && !bad; i++) { if (chg.has(i) || isWall(g[(i / W) | 0][i % W])) continue; if ((base[i] && !now[i]) || (baseS[i] && !nowS[i]) || (base[i] === 1 && now[i] !== 1) || (baseS[i] === 1 && nowS[i] !== 1)) bad = true; }
+      if (!bad && careful) { L.map = g.map(r => r.join('')); bad = validate(L).length > 0; }
+      if (bad) { st.rejected++; st.last = kind; for (let k = undo.length - 1; k >= 0; k--) { const [x, y, c] = undo[k]; g[y][x] = c; } return false; }
+      base = now; baseS = nowS; // (nästa steg jämförs med banan som den är nu)
+      used.add(room); L.scenes27.push(Object.assign({ kind, room }, box)); return true;
+    };
+    const free = (x, y) => inb(x, y) && g[y][x] === '.' && !ban[y * W + x];
+    const inRoom = (i, x, y) => inb(x, y) && roomOf(x, y) === i;
+    const clear = (x, y) => inb(x, y) && !isBlock(g[y][x]);
+    // procedurella scener: id -> (i, set) => true om något stämplades
+    const SC = {
+      pillarhall: (i, set) => { // pelarsal: 2x2-pelare i ett rutnät, alltid en fri gång runt om och mellan pelarna
+        const r = rooms[i]; if (!wallOK || r.w < 9 || r.h < 9) return false;
+        let n = 0;
+        for (let y = r.y + 2; y + 1 <= r.y + r.h - 3; y += 4) for (let x = r.x + 2; x + 1 <= r.x + r.w - 3; x += 4) {
+          const cs = [[x, y], [x + 1, y], [x, y + 1], [x + 1, y + 1]];
+          if (cs.every(([a, b]) => free(a, b) && inRoom(i, a, b))) { cs.forEach(([a, b]) => set(a, b, wall)); n++; }
+        }
+        return n >= 2;
+      },
+      cloister: (i, set) => { // korsgång: väggstumpar längs långsidorna bildar nischer, ljus i några, 1-2 av rummets fiender gömmer sig i dem
+        const r = rooms[i]; if (!wallOK || Math.max(r.w, r.h) < 8 || Math.min(r.w, r.h) < 5) return false;
+        const hz = r.w >= r.h, niches = [];
+        for (const side of [0, 1]) for (let a = 1; a < (hz ? r.w : r.h) - 1; a += 2) {
+          const x = hz ? r.x + a : side ? r.x + r.w - 1 : r.x, y = hz ? (side ? r.y + r.h - 1 : r.y) : r.y + a;
+          const ox = hz ? 0 : side ? -1 : 1, oy = hz ? (side ? -1 : 1) : 0; // (inåt)
+          if (!free(x, y) || !inRoom(i, x, y) || !isWall(g[y - oy] ? g[y - oy][x - ox] : '1')) continue;
+          if (a % 4 === 1) { if (clear(x + ox, y + oy)) set(x, y, wall); } // (väggstumpen; rutan framför den förblir gångbar)
+          else niches.push([x, y]);
+        }
+        if (niches.length) for (const [x, y] of niches.filter(() => rng.chance(0.4)).slice(0, 2)) if (g[y][x] === '.') set(x, y, candle);
+        const foes = []; for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) if (inRoom(i, x, y) && 'SKVILNORWUX'.includes(g[y][x]) && !ban[y * W + x]) foes.push([x, y]); // (bara vanliga fiender utan egna platsregler)
+        const spots = niches.filter(([x, y]) => g[y][x] === '.' && cheb(x, y, P[0], P[1]) >= 8);
+        for (let k = 0; k < Math.min(2, foes.length, spots.length); k++) { const [fx, fy] = foes[k], [sx, sy] = spots[k]; const c = g[fy][fx]; set(sx, sy, c); set(fx, fy, '.'); }
+        return true;
+      },
+      stacks: (i, set) => { // hyllgångar: rader av bokhyllor/lådor med en öppning som växlar sida (en liten labyrint)
+        const r = rooms[i]; if (r.w < 7 || r.h < 7) return false;
+        const hz = r.w >= r.h, A = hz ? r.w : r.h, Bn = hz ? r.h : r.w, ch = L.biome === 'library' || L.biome === 'dungeon' ? 'q' : 'T';
+        let n = 0, flip = rng.chance(0.5);
+        for (let b = 2; b <= Bn - 3; b += 2) {
+          const gap = flip ? 1 : A - 2; flip = !flip;
+          for (let a = 1; a < A - 1; a++) {
+            if (Math.abs(a - gap) <= 0) continue;
+            const x = hz ? r.x + a : r.x + b, y = hz ? r.y + b : r.y + a;
+            if (free(x, y) && inRoom(i, x, y)) { set(x, y, ch); n++; }
+          }
+        }
+        return n >= 6;
+      },
+      throne: (i, set) => { // tronsal: en statygång fram till tronen (staty mellan två kandelabrar) vid den bortre väggen, rummets skatt bakom tronen
+        const r = rooms[i]; if (r.w < 7 || r.h < 7) return false;
+        const sides = [0, 1, 2, 3].filter(sd => { // väggen utan dörr
+          for (let a = -1; a <= (sd % 2 ? r.w : r.h); a++) { const x = sd === 0 ? r.x + r.w : sd === 2 ? r.x - 1 : r.x + a, y = sd === 1 ? r.y + r.h : sd === 3 ? r.y - 1 : r.y + a; if (inb(x, y) && isDoorCh(g[y][x])) return false; }
+          return true; });
+        if (!sides.length) return false;
+        const sd = rng.pick(sides), dx = DX[sd], dy = DY[sd], cx = r.x + (r.w >> 1), cy = r.y + (r.h >> 1);
+        const tx = sd === 0 ? r.x + r.w - 2 : sd === 2 ? r.x + 1 : cx, ty = sd === 1 ? r.y + r.h - 2 : sd === 3 ? r.y + 1 : cy; // tronen
+        const px = -dy, py = dx; // längs väggen
+        if (!free(tx, ty) || !inRoom(i, tx, ty) || !free(tx + px, ty + py) || !free(tx - px, ty - py)) return false;
+        set(tx, ty, 'u'); set(tx + px, ty + py, candle); set(tx - px, ty - py, candle);
+        const len = sd % 2 ? r.h : r.w;
+        for (let k = 3; k < len - 2; k += 2) for (const s of [-2, 2]) { const x = tx - dx * k + px * s, y = ty - dy * k + py * s; if (free(x, y) && inRoom(i, x, y)) set(x, y, 'u'); }
+        // skatten: ett föremål ur rummet flyttas till hörnet bakom tronen
+        let loot = null; for (let y = r.y; y < r.y + r.h && !loot; y++) for (let x = r.x; x < r.x + r.w; x++) if (inRoom(i, x, y) && '$haC'.includes(g[y][x]) && !ban[y * W + x]) { loot = [x, y]; break; }
+        const bx = tx + px * 2, by = ty + py * 2;
+        if (loot && free(bx, by) && inRoom(i, bx, by) && isWall(g[by + dy][bx + dx])) { set(bx, by, g[loot[1]][loot[0]]); set(loot[0], loot[1], '.'); }
+        return true;
+      },
+      lavabridge: (i, set) => { // bro över lava (bara vulkanen): ett lavadike tvärs över salen med en smal bro i mitten
+        const r = rooms[i]; if (L.biome !== 'volcano' || Math.max(r.w, r.h) < 8 || Math.min(r.w, r.h) < 5) return false;
+        const hz = r.w >= r.h, A = hz ? r.w : r.h, Bn = hz ? r.h : r.w, mid = A >> 1, br = Bn >> 1;
+        let n = 0;
+        for (const a of [mid, mid + 1]) for (let b = 0; b < Bn; b++) {
+          if (b === br) continue;
+          const x = hz ? r.x + a : r.x + b, y = hz ? r.y + b : r.y + a;
+          if (!free(x, y) || !inRoom(i, x, y) || cheb(x, y, P[0], P[1]) < 3) continue;
+          set(x, y, '_'); n++;
+        }
+        return n >= 4;
+      },
+    };
+    const prefab = (id, i, set, box) => { // en rumsmall (slumpvis vriden/speglad) på en plats där alla rutor passar
+      if (!wallOK && V27_PREFABS[id].some(row => row.includes('#'))) return false;
+      let T = V27_PREFABS[id].map(r => r.split(''));
+      const rot = rng.int(0, 3), mir = rng.chance(0.5);
+      for (let k = 0; k < rot; k++) T = T[0].map((_, x) => T.map(row => row[x]).reverse());
+      if (mir) T = T.map(row => row.slice().reverse());
+      const th = T.length, tw = T[0].length, r = rooms[i], spots = [];
+      // (gångrutorna . måste vara fria; av rekvisitan räcker 70 %: det som inte får plats, där något redan står, hoppas över)
+      let nT = 0; for (const row of T) for (const t of row) if (t !== '.' && t !== '?') nT++;
+      for (let y = r.y + 1; y + th <= r.y + r.h - 1; y++) for (let x = r.x + 1; x + tw <= r.x + r.w - 1; x++) {
+        let ok = true, k = 0;
+        for (let yy = 0; yy < th && ok; yy++) for (let xx = 0; xx < tw; xx++) {
+          const t = T[yy][xx], X = x + xx, Y = y + yy;
+          if (t === '?') continue;
+          if (!inRoom(i, X, Y)) { ok = false; break; }
+          if (t === '.') { if (!clear(X, Y)) { ok = false; break; } } else if (free(X, Y)) k++; else if (isBlock(g[Y][X]) && !isWall(g[Y][X])) { ok = false; break; }
+        }
+        if (ok && k >= Math.max(2, Math.ceil(0.7 * nT))) spots.push([x, y, k]);
+      }
+      if (!spots.length) return false;
+      const c = (r.x + r.w / 2), d = (r.y + r.h / 2);
+      spots.sort((a, b) => b[2] - a[2] || Math.hypot(a[0] + tw / 2 - c, a[1] + th / 2 - d) - Math.hypot(b[0] + tw / 2 - c, b[1] + th / 2 - d));
+      const [x, y] = rng.pick(spots.slice(0, 3));
+      for (let yy = 0; yy < th; yy++) for (let xx = 0; xx < tw; xx++) { const t = T[yy][xx]; if (t !== '.' && t !== '?' && free(x + xx, y + yy)) set(x + xx, y + yy, t === '#' ? wall : t === 'c' ? candle : t); }
+      Object.assign(box, { x, y, w: tw, h: th });
+      return true;
+    };
+    const run = careful => {
+      const order = rng.shuffle(elig.slice());
+      if (L.hub27 >= 0) { const k = order.indexOf(L.hub27); if (k > 0) { order.splice(k, 1); order.unshift(L.hub27); } } // (planens mittgård först)
+      const want = F.scenes ? F.scenes.slice() : [];
+      if (!F.scenes) { // 1-3 scener och 2-3 rumsmallar per bana
+        const sc = rng.shuffle(['pillarhall', 'cloister', 'stacks', 'throne'].concat(L.biome === 'volcano' ? ['lavabridge', 'lavabridge'] : []));
+        for (let k = 0, n = rng.int(1, 3); k < n; k++) want.push(sc[k]);
+        const pf = rng.shuffle(V27_PREFAB_IDS.slice());
+        for (let k = 0, n = rng.int(2, 3); k < n; k++) want.push('prefab:' + pf[k]);
+      }
+      for (const kind of want) {
+        for (const i of order) {
+          if (used.has(i) || (!kind.startsWith('prefab:') && !V27_SCENE_ROOMS.includes(rooms[i].type))) continue;
+          const box = {}, r = rooms[i];
+          const fn = kind.startsWith('prefab:') ? set => prefab(kind.slice(7), i, set, box) : set => { Object.assign(box, { x: r.x, y: r.y, w: r.w, h: r.h }); return SC[kind] ? SC[kind](i, set) : false; };
+          if (step(kind, i, box, fn, careful)) break;
+        }
+      }
+    };
+    const g0 = g.map(r => r.slice());
+    run(false);
+    L.map = g.map(r => r.join(''));
+    st.n = (st.n || 0) + 1;
+    // (den fulla valideringen kostar ~2 ms per bana: den görs bara med opts.v27.check; gen-test validerar tusentals banor)
+    if (F.check && L.scenes27.length && validate(L).length) { st.redo = (st.redo || 0) + 1; st.redoWhy = validate(L)[0] + ' ' + JSON.stringify(L.scenes27.map(o => o.kind)); // underkänd: om igen med validering efter varje steg
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) g[y][x] = g0[y][x];
+      base = reach(false); baseS = reach(true);
+      used.clear(); L.scenes27 = []; run(true);
+      L.map = g.map(r => r.join(''));
+    }
+    L.features = features(L.map, L.beams, L.arenas, L.rooms);
+  }
+
+  // ---------- Version 28: översvämmad sal, vakttorn och balkonger bakom galler, fönster mot rum man når senare, blodvåning ----------
+  // Ett pass ovanpå version 27 (Gen.floor = floor28) med eget slumpflöde RNG(seed).fork('v28'). opts.v28off (och alla äldre vNNoff) stänger av det
+  // helt: då är banan exakt som i version 27 (inga nya fält). opts.v28 = { scenes: [id, ...], noScenes, noWindows, blood: bool } tvingar fram
+  // scener/blodvåning (tester, förhandsvisning).
+  //  ǂ FÖNSTER (galler/fönster med ram): en vägg (WALLS) man inte kan gå eller skjuta igenom men ser igenom (spelet ritar den).
+  //  level.scenes28 = [{ kind, room, x, y, w, h }]: floodhall (grunt vatten - över salen med torra öar; level.deep28 = [{ x, y }] är djupa
+  //    bassänger som spelet gör till djupt vatten Đ när banan startar; på kartan står -), tower (ett inhägnat torn mitt i salen med fönster ǂ och
+  //    en smal ingång; 1 skytt K inne), balcony (en avsats längs en vägg bakom galler ǂ som nås från ena änden; 1-2 skyttar K). Skyttarna är
+  //    rummets egna fiender som flyttas dit (antalet fiender ändras inte).
+  //  level.windows28 = [{ room, cells: [{ x, y }], from: { x, y } }]: 1-3 rutor ǂ i en tunn vägg mellan en tidig gång och ett rum längre fram
+  //    (utgången, skattkammaren, valvet eller nyckelns rum): spelaren ser målet långt innan hen når det.
+  //  level.blood28 = true: BLODVÅNINGEN (cirka 1 av 12 våningar från djup 3): spelet ger fler fiender, mer belöning och en egen stämning.
+  const V28_OFFS = V27_OFFS.concat(['v28off']);
+  const V28_SCENES = ['floodhall', 'tower', 'balcony'];
+  const V28_SCENE_ROOMS = ['normal', 'elite', 'exit'];
+  const V28_FLOOD_BIOMES = ['dungeon', 'sewer', 'harbor', 'bathhouse', 'jungle', 'prison', 'mine', 'cathedral', 'abattoir', 'battlefield', 'caves', 'forest', 'graveyard'];
+  const V28_BLOOD_P = 1 / 12, V28_WIN_CAP = 40;
+  const V28_WIN_ROOMS = ['exit', 'treasure', 'vault', 'elite'];
+  const WINDOW28 = 'ǂ';
+  function floor28(seed, depth, opts) {
+    opts = opts || {};
+    if (V28_OFFS.some(k => opts[k])) return floor27(seed, depth, opts);
+    const L = floor27(seed, depth, opts);
+    const R = RNG(seed).fork('v28'), F = opts.v28 || {}, st = floor28.stats.v28 = floor28.stats.v28 || { n: 0, rejected: 0, last: '', windows: 0, blood: 0 };
+    const d = Math.max(1, Math.min(5, Math.round(depth || 1)));
+    L.scenes28 = []; L.windows28 = []; L.deep28 = [];
+    const br = R.fork('blod').next();
+    L.blood28 = F.blood !== undefined ? !!F.blood : d >= 3 && br < V28_BLOOD_P;
+    if (L.blood28) st.blood++;
+    content28(L, R.fork('scene'), R.fork('window'), F, st);
+    return L;
+  }
+  floor28.stats = floor.stats;
+  function content28(L, rng, wrng, F, st) {
+    const H = L.map.length, W = L.map[0].length, N = W * H, g = L.map.map(r => r.split(''));
+    const rooms = L.rooms || [], rm = Array.isArray(L.roomMask) && L.roomMask.length === H ? L.roomMask : null;
+    if (!rm || L.arena || L.maze || L.secret) return;
+    const inb = (x, y) => x >= 0 && y >= 0 && x < W && y < H;
+    const roomOf = (x, y) => (rm[y][x] !== '-' ? rm[y].charCodeAt(x) - 48 : -1);
+    const wc = {}; for (const row of g) for (const c of row) if (isWall(c)) wc[c] = (wc[c] || 0) + 1;
+    const wall = Object.keys(wc).sort((a, b) => wc[b] - wc[a] || (a < b ? -1 : 1))[0];
+    const wallOK = wall && wall !== SHIFT16 && !['mirror', 'sky'].includes(L.biome);
+    // spärrade rutor (som version 27) och rummen som redan har en scen från version 27
+    const ban = new Uint8Array(N);
+    const banR = (x, y, r) => { for (let yy = y - r; yy <= y + r; yy++) for (let xx = x - r; xx <= x + r; xx++) if (inb(xx, yy)) ban[yy * W + xx] = 1; };
+    const pt = (o, r) => { if (o && Number.isInteger(o.x) && Number.isInteger(o.y)) banR(o.x, o.y, r); };
+    for (const s of L.shortcuts || []) { pt(s, 1); banR(s.sx, s.sy, 1); banR(s.nx, s.ny, 1); (s.carved || []).forEach(c => pt(c, 1)); }
+    for (const a of L.ambushes || []) { pt(a.trigger, 1); pt(a.from, 1); (a.cells || []).forEach(c => pt(c, 1)); }
+    for (const l of L.landmarks || []) banR(l.x, l.y, (l.r || 1) + 1);
+    for (const k of ['breadcrumbs', 'cover', 'pacing']) for (const o of L[k] || []) pt(o, 1);
+    for (const s of L.secretHints || []) { pt(s, 1); banR(s.fx, s.fy, 1); }
+    const pts = o => { if (!o || typeof o !== 'object') return; for (const [kx, ky] of [['x', 'y'], ['tx', 'ty'], ['sx', 'sy']]) if (Number.isInteger(o[kx]) && Number.isInteger(o[ky])) banR(o[kx], o[ky], 2); for (const k of ['a', 'b']) if (o[k] && typeof o[k] === 'object') pts(o[k]); if (Array.isArray(o.cells)) o.cells.forEach(pts); if (Array.isArray(o)) o.forEach(pts); };
+    for (const k of ['boulders', 'beams', 'saws', 'winds', 'teleports', 'belts', 'shifts', 'carts', 'starports', 'sluices', 'streams']) if (Array.isArray(L[k])) L[k].forEach(pts);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const c = g[y][x];
+      if ('PxZ}'.includes(c) || c === '|' || c === ']' || c === '{' || c === '*' || c === '±') banR(x, y, 2);
+      else if (isDoorCh(c) || isInter(c) || c === 'M' || c === 'Q' || HAZARD.includes(c)) banR(x, y, c === VENT30 ? 2 : 1);
+      if (c === '<' || c === 'ʒ' || c === 'ǎ') for (let k = 0; k < 4; k++) for (let j = 1; j <= 8; j++) if (inb(x + DX[k] * j, y + DY[k] * j)) ban[(y + DY[k] * j) * W + x + DX[k] * j] = 1;
+    }
+    for (const a of L.arenas || []) for (let y = a.y0 - 1; y <= a.y1 + 1; y++) for (let x = a.x0 - 1; x <= a.x1 + 1; x++) if (inb(x, y)) ban[y * W + x] = 1;
+    const used = new Set(); // (rum med en scen från version 27 får en till om den inte rör den: rutan runt version 27-scenen är spärrad)
+    for (const s of L.scenes27 || []) for (let y = s.y - 1; y <= s.y + s.h; y++) for (let x = s.x - 1; x <= s.x + s.w; x++) if (inb(x, y)) ban[y * W + x] = 1;
+    let P = null; for (let y = 0; y < H && !P; y++) for (let x = 0; x < W; x++) if (g[y][x] === 'P') { P = [x, y]; break; }
+    if (!P) return;
+    // nåbarhet som i version 27; de djupa bassängerna räknas som hinder i det säkra flödet (de är aldrig enda vägen)
+    const ow = new Set((L.shortcuts || []).filter(o => o.oneway).map(o => o.y * W + o.x));
+    const heat = heat30(g, W, H); // (version 30: ugnsmunnarnas hetta)
+    const deep = new Set();
+    const reach = safe => { const seen = new Uint8Array(N), q = [P[1] * W + P[0]]; seen[q[0]] = 1;
+      for (let h = 0; h < q.length; h++) { const c = q[h], x = c % W, y = (c / W) | 0; for (let k = 0; k < 4; k++) { const nx = x + DX[k], ny = y + DY[k], n = ny * W + nx; if (!inb(nx, ny) || seen[n] === 1) continue; if ((safe ? genBlk(g[ny][nx]) || deep.has(n) || heat.has(n) : isBlock(g[ny][nx])) || ow.has(n)) { seen[n] = 2; continue; } seen[n] = 1; q.push(n); } }
+      return seen; };
+    let base = reach(false), baseS = reach(true);
+    const step = (kind, room, box, fn) => {
+      const undo = [], dundo = [], set = (x, y, c) => { undo.push([x, y, g[y][x]]); g[y][x] = c; }, mkDeep = (x, y) => { const n = y * W + x; if (!deep.has(n)) { deep.add(n); dundo.push(n); } };
+      const rollback = () => { for (let k = undo.length - 1; k >= 0; k--) { const [x, y, c] = undo[k]; g[y][x] = c; } for (const n of dundo) deep.delete(n); };
+      if (!fn(set, mkDeep) || !undo.length) { rollback(); return false; }
+      const now = reach(false), nowS = reach(true); let bad = false;
+      const chg = new Set(undo.map(([x, y]) => y * W + x).concat(dundo));
+      for (const i of chg) { const c = g[(i / W) | 0][i % W]; if ((!isBlock(c) && now[i] !== 1) || (!genBlk(c) && !deep.has(i) && nowS[i] !== 1) || (!isWall(c) && !now[i])) bad = true; }
+      for (let i = 0; i < N && !bad; i++) { if (chg.has(i) || isWall(g[(i / W) | 0][i % W])) continue; if ((base[i] && !now[i]) || (baseS[i] && !nowS[i]) || (base[i] === 1 && now[i] !== 1) || (baseS[i] === 1 && nowS[i] !== 1)) bad = true; }
+      if (!bad) { // (och validate godkänner banan: scenerna är få, valideringen kostar ~2 ms)
+        L.scenes28.push(Object.assign({ kind, room }, box)); L.map = g.map(r => r.join('')); L.deep28 = [...deep].map(n => ({ x: n % W, y: (n / W) | 0 }));
+        const e = validate(L); if (e.length) { bad = true; st.why = e[0]; L.scenes28.pop(); }
+      }
+      if (bad) { st.rejected++; st.last = kind; rollback(); L.map = g.map(r => r.join('')); return false; }
+      base = now; baseS = nowS;
+      used.add(room); return true;
+    };
+    const free = (x, y) => inb(x, y) && g[y][x] === '.' && !ban[y * W + x];
+    const inRoom = (i, x, y) => inb(x, y) && roomOf(x, y) === i;
+    const clear = (x, y) => inb(x, y) && !isBlock(g[y][x]);
+    // rummets fiender (de gamla vanliga först; de gamla närstridarna blir eldskelett K, biomens egna fiender behåller sitt tecken) och skatter
+    const OLDFOE = 'SKVILNORWUX', MELEE = 'SVILRWUX', LOOT28 = '$ha';
+    const roomFoes = (i, r) => { const out = []; for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) if (inRoom(i, x, y) && !ban[y * W + x] && ENEMY_CHARS.includes(g[y][x]) && g[y][x] !== 'E') out.push([x, y]);
+      return out.sort((a, b) => (OLDFOE.includes(g[b[1]][b[0]]) ? 1 : 0) - (OLDFOE.includes(g[a[1]][a[0]]) ? 1 : 0)); };
+    const roomLoot = (i, r) => { const out = []; for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) if (inRoom(i, x, y) && !ban[y * W + x] && LOOT28.includes(g[y][x])) out.push([x, y]); return out; };
+    const shooter = c => (MELEE.includes(c) ? 'K' : c);
+    const SC = {
+      floodhall: (i, set, mkDeep, box) => { // översvämmad sal: grunt vatten över golvet, 2-4 torra öar och 1-2 djupa bassänger
+        const r = rooms[i]; if (!V28_FLOOD_BIOMES.includes(L.biome) || r.w < 6 || r.h < 6 || r.w * r.h < 40) return false;
+        Object.assign(box, { x: r.x, y: r.y, w: r.w, h: r.h });
+        const isl = []; for (let k = 0, n = rng.int(2, 4); k < n; k++) isl.push([r.x + rng.int(1, r.w - 2), r.y + rng.int(1, r.h - 2)]);
+        let n = 0; const wet = [];
+        for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) {
+          if (!free(x, y) || !inRoom(i, x, y) || isl.some(([a, b]) => cheb(x, y, a, b) <= 1)) continue;
+          if ([0, 1, 2, 3].some(d => { const c = inb(x + DX[d], y + DY[d]) ? g[y + DY[d]][x + DX[d]] : '1'; return isDoorCh(c) || c === 'P' || c === 'x'; })) continue;
+          set(x, y, '-'); n++; wet.push([x, y]);
+        }
+        if (n < 14) return false;
+        // djupa bassänger: 2x2 eller 3x2 rutor mitt i vattnet (alla grannar vatten eller vägg)
+        const isW = (x, y) => inb(x, y) && g[y][x] === '-';
+        for (let k = 0, want = rng.int(1, 2), tries = 0; k < want && tries < 30; tries++) {
+          const [x, y] = rng.pick(wet), pw = rng.int(2, 3), ph = 2;
+          let ok = true; for (let yy = y - 1; yy <= y + ph && ok; yy++) for (let xx = x - 1; xx <= x + pw && ok; xx++) { if (!inb(xx, yy)) { ok = false; break; } const inside = xx >= x && xx < x + pw && yy >= y && yy < y + ph; if (inside ? !isW(xx, yy) || deep.has(yy * W + xx) : !(isW(xx, yy) || isWall(g[yy][xx]))) ok = false; }
+          if (!ok) continue;
+          for (let yy = y; yy < y + ph; yy++) for (let xx = x; xx < x + pw; xx++) mkDeep(xx, yy);
+          k++;
+        }
+        return true;
+      },
+      balcony: (i, set, mkDeep, box) => { // balkong: en avsats (5-9 rutor) längs en vägg bakom galler ǂ, ingång i ena änden; rummets fiender blir skyttar där
+        const r = rooms[i]; if (!wallOK || Math.max(r.w, r.h) < 5 || Math.min(r.w, r.h) < 4) return false;
+        const cellOf = (sd, a, depth) => sd === 0 ? [r.x + r.w - 1 - depth, r.y + a] : sd === 2 ? [r.x + depth, r.y + a] : sd === 1 ? [r.x + a, r.y + r.h - 1 - depth] : [r.x + a, r.y + depth];
+        const wallAt = (sd, a) => { const [x, y] = cellOf(sd, a, -1); return inb(x, y) && (isWall(g[y][x]) || g[y][x] === 'D'); }; // (väggen bakom: vägg eller en vanlig dörr = en sidogång in på balkongen)
+        const fits = (sd, len, a0, L, gapEnd) => {
+          for (let a = a0 - 1; a <= a0 + L; a++) {
+            if (a < 0 || a >= len) continue;
+            if (!wallAt(sd, a)) return false;
+            const [bx, by] = cellOf(sd, a, 0), [gx, gy] = cellOf(sd, a, 1);
+            if (!inRoom(i, bx, by) || !inRoom(i, gx, gy)) return false;
+            if (a === a0 - 1 || a === a0 + L) { if (g[by][bx] !== '.' || g[gy][gx] !== '.') return false; continue; } // (gaveln blir vägg)
+            if (isBlock(g[by][bx]) || isDoorCh(g[by][bx])) return false;
+            if (a !== (gapEnd ? a0 + L - 1 : a0) && g[gy][gx] !== '.') return false;
+          }
+          const [ex, ey] = cellOf(sd, gapEnd ? a0 + L - 1 : a0, 2); return inRoom(i, ex, ey) && clear(ex, ey); }; // (framför ingången är det fritt)
+        const opts = [];
+        for (const sd of [0, 1, 2, 3]) { const len = sd % 2 ? r.w : r.h; if ((sd % 2 ? r.h : r.w) < 4) continue;
+          for (let L = Math.min(9, len); L >= 5; L--) for (let a0 = 0; a0 + L <= len; a0++) for (const ge of [false, true]) if (fits(sd, len, a0, L, ge)) opts.push([sd, len, a0, L, ge]); }
+        if (!opts.length) return false;
+        const best = opts.filter(o => o[3] === opts.reduce((m, o2) => Math.max(m, o2[3]), 0));
+        const [sd, len, a0, L, gapEnd] = rng.pick(best), cell = (a, depth) => cellOf(sd, a, depth), gapA = gapEnd ? a0 + L - 1 : a0;
+        for (const a of [a0 - 1, a0 + L]) if (a >= 0 && a < len) { const [bx, by] = cell(a, 0), [gx, gy] = cell(a, 1); set(bx, by, wall); set(gx, gy, wall); }
+        for (let a = a0; a < a0 + L; a++) if (a !== gapA) { const [gx, gy] = cell(a, 1); set(gx, gy, WINDOW28); }
+        const spots = []; for (let a = a0; a < a0 + L; a++) { const [bx, by] = cell(a, 0); if (g[by][bx] === '.' && !ban[by * W + bx] && Math.abs(a - gapA) >= 2) spots.push([bx, by]); }
+        const foes = roomFoes(i, r).filter(([fx, fy]) => !spots.some(([a, b]) => a === fx && b === fy));
+        let moved = 0;
+        const fsp = spots.filter(([x, y]) => Math.hypot(x - P[0], y - P[1]) >= 7.5); // (fiender minst 7 rutor från P)
+        for (const k of [0.3, 0.7]) { if (!foes.length || !fsp.length) break; const sp = fsp[Math.min(fsp.length - 1, Math.floor(k * fsp.length))]; if (g[sp[1]][sp[0]] !== '.') continue; const [fx, fy] = foes.shift(); const c = g[fy][fx]; set(fx, fy, '.'); set(sp[0], sp[1], shooter(c)); moved++; }
+        if (!moved) { const lt = roomLoot(i, r).filter(([lx, ly]) => !spots.some(([a, b]) => a === lx && b === ly)); const sp = spots[spots.length >> 1]; if (!lt.length || !sp || g[sp[1]][sp[0]] !== '.') return false; const [lx, ly] = lt[0], c = g[ly][lx]; set(lx, ly, '.'); set(sp[0], sp[1], c); } // (utan fiender: rummets skatt på balkongen)
+        const c0 = cell(Math.max(0, a0 - 1), 0), c1 = cell(Math.min(len - 1, a0 + L), 1);
+        Object.assign(box, { x: Math.min(c0[0], c1[0]), y: Math.min(c0[1], c1[1]), w: Math.abs(c0[0] - c1[0]) + 1, h: Math.abs(c0[1] - c1[1]) + 1 });
+        return true;
+      },
+      tower: (i, set, mkDeep, box) => { // vakttorn: 4x4 (eller 3x3) rutor i salen, väggar i hörnen, fönster ǂ på tre sidor och en smal ingång på den fjärde; en skytt inne
+        const r = rooms[i]; if (!wallOK || r.w < 6 || r.h < 6) return false;
+        let S = 0, tx = 0, ty = 0;
+        for (const s0 of [4, 3]) {
+          const E = s0 - 1, fits = (tx, ty) => { for (let y = ty - 1; y <= ty + s0; y++) for (let x = tx - 1; x <= tx + s0; x++) { const edge = x < tx || x > tx + E || y < ty || y > ty + E, ring = !edge && (x === tx || x === tx + E || y === ty || y === ty + E); if (!inRoom(i, x, y) || !clear(x, y) || (ring && g[y][x] !== '.') || (!edge && HAZARD.includes(g[y][x]))) return false; } return true; }; // (ringen på tomt golv; inne i tornet får saker ligga kvar)
+          const spots = []; for (let y = r.y + 1; y + s0 <= r.y + r.h - 1; y++) for (let x = r.x + 1; x + s0 <= r.x + r.w - 1; x++) if (fits(x, y)) spots.push([x, y, Math.hypot(x + s0 / 2 - r.x - r.w / 2, y + s0 / 2 - r.y - r.h / 2)]);
+          if (!spots.length) continue;
+          spots.sort((a, b) => a[2] - b[2]); [tx, ty] = rng.pick(spots.slice(0, 3)); S = s0; break; // (så nära mitten som möjligt)
+        }
+        if (!S) return false;
+        const E = S - 1, door = rng.int(0, 3), dpos = rng.int(1, E - 1);
+        for (let y = ty; y <= ty + E; y++) for (let x = tx; x <= tx + E; x++) {
+          const ring = x === tx || x === tx + E || y === ty || y === ty + E; if (!ring) continue;
+          const corner = (x === tx || x === tx + E) && (y === ty || y === ty + E);
+          const sd = x === tx + E ? 0 : y === ty + E ? 1 : x === tx ? 2 : 3, a = sd % 2 ? x - tx : y - ty;
+          if (!corner && sd === door && a === dpos) continue; // ingången
+          set(x, y, corner || (sd === door) ? wall : WINDOW28);
+        }
+        const out = ([fx, fy]) => fx < tx || fx > tx + E || fy < ty || fy > ty + E;
+        const foes = roomFoes(i, r).filter(out);
+        const ins = []; for (let y = ty + 1; y < ty + E; y++) for (let x = tx + 1; x < tx + E; x++) if (g[y][x] === '.') ins.push([x, y]);
+        const mv = foes.length ? foes[0] : roomLoot(i, r).filter(out)[0]; // (en skytt, annars rummets skatt)
+        const insF = foes.length ? ins.filter(([x, y]) => Math.hypot(x - P[0], y - P[1]) >= 7.5) : ins; // (fiender minst 7 rutor från P)
+        if (mv && insF.length) { const c = g[mv[1]][mv[0]], [ix, iy] = rng.pick(insF); set(mv[0], mv[1], '.'); set(ix, iy, ENEMY_CHARS.includes(c) ? shooter(c) : c); }
+        Object.assign(box, { x: tx, y: ty, w: S, h: S });
+        return true;
+      },
+    };
+    const elig = rooms.map((r, i) => i).filter(i => {
+      const r = rooms[i];
+      return V28_SCENE_ROOMS.includes(r.type) && !used.has(i) && !SET14[r.arch] && !SET17[r.arch] && !['nest', 'flooded', 'frozen', 'frozenlake', 'lava', 'gas', 'mudflat'].includes(r.arch) && r.w >= 5 && r.h >= 5;
+    });
+    const order = rng.shuffle(elig.slice());
+    const want = F.scenes ? F.scenes.slice() : [];
+    if (!F.scenes && !F.noScenes) { // 0-3 försök per bana (de flesta salar är för små eller fulla: scenerna blir betydligt ovanligare än så)
+      if (rng.chance(0.5)) want.push('floodhall');
+      if (rng.chance(0.7)) want.push('balcony');
+      if (rng.chance(0.6)) want.push('tower');
+    }
+    for (const kind of want) for (const i of order) {
+      if (used.has(i)) continue;
+      const box = {};
+      if (step(kind, i, box, (set, mkDeep) => SC[kind] ? SC[kind](i, set, mkDeep, box) : false)) break;
+    }
+    L.deep28 = [...deep].map(n => ({ x: n % W, y: (n / W) | 0 }));
+    // fönster mot rum man når senare (bara väggar byts: nåbarheten ändras inte)
+    if (!F.noWindows && wallOK) windows28(L, g, wrng, ban, roomOf, inb, P, wall, st, F);
+    L.map = g.map(r => r.join(''));
+    st.n++;
+    L.features = features(L.map, L.beams, L.arenas, L.rooms);
+  }
+  function windows28(L, g, rng, ban, roomOf, inb, P, wall, st, F) {
+    const H = g.length, W = g[0].length, rooms = L.rooms;
+    const dist = new Int32Array(W * H).fill(-1), q = [P[1] * W + P[0]]; dist[q[0]] = 0;
+    for (let h = 0; h < q.length; h++) { const c = q[h], x = c % W, y = (c / W) | 0; for (let k = 0; k < 4; k++) { const nx = x + DX[k], ny = y + DY[k], n = ny * W + nx; if (!inb(nx, ny) || dist[n] >= 0) continue; const ch = g[ny][nx]; if (isBlock(ch) && !isDoorCh(ch)) continue; dist[n] = dist[c] + 1; q.push(n); } }
+    let keyRoom = -1; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (g[y][x] === '}') keyRoom = roomOf(x, y);
+    const target = k => k >= 0 && rooms[k] && (V28_WIN_ROOMS.includes(rooms[k].type) || k === keyRoom);
+    const guard = new Set(rooms.map((r, i) => r.type === 'guardian' ? i : -1).filter(i => i >= 0));
+    const walk = (x, y) => inb(x, y) && !isBlock(g[y][x]);
+    const okCell = (x, y) => { // en vägg mellan två gångbara rutor (A tidig, B i målrummet), aldrig vid dörrar eller vaktarens sal
+      if (x <= 0 || y <= 0 || x >= W - 1 || y >= H - 1 || g[y][x] !== wall || ban[y * W + x]) return null;
+      for (let k = 0; k < 8; k++) { const a = x + RX[k], b = y + RY[k]; if (!inb(a, b)) continue; const c = g[b][a]; if (isDoorCh(c) || c === WINDOW28 || guard.has(roomOf(a, b))) return null; }
+      for (const [dx, dy] of [[1, 0], [0, 1]]) for (const s of [1, -1]) {
+        const ax = x - dx * s, ay = y - dy * s, bx = x + dx * s, by = y + dy * s;
+        if (!walk(ax, ay) || !walk(bx, by)) continue;
+        const ka = roomOf(ax, ay), kb = roomOf(bx, by), da = dist[ay * W + ax], db = dist[by * W + bx];
+        if (!target(kb) || ka === kb || da < 0 || db < 0 || db - da < 12) continue;
+        return { dx, dy, s, kb, gain: db - da, from: { x: ax, y: ay } };
+      }
+      return null;
+    };
+    const cand = [];
+    for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) { const o = okCell(x, y); if (o) cand.push(Object.assign({ x, y }, o)); }
+    if (!cand.length) return;
+    cand.sort((a, b) => b.gain - a.gain || a.y - b.y || a.x - b.x);
+    const nWant = F.windows !== undefined ? F.windows : rng.chance(0.7) ? (rng.chance(0.35) ? 2 : 1) : 0;
+    const doneRooms = new Set(); let total = 0;
+    for (const c of cand) {
+      if (L.windows28.length >= nWant || doneRooms.has(c.kb)) continue;
+      if (g[c.y][c.x] !== wall) continue;
+      const cells = [{ x: c.x, y: c.y }];
+      for (const s of [1, -1]) for (let j = 1; j <= 1; j++) { // längs väggen (vinkelrätt mot A-B), högst 3 rutor
+        const x = c.x + c.dy * s * j, y = c.y + c.dx * s * j, o = okCell(x, y);
+        if (o && o.kb === c.kb) cells.push({ x, y });
+      }
+      if (total + cells.length > V28_WIN_CAP) break;
+      for (const p of cells) g[p.y][p.x] = WINDOW28;
+      total += cells.length; doneRooms.add(c.kb); st.windows++;
+      L.windows28.push({ room: c.kb, cells, from: c.from });
+    }
+  }
+
+  // ---------- Version 29 (SPEL): blodaltarets plats och blodfurstens sal på blodvåningen ----------
+  // Ett pass ovanpå version 28 (Gen.floor = floor29) med eget slumpflöde RNG(seed).fork('v29'). Bara på blodvåningar (level.blood28) och kartan
+  // ändras aldrig: två nya fält som spelet läser. opts.v29off (och alla äldre vNNoff) ger exakt version 28:s bana; en bana som inte är blodvåning
+  // är alltid exakt densamma som i version 28. opts.v29 = { altar: false, boss: false } stänger av ett fält (tester).
+  //  level.altar29 = { x, y }: en golvruta '.' med åtta fria grannar ('.') i ett vanligt rum (inte vaktarens sal, inte startrummet), minst 8 steg från
+  //    P längs gångvägen: spelet ställer blodaltaret där (ett block mitt på golvet stänger aldrig en gång).
+  //  level.boss29 = { room, x, y }: en fri ruta nära mitten av den största salen (normal, elit eller utgång, minst 6×6) långt från P: blodfursten.
+  const V29_OFFS = V28_OFFS.concat(['v29off']);
+  const V29_ROOMS = ['normal', 'elite', 'exit', 'treasure'];
+  function floor29(seed, depth, opts) {
+    opts = opts || {};
+    const L = floor28(seed, depth, opts);
+    if (V29_OFFS.some(k => opts[k]) || !L.blood28) return L;
+    const st = floor29.stats.v29 = floor29.stats.v29 || { n: 0, altar: 0, boss: 0 };
+    content29(L, RNG(seed).fork('v29'), opts.v29 || {}, st);
+    return L;
+  }
+  floor29.stats = floor.stats;
+  function content29(L, rng, F, st) {
+    const m = L.map, H = m.length, W = m[0].length, rm = Array.isArray(L.roomMask) && L.roomMask.length === H ? L.roomMask : null, rooms = L.rooms || [];
+    if (!rm || L.arena || L.maze || L.secret) return;
+    st.n++;
+    let P = null; for (let y = 0; y < H && !P; y++) for (let x = 0; x < W; x++) if (m[y][x] === 'P') { P = [x, y]; break; }
+    if (!P) return;
+    const dist = new Int32Array(W * H).fill(-1), q = [P[1] * W + P[0]]; dist[q[0]] = 0;
+    for (let h = 0; h < q.length; h++) { const c = q[h], x = c % W, y = (c / W) | 0; for (let k = 0; k < 4; k++) { const nx = x + DX[k], ny = y + DY[k], n = ny * W + nx; if (nx < 0 || ny < 0 || nx >= W || ny >= H || dist[n] >= 0 || (isBlock(m[ny][nx]) && !isDoorCh(m[ny][nx]))) continue; dist[n] = dist[c] + 1; q.push(n); } }
+    const roomOf = (x, y) => (rm[y][x] !== '-' ? rm[y].charCodeAt(x) - 48 : -1), startRoom = roomOf(P[0], P[1]);
+    const okRoom = k => k >= 0 && k !== startRoom && rooms[k] && V29_ROOMS.includes(rooms[k].type);
+    const open8 = (x, y) => { if (m[y][x] !== '.') return false; for (let k = 0; k < 8; k++) if ((m[y + RY[k]] || '')[x + RX[k]] !== '.') return false; return true; };
+    if (F.altar !== false) {
+      const cand = []; for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) if (open8(x, y) && okRoom(roomOf(x, y)) && dist[y * W + x] >= 8) cand.push([x, y]);
+      if (cand.length) { const [x, y] = rng.pick(cand); L.altar29 = { x, y }; st.altar++; }
+    }
+    if (F.boss !== false) {
+      const big = rooms.map((r, i) => i).filter(i => okRoom(i) && rooms[i].type !== 'treasure' && rooms[i].w >= 6 && rooms[i].h >= 6).sort((a, b) => rooms[b].w * rooms[b].h - rooms[a].w * rooms[a].h || a - b);
+      for (const i of big.slice(0, 3)) {
+        const r = rooms[i], cx = r.x + r.w / 2, cy = r.y + r.h / 2; let best = null, bd = 1e9;
+        for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) { if (roomOf(x, y) !== i || !open8(x, y) || dist[y * W + x] < 12 || (L.altar29 && L.altar29.x === x && L.altar29.y === y)) continue; const d = Math.hypot(x + 0.5 - cx, y + 0.5 - cy); if (d < bd) { bd = d; best = [x, y]; } }
+        if (best) { L.boss29 = { room: i, x: best[0], y: best[1] }; st.boss++; break; }
+      }
+    }
+  }
+
+  // ---------- Version 30 (GEN): förslag på spruckna väggar till RAS i ruinstaden ----------
+  // Ett pass ovanpå version 29 (Gen.floor = floor30) med eget slumpflöde RNG(seed).fork('v30'). Bara i ruinstaden, och kartan ändras aldrig: ett nytt fält
+  // som RAS läser (RAS gör den egna kontrollen och kan strunta i förslagen). opts.v30off (och alla äldre vNNoff) ger exakt version 29:s bana; alla
+  // andra biomer är alltid exakt desamma som i version 29 (fältet saknas där).
+  //  level.ras30 = [{ x, y }] (högst 3, minst 6 rutor isär): en väggruta (1 ruta tjock, inte boss- eller fönstervägg, inte vid dörrar, P, x eller Z) med gångbar
+  //    mark på båda sidor (vågrätt eller lodrätt) i olika rum/gångar; båda sidorna nås från P med grindar, lås och enkelriktade dörrar stängda och
+  //    ligger minst 10 steg isär längs vägen: om väggen rasar blir det en genväg, aldrig en väg förbi ett lås. Inte i valv, hemliga rum, vaktarens sal,
+  //    butiken eller arenor. Tom lista när inget passar.
+  const V30_OFFS = V29_OFFS.concat(['v30off']);
+  const RAS30_CAP = 3, RAS30_GAP = 10;
+  function floor30(seed, depth, opts) {
+    opts = opts || {};
+    const L = floor29(seed, depth, opts);
+    if (V30_OFFS.some(k => opts[k]) || L.biome !== 'ruins' || L.arena || L.maze || L.secret) return L;
+    L.ras30 = ras30(L, RNG(seed).fork('v30'));
+    return L;
+  }
+  floor30.stats = floor.stats;
+  function ras30(L, rng) {
+    const m = L.map, H = m.length, W = m[0].length, N = W * H, rm = Array.isArray(L.roomMask) && L.roomMask.length === H ? L.roomMask : null, rooms = L.rooms || [];
+    let P = null; for (let y = 0; y < H && !P; y++) for (let x = 0; x < W; x++) if (m[y][x] === 'P') { P = [x, y]; break; }
+    if (!P) return [];
+    const ow = new Set((L.shortcuts || []).filter(o => o.oneway).map(o => o.y * W + o.x));
+    const dist = new Int32Array(N).fill(-1), q = [P[1] * W + P[0]]; dist[q[0]] = 0;
+    for (let h = 0; h < q.length; h++) { const c = q[h], x = c % W, y = (c / W) | 0; for (let k = 0; k < 4; k++) { const nx = x + DX[k], ny = y + DY[k], n = ny * W + nx; if (nx < 0 || ny < 0 || nx >= W || ny >= H || dist[n] >= 0 || isBlock(m[ny][nx]) || m[ny][nx] === '*' || ow.has(n)) continue; dist[n] = dist[c] + 1; q.push(n); } }
+    const roomOf = (x, y) => (rm && rm[y][x] !== '-' ? rm[y].charCodeAt(x) - 48 : -1);
+    const badRoom = k => k >= 0 && rooms[k] && ['vault', 'secret', 'guardian', 'shop'].includes(rooms[k].type);
+    const at = (x, y) => (x < 0 || y < 0 || x >= W || y >= H ? '1' : m[y][x]);
+    const near = (x, y, r, test) => { for (let yy = y - r; yy <= y + r; yy++) for (let xx = x - r; xx <= x + r; xx++) if (test(at(xx, yy))) return true; return false; };
+    const cand = [];
+    for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
+      const c = m[y][x];
+      if (!isWall(c) || c === WINDOW28 || c === MAYORWALL30 || Object.values(GUARDIANS).some(gd => gd.wall === c)) continue;
+      if (near(x, y, 1, ch => isDoorCh(ch)) || near(x, y, 2, ch => 'PxZ'.includes(ch))) continue;
+      for (const [dx, dy] of [[1, 0], [0, 1]]) {
+        const ax = x - dx, ay = y - dy, bx = x + dx, by = y + dy, ca = at(ax, ay), cb = at(bx, by);
+        if (isBlock(ca) || isBlock(cb) || HAZARD.includes(ca) || HAZARD.includes(cb)) continue;
+        if (!isWall(at(x + dy, y + dx)) || !isWall(at(x - dy, y - dx))) continue; // (en vägg, inte en pelare i ett rum)
+        const da = dist[ay * W + ax], db = dist[by * W + bx], ra = roomOf(ax, ay), rb = roomOf(bx, by);
+        if (da < 0 || db < 0 || Math.abs(da - db) < RAS30_GAP || (ra === rb && ra >= 0) || badRoom(ra) || badRoom(rb) || badRoom(roomOf(x, y))) continue;
+        cand.push({ x, y, gap: Math.abs(da - db) + rng.next() * 3 });
+        break;
+      }
+    }
+    cand.sort((a, b) => b.gap - a.gap);
+    const out = [];
+    for (const c of cand) { if (out.length >= RAS30_CAP) break; if (out.some(o => cheb(o.x, o.y, c.x, c.y) < 6)) continue; out.push({ x: c.x, y: c.y }); }
+    return out;
+  }
+
   // ---------- Validering ----------
   const ENEMY_CHARS = 'SKVILNORWE' + Object.keys(NEW_ENEMIES).join('');
-  const VALID = new Set((WALLS + 'DG*xPBhaA$CMfotn.QZ' + ENEMY_CHARS + PROP_CHARS + WEAPON_CHARS + GATES + HAZARD + NPCS + NPCS7 + ",'}¥ªðþ¼½").split(''));
+  const VALID = new Set((WALLS + 'DG*xPBhaA$CMfotn.QZ' + ENEMY_CHARS + PROP_CHARS + WEAPON_CHARS + GATES + HAZARD + NPCS + NPCS7 + NPCS8 + ",'}¥ªðþ¼½Ģ" + 'Ŋŋ' + 'Ũ' + 'Ƃ' + 'ƞƳ' + 'ǫǭ' + 'Ǿȏ' + '\u022b' + '\u0246' + '\u025f' + 'ɻ' + 'ʖ' + 'ʴʵ').split(''));
+  const WATER_LOOT = '$haĢ¥'; // version 8: föremål som får ligga på en holme som bara nås simmande (vattenskatten; vrakkistan Ě räknas också)
   function validate(level) {
     const errs = [];
     const map = level && level.map;
@@ -3814,7 +10614,10 @@
       ['¬', 8, 'smulande golv'], ['±', 3, 'pendelblad'], ['¨', 2, 'tryckplattor'], ['Ñ', 2, 'nekromantiker'], ['Ð', 2, 'dödsriddare'],
       ['²', 5, 'sarkofager'], ['³', 1, 'larmklockor'], ['ç', 1, 'spelare'], ['ÿ', 1, 'bankirer'], ['ý', 1, 'vandrare'], ['þ', 1, 'krönikesidor'],
       ['¼', level.maze ? 4 : 2, 'lampoljor'], ['½', 2, 'kaststenshögar'], ['¹', 1, 'rullstensutlösare'], ['¯', level.arena ? 160 : QUICKSAND_CAP, 'kvicksandsrutor'],
-      ['Î', 1, 'tjuvar'], ['Ô', 1, 'dubbelgångare']])
+      ['Î', 1, 'tjuvar'], ['Ô', 1, 'dubbelgångare'],
+      ['Ā', 1, 'skuggjägare'], ['Ă', 1, 'häxor'], ['Ğ', 1, 'kartografer'], ['Ġ', 1, 'talangaltare'], ['Ģ', 2, 'kunskapsböcker'], ['Ė', level.arena ? 10 : 4, 'brytande kristaller'],
+      ['Ě', 3, 'vrakkistor'], ['Ē', level.arena ? 40 : SPIKES8_CAP, 'kristallspikar'], ['Ĕ', level.arena ? 90 : TIDE_CAP, 'tidvattenrutor'], ['Ĝ', 6, 'luftbubblor'], ['Ó', 4, 'ålar'],
+      ['Ŋ', 3, 'kugghjul'], ['ŋ', 1, 'fjädrar'], ['ŀ', 3, 'tidsbubblor'], ['Ň', 1, 'klockspel'], ['ň', 3, 'molnkistor'], ['ĸ', 2, 'molnjättar']])
       if ((nCh[c] || 0) > lim) errs.push('för många ' + what + ': ' + nCh[c]);
     if (nCh['ÿ'] && level.depth === 1) errs.push('bankir på första våningen');
     if ((nCh['µ'] || 0) + (nCh['ß'] || 0) > 3) errs.push('för många gift-/frosttunnor: ' + ((nCh['µ'] || 0) + (nCh['ß'] || 0)));
@@ -3822,6 +10625,183 @@
     if (nCh['¨'] && !nCh['*'] && !nCh['{']) errs.push('tryckplatta utan hemlig/sprucken vägg');
     if (!!nCh['|'] !== !!nCh['/']) errs.push('järngrind utan spak eller spak utan järngrind');
     if (!!nCh[']'] !== !!nCh['}']) errs.push('låst dörr utan nyckel eller nyckel utan låst dörr');
+    // version 8: tidvattnet (level.tide = { period: 24-40 s } eller null) och de nya tecknen bara där de får finnas
+    if (level.tide !== undefined && level.tide !== null && (typeof level.tide !== 'object' || !Number.isInteger(level.tide.period) || level.tide.period < 24 || level.tide.period > 40))
+      errs.push('level.tide ogiltigt (period 24-40)');
+    if (nCh['Ĕ'] && !level.tide) errs.push('tidvatten Ĕ utan level.tide');
+    if (['Ą', 'Ć', 'Ĉ', 'Ċ', 'Č', 'Ď', 'Đ', 'Ē', 'Ĕ', 'Ė', 'Ę', 'Ě', 'Ĝ', 'Ó', 'Ë', 'Í', 'Ï', 'Ú', 'Û'].some(c => nCh[c])) {
+      const bio = level.biome, gb = level.guardian || level.boss, dw = Array.isArray(level.floors) ? level.floors.indexOf('floor_deepwater') : -1;
+      const fmk = Array.isArray(level.floorMask) && level.floorMask.length === H ? level.floorMask : null;
+      const nb = (x, y, set, n8) => { for (let k = 0; k < 8; k += n8 ? 1 : 2) if (set.includes(at(x + RX[k], y + RY[k]))) return true; return false; };
+      const where = { 'Ą': bio === 'crystal', 'Ć': bio === 'crystal', 'Ĉ': gb === 'crystalqueen', 'Ċ': bio === 'sunken', 'Č': bio === 'sunken', 'Ď': gb === 'leviathan',
+        'Đ': bio === 'sunken' || gb === 'leviathan' || bio === 'harbor', // (version 21: fiskelägets vatten) 'Ē': bio === 'crystal', 'Ė': bio === 'crystal', 'Ę': bio === 'crystal' || gb === 'crystalqueen',
+        'Ĕ': bio === 'sunken', 'Ĝ': bio === 'sunken', 'Ó': bio === 'sunken', 'Ě': bio === 'sunken', 'Ë': bio === 'crystal', 'Í': bio === 'crystal',
+        'Ï': bio === 'sunken', 'Ú': bio === 'sunken', 'Û': bio === 'sunken' };
+      const told = {};
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const c = map[y][x];
+        if (where[c] === undefined) continue;
+        if (!where[c] && !told[c]) { told[c] = 1; errs.push('tecknet ' + c + ' hör inte hemma här (' + bio + ', ' + gb + ') vid ' + x + ',' + y); }
+        if (c === 'Ó' && (!nb(x, y, 'ĐĜÓ', true) || (dw >= 0 && fmk && +fmk[y][x] !== dw))) errs.push('ål utanför vattnet vid ' + x + ',' + y);
+        if (c === 'Ĝ' && !nb(x, y, 'ĐĜÓ', false)) errs.push('luftbubblor utanför vattnet vid ' + x + ',' + y);
+        if (c === 'Ĕ' && !nb(x, y, 'ĐĜÓĔ', true)) errs.push('tidvatten långt från vattnet vid ' + x + ',' + y);
+        if ((c === 'Ē' || c === 'Ĕ') && [0, 1, 2, 3].some(d => isDoorCh(at(x + DX[d], y + DY[d])))) errs.push('fälla ' + c + ' i dörröppning vid ' + x + ',' + y);
+      }
+    }
+    // version 9: klocktornets och molnborgens tecken bara där de får finnas; sågspår, tidsbubblor och vindrutor aldrig i dörröppningar,
+    // tidsbubblor i rum; level.saws och level.winds stämmer med kartan
+    if (['Ĺ', 'ĺ', 'Ļ', 'ļ', 'Ľ', 'ľ', 'Ŀ', 'ŀ', 'Ń', 'ń', 'Ņ', 'ņ', 'Ň', 'ň', 'ĳ', 'Ĵ', 'ĵ', 'Ķ', 'ķ', 'ĸ'].some(c => nCh[c])) {
+      const bio = level.biome, gb = level.guardian || level.boss, clk = bio === 'clock', sk = bio === 'sky';
+      const rmk9 = Array.isArray(level.roomMask) && level.roomMask.length === H ? level.roomMask : null;
+      const where = { 'Ĺ': clk, 'ĺ': clk, 'Ļ': gb === 'clockmaker', 'ļ': sk, 'Ľ': sk, 'ľ': gb === 'thunderbird', 'Ŀ': clk, 'ŀ': clk, 'Ń': sk, 'ń': sk,
+        'Ņ': clk || gb === 'clockmaker', 'ņ': sk || gb === 'thunderbird', 'Ň': clk, 'ň': sk, 'ĳ': clk, 'Ĵ': clk, 'ĵ': clk, 'Ķ': sk, 'ķ': sk, 'ĸ': sk };
+      const told = {};
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const c = map[y][x];
+        if (where[c] === undefined) continue;
+        if (!where[c] && !told[c]) { told[c] = 1; errs.push('tecknet ' + c + ' hör inte hemma här (' + bio + ', ' + gb + ') vid ' + x + ',' + y); }
+        if ((c === 'Ŀ' || c === 'ŀ' || c === 'ń') && [0, 1, 2, 3].some(d => isDoorCh(at(x + DX[d], y + DY[d])))) errs.push('fälla ' + c + ' i dörröppning vid ' + x + ',' + y);
+        if (c === 'ŀ' && rmk9 && rmk9[y] && rmk9[y][x] === '-') errs.push('tidsbubbla utanför ett rum vid ' + x + ',' + y);
+      }
+    }
+    // version 10: de nya fienderna bara i sin biom och den närliggande (aldrig i arenor/labyrinter), på tillåtna djup, under taken; grävaren
+    // aldrig intill vatten, rotvättarna i grupper om 2-3 i samma rum; legendaltaret högst 1, djup 2+, i ett lugnt rum med fri framsida
+    if ([...FOES10_CH, 'Œ'].some(c => nCh[c])) {
+      const bio = level.biome, rmk10 = Array.isArray(level.roomMask) && level.roomMask.length === H ? level.roomMask : null;
+      const rooms0 = level.rooms || [], told = {}, roots = {};
+      const roomAt = (x, y) => (rmk10 && rmk10[y] && rmk10[y][x] !== '-' ? rooms0[rmk10[y].charCodeAt(x) - 48] : null);
+      for (const c of FOES10_CH) if ((nCh[c] || 0) > FOES10[c].max) errs.push('för många ' + c + ': ' + nCh[c]);
+      if ((nCh['Œ'] || 0) > 1) errs.push('för många legendaltare: ' + nCh['Œ']);
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const c = map[y][x];
+        if (c === 'Œ') {
+          const r = roomAt(x, y);
+          if (level.arena || level.maze || level.secret || (level.depth !== undefined && level.depth < 2)) errs.push('legendaltare här (arena/labyrint/hemlig våning/djup ' + level.depth + ') vid ' + x + ',' + y);
+          else if (rmk10 && (!r || ['normal', 'elite', 'exit', 'guardian', 'boss'].includes(r.type) || r.arch === 'challenge')) errs.push('legendaltare i ' + (r ? r.type + '/' + r.arch : 'korridor') + ' vid ' + x + ',' + y);
+          if (![0, 1, 2, 3].some(d => { const a = at(x + DX[d], y + DY[d]); return !isBlock(a) && !HAZARD.includes(a); })) errs.push('legendaltaret saknar fri framsida vid ' + x + ',' + y);
+          continue;
+        }
+        const F = FOES10[c];
+        if (!F) continue;
+        if ((level.arena || level.maze || level.secret || (bio !== F.home && !F.near.includes(bio))) && !told[c]) { told[c] = 1; errs.push('tecknet ' + c + ' hör inte hemma här (' + bio + ') vid ' + x + ',' + y); }
+        if (level.depth !== undefined && level.depth < F.d) errs.push('fiende ' + c + ' på djup ' + level.depth + ' (minst ' + F.d + ') vid ' + x + ',' + y);
+        if (c === 'ō' && [0, 1, 2, 3].some(d => { const a = at(x + DX[d], y + DY[d]); return a === '-' || isWet(a); })) errs.push('grävare i vattnet vid ' + x + ',' + y);
+        if (c === 'ŏ') { const k = rmk10 && rmk10[y] ? rmk10[y][x] : '?'; roots[k] = (roots[k] || 0) + 1; }
+      }
+      for (const k in roots) if (roots[k] < 2 || roots[k] > 3) errs.push('rotvättar: ' + roots[k] + ' i ' + (k === '-' ? 'en korridor' : 'rum ' + (k.charCodeAt(0) - 48)) + ' (väntat en grupp om 2-3)');
+    }
+    // version 11: svamprikets och spegelpalatsets tecken bara där de får finnas (även i deras arenor, hemliga våningar och labyrinter),
+    // fienderna på tillåtna djup och under taken, spegelväggar aldrig på dörrkarmar, studsplattor/sporpölar/teleportrar aldrig vid dörrar;
+    // level.teleports stämmer med kartan (exakta par, i olika rum)
+    if (['ŝ', 'Ş', 'ş', 'Š', 'š', 'Ţ', 'ţ', 'Ť', 'ť', 'Ŧ', 'ŧ', 'ŗ', 'Ř', 'ř', 'Ś', 'ś', 'Ŝ', 'Ũ'].some(c => nCh[c])) {
+      const bio = level.biome, gb = level.guardian || level.boss, fu = bio === 'fungus', mi = bio === 'mirror';
+      const where = { 'ŝ': fu, 'Ş': fu, 'ş': gb === 'mycelmother', 'Š': mi, 'š': mi, 'Ţ': gb === 'mirrorking', 'ţ': fu, 'Ť': fu, 'ť': mi,
+        'Ŧ': fu || gb === 'mycelmother', 'ŧ': mi || gb === 'mirrorking', 'ŗ': fu, 'Ř': fu, 'ř': fu, 'Ś': mi, 'ś': mi, 'Ŝ': mi, 'Ũ': true };
+      const deep = { 'Ř': 2, 'ř': 2, 'ś': 2 }, told = {};
+      for (const [c, lim, what] of [['Ř', 2, 'mycelbestar'], ['ś', 2, 'illusionister'], ['Ũ', 2, 'sporsäckar'], ['Ť', level.arena ? 40 : SPOREPOOL11_CAP, 'sporpölsrutor'],
+        ['ţ', level.arena ? 8 : 4, 'studsplattor'], ['ť', 6, 'teleportrar']])
+        if ((nCh[c] || 0) > lim) errs.push('för många ' + what + ': ' + nCh[c]);
+      if (nCh['Ũ'] && (level.arena || level.maze || level.secret)) errs.push('sporsäck i en arena/labyrint/hemlig våning');
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const c = map[y][x];
+        if (where[c] === undefined) continue;
+        if (!where[c] && !told[c]) { told[c] = 1; errs.push('tecknet ' + c + ' hör inte hemma här (' + bio + ', ' + gb + ') vid ' + x + ',' + y); }
+        if (deep[c] && level.depth !== undefined && level.depth < deep[c]) errs.push('fiende ' + c + ' på djup ' + level.depth + ' (minst ' + deep[c] + ') vid ' + x + ',' + y);
+        if ((c === 'š' || c === 'ť') && RX.some((dx, k) => isDoorCh(at(x + dx, y + RY[k])))) errs.push((c === 'š' ? 'spegelvägg på en dörrkarm' : 'teleporter intill en dörr') + ' vid ' + x + ',' + y);
+        if ((c === 'ţ' || c === 'Ť') && [0, 1, 2, 3].some(d => isDoorCh(at(x + DX[d], y + DY[d])))) errs.push('fälla ' + c + ' i dörröppning vid ' + x + ',' + y);
+      }
+    }
+    if (level.teleports !== undefined || nCh['ť']) {
+      const tps = level.teleports, rmk11 = Array.isArray(level.roomMask) && level.roomMask.length === H ? level.roomMask : null;
+      if (!Array.isArray(tps)) errs.push('teleportrar ť utan level.teleports (eller ogiltigt level.teleports)');
+      else {
+        const seen = new Set(), ok = p => p && Number.isInteger(p.x) && Number.isInteger(p.y) && at(p.x, p.y) === 'ť';
+        for (const tp of tps) {
+          const { a, b } = tp || {};
+          if (!ok(a) || !ok(b)) { errs.push('teleporterparet pekar inte på två ť: ' + JSON.stringify(tp)); continue; }
+          for (const p of [a, b]) { if (seen.has(p.y * W + p.x)) errs.push('teleportern finns i två par vid ' + p.x + ',' + p.y); seen.add(p.y * W + p.x); }
+          if (a.x === b.x && a.y === b.y) errs.push('teleporterparet har samma ruta vid ' + a.x + ',' + a.y);
+          else if (rmk11 && (rmk11[a.y][a.x] === '-' || rmk11[b.y][b.x] === '-' || rmk11[a.y][a.x] === rmk11[b.y][b.x])) errs.push('teleporterparet ligger inte i två olika rum: ' + JSON.stringify(tp));
+        }
+        if (seen.size !== (nCh['ť'] || 0)) errs.push('level.teleports har ' + seen.size + ' teleportrar men kartan har ' + (nCh['ť'] || 0) + ' ť');
+      }
+    }
+    // version 13: bibliotekets och gjuteriets tecken bara där de får finnas (även i deras arenor, hemliga våningar och labyrinter), fienderna på
+    // tillåtna djup och under taken, bläckpölar/kanaler/ventiler/rullband aldrig i dörröppningar; level.belts stämmer med kartan
+    if (['ũ', 'Ū', 'ū', 'ŵ', 'Ŷ', 'ŷ', 'Ű', 'ű', 'Ŭ', 'Ÿ', 'Ź', 'ź', 'Ż', 'ż', 'Ų', 'ų', 'Ŵ', 'Ž', 'ž', 'ſ', 'Ƃ'].some(c => nCh[c])) {
+      const bio = level.biome, gb = level.guardian || level.boss, li = bio === 'library', fo = bio === 'foundry';
+      const where = { 'ũ': li, 'Ū': li, 'ū': gb === 'librarian', 'ŵ': fo, 'Ŷ': fo, 'ŷ': gb === 'colossus', 'Ű': li, 'ű': li || gb === 'librarian', 'Ŭ': li,
+        'Ÿ': fo, 'Ź': fo, 'ź': fo, 'Ż': fo, 'ż': fo || gb === 'colossus', 'Ų': li, 'ų': li, 'Ŵ': li, 'Ž': fo, 'ž': fo, 'ſ': fo, 'Ƃ': true };
+      const deep = { 'Ŵ': 2, 'Ž': 2 }, told = {};
+      for (const [c, lim, what] of [['Ŵ', 2, 'arkivariespöken'], ['Ž', 2, 'smältgolemer'], ['Ƃ', INKFLASK13_CAP, 'bläckflaskor'], ['Ű', LECTERN13_CAP, 'pulpeter'],
+        ['Ŭ', level.arena ? 40 : INK13_CAP, 'bläckpölsrutor'], ['ź', level.arena ? 6 : VENT13_CAP, 'ångventiler'], ['Ż', PRESS13_CAP, 'stansar'],
+        ['Ÿ', BELT13_MAX * BELT13_LEN[1], 'rullbandsrutor']])
+        if ((nCh[c] || 0) > lim) errs.push('för många ' + what + ': ' + nCh[c]);
+      if (nCh['Ƃ'] && (level.arena || level.maze || level.secret)) errs.push('bläckflaska i en arena/labyrint/hemlig våning');
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const c = map[y][x];
+        if (where[c] === undefined) continue;
+        if (!where[c] && !told[c]) { told[c] = 1; errs.push('tecknet ' + c + ' hör inte hemma här (' + bio + ', ' + gb + ') vid ' + x + ',' + y); }
+        if (deep[c] && level.depth !== undefined && level.depth < deep[c]) errs.push('fiende ' + c + ' på djup ' + level.depth + ' (minst ' + deep[c] + ') vid ' + x + ',' + y);
+        if ((c === 'Ŭ' || c === 'Ź' || c === 'ź' || c === 'Ÿ') && [0, 1, 2, 3].some(d => isDoorCh(at(x + DX[d], y + DY[d])))) errs.push('fälla ' + c + ' i dörröppning vid ' + x + ',' + y);
+      }
+    }
+    if (level.belts !== undefined || nCh['Ÿ']) {
+      const belts = level.belts;
+      if (!Array.isArray(belts)) errs.push('rullband Ÿ utan level.belts (eller ogiltigt level.belts)');
+      else {
+        const dir = new Map();
+        for (const bt of belts) {
+          const { x, y, dx, dy } = bt || {};
+          if (![x, y, dx, dy].every(Number.isInteger) || Math.abs(dx) > 1 || Math.abs(dy) > 1 || Math.abs(dx) + Math.abs(dy) !== 1) { errs.push('rullbandet har ogiltig riktning: ' + JSON.stringify(bt)); continue; }
+          if (at(x, y) !== 'Ÿ') errs.push('level.belts pekar på "' + at(x, y) + '" vid ' + x + ',' + y);
+          if (dir.has(y * W + x)) errs.push('rullbandsrutan finns två gånger vid ' + x + ',' + y);
+          dir.set(y * W + x, [dx, dy]);
+        }
+        for (const [k, [dx, dy]] of dir) { // bandet för i en riktning: nästa ruta är samma band (samma riktning) eller fritt golv där det slutar
+          const x = k % W, y = (k / W) | 0, nx = x + dx, ny = y + dy, nxt = dir.get(ny * W + nx);
+          if (nxt ? nxt[0] !== dx || nxt[1] !== dy : at(nx, ny) === 'Ÿ') errs.push('rullbandet byter riktning vid ' + nx + ',' + ny);
+          else if (!nxt && isBlock(at(nx, ny))) errs.push('rullbandet för in i en vägg/ett hinder vid ' + x + ',' + y);
+        }
+        if (dir.size !== (nCh['Ÿ'] || 0)) errs.push('level.belts har ' + dir.size + ' rutor men kartan har ' + (nCh['Ÿ'] || 0) + ' Ÿ');
+      }
+    }
+    if (level.saws !== undefined || nCh['Ŀ']) {
+      const saws = level.saws;
+      if (!Array.isArray(saws)) errs.push('sågspår Ŀ utan level.saws (eller ogiltigt level.saws)');
+      else {
+        const cov = new Uint8Array(W * H); let tot = 0;
+        for (const sw of saws) {
+          const { x0, y0, x1, y1 } = sw || {};
+          if (![x0, y0, x1, y1].every(Number.isInteger) || (x0 !== x1 && y0 !== y1)) { errs.push('sågspåret är inte rakt: ' + JSON.stringify(sw)); continue; }
+          const len = Math.abs(x1 - x0) + Math.abs(y1 - y0) + 1, ux = Math.sign(x1 - x0), uy = Math.sign(y1 - y0);
+          if (len < 3 || len > 7) errs.push('sågspåret har ' + len + ' rutor (3-7) vid ' + x0 + ',' + y0);
+          for (let k = 0; k < len; k++) {
+            const x = x0 + ux * k, y = y0 + uy * k;
+            if (at(x, y) !== 'Ŀ') { errs.push('sågspåret går utanför Ŀ vid ' + x + ',' + y); break; }
+            if (cov[y * W + x]) errs.push('sågspåren överlappar vid ' + x + ',' + y);
+            cov[y * W + x] = 1; tot++;
+          }
+        }
+        if (tot !== (nCh['Ŀ'] || 0)) errs.push('level.saws täcker ' + tot + ' rutor men kartan har ' + (nCh['Ŀ'] || 0) + ' Ŀ');
+      }
+    }
+    if (level.winds !== undefined || nCh['ń']) {
+      const winds = level.winds;
+      if (!Array.isArray(winds)) errs.push('vindrutor ń utan level.winds (eller ogiltigt level.winds)');
+      else {
+        const seen = new Set();
+        for (const wd of winds) {
+          const { x, y, dx, dy } = wd || {};
+          if (![x, y, dx, dy].every(Number.isInteger) || Math.abs(dx) + Math.abs(dy) !== 1) { errs.push('vindrutan har ogiltig riktning: ' + JSON.stringify(wd)); continue; }
+          if (at(x, y) !== 'ń') errs.push('level.winds pekar på "' + at(x, y) + '" vid ' + x + ',' + y);
+          if (seen.has(y * W + x)) errs.push('vindrutan finns två gånger vid ' + x + ',' + y);
+          seen.add(y * W + x);
+          if (isBlock(at(x + dx, y + dy))) errs.push('vinden blåser ut i tomrummet/in i ett hinder vid ' + x + ',' + y);
+        }
+        if (seen.size !== (nCh['ń'] || 0)) errs.push('level.winds har ' + seen.size + ' rutor men kartan har ' + (nCh['ń'] || 0) + ' ń');
+      }
+    }
     // dörrar, eldfat och spikfällor
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const c = map[y][x];
@@ -3859,10 +10839,24 @@
     //  - med grindarna stängda nås allt utom valven (type 'vault') och hemliga rum; spak, nyckel och interaktiva saker nås då
     const rooms = level.rooms || [];
     if (nP === 1) {
-      const N = W * H, isGate = c => GATES.includes(c), haz = c => c === '_' || c === 'z' || c === '¬' || c === '¯'; // smulande golv och kvicksand räknas som lava: de får aldrig vara enda vägen
-      // per ruta: 1 gångbar, 2 grind (| ] {), 4 lava/spikar
+      // smulande golv, kvicksand, djupt vatten, kristallspikar, tidvatten, sågspår och tidsbubblor räknas som lava: de får aldrig vara
+      // enda vägen (tomrummet Ń blockerar: allt nås utan att gå på det)
+      // version 11: studsplattor, sporpölar och teleportrar likaså (allt nås till fots utan dem); version 13: bläckpölar, smält metall och ångventiler
+      // likaså (stansar Ż och bokhyllor ũ är hinder/väggar; rullbanden Ÿ är vanligt golv)
+      const N = W * H, isGate = c => GATES.includes(c), haz = c => c === '_' || c === 'z' || c === '¬' || c === '¯' || isWet(c) || c === 'Ŀ' || c === 'ŀ' || c === 'ţ' || c === 'Ť' || c === 'ť'
+        || c === 'Ŭ' || c === 'Ź' || c === 'ź' || c === 'Ɩ' || c === 'ƥ' // (version 15/16: honung och taggrankor likaså)
+        || c === ROT17 || c === WET17 || c === ACID17 // (version 17: ruttna plankor, sköljt däck och syrakar likaså)
+        || c === TRAP18 || c === PIRANHA18 || c === VINES18 // (version 18: fallluckor, pirayavatten och lianer likaså)
+        || SINK19.includes(c) // (version 19: räls, gasfickor, ras, kupolspringor och stjärnportar likaså)
+        || SINK20.includes(c) // (version 20: slam, sprutrör och slussar likaså)
+        || SINK21.includes(c) // (version 21: larmplattor och fisknät likaså)
+        || SINK22.includes(c) // (version 22: heta bassänger, eldfloder och runcirklar likaså)
+        || SINK23.includes(c) // (version 23: köttkvarnar, djup lera och katapultmål likaså)
+        || SINK30.includes(c); // (version 30: rasande tak, smält glas, skärvor och ugnsmunnar likaså)
+      // per ruta: 1 gångbar, 2 grind (| ] {), 4 lava/spikar/vatten, 8 lava/spikar (inte simbart vatten)
       const cls = new Uint8Array(N);
-      for (let y = 0; y < H; y++) { const row = map[y]; for (let x = 0; x < W; x++) { const c = row[x]; cls[y * W + x] = isBlock(c) ? (isGate(c) ? 2 : 0) : (haz(c) ? 5 : 1); } }
+      let wetN = 0;
+      for (let y = 0; y < H; y++) { const row = map[y]; for (let x = 0; x < W; x++) { const c = row[x]; cls[y * W + x] = isBlock(c) ? (isGate(c) ? 2 : 0) : (haz(c) ? (WATER8.includes(c) ? (wetN++, 5) : 13) : 1); } }
       const stack = new Int32Array(N);
       const flood = (ok, no) => { // ok: tillåtna bitar, no: förbjudna bitar
         const seen = new Uint8Array(N); let sp = 0;
@@ -3877,6 +10871,8 @@
         return seen;
       };
       const sAll = flood(3, 0), sSafe = flood(3, 4), sClosed = flood(1, 4);
+      const sSwim = wetN ? flood(1, 8) : sClosed; // vattenskatten: simmande, utan lava/spikar, grindarna stängda
+      const swimOK = (c, x, y) => (WATER_LOOT.includes(c) && sSwim[y * W + x]) || (c === 'Ě' && near(sSwim, x, y));
       const rm = Array.isArray(level.roomMask) && level.roomMask.length === H ? level.roomMask : null;
       const optional = (x, y) => { if (!rm || !rm[y]) return false; const r = rooms[rm[y].charCodeAt(x) - 48]; return !!r && (r.type === 'vault' || r.type === 'secret'); };
       const near = (s, x, y) => { for (let d = 0; d < 4; d++) { const nx = x + DX[d], ny = y + DY[d]; if (nx >= 0 && ny >= 0 && nx < W && ny < H && s[ny * W + nx]) return true; } return false; };
@@ -3886,11 +10882,11 @@
         const i = y * W + x;
         if (cls[i] === 0 && !isInter(map[y][x])) continue;
         const c = map[y][x];
-        if (isGate(c) || isInter(c)) { if (!near(sClosed, x, y) && (c === '/' || !optional(x, y))) bad(c + ' nås inte från någon sida vid ' + x + ',' + y); continue; }
+        if (isGate(c) || isInter(c)) { if (!near(sClosed, x, y) && (c === '/' || !optional(x, y)) && !swimOK(c, x, y)) bad(c + ' nås inte från någon sida vid ' + x + ',' + y); continue; }
         if (isBlock(c)) continue;
         if (!sAll[i]) bad('onåbar ruta "' + c + '" vid ' + x + ',' + y);
-        else if (!haz(c) && !sSafe[i]) bad('ruta "' + c + '" nås bara över lava/spikar vid ' + x + ',' + y);
-        else if (!haz(c) && !sClosed[i] && !optional(x, y)) bad('ruta "' + c + '" nås bara genom en grind/låst dörr vid ' + x + ',' + y);
+        else if (!haz(c) && !sSafe[i] && !swimOK(c, x, y)) bad('ruta "' + c + '" nås bara över lava/spikar/vatten vid ' + x + ',' + y);
+        else if (!haz(c) && !sClosed[i] && !optional(x, y) && !swimOK(c, x, y)) bad('ruta "' + c + '" nås bara genom en grind/låst dörr vid ' + x + ',' + y);
         else if (c === '}' && !sClosed[i]) bad('nyckeln ligger bakom en grind/låst dörr vid ' + x + ',' + y);
       }
       if (shown > 5) errs.push('... totalt ' + shown + ' nåbarhetsfel');
@@ -3970,8 +10966,555 @@
         if (Array.isArray(level.sky) && level.sky[y] && level.sky[y][x] === '1') errs.push('ljusschakt under öppen himmel vid ' + x + ',' + y);
       }
     }
+    // version 14: de nya fienderna bara i sin biom, på tillåtna djup, högst max; marulken bara i/vid vatten
+    if ([...FOES14_CH].some(c => nCh[c])) {
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const c = map[y][x], F = FOES14[c];
+        if (!F) continue;
+        if (level.biome !== F.home) errs.push('fiende ' + c + ' hör inte hemma här (' + level.biome + ') vid ' + x + ',' + y);
+        if (level.depth !== undefined && level.depth < F.d) errs.push('fiende ' + c + ' på djup ' + level.depth + ' (minst ' + F.d + ') vid ' + x + ',' + y);
+        if (c === 'ƈ' && !RX.some((dx, k) => WATER14.includes(at(x + dx, y + RY[k])))) errs.push('marulk utanför vattnet vid ' + x + ',' + y);
+      }
+      for (const c of FOES14_CH) if ((nCh[c] || 0) > FOES14[c].max) errs.push('för många ' + c + ': ' + nCh[c]);
+    }
+    // version 15/16: katedralens, bikupans, trädgårdens och drömrikets tecken bara där de får finnas (även i deras arenor, hemliga våningar och
+    // labyrinter; väktarnas väggar, ljus och dekor i alla biomer), fienderna i sina biomer på tillåtna djup och under taken (aldrig i arenor),
+    // de nya golvrutorna aldrig i dörröppningar, bikupor och drömflaskor aldrig i arenor/labyrinter/hemliga våningar, högst två klockor
+    if (NEW1516_CHARS.some(c => nCh[c])) {
+      const bio = level.biome, gb = level.guardian || level.boss, ca = bio === 'cathedral', hi = bio === 'hive', ga = bio === 'garden', dr = bio === 'dream';
+      const where = { 'Ɗ': ca, 'Ƌ': ca, 'ƌ': gb === 'cardinal', 'Ɠ': hi, 'Ɣ': hi, 'ƕ': gb === 'queenbee', 'Ɵ': ga, 'Ơ': ga, 'ơ': gb === 'gardener', 'Ƣ': dr, 'ƣ': dr,
+        'Ƥ': gb === 'sandman', 'ƍ': ca, 'Ɩ': hi, 'ƥ': ga, 'Ʀ': dr, 'Ǝ': ca || gb === 'cardinal', 'Ə': ca, 'Ɛ': ca, 'Ɨ': hi, 'Ƨ': ga, 'ƨ': ga || gb === 'gardener', 'Ʃ': dr,
+        'ƪ': dr || gb === 'sandman', 'ƞ': true, 'Ƴ': true };
+      const told = {}, A = !!level.arena;
+      for (const [c, lim, what] of [['Ɛ', BELL15_CAP, 'klockor'], ['Ə', FONT15_CAP, 'blodfuntar'], ['Ɨ', SAC15_CAP, 'larvsäckar'], ['Ɩ', HONEY15_CAP, 'honungsrutor'],
+        ['ƍ', BEAM15_CAP, 'ljusstråksrutor'], ['ƞ', BEEHIVE15_CAP, 'bikupor'], ['Ƨ', FOUNTAIN16_CAP, 'fontäner'], ['Ʃ', FALSEDOOR16_CAP, 'falska dörrar'],
+        ['ƥ', THORN16_CAP, 'taggranksrutor'], ['Ʀ', MIST16_CAP, 'dimrutor'], ['Ƴ', DREAMFLASK16_CAP, 'drömflaskor'], ['ƣ', SHIFT16_CAP, 'glidande väggar']])
+        if ((nCh[c] || 0) > lim) errs.push('för många ' + what + ': ' + nCh[c]);
+      for (const c of FOES1516_CH) if (FOES1516[c][2] && (nCh[c] || 0) > FOES1516[c][2]) errs.push('för många ' + c + ': ' + nCh[c]);
+      if ((nCh['ƞ'] || nCh['Ƴ']) && (A || level.maze || level.secret)) errs.push('bikupa/drömflaska i en arena/labyrint/hemlig våning');
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const c = map[y][x], F = FOES1516[c];
+        if (F) {
+          if ((A || !F[0].includes(bio)) && !told[c]) { told[c] = 1; errs.push('fiende ' + c + ' hör inte hemma här (' + bio + (A ? ', arena' : '') + ') vid ' + x + ',' + y); }
+          if (level.depth !== undefined && level.depth < F[1]) errs.push('fiende ' + c + ' på djup ' + level.depth + ' (minst ' + F[1] + ') vid ' + x + ',' + y);
+          continue;
+        }
+        if (where[c] === undefined) continue;
+        if (!where[c] && !told[c]) { told[c] = 1; errs.push('tecknet ' + c + ' hör inte hemma här (' + bio + ', ' + gb + ') vid ' + x + ',' + y); }
+        if ((c === 'ƍ' || c === 'Ɩ' || c === 'ƥ' || c === 'Ʀ') && [0, 1, 2, 3].some(d => isDoorCh(at(x + DX[d], y + DY[d])))) errs.push('golvrutan ' + c + ' i dörröppning vid ' + x + ',' + y);
+        if (c === SHIFT16) { // den glidande väggen: aldrig i kanten, aldrig intill en dörr/grind/hemlig vägg (de åtta grannarna)
+          if (x === 0 || y === 0 || x === W - 1 || y === H - 1) errs.push('glidande vägg i kanten vid ' + x + ',' + y);
+          if (RX.some((dx, k) => isDoorCh(at(x + dx, y + RY[k])))) errs.push('glidande vägg intill en dörr vid ' + x + ',' + y);
+        }
+      }
+    }
+    // version 16: level.shifts = [{ x, y, ph }] stämmer exakt med de glidande väggarna ƣ på kartan (fas 0-3.9 s); med alla ƣ uppe (som vägg) nås allt,
+    // se nåbarheten nedan (ƣ är en vägg)
+    if (level.shifts !== undefined || nCh[SHIFT16]) {
+      const sh = level.shifts;
+      if (!Array.isArray(sh)) errs.push('glidande väggar ƣ utan level.shifts (eller ogiltigt level.shifts)');
+      else {
+        const seen = new Set();
+        for (const sw of sh) {
+          const { x, y, ph } = sw || {};
+          if (!Number.isInteger(x) || !Number.isInteger(y) || typeof ph !== 'number' || !(ph >= 0 && ph <= 3.9 + 1e-9)) { errs.push('glidande väggen är ogiltig: ' + JSON.stringify(sw)); continue; }
+          if (at(x, y) !== SHIFT16) errs.push('level.shifts pekar på "' + at(x, y) + '" vid ' + x + ',' + y);
+          if (seen.has(y * W + x)) errs.push('glidande väggen finns två gånger vid ' + x + ',' + y);
+          seen.add(y * W + x);
+        }
+        if (seen.size !== (nCh[SHIFT16] || 0)) errs.push('level.shifts har ' + seen.size + ' väggar men kartan har ' + (nCh[SHIFT16] || 0) + ' ƣ');
+      }
+    }
+    // version 17: skeppets och laboratoriets tecken bara där de får finnas (även i deras arenor, hemliga våningar och labyrinter; väktarnas väggar, ljus
+    // och dekor i alla biomer), fienderna i sina biomer på tillåtna djup och under taken (aldrig i arenor), taken för kanoner, alembiker (högst två),
+    // teslaspolar (högst tre, aldrig intill en dörr eller i en korridor), krutkaggar, flaskhyllor och farorna, kanonerna vid relingen (skrovet), de nya
+    // golvrutorna aldrig i dörröppningar, kulkistor och syraflaskor aldrig i arenor/labyrinter/hemliga våningar
+    if (NEW17_CHARS.some(c => nCh[c])) {
+      const bio = level.biome, gb = level.guardian || level.boss, sh = bio === 'ship', lb = bio === 'lab', A = !!level.arena;
+      const rm = Array.isArray(level.roomMask) && level.roomMask.length === H ? level.roomMask : null;
+      const where = { [HULL17]: sh, [MAST17]: sh, [CAPWALL17]: gb === 'captain', [TILE17]: lb, [JARS17]: lb, [ALCHWALL17]: gb === 'alchemist',
+        [ROT17]: sh, [WET17]: sh, [ACID17]: lb, [TRANS17]: lb, [CANNON17]: sh, [LANTERN17]: sh || gb === 'captain', [KEG17]: sh || gb === 'captain',
+        [FLASKS17]: lb || gb === 'alchemist', [TESLA17]: lb, [ALEMBIC17]: lb, 'ǫ': true, 'ǭ': true };
+      const told = {};
+      for (const [c, lim, what] of [[CANNON17, CANNON17_CAP, 'kanoner'], [ALEMBIC17, ALEMBIC17_CAP, 'alembiker'], [TESLA17, TESLA17_CAP, 'teslaspolar'], [KEG17, KEG17_CAP + 4, 'krutkaggar'],
+        [FLASKS17, FLASK17_CAP + 4, 'flaskhyllor'], [TRANS17, A ? 30 : TRANS17_CAP, 'transmutationsrutor'], [ROT17, A ? 30 : ROT17_CAP, 'ruttna plankor'], [WET17, A ? 40 : WET17_CAP, 'sköljda däcksrutor'],
+        [ACID17, A ? 30 : ACID17_CAP, 'syrakarsrutor'], ['ǫ', AMMO17_CAP, 'kulkistor'], ['ǭ', AMMO17_CAP, 'syraflaskor']])
+        if ((nCh[c] || 0) > lim) errs.push('för många ' + what + ': ' + nCh[c]);
+      for (const c of FOES17_CH) if (FOES17[c][2] && (nCh[c] || 0) > FOES17[c][2]) errs.push('för många ' + c + ': ' + nCh[c]);
+      if ((nCh['ǫ'] || nCh['ǭ']) && (A || level.maze || level.secret)) errs.push('kulkista/syraflaska i en arena/labyrint/hemlig våning');
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const c = map[y][x], F = FOES17[c];
+        if (F) {
+          if ((A || !F[0].includes(bio)) && !told[c]) { told[c] = 1; errs.push('fiende ' + c + ' hör inte hemma här (' + bio + (A ? ', arena' : '') + ') vid ' + x + ',' + y); }
+          if (level.depth !== undefined && level.depth < F[1]) errs.push('fiende ' + c + ' på djup ' + level.depth + ' (minst ' + F[1] + ') vid ' + x + ',' + y);
+          continue;
+        }
+        if (where[c] === undefined) continue;
+        if (!where[c] && !told[c]) { told[c] = 1; errs.push('tecknet ' + c + ' hör inte hemma här (' + bio + ', ' + gb + ') vid ' + x + ',' + y); }
+        if ((c === ROT17 || c === WET17 || c === ACID17 || c === TRANS17) && [0, 1, 2, 3].some(d => isDoorCh(at(x + DX[d], y + DY[d])))) errs.push('golvrutan ' + c + ' i dörröppning vid ' + x + ',' + y);
+        if (c === TESLA17) { // teslaspolen: aldrig intill en dörr/grind/hemlig vägg (de åtta grannarna) och aldrig i en korridor (utanför rummen)
+          if (RX.some((dx, k) => isDoorCh(at(x + dx, y + RY[k])))) errs.push('teslaspole intill en dörr vid ' + x + ',' + y);
+          if (rm && rm[y][x] === '-') errs.push('teslaspole i en korridor vid ' + x + ',' + y);
+        }
+        if (c === CANNON17 && ![0, 1, 2, 3].some(d => { const w = at(x + DX[d], y + DY[d]); return w === HULL17 || w === CAPWALL17; })) errs.push('kanon utan reling (skrov) vid ' + x + ',' + y);
+      }
+    }
+    // version 18: cirkusens och djungelns tecken bara där de får finnas (även i deras arenor, hemliga våningar och labyrinter; väktarnas väggar, ljus och
+    // dekor i alla biomer), fienderna i sina biomer på tillåtna djup och under taken (aldrig i arenor), taken för knivkastarhjul (tre), lyckohjul,
+    // guldidoler (en), pilidoler (fyra), giftblommor, ballonger och farorna, knivkastarhjulen aldrig i korridorer, pilidolerna aldrig med en dörr inom
+    // DART18_NEAR rutor i fri rak linje, de nya golvrutorna och giftblommorna aldrig i dörröppningar, kägellådor och pilkoger aldrig i arenor/labyrinter/
+    // hemliga våningar
+    if (NEW18_CHARS.some(c => nCh[c])) {
+      const bio = level.biome, gb = level.guardian || level.boss, ci = bio === 'circus', ju = bio === 'jungle', A = !!level.arena;
+      const rm = Array.isArray(level.roomMask) && level.roomMask.length === H ? level.roomMask : null;
+      const where = { [TENT18]: ci, [CAGE18]: ci, [RMWALL18]: gb === 'ringmaster', [JSTONE18]: ju, [JUNGLE18]: ju, [SERPWALL18]: gb === 'serpent',
+        [TRAP18]: ci, [SPOT18]: ci, [PIRANHA18]: ju, [VINES18]: ju, [KNIFE18]: ci, [PRIZE18]: ci, [BALLOON18]: ci || gb === 'ringmaster', [MARQUEE18]: ci || gb === 'ringmaster',
+        [GIDOL18]: ju, [DIDOL18]: ju, [FLOWER18]: ju, [TIKI18]: ju || gb === 'serpent', 'Ǿ': true, 'ȏ': true };
+      const told = {};
+      for (const [c, lim, what] of [[KNIFE18, KNIFE18_CAP, 'knivkastarhjul'], [PRIZE18, PRIZE18_CAP, 'lyckohjul'], [GIDOL18, GIDOL18_CAP, 'guldidoler'], [DIDOL18, DIDOL18_CAP, 'pilidoler'],
+        [FLOWER18, FLOWER18_CAP, 'giftblommor'], [BALLOON18, BALLOON18_CAP + 4, 'ballongklasar'], [TRAP18, A ? 30 : TRAP18_CAP, 'fallluckor'], [SPOT18, A ? 20 : SPOT18_CAP, 'strålkastarrutor'],
+        [PIRANHA18, A ? 40 : PIRANHA18_CAP, 'pirayarutor'], [VINES18, A ? 40 : VINES18_CAP, 'lianrutor'], ['Ǿ', AMMO18_CAP, 'kägellådor'], ['ȏ', AMMO18_CAP, 'pilkoger']])
+        if ((nCh[c] || 0) > lim) errs.push('för många ' + what + ': ' + nCh[c]);
+      for (const c of FOES18_CH) if (FOES18[c][2] && (nCh[c] || 0) > FOES18[c][2]) errs.push('för många ' + c + ': ' + nCh[c]);
+      if ((nCh['Ǿ'] || nCh['ȏ']) && (A || level.maze || level.secret)) errs.push('kägellåda/pilkoger i en arena/labyrint/hemlig våning');
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const c = map[y][x], F = FOES18[c];
+        if (F) {
+          if ((A || !F[0].includes(bio)) && !told[c]) { told[c] = 1; errs.push('fiende ' + c + ' hör inte hemma här (' + bio + (A ? ', arena' : '') + ') vid ' + x + ',' + y); }
+          if (level.depth !== undefined && level.depth < F[1]) errs.push('fiende ' + c + ' på djup ' + level.depth + ' (minst ' + F[1] + ') vid ' + x + ',' + y);
+          continue;
+        }
+        if (where[c] === undefined) continue;
+        if (!where[c] && !told[c]) { told[c] = 1; errs.push('tecknet ' + c + ' hör inte hemma här (' + bio + ', ' + gb + ') vid ' + x + ',' + y); }
+        if ((SINK18.includes(c) || c === SPOT18 || c === FLOWER18) && [0, 1, 2, 3].some(d => isDoorCh(at(x + DX[d], y + DY[d])))) errs.push('rutan ' + c + ' i dörröppning vid ' + x + ',' + y);
+        if (c === KNIFE18 && rm && rm[y][x] === '-') errs.push('knivkastarhjul i en korridor vid ' + x + ',' + y);
+        if (c === DIDOL18 && dartBad18(at, x, y, rm ? (xx, yy) => yy >= 0 && yy < H && rm[yy][xx] === '-' : null)) errs.push('pilidol som täcker en dörröppning på nära håll vid ' + x + ',' + y);
+      }
+    }
+    // version 19: gruvans och observatoriets tecken bara där de får finnas (även i deras arenor, hemliga våningar och labyrinter; väktarnas väggar, ljus
+    // och dekor i alla biomer), fienderna i sina biomer på tillåtna djup och under taken (aldrig i arenor), taken för rekvisitan och farorna, de nya
+    // golvrutorna aldrig i dörröppningar, stjärnstoft aldrig i arenor/labyrinter/hemliga våningar
+    if (NEW19_CHARS.some(c => nCh[c])) {
+      const bio = level.biome, gb = level.guardian || level.boss, mi = bio === 'mine', ob = bio === 'observatory', A = !!level.arena;
+      const where = { [TIMBER19]: mi, [ORE19]: mi, [FOREWALL19]: gb === 'foreman', [BRASS19]: ob, [CHART19]: ob, [SEERWALL19]: gb === 'starseer',
+        [RAIL19]: mi, [GAS19]: mi, [CAVE19]: mi, [SLIT19]: ob, [PORT19]: ob, [STARMAP19]: ob, [CART19]: mi, [DYNA19]: mi || gb === 'foreman', [LAMP19]: mi || gb === 'foreman',
+        [ORRERY19]: ob, [SCOPE19]: ob, 'ȫ': true };
+      const told = {};
+      for (const [c, lim, what] of [[CART19, CART19_CAP, 'gruvvagnar'], [DYNA19, DYNA19_CAP + 4, 'dynamitlådor'], [ORRERY19, ORRERY19_CAP, 'orrerier'], [SCOPE19, SCOPE19_CAP, 'teleskop'],
+        [RAIL19, A ? 30 : RAIL19_CAP, 'rälsrutor'], [GAS19, A ? 20 : GAS19_CAP, 'gasrutor'], [CAVE19, A ? 20 : CAVE19_CAP, 'rasrutor'], [SLIT19, A ? 30 : SLIT19_CAP, 'kupolspringor'],
+        [STARMAP19, A ? 20 : STARMAP19_CAP, 'stjärnkarterutor'], [PORT19, 2 * PORT19_PAIRS, 'stjärnportar'], ['ȫ', AMMO19_CAP, 'stjärnstoftsflaskor']])
+        if ((nCh[c] || 0) > lim) errs.push('för många ' + what + ': ' + nCh[c]);
+      for (const c of FOES19_CH) if (FOES19[c][2] && (nCh[c] || 0) > FOES19[c][2]) errs.push('för många ' + c + ': ' + nCh[c]);
+      if (nCh['ȫ'] && (A || level.maze || level.secret)) errs.push('stjärnstoftsflaska i en arena/labyrint/hemlig våning');
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const c = map[y][x], F = FOES19[c];
+        if (F) {
+          if ((A || !F[0].includes(bio)) && !told[c]) { told[c] = 1; errs.push('fiende ' + c + ' hör inte hemma här (' + bio + (A ? ', arena' : '') + ') vid ' + x + ',' + y); }
+          if (level.depth !== undefined && level.depth < F[1]) errs.push('fiende ' + c + ' på djup ' + level.depth + ' (minst ' + F[1] + ') vid ' + x + ',' + y);
+          continue;
+        }
+        if (where[c] === undefined) continue;
+        if (!where[c] && !told[c]) { told[c] = 1; errs.push('tecknet ' + c + ' hör inte hemma här (' + bio + ', ' + gb + ') vid ' + x + ',' + y); }
+        if ((SINK19.includes(c) || c === STARMAP19) && [0, 1, 2, 3].some(d => isDoorCh(at(x + DX[d], y + DY[d])))) errs.push('rutan ' + c + ' i dörröppning vid ' + x + ',' + y);
+      }
+    }
+    // version 19: level.carts stämmer med kartan (varje Ȗ i exakt en bana, banorna sammanhängande, slingorna slutna) och level.starports likaså
+    // (exakta par av Ƞ, i två olika rum)
+    if (level.carts !== undefined || nCh[RAIL19]) {
+      const cs = level.carts;
+      if (!Array.isArray(cs)) errs.push('räls Ȗ utan level.carts (eller ogiltigt level.carts)');
+      else {
+        const seen = new Set();
+        for (const c of cs) {
+          const p = c && c.path;
+          if (!Array.isArray(p) || p.length < 3 || typeof c.loop !== 'boolean' || !(c.speed > 0) || !(c.ph >= 0 && c.ph <= 1)) { errs.push('ogiltig vagnbana: ' + JSON.stringify(c).slice(0, 80)); continue; }
+          if (c.loop && p.length < 8) errs.push('för kort vagnslinga: ' + p.length);
+          for (let k = 0; k < p.length; k++) {
+            const q = p[k];
+            if (!q || at(q.x, q.y) !== RAIL19) { errs.push('vagnbanan går utanför rälsen vid ' + (q && q.x) + ',' + (q && q.y)); break; }
+            if (seen.has(q.y * W + q.x)) errs.push('rälsrutan finns i två vagnbanor vid ' + q.x + ',' + q.y);
+            seen.add(q.y * W + q.x);
+            const n = k + 1 < p.length ? p[k + 1] : c.loop ? p[0] : null;
+            if (n && Math.abs(n.x - q.x) + Math.abs(n.y - q.y) !== 1) { errs.push('vagnbanan hänger inte ihop vid ' + q.x + ',' + q.y); break; }
+          }
+        }
+        if (seen.size !== (nCh[RAIL19] || 0)) errs.push('level.carts har ' + seen.size + ' rälsrutor men kartan har ' + (nCh[RAIL19] || 0) + ' Ȗ');
+      }
+    }
+    if (level.starports !== undefined || nCh[PORT19]) {
+      const sp = level.starports, rmk = Array.isArray(level.roomMask) && level.roomMask.length === H ? level.roomMask : null;
+      if (!Array.isArray(sp)) errs.push('stjärnportar Ƞ utan level.starports (eller ogiltigt level.starports)');
+      else {
+        const seen = new Set(), ok = p => p && Number.isInteger(p.x) && Number.isInteger(p.y) && at(p.x, p.y) === PORT19;
+        for (const pr of sp) {
+          if (!Array.isArray(pr) || pr.length !== 2 || !ok(pr[0]) || !ok(pr[1])) { errs.push('stjärnportparet pekar inte på två Ƞ: ' + JSON.stringify(pr)); continue; }
+          const [a, b2] = pr;
+          for (const p of pr) { if (seen.has(p.y * W + p.x)) errs.push('stjärnporten finns i två par vid ' + p.x + ',' + p.y); seen.add(p.y * W + p.x); }
+          if (a.x === b2.x && a.y === b2.y) errs.push('stjärnportparet har samma ruta vid ' + a.x + ',' + a.y);
+          else if (rmk && (rmk[a.y][a.x] === '-' || rmk[b2.y][b2.x] === '-' || rmk[a.y][a.x] === rmk[b2.y][b2.x])) errs.push('stjärnportparet ligger inte i två olika rum: ' + JSON.stringify(pr));
+        }
+        if (seen.size !== (nCh[PORT19] || 0)) errs.push('level.starports har ' + seen.size + ' portar men kartan har ' + (nCh[PORT19] || 0) + ' Ƞ');
+      }
+    }
+    // version 20: kloakernas och öknens tecken bara där de får finnas (även i deras arenor, hemliga våningar och labyrinter; väktarnas väggar, ljus och
+    // dekor i alla biomer), fienderna i sina biomer på tillåtna djup och under taken (aldrig i arenor), taken, exakt en slussratt per bana med slussar,
+    // oaserna aldrig intill varandra, de nya golvrutorna aldrig i dörröppningar, fällådor aldrig i arenor/labyrinter/hemliga våningar
+    if (NEW20_CHARS.some(c => nCh[c])) {
+      const bio = level.biome, gb = level.guardian || level.boss, se = bio === 'sewer', de = bio === 'desert', A = !!level.arena;
+      const where = { [SEWER20]: se, [PIPES20]: se, [RATWALL20]: gb === 'ratking', [DUNE20]: de, [MESA20]: de, [SPHWALL20]: gb === 'sphinx',
+        [SLUDGE20]: se, [SPRAY20]: se, [SLUICE20]: se && !A, [WHEEL20]: se && !A, [NEST20]: se, [OASIS20]: de, [MIRAGE20]: de, [CACTUS20]: de,
+        [AMPHORA20]: de || gb === 'sphinx', [BRAZIER20]: de || gb === 'sphinx', 'Ɇ': true };
+      const told = {};
+      for (const [c, lim, what] of [[WHEEL20, 1, 'slussrattar'], [NEST20, NEST20_CAP, 'råttbon'], [CACTUS20, CACTUS20_CAP, 'kaktusar'], [AMPHORA20, AMPHORA20_CAP + 4, 'amforor'],
+        [BRAZIER20, BRAZIER20_CAP, 'kokpannor'], [SLUDGE20, A ? 30 : SLUDGE20_CAP, 'slamrutor'], [SPRAY20, A ? 20 : SPRAY20_CAP, 'sprutrör'], [SLUICE20, SLUICE20_CAP, 'slussar'],
+        [OASIS20, OASIS20_CAP, 'oaser'], [MIRAGE20, A ? 20 : MIRAGE20_CAP, 'hägringar'], ['Ɇ', AMMO20_CAP, 'fällådor']])
+        if ((nCh[c] || 0) > lim) errs.push('för många ' + what + ': ' + nCh[c]);
+      for (const c of FOES20_CH) if (FOES20[c][2] && (nCh[c] || 0) > FOES20[c][2]) errs.push('för många ' + c + ': ' + nCh[c]);
+      if (nCh['Ɇ'] && (A || level.maze || level.secret)) errs.push('fällåda i en arena/labyrint/hemlig våning');
+      if ((nCh[SLUICE20] || 0) > 0 !== (nCh[WHEEL20] || 0) > 0) errs.push('slussar utan slussratt (eller slussratt utan slussar): ' + (nCh[SLUICE20] || 0) + '/' + (nCh[WHEEL20] || 0));
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const c = map[y][x], F = FOES20[c];
+        if (F) {
+          if ((A || !F[0].includes(bio)) && !told[c]) { told[c] = 1; errs.push('fiende ' + c + ' hör inte hemma här (' + bio + (A ? ', arena' : '') + ') vid ' + x + ',' + y); }
+          if (level.depth !== undefined && level.depth < F[1]) errs.push('fiende ' + c + ' på djup ' + level.depth + ' (minst ' + F[1] + ') vid ' + x + ',' + y);
+          continue;
+        }
+        if (where[c] === undefined) continue;
+        if (!where[c] && !told[c]) { told[c] = 1; errs.push('tecknet ' + c + ' hör inte hemma här (' + bio + ', ' + gb + ') vid ' + x + ',' + y); }
+        if ((SINK20.includes(c) || FLOOR20.includes(c)) && [0, 1, 2, 3].some(d => isDoorCh(at(x + DX[d], y + DY[d])))) errs.push('rutan ' + c + ' i dörröppning vid ' + x + ',' + y);
+        if (c === OASIS20 && RX.some((dx, k) => at(x + dx, y + RY[k]) === OASIS20)) errs.push('två oaser intill varandra vid ' + x + ',' + y);
+      }
+    }
+    // version 21: järnfängelsets och fiskelägets tecken bara där de får finnas (även i deras arenor, hemliga våningar och labyrinter; väktarnas väggar,
+    // ljus och dekor i alla biomer), fienderna i sina biomer på tillåtna djup och under taken (aldrig i arenor), taken, larmplattor och nät aldrig i
+    // dörröppningar, fiskmännen i djupt vatten intill gångbart golv, skrotpåsar aldrig i arenor/labyrinter/hemliga våningar
+    if (NEW21_CHARS.some(c => nCh[c])) {
+      const bio = level.biome, gb = level.guardian || level.boss, pr = bio === 'prison', hb = bio === 'harbor', A = !!level.arena;
+      const dw = Array.isArray(level.floors) ? level.floors.indexOf('floor_deepwater') : -1;
+      const fmk = Array.isArray(level.floorMask) && level.floorMask.length === H ? level.floorMask : null;
+      const where = { [PSTONE21]: pr, [CELLS21]: pr, [EXECWALL21]: gb === 'executioner', [SHACK21]: hb, [QUAY21]: hb, [TIDEWALL21]: gb === 'tidepriest',
+        [ALARM21]: pr && !A, [NET21]: hb, [CAGE21]: pr, [RACK21]: pr || gb === 'executioner', [GALLOWS21]: pr, [HLAMP21]: hb || gb === 'tidepriest',
+        [FBARREL21]: hb || gb === 'tidepriest', [ANCHOR21]: hb || gb === 'tidepriest', 'ɟ': true };
+      const told = {};
+      for (const [c, lim, what] of [[ALARM21, ALARM21_CAP, 'larmplattor'], [NET21, A ? 24 : NET21_CAP, 'fisknät'], [CAGE21, CAGE21_CAP + 6, 'hängande burar'],
+        [RACK21, RACK21_CAP + 4, 'sträckbänkar'], [GALLOWS21, GALLOWS21_CAP + 2, 'galgar'], [HLAMP21, HLAMP21_CAP, 'fyrlyktor'], [FBARREL21, FBARREL21_CAP + 8, 'fisktunnor'],
+        [ANCHOR21, ANCHOR21_CAP + 6, 'ankare'], [CELLS21, CELLS21_CAP + 40, 'cellgaller'], ['ɟ', AMMO21_CAP, 'skrotpåsar']])
+        if ((nCh[c] || 0) > lim) errs.push('för många ' + what + ': ' + nCh[c]);
+      for (const c of FOES21_CH) if (FOES21[c][2] && (nCh[c] || 0) > FOES21[c][2]) errs.push('för många ' + c + ': ' + nCh[c]);
+      if (nCh['ɟ'] && (A || level.maze || level.secret)) errs.push('skrotpåse i en arena/labyrint/hemlig våning');
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const c = map[y][x], F = FOES21[c];
+        if (F) {
+          if ((A || !F[0].includes(bio)) && !told[c]) { told[c] = 1; errs.push('fiende ' + c + ' hör inte hemma här (' + bio + (A ? ', arena' : '') + ') vid ' + x + ',' + y); }
+          if (level.depth !== undefined && level.depth < F[1]) errs.push('fiende ' + c + ' på djup ' + level.depth + ' (minst ' + F[1] + ') vid ' + x + ',' + y);
+          if (c === 'ɚ') { // fiskmannen: gömd i djupt vatten (golvet under är djupvatten) intill gångbart golv
+            const wn = [0, 1, 2, 3].filter(d => at(x + DX[d], y + DY[d]) === 'Đ').length, land = [0, 1, 2, 3].some(d => { const n = at(x + DX[d], y + DY[d]); return !isBlock(n) && !isWet(n) && !SINK21.includes(n); });
+            if (wn < 1 || !land || (dw >= 0 && fmk && +fmk[y][x] !== dw)) errs.push('fiskman utanför djupvattnet vid ' + x + ',' + y);
+          }
+          continue;
+        }
+        if (where[c] === undefined) continue;
+        if (!where[c] && !told[c]) { told[c] = 1; errs.push('tecknet ' + c + ' hör inte hemma här (' + bio + ', ' + gb + ') vid ' + x + ',' + y); }
+        if (SINK21.includes(c) && [0, 1, 2, 3].some(d => isDoorCh(at(x + DX[d], y + DY[d])))) errs.push('rutan ' + c + ' i dörröppning vid ' + x + ',' + y);
+      }
+    }
+    // version 22: badhusets och skärseldens tecken bara där de får finnas (även i deras arenor, hemliga våningar och labyrinter; väktarnas väggar, ljus
+    // och dekor i alla biomer), fienderna i sina biomer på tillåtna djup och under taken (aldrig i arenor), taken, de nya golvrutorna aldrig i
+    // dörröppningar, runcirklar aldrig nära start, svavelklumpar aldrig i arenor/labyrinter/hemliga våningar
+    if (NEW22_CHARS.some(c => nCh[c])) {
+      const bio = level.biome, gb = level.guardian || level.boss, ba = bio === 'bathhouse', pu = bio === 'purgatory', A = !!level.arena;
+      const where = { [MOSAIC22]: ba, [COLUMN22]: ba, [BATHWALL22]: gb === 'bathmaster', [FLESH22]: pu, [BONE22]: pu, [PYREWALL22]: gb === 'pyrelord',
+        [HOTPOOL22]: ba, [VENT22]: ba, [COLDPOOL22]: ba, [FIRE22]: pu, [RUNE22]: pu && !A, [BSTATUE22]: ba || gb === 'bathmaster', [FOUNT22]: ba,
+        [BENCH22]: ba || gb === 'bathmaster', [SOUL22]: pu || gb === 'pyrelord', [BPILLAR22]: pu || gb === 'pyrelord', [BRIMPOT22]: pu || gb === 'pyrelord', 'ɻ': true };
+      const told = {}, Pp = (() => { for (let y = 0; y < H; y++) { const x = map[y].indexOf('P'); if (x >= 0) return [x, y]; } return null; })();
+      for (const [c, lim, what] of [[RUNE22, RUNE22_CAP, 'runcirklar'], [HOTPOOL22, A ? 30 : HOTPOOL22_CAP, 'heta bassänger'], [COLDPOOL22, COLDPOOL22_CAP, 'kallbad'],
+        [VENT22, A ? 20 : VENT22_CAP, 'ånggaller'], [FIRE22, A ? 40 : FIRE22_CAP, 'eldflodsrutor'], [BSTATUE22, BSTATUE22_CAP + 6, 'badstatyer'], [FOUNT22, FOUNT22_CAP, 'fontäner'],
+        [BENCH22, BENCH22_CAP + 6, 'bänkar'], [SOUL22, SOUL22_CAP + 6, 'kedjade själar'], [BPILLAR22, BPILLAR22_CAP + 12, 'benpelare'], [BRIMPOT22, BRIMPOT22_CAP, 'svavelgrytor'],
+        [COLUMN22, COLUMN22_CAP + 40, 'pelare'], ['ɻ', AMMO22_CAP, 'svavelklumpar']])
+        if ((nCh[c] || 0) > lim) errs.push('för många ' + what + ': ' + nCh[c]);
+      for (const c of FOES22_CH) if (FOES22[c][2] && (nCh[c] || 0) > FOES22[c][2]) errs.push('för många ' + c + ': ' + nCh[c]);
+      if (nCh['ɻ'] && (A || level.maze || level.secret)) errs.push('svavelklump i en arena/labyrint/hemlig våning');
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const c = map[y][x], F = FOES22[c];
+        if (F) {
+          if ((A || !F[0].includes(bio)) && !told[c]) { told[c] = 1; errs.push('fiende ' + c + ' hör inte hemma här (' + bio + (A ? ', arena' : '') + ') vid ' + x + ',' + y); }
+          if (level.depth !== undefined && level.depth < F[1]) errs.push('fiende ' + c + ' på djup ' + level.depth + ' (minst ' + F[1] + ') vid ' + x + ',' + y);
+          continue;
+        }
+        if (where[c] === undefined) continue;
+        if (!where[c] && !told[c]) { told[c] = 1; errs.push('tecknet ' + c + ' hör inte hemma här (' + bio + ', ' + gb + ') vid ' + x + ',' + y); }
+        if ((SINK22.includes(c) || FLOOR22.includes(c)) && [0, 1, 2, 3].some(d => isDoorCh(at(x + DX[d], y + DY[d])))) errs.push('rutan ' + c + ' i dörröppning vid ' + x + ',' + y);
+        if (c === RUNE22 && Pp && cheb(x, y, Pp[0], Pp[1]) < 6) errs.push('runcirkel nära start vid ' + x + ',' + y);
+      }
+    }
+    // version 23: slakteriets och slagfältets tecken bara där de får finnas (även i deras arenor, hemliga våningar och labyrinter; väktarnas väggar, ljus
+    // och dekor i alla biomer), fienderna i sina biomer på tillåtna djup och under taken (aldrig i arenor), spöksoldaterna i grupper om 3, spökryttarna
+    // med en lång fri linje, de nya golvrutorna aldrig i dörröppningar, katapultmålen aldrig nära start, kulpåsar aldrig i arenor/labyrinter/hemliga våningar
+    if (NEW23_CHARS.some(c => nCh[c])) {
+      const bio = level.biome, gb = level.guardian || level.boss, ab = bio === 'abattoir', bf = bio === 'battlefield', A = !!level.arena;
+      const where = { [TILE23]: ab, [COLD23]: ab, [BUTCHWALL23]: gb === 'butcher', [PALI23]: bf, [EARTH23]: bf, [WARWALL23]: gb === 'warlord',
+        [SLICK23]: ab, [GRIND23]: ab, [MUD23]: bf, [TARGET23]: bf && !A, [HOOK23]: ab, [BLOCK23]: ab || gb === 'butcher', [SAW23]: ab || gb === 'butcher',
+        [CATA23]: bf, [BANNER23]: bf || gb === 'warlord', [STAKES23]: bf || gb === 'warlord', 'ʖ': true };
+      const told = {}, Pp = (() => { for (let y = 0; y < H; y++) { const x = map[y].indexOf('P'); if (x >= 0) return [x, y]; } return null; })();
+      for (const [c, lim, what] of [[TARGET23, TARGET23_CAP, 'katapultmål'], [SLICK23, A ? 30 : SLICK23_CAP, 'blodhala rutor'], [GRIND23, A ? 20 : GRIND23_CAP, 'köttkvarnar'],
+        [MUD23, A ? 30 : MUD23_CAP, 'lerrutor'], [HOOK23, HOOK23_CAP + 4, 'köttkrokar'], [BLOCK23, BLOCK23_CAP + 6, 'slaktbänkar'], [SAW23, SAW23_CAP + 4, 'bandsågar'],
+        [CATA23, CATA23_CAP + 6, 'katapulter'], [BANNER23, BANNER23_CAP + 6, 'krigsfanor'], [STAKES23, STAKES23_CAP + 12, 'spjutpålar'], [COLD23, COLD23_CAP + 40, 'kylrumsväggar'],
+        ['ʖ', AMMO23_CAP, 'kulpåsar']])
+        if ((nCh[c] || 0) > lim) errs.push('för många ' + what + ': ' + nCh[c]);
+      for (const c of FOES23_CH) if (FOES23[c][2] && (nCh[c] || 0) > FOES23[c][2]) errs.push('för många ' + c + ': ' + nCh[c]);
+      if ((nCh['ʐ'] || 0) % 3) errs.push('spöksoldaterna kommer inte i grupper om 3: ' + nCh['ʐ']);
+      if (nCh['ʖ'] && (A || level.maze || level.secret)) errs.push('kulpåse i en arena/labyrint/hemlig våning');
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const c = map[y][x], F = FOES23[c];
+        if (F) {
+          if ((A || !F[0].includes(bio)) && !told[c]) { told[c] = 1; errs.push('fiende ' + c + ' hör inte hemma här (' + bio + (A ? ', arena' : '') + ') vid ' + x + ',' + y); }
+          if (level.depth !== undefined && level.depth < F[1]) errs.push('fiende ' + c + ' på djup ' + level.depth + ' (minst ' + F[1] + ') vid ' + x + ',' + y);
+          if (c === 'ʒ' && freeLine(at, x, y) < RIDER23_LINE) errs.push('spökryttare utan lång fri linje vid ' + x + ',' + y);
+          continue;
+        }
+        if (where[c] === undefined) continue;
+        if (!where[c] && !told[c]) { told[c] = 1; errs.push('tecknet ' + c + ' hör inte hemma här (' + bio + ', ' + gb + ') vid ' + x + ',' + y); }
+        if ((SINK23.includes(c) || FLOOR23.includes(c)) && [0, 1, 2, 3].some(d => isDoorCh(at(x + DX[d], y + DY[d])))) errs.push('rutan ' + c + ' i dörröppning vid ' + x + ',' + y);
+        if (c === TARGET23 && Pp && cheb(x, y, Pp[0], Pp[1]) < 6) errs.push('katapultmål nära start vid ' + x + ',' + y);
+      }
+    }
+    // version 30: ruinstadens och glasbrukets tecken bara där de får finnas (även i deras arenor, hemliga våningar och labyrinter; väktarnas väggar, ljus
+    // och dekor i alla biomer), fienderna i sina biomer på tillåtna djup och under taken (aldrig i arenor), de nya golvrutorna aldrig i dörröppningar,
+    // rasande tak aldrig under bar himmel eller i arenan, ugnsmunnarna med fritt runt om (när rutan och dess åtta grannar blockeras nås allt annat ändå
+    // utan faror), stenpåsar och glasbitar aldrig i arenor/labyrinter/hemliga våningar
+    if (NEW30_CHARS.some(c => nCh[c])) {
+      const bio = level.biome, gb = level.guardian || level.boss, ru = bio === 'ruins', gw = bio === 'glassworks', A = !!level.arena;
+      const where = { [RBRICK30]: ru, [PLASTER30]: ru, [MAYORWALL30]: gb === 'mayor', [KILN30]: gw, [SHELF30]: gw, [GMWALL30]: gb === 'glassmaster',
+        [ROOF30]: ru && !A, [RUBBLE30]: ru, [MOLTEN30]: gw, [SHARDS30]: gw, [VENT30]: gw, [COLUMN30]: ru || gb === 'mayor', [BEAM30]: ru, [STATUE30]: ru || gb === 'mayor',
+        [FURNACE30]: gw || gb === 'glassmaster', [RACK30]: gw || gb === 'glassmaster', [GBENCH30]: gw || gb === 'glassmaster', 'ʴ': ru || gw, 'ʵ': ru || gw };
+      const told = {}, vents = [];
+      for (const [c, lim, what] of [[ROOF30, ROOF30_CAP, 'rasande tak'], [RUBBLE30, A ? 40 : RUBBLE30_CAP, 'grushögar'], [MOLTEN30, A ? 30 : MOLTEN30_CAP, 'rutor med smält glas'],
+        [SHARDS30, SHARDS30_CAP, 'rutor med skärvor'], [VENT30, VENT30_CAP, 'ugnsmunnar'], [COLUMN30, A ? 40 : COLUMN30_CAP + 12, 'raserade pelare'], [BEAM30, A ? 40 : BEAM30_CAP + 6, 'takbjälkar'],
+        [STATUE30, A ? 40 : STATUE30_CAP + 8, 'statyer'], [FURNACE30, A ? 40 : FURNACE30_CAP + 8, 'smältugnar'], [RACK30, A ? 40 : RACK30_CAP + 12, 'glashyllor'], [GBENCH30, A ? 40 : GBENCH30_CAP + 8, 'glasblåsarbänkar'],
+        [SHELF30, SHELF30_CAP + 60, 'hyllpaneler'], ['ʴ', AMMO30_CAP, 'stenpåsar'], ['ʵ', AMMO30_CAP, 'glasbitar']])
+        if ((nCh[c] || 0) > lim) errs.push('för många ' + what + ': ' + nCh[c]);
+      for (const c of FOES30_CH) if (FOES30[c][2] && (nCh[c] || 0) > FOES30[c][2]) errs.push('för många ' + c + ': ' + nCh[c]);
+      if ((nCh['ʴ'] || nCh['ʵ']) && (A || level.maze || level.secret)) errs.push('stenpåse/glasbit i en arena/labyrint/hemlig våning');
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const c = map[y][x], F = FOES30[c];
+        if (F) {
+          if ((A || !F[0].includes(bio)) && !told[c]) { told[c] = 1; errs.push('fiende ' + c + ' hör inte hemma här (' + bio + (A ? ', arena' : '') + ') vid ' + x + ',' + y); }
+          if (level.depth !== undefined && level.depth < F[1]) errs.push('fiende ' + c + ' på djup ' + level.depth + ' (minst ' + F[1] + ') vid ' + x + ',' + y);
+          continue;
+        }
+        if (where[c] === undefined) continue;
+        if (!where[c] && !told[c]) { told[c] = 1; errs.push('tecknet ' + c + ' hör inte hemma här (' + bio + ', ' + gb + ') vid ' + x + ',' + y); }
+        if ((SINK30.includes(c) || FLOOR30.includes(c)) && [0, 1, 2, 3].some(d => isDoorCh(at(x + DX[d], y + DY[d])))) errs.push('rutan ' + c + ' i dörröppning vid ' + x + ',' + y);
+        if (c === ROOF30 && level.sky && level.sky[y] && level.sky[y][x] === '1') errs.push('rasande tak under bar himmel vid ' + x + ',' + y);
+        if (c === VENT30) vents.push([x, y]);
+      }
+      if (vents.length) { // ugnsmunnarna: fritt runt om (ingen annan ugnsmun inom 2 rutor) och aldrig enda vägen, inte heller grannrutorna
+        const pass = c => !isBlock(c) && !HAZARD.includes(c), Pv = (() => { for (let y = 0; y < H; y++) { const x = map[y].indexOf('P'); if (x >= 0) return [x, y]; } return null; })();
+        const reach = ban => {
+          const seen = new Uint8Array(W * H); if (!Pv) return seen;
+          const q = [Pv[1] * W + Pv[0]]; seen[q[0]] = 1;
+          for (let h = 0; h < q.length; h++) { const i = q[h], x = i % W, y = (i / W) | 0; for (let d = 0; d < 4; d++) { const nx = x + DX[d], ny = y + DY[d], ni = ny * W + nx; if (nx < 0 || ny < 0 || nx >= W || ny >= H || seen[ni] || (ban && ban.has(ni))) continue; const c = map[ny][nx]; if (!pass(c) && c !== 'P') continue; seen[ni] = 1; q.push(ni); } }
+          return seen;
+        };
+        const R0 = reach(null);
+        for (const [vx, vy] of vents) {
+          if (vents.some(([ox, oy]) => (ox !== vx || oy !== vy) && cheb(ox, oy, vx, vy) <= 2)) errs.push('ugnsmunnar för nära varandra vid ' + vx + ',' + vy);
+          const ban = new Set(VENT30_RING.map(([dx, dy]) => (vy + dy) * W + vx + dx)), R1 = reach(ban);
+          for (let i = 0; i < W * H; i++) if (R0[i] && !R1[i] && !ban.has(i)) { errs.push('ugnsmunnen vid ' + vx + ',' + vy + ' (med grannrutorna) är enda vägen till ' + (i % W) + ',' + ((i / W) | 0)); break; }
+        }
+      }
+    }
+    // version 30: level.ras30 (bara i ruinstaden): väggrutor med gångbar mark på två motsatta sidor
+    if (level.ras30 !== undefined) {
+      if (!Array.isArray(level.ras30) || level.biome !== 'ruins') errs.push('level.ras30 utanför ruinstaden eller inte en lista');
+      else for (const o of level.ras30) {
+        if (!o || !Number.isInteger(o.x) || !Number.isInteger(o.y) || !isWall(at(o.x, o.y))) { errs.push('ras30-förslaget är ingen vägg: ' + JSON.stringify(o)); continue; }
+        if (![[1, 0], [0, 1]].some(([dx, dy]) => !isBlock(at(o.x - dx, o.y - dy)) && !isBlock(at(o.x + dx, o.y + dy)))) errs.push('ras30-förslaget vid ' + o.x + ',' + o.y + ' har inte mark på två motsatta sidor');
+      }
+    }
+    // version 22: level.streams stämmer med kartan (varje ɰ i exakt en post { x, y, dx, dy } med en ortogonal riktning)
+    if (level.streams !== undefined || nCh[FIRE22]) {
+      const st = level.streams;
+      if (!Array.isArray(st)) errs.push('eldfloder ɰ utan level.streams (eller ogiltigt level.streams)');
+      else {
+        const seen = new Set();
+        for (const q of st) {
+          if (!q || !Number.isInteger(q.x) || !Number.isInteger(q.y) || at(q.x, q.y) !== FIRE22) { errs.push('strömmen pekar inte på en ɰ: ' + JSON.stringify(q)); continue; }
+          if (!Number.isInteger(q.dx) || !Number.isInteger(q.dy) || Math.abs(q.dx) + Math.abs(q.dy) !== 1) errs.push('strömmen har ogiltig riktning vid ' + q.x + ',' + q.y);
+          if (seen.has(q.y * W + q.x)) errs.push('strömmen finns två gånger i level.streams vid ' + q.x + ',' + q.y);
+          seen.add(q.y * W + q.x);
+        }
+        if (seen.size !== (nCh[FIRE22] || 0)) errs.push('level.streams har ' + seen.size + ' rutor men kartan har ' + (nCh[FIRE22] || 0) + ' ɰ');
+      }
+    }
+    // version 20: level.sluices stämmer med kartan (varje ȷ i exakt en post { x, y, open })
+    if (level.sluices !== undefined || nCh[SLUICE20]) {
+      const sl = level.sluices;
+      if (!Array.isArray(sl)) errs.push('slussar ȷ utan level.sluices (eller ogiltigt level.sluices)');
+      else {
+        const seen = new Set();
+        for (const q of sl) {
+          if (!q || !Number.isInteger(q.x) || !Number.isInteger(q.y) || typeof q.open !== 'boolean' || at(q.x, q.y) !== SLUICE20) { errs.push('slussen pekar inte på en ȷ: ' + JSON.stringify(q)); continue; }
+          if (seen.has(q.y * W + q.x)) errs.push('slussen finns två gånger i level.sluices vid ' + q.x + ',' + q.y);
+          seen.add(q.y * W + q.x);
+        }
+        if (seen.size !== (nCh[SLUICE20] || 0)) errs.push('level.sluices har ' + seen.size + ' slussar men kartan har ' + (nCh[SLUICE20] || 0) + ' ȷ');
+      }
+    }
+    // version 14: arenarum. Rektangeln (inre rutor x0..x1, y0..y1, minst 5x5) inom kartan, väggar runt om utom dörröppningarna (som alla står i
+    // doors, ligger i kanten och är fria), 2-3 vågor, aldrig P, x, vaktaren Z eller nyckeln } i arenan; med dörrarna stängda kommer man inte ut
+    if (level.arenas !== undefined) {
+      const ars = level.arenas;
+      if (!Array.isArray(ars)) errs.push('level.arenas ogiltigt');
+      else for (const a of ars) {
+        const { x0, y0, x1, y1, doors, waves } = a || {}, tag = 'arenan ' + JSON.stringify(a && { x0, y0, x1, y1 });
+        if (![x0, y0, x1, y1].every(Number.isInteger) || x0 < 1 || y0 < 1 || x1 > W - 2 || y1 > H - 2 || x1 - x0 < 4 || y1 - y0 < 4) { errs.push(tag + ' ligger inte inom kartan / är mindre än 5x5'); continue; }
+        if (waves !== 2 && waves !== 3) errs.push(tag + ' har ' + waves + ' vågor (2 eller 3)');
+        if (!Array.isArray(doors) || !doors.length) { errs.push(tag + ' saknar dörrar'); continue; }
+        const dset = new Set();
+        for (const d of doors) {
+          const { x, y } = d || {};
+          const edge = Number.isInteger(x) && Number.isInteger(y) && (((x === x0 - 1 || x === x1 + 1) && y >= y0 && y <= y1) || ((y === y0 - 1 || y === y1 + 1) && x >= x0 && x <= x1));
+          if (!edge) { errs.push(tag + ': dörren ' + x + ',' + y + ' ligger inte i rummets kant'); continue; }
+          const c = at(x, y);
+          if (isWall(c) || (c !== 'D' && c !== 'G' && isBlock(c)) || '*|]{'.includes(c)) errs.push(tag + ': dörröppningen ' + x + ',' + y + ' är inte öppen ("' + c + '")');
+          dset.add(y * W + x);
+        }
+        for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if ('Px}Z'.includes(map[y][x])) errs.push(tag + ' innehåller ' + map[y][x] + ' vid ' + x + ',' + y);
+        // version 16: ingen glidande vägg i arenans kant (den skulle öppna arenan halva tiden)
+        for (let y = y0 - 1; y <= y1 + 1; y++) for (let x = x0 - 1; x <= x1 + 1; x++) if ((x < x0 || x > x1 || y < y0 || y > y1) && at(x, y) === SHIFT16) errs.push(tag + ' har en glidande vägg i kanten vid ' + x + ',' + y);
+        // med dörrarna som vägg: flood fill från arenans rutor når aldrig utanför rektangeln
+        const seen = new Uint8Array(W * H), st = [];
+        for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (!isWall(map[y][x])) { seen[y * W + x] = 1; st.push(y * W + x); }
+        let leak = null;
+        while (st.length && !leak) {
+          const i = st.pop(), x = i % W, y = (i / W) | 0;
+          for (let d = 0; d < 4; d++) {
+            const nx = x + DX[d], ny = y + DY[d], j = ny * W + nx;
+            if (seen[j] || isWall(at(nx, ny)) || dset.has(j)) continue;
+            if (nx < x0 || nx > x1 || ny < y0 || ny > y1) { leak = [nx, ny]; break; }
+            seen[j] = 1; st.push(j);
+          }
+        }
+        if (leak) errs.push(tag + ' är inte sluten: öppning utan dörr vid ' + leak[0] + ',' + leak[1]);
+      }
+    }
+    validate24(level, map, W, H, at, nP === 1 ? [px, py] : null, errs);
+    validate27(level, W, H, errs); // version 27
+    validate28(level, W, H, errs); // version 28
     return errs;
   }
+  // version 24: bandesignens fält (genvägar, bakhåll, landmärken, brödsmulor, ledtrådar, skydd, takt) stämmer med kartan
+  function validate24(level, map, W, H, at, P, errs) {
+    for (const k of V24_FIELDS) if (level[k] !== undefined && !Array.isArray(level[k])) errs.push('level.' + k + ' ogiltigt (ska vara en lista)');
+    const arr = k => (Array.isArray(level[k]) ? level[k] : []), inside = o => o && Number.isInteger(o.x) && Number.isInteger(o.y) && o.x >= 0 && o.y >= 0 && o.x < W && o.y < H;
+    const walk = (x, y) => { const c = at(x, y); return !isBlock(c) && c !== '*'; };
+    if ((level.arena || level.maze || level.secret) && V24_FIELDS.some(k => arr(k).length)) errs.push('version 24-saker i en arena/labyrint/hemlig våning');
+    // genvägar: en dörr D med gångbara rutor på båda sidor; den enkelriktade öppnas från (sx, sy); med alla enkelriktade dörrar stängda nås allt som annars nås
+    const ow = new Set();
+    for (const s of arr('shortcuts')) {
+      if (!inside(s) || at(s.x, s.y) !== 'D') { errs.push('genvägen pekar inte på en dörr: ' + JSON.stringify(s)); continue; }
+      if (!Number.isInteger(s.sx) || !Number.isInteger(s.sy) || Math.abs(s.sx - s.x) + Math.abs(s.sy - s.y) !== 1 || !walk(s.sx, s.sy) || !walk(2 * s.x - s.sx, 2 * s.y - s.sy)) { errs.push('genvägen saknar gångbara rutor på båda sidor vid ' + s.x + ',' + s.y); continue; }
+      if (typeof s.oneway !== 'boolean') errs.push('genvägen saknar oneway vid ' + s.x + ',' + s.y);
+      if (s.carved !== undefined && (!Array.isArray(s.carved) || s.carved.length > 2 || !s.carved.every(c => inside(c) && walk(c.x, c.y)))) errs.push('genvägens gång (carved) ogiltig vid ' + s.x + ',' + s.y);
+      if (s.oneway) ow.add(s.y * W + s.x);
+    }
+    if (ow.size && P) {
+      const fl = shut => { const seen = new Uint8Array(W * H), st = [P[1] * W + P[0]]; seen[st[0]] = 1;
+        while (st.length) { const c = st.pop(), x = c % W, y = (c / W) | 0; for (let k = 0; k < 4; k++) { const nx = x + DX[k], ny = y + DY[k], n = ny * W + nx; if (nx < 0 || ny < 0 || nx >= W || ny >= H || seen[n] || isBlock(map[ny][nx]) || (shut && ow.has(n))) continue; seen[n] = 1; st.push(n); } }
+        return seen; };
+      const open = fl(false), shut = fl(true);
+      let bad = 0; for (let i = 0; i < W * H; i++) if (open[i] && !shut[i] && !ow.has(i)) { if (!bad) errs.push('med de enkelriktade dörrarna stängda nås inte ruta ' + (i % W) + ',' + ((i / W) | 0)); bad++; }
+      for (const s of arr('shortcuts')) if (s.oneway && inside(s) && !shut[s.sy * W + s.sx]) errs.push('den enkelriktade dörrens öppningssida nås inte vid ' + s.x + ',' + s.y);
+    }
+    // bakhåll: utlösaren på en gångbar ruta, nischen (2-6 rutor vägg, den första intill from) är sluten, 1-4 fiender i nischen
+    for (const a of arr('ambushes')) {
+      const tag = 'bakhållet ' + JSON.stringify(a && a.trigger);
+      if (!a || !inside(a.trigger) || !['key', 'chest'].includes(a.trigger.kind) || !walk(a.trigger.x, a.trigger.y)) { errs.push(tag + ': ogiltig utlösare'); continue; }
+      if (a.trigger.kind === 'key' && at(a.trigger.x, a.trigger.y) !== '}') errs.push(tag + ': ingen nyckel vid utlösaren');
+      if (a.trigger.kind === 'chest' && at(a.trigger.x, a.trigger.y) !== 'C') errs.push(tag + ': ingen kista vid utlösaren');
+      if (!inside(a.from) || !walk(a.from.x, a.from.y)) { errs.push(tag + ': from är inte gångbar'); continue; }
+      if (!Array.isArray(a.cells) || a.cells.length < 2 || a.cells.length > 6 || !a.cells.every(c => inside(c) && c.x > 0 && c.y > 0 && c.x < W - 1 && c.y < H - 1 && isWall(at(c.x, c.y)))) { errs.push(tag + ': nischens rutor ska vara 2-6 väggrutor innanför kanten'); continue; }
+      if (Math.abs(a.cells[0].x - a.from.x) + Math.abs(a.cells[0].y - a.from.y) !== 1) errs.push(tag + ': nischens öppning ligger inte intill from');
+      const cs = new Set(a.cells.map(c => c.y * W + c.x));
+      for (const c of a.cells) for (let k = 0; k < 8; k++) { const nx = c.x + RX[k], ny = c.y + RY[k]; if (cs.has(ny * W + nx) || Math.abs(nx - a.from.x) + Math.abs(ny - a.from.y) <= 1) continue; if (!isWall(at(nx, ny))) { errs.push(tag + ': nischen är inte sluten vid ' + nx + ',' + ny); break; } }
+      if (!Array.isArray(a.enemies) || a.enemies.length < 1 || a.enemies.length > 4) errs.push(tag + ': 1-4 fiender');
+      else for (const e of a.enemies) if (!e || !ENEMY_CHARS.includes(e.ch) || V24_AMB_DENY.includes(e.ch) || !cs.has(e.y * W + e.x)) errs.push(tag + ': ogiltig fiende ' + JSON.stringify(e));
+    }
+    if (arr('ambushes').length > 2) errs.push('för många bakhåll: ' + arr('ambushes').length);
+    for (const l of arr('landmarks')) if (!inside(l) || !isBlock(at(l.x, l.y))) errs.push('landmärket pekar inte på ett blockerande föremål: ' + JSON.stringify(l));
+    for (const b of arr('breadcrumbs')) if (!inside(b) || !'ah'.includes(b.ch) || at(b.x, b.y) !== '.') errs.push('brödsmulan ligger inte på tomt golv: ' + JSON.stringify(b));
+    if (arr('breadcrumbs').length > 4) errs.push('för många brödsmulor: ' + arr('breadcrumbs').length);
+    for (const s of arr('secretHints')) if (!inside(s) || at(s.x, s.y) !== '*' || Math.abs(s.fx - s.x) + Math.abs(s.fy - s.y) !== 1 || !walk(s.fx, s.fy)) errs.push('ledtråden pekar inte på en hemlig vägg: ' + JSON.stringify(s));
+    for (const c of arr('cover')) if (!inside(c) || at(c.x, c.y) !== 'T') errs.push('skyddet pekar inte på en låda T: ' + JSON.stringify(c));
+    const nR = (level.rooms || []).length;
+    for (const p of arr('pacing')) if (!p || !Number.isInteger(p.room) || p.room < 0 || p.room >= nR || !V24_BEATS.includes(p.beat)) errs.push('ogiltig takt: ' + JSON.stringify(p));
+  }
 
-  window.Gen = { floor, boss, secret, maze, validate, THEMES, BOSS_THEMES, BIOMES, GUARDIANS, ARCHES: Object.keys(ARCH), WEAPONS, ARENAS: ['hall'].concat(Object.keys(ARENAS)) };
+  // version 27: planritningen och scenerna stämmer med banan
+  function validate27(level, W, H, errs) {
+    if (level.plan27 !== undefined && level.plan27 !== null && !V27_PLANS.includes(level.plan27)) errs.push('okänd planritning ' + level.plan27);
+    if (level.scenes27 === undefined) return;
+    if (!Array.isArray(level.scenes27)) { errs.push('level.scenes27 ogiltigt (ska vara en lista)'); return; }
+    if ((level.arena || level.maze || level.secret) && (level.scenes27.length || level.plan27)) errs.push('version 27-saker i en arena/labyrint/hemlig våning');
+    const nR = (level.rooms || []).length, seen = new Set();
+    for (const s of level.scenes27) {
+      if (!s || !V27_SCENES.includes(s.kind) || !Number.isInteger(s.room) || s.room < 0 || s.room >= nR) { errs.push('ogiltig scen ' + JSON.stringify(s)); continue; }
+      if (seen.has(s.room)) errs.push('två scener i rum ' + s.room); seen.add(s.room);
+      if (!(s.kind.startsWith('prefab:') ? V27_ROOMTYPES : V27_SCENE_ROOMS).includes(level.rooms[s.room].type)) errs.push('scen i ett ' + level.rooms[s.room].type + '-rum: ' + s.kind);
+      if (!(Number.isInteger(s.x) && Number.isInteger(s.y) && s.x >= 0 && s.y >= 0 && s.x + s.w <= W && s.y + s.h <= H)) errs.push('scenens ruta utanför kartan: ' + JSON.stringify(s));
+    }
+    if (level.scenes27.length > 6) errs.push('för många scener: ' + level.scenes27.length);
+  }
+
+  // version 28: scenerna, fönstren, de djupa bassängerna och blodvåningen stämmer med banan
+  function validate28(level, W, H, errs) {
+    const map = level.map, at = (x, y) => (x < 0 || y < 0 || x >= W || y >= H) ? '1' : map[y][x];
+    let nWin = 0; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (map[y][x] === WINDOW28) nWin++;
+    const special = level.arena || level.maze || level.secret;
+    if (level.blood28 !== undefined && typeof level.blood28 !== 'boolean') errs.push('level.blood28 ogiltigt (ska vara true/false)');
+    if (special && (level.blood28 || nWin || (level.scenes28 && level.scenes28.length) || (level.deep28 && level.deep28.length))) errs.push('version 28-saker i en arena/labyrint/hemlig våning');
+    if (level.scenes28 === undefined) { if (nWin && !special) errs.push('fönster ǂ utan version 28'); return; }
+    for (const k of ['scenes28', 'windows28', 'deep28']) if (!Array.isArray(level[k])) { errs.push('level.' + k + ' ogiltigt (ska vara en lista)'); return; }
+    if (nWin > V28_WIN_CAP) errs.push('för många fönster ǂ: ' + nWin);
+    const nR = (level.rooms || []).length, seen = new Set(), own = new Set(), flood = [];
+    const inBox = (s, x, y) => x >= s.x && y >= s.y && x < s.x + s.w && y < s.y + s.h;
+    for (const s of level.scenes28) {
+      if (!s || !V28_SCENES.includes(s.kind) || !Number.isInteger(s.room) || s.room < 0 || s.room >= nR) { errs.push('ogiltig scen (version 28) ' + JSON.stringify(s)); continue; }
+      if (seen.has(s.room)) errs.push('två scener i rum ' + s.room); seen.add(s.room);
+      if (!V28_SCENE_ROOMS.includes(level.rooms[s.room].type)) errs.push('scen i ett ' + level.rooms[s.room].type + '-rum: ' + s.kind);
+      if (!(Number.isInteger(s.x) && Number.isInteger(s.y) && s.w > 0 && s.h > 0 && s.x >= 0 && s.y >= 0 && s.x + s.w <= W && s.y + s.h <= H)) { errs.push('scenens ruta utanför kartan: ' + JSON.stringify(s)); continue; }
+      if (s.kind === 'floodhall') flood.push(s);
+      if (s.kind !== 'floodhall') for (let y = s.y; y < s.y + s.h; y++) for (let x = s.x; x < s.x + s.w; x++) if (map[y][x] === WINDOW28) own.add(y * W + x);
+    }
+    if (level.scenes28.length > 3) errs.push('för många scener (version 28): ' + level.scenes28.length);
+    for (const w of level.windows28) {
+      if (!w || !Number.isInteger(w.room) || w.room < 0 || w.room >= nR || !Array.isArray(w.cells) || !w.cells.length || w.cells.length > 3) { errs.push('ogiltigt fönster ' + JSON.stringify(w)); continue; }
+      for (const c of w.cells) { if (!c || at(c.x, c.y) !== WINDOW28) errs.push('fönstret pekar inte på ǂ: ' + JSON.stringify(c)); else own.add(c.y * W + c.x); }
+    }
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (map[y][x] === WINDOW28) {
+      if (!own.has(y * W + x)) errs.push('fönster ǂ utan scen eller level.windows28 vid ' + x + ',' + y);
+      if (x === 0 || y === 0 || x === W - 1 || y === H - 1) errs.push('fönster ǂ i kanten vid ' + x + ',' + y);
+      if ([0, 1, 2, 3].some(d => isDoorCh(at(x + DX[d], y + DY[d])))) errs.push('fönster ǂ intill en dörr vid ' + x + ',' + y);
+    }
+    // djupa bassänger: grunt vatten - i en översvämmad sal; allt som nås nås också utan dem
+    if (level.deep28.length) {
+      const dset = new Set();
+      for (const c of level.deep28) { if (!c || at(c.x, c.y) !== '-' || !flood.some(s => inBox(s, c.x, c.y))) errs.push('djup bassäng utanför den översvämmade salen: ' + JSON.stringify(c)); else dset.add(c.y * W + c.x); }
+      let P = null; for (let y = 0; y < H && !P; y++) for (let x = 0; x < W; x++) if (map[y][x] === 'P') { P = [x, y]; break; }
+      if (P) {
+        const fl = shut => { const s = new Uint8Array(W * H), st = [P[1] * W + P[0]]; s[st[0]] = 1;
+          while (st.length) { const c = st.pop(), x = c % W, y = (c / W) | 0; for (let k = 0; k < 4; k++) { const nx = x + DX[k], ny = y + DY[k], n = ny * W + nx; if (nx < 0 || ny < 0 || nx >= W || ny >= H || s[n] || isBlock(map[ny][nx]) || (shut && dset.has(n))) continue; s[n] = 1; st.push(n); } }
+          return s; };
+        const a = fl(false), b = fl(true);
+        for (let i = 0; i < W * H; i++) if (a[i] && !b[i] && !dset.has(i)) { errs.push('de djupa bassängerna är enda vägen till ' + (i % W) + ',' + ((i / W) | 0)); break; }
+      }
+    }
+  }
+
+  window.Gen = { floor, boss, secret, maze, validate, THEMES, BOSS_THEMES, BIOMES, GUARDIANS, ARCHES: Object.keys(ARCH).concat(SET14_ID, SET17_ID), WEAPONS, ARENAS: ['hall'].concat(Object.keys(ARENAS)) };
+  window.Gen.floor = floor27; // version 27: fler banor (planritningar och scener ovanpå version 24)
+  window.Gen.floor = floor28; // version 28: översvämmad sal, vakttorn, balkonger, fönster och blodvåning (ovanpå version 27)
+  window.Gen.floor = floor29; // version 29 (SPEL): blodaltarets plats och blodfurstens sal på blodvåningen (ovanpå version 28)
+  window.Gen.floor = floor30; // version 30 (GEN): förslag på spruckna väggar till RAS i ruinstaden (level.ras30, ovanpå version 29)
 })();

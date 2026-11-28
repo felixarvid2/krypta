@@ -5,3 +5,5 @@ package*.json
 xframes/
 qframes/
 side_*.png
+__pycache__/
+pixelstyle_ark/

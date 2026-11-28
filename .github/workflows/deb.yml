@@ -1,0 +1,42 @@
+# Bygger Debian-paketet (tools/deb/build.sh) vid varje push som rör spelet och lägger det som
+# nedladdningsbar fil (artifact) på körningen. Skapar ingen release.
+name: Debian-paket
+
+on:
+  push:
+    branches: [main, 'claude/**']
+    paths: ['index.html', 'js/**', 'src/**', 'tools/build-game.mjs', 'css/**', 'assets/**', 'tools/deb/**', '.github/workflows/deb.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deb:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verktyg
+        run: sudo apt-get update && sudo apt-get install -y python3-pil
+      - name: js/game.js stämmer med src/game/
+        run: node tools/build-game.mjs --check && node tools/build-game.mjs --syntax
+      - name: Bygg paketet
+        id: build
+        run: |
+          VER=$(grep -oE "\bV[0-9]+\b" index.html | head -1 | tr -d V)
+          DEB=$(bash tools/deb/build.sh "${VER:-0}.0+ci${{ github.run_number }}")
+          echo "deb=$DEB" >> "$GITHUB_OUTPUT"
+          echo "name=$(basename "$DEB" .deb)" >> "$GITHUB_OUTPUT"
+      - name: Prova att installera och starta
+        run: |
+          sudo apt-get install -y "${{ steps.build.outputs.deb }}"
+          krypta --no-browser & sleep 2
+          curl -sf http://127.0.0.1:47823/index.html | grep -q KRYPTA
+          curl -sf -o /dev/null http://127.0.0.1:47823/js/game.js
+          krypta --stop
+          sudo apt-get remove -y krypta
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.build.outputs.name }}
+          path: ${{ steps.build.outputs.deb }}
+          compression-level: 0

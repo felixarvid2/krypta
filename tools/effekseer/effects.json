@@ -1,0 +1,491 @@
+{
+ "effects": [
+  {
+   "name": "boom",
+   "size": 256,
+   "frames": 90,
+   "cam": [
+    0,
+    4,
+    24
+   ],
+   "target": [
+    0,
+    1.5,
+    0
+   ],
+   "layers": [
+    {
+     "src": "samples/00_Basic/Simple_SpawnMethod1.efkefc",
+     "scale": 0.6,
+     "pos": [
+      0,
+      1.5,
+      0
+     ]
+    },
+    {
+     "src": "samples/02_Tktk03/ToonHit.efkefc",
+     "scale": 1.3,
+     "pos": [
+      0,
+      1.5,
+      0
+     ]
+    },
+    {
+     "src": "samples/00_Basic/Simple_SpawnMethod1.efkefc",
+     "scale": 0.45,
+     "pos": [
+      0,
+      1.7,
+      0
+     ],
+     "delay": 6
+    }
+   ]
+  },
+  {
+   "name": "magic",
+   "size": 256,
+   "frames": 90,
+   "cam": [
+    0,
+    4,
+    24
+   ],
+   "target": [
+    0,
+    1.5,
+    0
+   ],
+   "layers": [
+    {
+     "src": "samples/02_Tktk03/ToonHit.efkefc",
+     "pos": [
+      0,
+      1.5,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "name": "tele",
+   "size": 256,
+   "frames": 320,
+   "cam": [
+    0,
+    4,
+    24
+   ],
+   "target": [
+    0,
+    3,
+    0
+   ],
+   "layers": [
+    {
+     "src": "samples/02_Tktk03/Light.efkefc"
+    }
+   ]
+  },
+  {
+   "name": "portal",
+   "size": 256,
+   "frames": 110,
+   "cam": [
+    0,
+    4,
+    24
+   ],
+   "target": [
+    0,
+    1.5,
+    0
+   ],
+   "layers": [
+    {
+     "src": "samples/00_Basic/Simple_Distortion.efkefc"
+    }
+   ]
+  },
+  {
+   "name": "fire",
+   "size": 256,
+   "frames": 130,
+   "warm": 340,
+   "cam": [
+    0,
+    4,
+    24
+   ],
+   "target": [
+    0,
+    1.5,
+    0
+   ],
+   "layers": [
+    {
+     "src": "samples/00_Basic/Simple_Ring_Shape2.efkefc"
+    }
+   ]
+  },
+  {
+   "name": "shatter",
+   "size": 256,
+   "frames": 140,
+   "cam": [
+    0,
+    4,
+    24
+   ],
+   "target": [
+    0,
+    1.5,
+    0
+   ],
+   "layers": [
+    {
+     "src": "samples/02_Tktk03/ToonWater.efkefc"
+    }
+   ]
+  },
+  {
+   "name": "poison",
+   "size": 256,
+   "frames": 210,
+   "step": 2,
+   "cam": [
+    0,
+    4,
+    24
+   ],
+   "target": [
+    0,
+    1.5,
+    0
+   ],
+   "layers": [
+    {
+     "src": "samples/00_Version16/Aura01.efkefc"
+    }
+   ]
+  },
+  {
+   "name": "bolt",
+   "size": 256,
+   "frames": 44,
+   "cam": [
+    0,
+    4,
+    24
+   ],
+   "target": [
+    0,
+    1.5,
+    0
+   ],
+   "layers": [
+    {
+     "src": "samples/00_Basic/Laser02.efkefc"
+    }
+   ]
+  },
+  {
+   "name": "heal",
+   "size": 256,
+   "frames": 84,
+   "cam": [
+    0,
+    4,
+    24
+   ],
+   "target": [
+    0,
+    1.5,
+    0
+   ],
+   "layers": [
+    {
+     "src": "samples/00_Basic/Laser01.efkefc"
+    }
+   ]
+  },
+  {
+   "name": "slam",
+   "size": 256,
+   "frames": 50,
+   "cam": [
+    0,
+    4,
+    24
+   ],
+   "target": [
+    0,
+    1.5,
+    0
+   ],
+   "layers": [
+    {
+     "src": "samples/00_Basic/Simple_Sprite_Fixed.efkefc",
+     "scale": 0.7,
+     "pos": [
+      0,
+      1.5,
+      0
+     ],
+     "speed": 2.5
+    },
+    {
+     "src": "samples/00_Basic/Simple_SpawnMethod1.efkefc",
+     "scale": 0.45,
+     "pos": [
+      0,
+      1.5,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "name": "ring",
+   "size": 256,
+   "frames": 120,
+   "cam": [
+    0,
+    2.2,
+    24
+   ],
+   "target": [
+    0,
+    0.6,
+    0
+   ],
+   "layers": [
+    {
+     "src": "samples/00_Basic/Simple_Ring_Shape1.efkefc",
+     "scale": 1.0
+    }
+   ]
+  },
+  {
+   "name": "burst",
+   "size": 256,
+   "frames": 60,
+   "cam": [
+    0,
+    4,
+    24
+   ],
+   "target": [
+    0,
+    1.5,
+    0
+   ],
+   "layers": [
+    {
+     "src": "samples/02_Tktk03/ToonHit.efkefc",
+     "scale": 1.4,
+     "pos": [
+      0,
+      1.5,
+      0
+     ]
+    },
+    {
+     "src": "samples/00_Basic/Simple_SpawnMethod1.efkefc",
+     "scale": 0.6,
+     "pos": [
+      0,
+      1.5,
+      0
+     ],
+     "delay": 3
+    },
+    {
+     "src": "samples/00_Basic/Simple_Ring_Shape1.efkefc",
+     "scale": 1.1,
+     "pos": [
+      0,
+      0,
+      0
+     ]
+    }
+   ]
+  }
+ ],
+ "strips": [
+  {
+   "file": "efx_boom.png",
+   "src": "boom",
+   "n": 12,
+   "w": 48,
+   "h": 48,
+   "mode": "color",
+   "ease": 1.3,
+   "colors": 24,
+   "gain": 1.15,
+   "range": [
+    8,
+    44
+   ],
+   "floor": 36
+  },
+  {
+   "file": "efx_magic.png",
+   "src": "magic",
+   "n": 10,
+   "w": 32,
+   "h": 32,
+   "mode": "white",
+   "ease": 1.2,
+   "levels": 6,
+   "range": [
+    11,
+    40
+   ]
+  },
+  {
+   "file": "efx_tele.png",
+   "src": "tele",
+   "n": 12,
+   "w": 32,
+   "h": 48,
+   "mode": "white",
+   "anchor": "bottom",
+   "levels": 6,
+   "gain": 1.2,
+   "range": [
+    74,
+    200
+   ]
+  },
+  {
+   "file": "efx_portal.png",
+   "src": "portal",
+   "n": 12,
+   "w": 48,
+   "h": 48,
+   "mode": "white",
+   "levels": 6,
+   "gain": 1.2,
+   "range": [
+    7,
+    70
+   ]
+  },
+  {
+   "file": "efx_fire.png",
+   "src": "fire",
+   "n": 10,
+   "w": 32,
+   "h": 40,
+   "mode": "color",
+   "anchor": "bottom",
+   "colors": 24,
+   "range": [
+    20,
+    129
+   ],
+   "gain": 0.7
+  },
+  {
+   "file": "efx_shatter.png",
+   "src": "shatter",
+   "n": 12,
+   "w": 48,
+   "h": 48,
+   "mode": "white",
+   "anchor": "bottom",
+   "levels": 6,
+   "gain": 1.1,
+   "range": [
+    10,
+    75
+   ]
+  },
+  {
+   "file": "efx_poison.png",
+   "src": "poison",
+   "n": 12,
+   "w": 32,
+   "h": 48,
+   "mode": "white",
+   "anchor": "bottom",
+   "levels": 6,
+   "gain": 1.3,
+   "range": [
+    9,
+    100
+   ],
+   "bbox": 40
+  },
+  {
+   "file": "efx_bolt.png",
+   "src": "bolt",
+   "n": 10,
+   "w": 32,
+   "h": 32,
+   "mode": "white",
+   "levels": 6,
+   "gamma": 1.6,
+   "floor": 24,
+   "range": [
+    2,
+    16
+   ]
+  },
+  {
+   "file": "efx_heal.png",
+   "src": "heal",
+   "n": 12,
+   "w": 32,
+   "h": 48,
+   "mode": "white",
+   "anchor": "bottom",
+   "levels": 6,
+   "gain": 1.1,
+   "range": [
+    5,
+    66
+   ]
+  },
+  {
+   "file": "efx_slam.png",
+   "src": "slam",
+   "n": 12,
+   "w": 48,
+   "h": 48,
+   "mode": "color",
+   "colors": 24,
+   "gain": 1.1
+  },
+  {
+   "file": "efx_ring.png",
+   "src": "ring",
+   "n": 6,
+   "w": 48,
+   "h": 12,
+   "mode": "white",
+   "levels": 6,
+   "gain": 1.2,
+   "range": [
+    8,
+    40
+   ]
+  },
+  {
+   "file": "efx_burst.png",
+   "src": "burst",
+   "n": 12,
+   "w": 64,
+   "h": 64,
+   "mode": "color",
+   "ease": 1.3,
+   "colors": 24,
+   "gain": 1.1,
+   "floor": 30
+  }
+ ]
+}

@@ -1,0 +1,74 @@
+name: Release
+
+# Bygger Krypta och publicerar en GitHub-release med Debian-paketet och webbversionen.
+# Tre vägar in (se skillen autonomous-github-release):
+#  - pusha/merga en releasetext docs/releases/vX.Y.Z.md (skapar eller uppdaterar release vX.Y.Z på den
+#    commiten; fungerar från sessioner som inte får pusha taggar eller använda release-API:t),
+#  - pusha en tagg som v23.0.0,
+#  - kör flödet för hand (workflow_dispatch) med ett taggnamn.
+on:
+  push:
+    tags: ['v*']
+    branches: [main, 'claude/**']
+    paths: ['docs/releases/v*.md']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Releasens tagg (t.ex. v23.0.0)
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Välj tagg
+        run: |
+          if [ -n "${{ github.event.inputs.tag }}" ]; then
+            TAG="${{ github.event.inputs.tag }}"
+          elif [ "${{ github.ref_type }}" = "tag" ]; then
+            TAG="${{ github.ref_name }}"
+          else
+            FILE=$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" -- 'docs/releases/v*.md' | sort -V | tail -1)
+            TAG=$(basename "$FILE" .md)
+          fi
+          if ! echo "$TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then echo "Felaktig tagg: '$TAG'"; exit 1; fi
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+          echo "VER=${TAG#v}" >> "$GITHUB_ENV"
+      - name: Verktyg
+        run: sudo apt-get update && sudo apt-get install -y python3-pil
+      - name: Bygg Debian-paketet
+        run: bash tools/deb/build.sh "$VER"
+      - name: Prova att installera och starta
+        run: |
+          sudo apt-get install -y "$PWD/tools/deb/out/krypta_${VER}_all.deb"
+          krypta --no-browser & sleep 2
+          curl -sf http://127.0.0.1:47823/index.html | grep -q KRYPTA
+          curl -sf -o /dev/null http://127.0.0.1:47823/js/game.js
+          krypta --stop
+          sudo apt-get remove -y krypta
+      - name: Packa webbversionen
+        run: zip -qr "krypta-${TAG}-web.zip" index.html js css assets
+      - name: Releasetext
+        run: |
+          {
+            echo "**Linux (Debian/Ubuntu):** ladda ned \`krypta_${VER}_all.deb\` och installera med \`sudo apt install ./krypta_${VER}_all.deb\`, starta sedan **Krypta** från programmenyn eller med \`krypta\` (spelet öppnas i webbläsaren via en lokal server på 127.0.0.1:47823; \`krypta --stop\` stoppar den)."
+            echo
+            echo "**Webbversion:** packa upp \`krypta-${TAG}-web.zip\` och servera mappen med valfri webbserver, t.ex. \`python3 -m http.server\`, och öppna \`index.html\`."
+            if [ -f "docs/releases/${TAG}.md" ]; then echo; cat "docs/releases/${TAG}.md"; fi
+          } > release-notes.md
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          target_commitish: ${{ github.sha }}
+          name: Krypta ${{ env.TAG }}
+          files: |
+            tools/deb/out/krypta_${{ env.VER }}_all.deb
+            krypta-${{ env.TAG }}-web.zip
+          body_path: release-notes.md
+          overwrite_files: true

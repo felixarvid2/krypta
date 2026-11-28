@@ -1,5 +1,5 @@
 'use strict';
-// KRYPTA – kortgränssnitt: draft (välj 1 av n), butik, kortlek och toast.
+// KRYPTA – kortgränssnitt: draft (välj 1 av n), butik, kortlek, talangval och toast.
 // Ladda helst före game.js så att UI:ts tangentlyssnare (window, capture) körs först och
 // kan stoppa tangenter från att nå spelet medan ett fönster är öppet.
 (() => {
@@ -155,6 +155,46 @@ function art(card) {
   return a;
 }
 
+// ---------- Markering (kompakta dialoger) ----------
+// Rutorna visar bara ikon + namn + pris/sällsynthet. Beskrivningen visas för det markerade valet i ETT litet fält (.cu-desc).
+// Mus/tangentbord/handkontroll: hovra eller fokusera = markera, klick/Enter/siffra = välj.
+// Pekskärm: första trycket markerar och visar beskrivningen, andra trycket på samma val väljer ("TRYCK IGEN").
+let lastTouch = 0;
+window.addEventListener('touchend', () => { lastTouch = Date.now(); }, true);
+const tapIsTouch = ev => !!(ev && ev.isTrusted) && (ev.pointerType ? ev.pointerType === 'touch' : Date.now() - lastTouch < 700);
+function marker(desc, render, again) {
+  const m = { node: null, armed: null, data: null };
+  m.show = (node, data, armed) => {
+    if (m.node && m.node !== node) m.node.classList.remove('sel');
+    m.node = node; m.data = data;
+    if (node) node.classList.add('sel');
+    desc.className = 'cu-desc'; desc.textContent = '';
+    if (node) render(desc, data);
+    if (armed) { const h = desc.querySelector('.cu-dh'); (h || desc).appendChild(el(h ? 'span' : 'div', 'cu-again', (h ? ' · ' : '') + (again || 'TRYCK IGEN FÖR ATT VÄLJA'))); } // på namnraden: fältet växer inte
+  };
+  m.msg = (t, cls) => { m.armed = null; desc.textContent = ''; desc.className = 'cu-desc msg' + (cls ? ' ' + cls : ''); desc.appendChild(el('div', 'cu-dmsg', t || '')); };
+  // true = valet ska utföras nu; false = trycket markerade bara (pekskärm, första trycket)
+  m.tap = (node, data, ev) => {
+    if (!tapIsTouch(ev) || m.armed === node) return true;
+    m.armed = node; m.show(node, data, true); sfx('flip');
+    return false;
+  };
+  m.reset = () => { m.armed = null; if (m.node && !m.node.isConnected) m.node = null; };
+  return m;
+}
+function descField() { const d = el('div', 'cu-desc'); d.setAttribute('aria-live', 'polite'); return d; }
+// Namn · sällsynthet och effekterna på en rad (talen färgade)
+function cardDesc(box, card, extra) {
+  const r = R()[card.rarity];
+  const h = el('div', 'cu-dh');
+  const n = el('span', 'cu-dn', card.name); n.style.color = r.color; h.appendChild(n);
+  h.appendChild(el('span', 'cu-dr', ' · ' + tagPre(card) + r.label + (card.active ? ' · ' + actTxt(card) : '') + (extra && extra.have ? ' · ' + extra.have : '')));
+  box.appendChild(h);
+  box.appendChild(fxLines(card));
+  if (extra && extra.syn) box.appendChild(el('div', 'cu-dsyn', 'SYNERGI: ' + extra.syn));
+  if (extra && extra.cmp) box.appendChild(extra.cmp);
+}
+
 // ---------- Öppna / stänga ----------
 function open(type, node, onKey) {
   close(true);
@@ -240,7 +280,7 @@ function draft(cards, opts, onPick) {
   // "FÖRE → EFTER" för talen kortet ändrar, och vilken aktiv förmåga ett nytt förmågekort ersätter
   function compare(card) {
     const C = window.Cards;
-    const lines = curMods && C.preview ? C.preview(card, curMods, ownedList) : [];
+    const lines = (curMods && C.preview ? C.preview(card, curMods, ownedList) : []).filter(l => l.before !== 0); // bara när kortet ändrar något du redan har – annars säger kortets text samma sak
     const swap = card.active && nowActive && nowActive.id !== card.id ? nowActive : null;
     if (!lines.length && !swap) return null;
     const box = cmpBox(lines, 'FÖRE → EFTER', 4);
@@ -267,6 +307,13 @@ function draft(cards, opts, onPick) {
   wrap.appendChild(row);
   let slots = []; // { card, slot, el, revealed, ban }
   let picked = false, banishUsed = false;
+  // beskrivningen (effekter, synergi, före → efter) visas bara för det markerade kortet
+  const desc = descField();
+  const mk = marker(desc, (d, s) => {
+    const nHave = haveOf(s.card), cmp = compare(s.card);
+    cardDesc(d, s.card, { syn: synOf(s.card), cmp: cmp && cmp.box, have: nHave ? 'DU HAR ' + nHave : owned[s.card.id] ? 'ÄGER ' + owned[s.card.id] + '/' + s.card.max : '' });
+  });
+  const slotOf = c => slots.find(x => x.el === c);
 
   function makeSlot(card, i) {
     const r = R()[card.rarity];
@@ -289,7 +336,7 @@ function draft(cards, opts, onPick) {
     const rar = el('div', 'cu-rar'); rar.appendChild(el('span', '', r.label)); rar.appendChild(el('span', 'cu-key', '[' + (i + 1) + ']'));
     front.appendChild(rar);
     front.appendChild(art(card));
-    front.appendChild(el('div', 'cu-name', card.name));
+    front.appendChild(el('div', 'cu-name' + (card.name.length > 12 ? ' long' : ''), card.name));
     front.appendChild(el('div', 'cu-sep'));
     front.appendChild(fxLines(card));
     if (owned[card.id] && !have) front.appendChild(el('div', 'cu-own', 'ÄGER ' + owned[card.id] + '/' + card.max));
@@ -301,7 +348,13 @@ function draft(cards, opts, onPick) {
       h.title = canFuse ? 'VÄLJER DU KORTET KAN DE TVÅ SMÄLTAS SAMMAN I KORTLEKEN' : 'DU HAR REDAN ' + nHave + ' AV ' + card.max;
       c.appendChild(h);
     }
-    c.addEventListener('click', () => pick(slots.findIndex(s => s.el === c)));
+    c.addEventListener('click', ev => {
+      const s2 = slotOf(c); if (!s2 || picked) return;
+      if (!allRevealed()) { revealAll(); const t = tapIsTouch(ev); if (t) mk.armed = c; mk.show(c, s2, t); return; } // första trycket vänder upp resten och markerar
+      if (mk.tap(c, s2, ev)) pick(slots.indexOf(s2));
+    });
+    c.addEventListener('mouseenter', () => { const s2 = slotOf(c); if (s2 && s2.revealed && mk.armed !== c && !picked) { mk.show(c, s2); if (!touchUI()) try { c.focus({ preventScroll: true }); } catch (err) { /* ingen fokus */ } } });
+    c.addEventListener('focus', () => { const s2 = slotOf(c); if (s2 && s2.revealed && mk.node !== c && !picked) mk.show(c, s2); });
     slot.appendChild(c);
     const s = { card, slot, el: c, revealed: false, ban: null };
     if (syn || canBanish) {
@@ -323,7 +376,8 @@ function draft(cards, opts, onPick) {
   const CHARGE = 650; // så länge ett legendariskt kort laddar upp innan det vänds
   function build(animate) {
     row.textContent = '';
-    row.style.setProperty('--n', Math.max(1, cards.length));
+    row.style.setProperty('--n', Math.max(1, Math.min(6, cards.length)));
+    mk.armed = null; if (mk.node) mk.show(null);
     slots = cards.map((card, i) => { const s = makeSlot(card, i); row.appendChild(s.slot); return s; });
     if (reduced() || !animate) slots.forEach((_, i) => reveal(i, animate));
     else {
@@ -353,11 +407,18 @@ function draft(cards, opts, onPick) {
     skip.addEventListener('click', skipIt);
     foot.appendChild(skip);
   }
-  wrap.appendChild(msg);
+  let banBtn = null;
+  if (canBanish) { // FÖRVISA gäller det markerade kortet (en knapp i stället för en per kort)
+    banBtn = el('button', 'cu-btn ghost cu-banall', 'FÖRVISA'); banBtn.type = 'button';
+    banBtn.title = 'BYT UT DET MARKERADE KORTET MOT ETT ANNAT (EN GÅNG PER VAL)';
+    banBtn.addEventListener('click', ev => { ev.stopPropagation(); const s2 = mk.node && slotOf(mk.node); if (!s2) { deny(banBtn, 'MARKERA ETT KORT FÖRST'); return; } banish(slots.indexOf(s2)); });
+    foot.insertBefore(banBtn, foot.firstChild);
+  }
+  wrap.appendChild(desc);
+  if (touchUI()) mk.msg('TRYCK PÅ ETT KORT');
   wrap.appendChild(foot);
-  const hint = el('div', 'cu-hint');
-  wrap.appendChild(hint);
-  const setMsg = (t, cls) => { msg.textContent = t || ''; msg.className = 'cu-msg' + (cls ? ' ' + cls : ''); };
+  const hint = el('div', 'cu-hint'); // behålls tom: beskrivningsfältet räcker
+  const setMsg = (t, cls) => mk.msg(t, cls);
   function refreshReroll() {
     if (!rr) return;
     const p = rrPrice();
@@ -371,6 +432,7 @@ function draft(cards, opts, onPick) {
     const s = slots[i];
     if (!s || s.revealed) return;
     s.revealed = true;
+    if (!mk.node && !touchUI() && i === 0) later(() => { if (!mk.node && s.el.isConnected) mk.show(s.el, s); }, 0); // dator: första kortets beskrivning direkt
     if (flip === false) { s.el.classList.remove('down'); s.slot.classList.remove('down'); return; }
     s.el.classList.remove('down', 'charging'); s.slot.classList.remove('down');
     if (s.card.rarity === 'legendarisk' && !reduced()) { // ljusexplosion; klassen tas bort efteråt så kortets vanliga animationer kommer tillbaka
@@ -405,8 +467,9 @@ function draft(cards, opts, onPick) {
     row.replaceChild(s.slot, old.slot);
     slots[i] = s;
     slots.forEach(x => { if (x.ban) x.ban.disabled = true; });
+    if (banBtn) banBtn.disabled = true;
     if (reduced()) reveal(i, false); else later(() => reveal(i), 60);
-    setMsg(old.card.name + ' FÖRVISAD', 'ok');
+    mk.reset(); mk.show(s.el, s);
     sfx('flip');
     if (hadFocus) try { s.el.focus({ preventScroll: true }); } catch (e) { /* ingen fokus */ }
   }
@@ -438,8 +501,10 @@ function draft(cards, opts, onPick) {
     if (e.code === 'Escape') { if (canSkip) skipIt(); return true; }
     if (e.code === 'KeyR' && rr) { reroll(); return true; }
     const els = slots.map(s => s.el);
-    if (e.code === 'ArrowLeft' || e.code === 'ArrowUp') { moveFocus(els, -1); return true; }
-    if (e.code === 'ArrowRight' || e.code === 'ArrowDown') { moveFocus(els, 1); return true; }
+    if (/^Arrow/.test(e.code)) {
+      if (!els.includes(document.activeElement) && mk.node && els.includes(mk.node)) mk.node.focus({ preventScroll: true });
+      return gridMove(els, e, null);
+    }
     return activate(e);
   });
   build(true);
@@ -464,6 +529,7 @@ const GLYPHS = {
   bless: { color: '#fff0a0', map: ['..XXXXX..', '.X.....X.', '....X....', '.XXXXXXX.', '....X....', '....X....', '....X....', '....X....', '...XXX...'] },
   curse: { color: '#a050e0', map: ['..XXXXX..', '.XXXXXXX.', 'XXXXXXXXX', 'XX..X..XX', 'XX..X..XX', 'XXXXXXXXX', '.XXX.XXX.', '..X.X.X..', '..XXXXX..'] },
   weapon: { color: '#c9a87a', map: ['.XXX.....', 'XXXXX.X..', 'XXXXXXX..', 'XXXXX.X..', '.XXX..X..', '......X..', '......X..', '......X..', '.....XXX.'] },
+  rune: { color: '#ff8030', map: ['...XXX...', '..XXXXX..', '.XX.X.XX.', '.XX.XX.X.', '.XX.X.XX.', '.XX.X..X.', '.XX.X.XX.', '..XXXXX..', '...XXX...'] },
   pet: { color: '#c0d0e0', map: ['..X...X..', '.XXX.XXX.', '..X...X..', 'X.......X', 'XX.XXX.XX', '..XXXXX..', '.XXXXXXX.', '.XXXXXXX.', '..XX.XX..'] },
 };
 const DEFAULTS = {
@@ -483,6 +549,7 @@ const DEFAULTS = {
   curse: ['FÖRBANNELSE', 'MAKT MED ETT PRIS'],
   weapon: ['VAPEN', 'ETT NYTT VAPEN'],
   pet: ['FÖLJESLAGARE', 'EN TROGEN VÄN'],
+  rune: ['RUNSTEN', 'EN RUNA ATT FÄSTA I ETT VAPEN'],
 };
 // glyph(sort, färg?): pixelikon för varor som inte är kort. color (valfri CSS-färg) ersätter standardfärgen.
 function glyph(kind, color) {
@@ -516,17 +583,25 @@ function shop(items, gold, onBuy, onClose, opts) {
   goldBox.appendChild(el('span', 'cu-coin'));
   const goldTxt = el('span'); goldBox.appendChild(goldTxt);
   head.appendChild(goldBox);
+  const leave = el('button', 'cu-btn ghost cu-leave', esc('LÄMNA')); leave.type = 'button';
   box.appendChild(head);
   const grid = el('div', 'cu-items');
   box.appendChild(grid);
-  const msg = el('div', 'cu-msg'); msg.setAttribute('aria-live', 'polite');
-  box.appendChild(msg);
-  const foot = el('div', 'cu-foot');
-  const leave = el('button', 'cu-btn', esc('LÄMNA')); leave.type = 'button';
-  foot.appendChild(leave); box.appendChild(foot);
+  const desc = descField(); // beskrivningen för den markerade varan, och köpmeddelanden
+  box.appendChild(desc);
+  box.appendChild(leave); // sist i DOM (bottarna tar första .cu-item), men visas uppe till höger i rubrikraden (CSS)
   let tiles = []; // { item, node }
-
-  const setMsg = (t, cls) => { msg.textContent = t || ''; msg.className = 'cu-msg' + (cls ? ' ' + cls : ''); };
+  const nameOf = it => (it.kind === 'card' && it.card ? (it.label || it.card.name) : (it.label || (DEFAULTS[it.kind] || DEFAULTS.reroll)[0]));
+  const mk = marker(desc, (d, it) => {
+    if (it.kind === 'card' && it.card) { cardDesc(d, it.card); if (it.label && it.label !== it.card.name) d.firstChild.insertBefore(el('span', 'cu-dsale', it.label.split(':')[0] + ' '), d.firstChild.firstChild); }
+    else {
+      const h = el('div', 'cu-dh'); h.appendChild(el('span', 'cu-dn', nameOf(it)));
+      h.appendChild(el('span', 'cu-dr', ' · ' + (it.owned ? 'UPPLÅST' : it.price + ' ' + currency)));
+      d.appendChild(h);
+      d.appendChild(fxLine(it.text || (DEFAULTS[it.kind] || DEFAULTS.reroll)[1], false)).classList.add('cu-fx');
+    }
+  }, 'TRYCK IGEN FÖR ATT KÖPA');
+  const setMsg = (t, cls) => mk.msg(t, cls);
   const setGold = flash => {
     goldTxt.textContent = currency + ' ' + money;
     if (flash && !reduced()) { goldBox.classList.remove('flash'); void goldBox.offsetWidth; goldBox.classList.add('flash'); }
@@ -556,16 +631,19 @@ function shop(items, gold, onBuy, onClose, opts) {
         fx = el('div', 'cu-fx'); fx.appendChild(el('div', '', item.text || d[1]));
       }
       top.appendChild(nm);
-      t.appendChild(top); t.appendChild(fx);
+      t.appendChild(top); void fx; // effekten visas bara i beskrivningsfältet för den markerade varan
       const pr = el('div', 'cu-price');
       pr.appendChild(el('span', 'cu-num'));
       pr.appendChild(el('span', 'cu-pv', item.owned ? 'UPPLÅST' : String(item.price)));
       t.appendChild(pr);
-      t.addEventListener('click', () => buy(item, t));
+      t.addEventListener('click', ev => { if (mk.tap(t, item, ev)) buy(item, t); });
+      t.addEventListener('mouseenter', () => { if (mk.armed !== t) mk.show(t, item); if (!touchUI()) try { t.focus({ preventScroll: true }); } catch (err) { /* ingen fokus */ } }); // Enter gäller det som beskrivs
+      t.addEventListener('focus', () => { if (mk.node !== t) mk.show(t, item); });
       grid.appendChild(t);
       tiles.push({ item, node: t });
     });
     if (!tiles.length) grid.appendChild(el('div', 'cu-empty', 'HYLLORNA ÄR TOMMA.'));
+    mk.reset();
     refresh();
   }
   function refresh() {
@@ -597,6 +675,7 @@ function shop(items, gold, onBuy, onClose, opts) {
         sfx('buy');
         const nm = item.kind === 'card' && item.card ? (item.label || item.card.name) : (item.label || (DEFAULTS[item.kind] || DEFAULTS.reroll)[0]);
         setMsg(r.msg || ('KÖPT: ' + nm), 'ok');
+        if (t.isConnected) mk.armed = t; // samma vara kan köpas igen med ett tryck
         setGold(true);
         if (Array.isArray(r.items)) { list = r.items.slice(); build(); }
         else if (item.kind === 'card') {
@@ -620,17 +699,22 @@ function shop(items, gold, onBuy, onClose, opts) {
   function leaveShop() { close(); if (onClose) onClose(); }
   leave.addEventListener('click', leaveShop);
   setGold(false); build();
-  setMsg(touchUI() ? 'TRYCK PÅ EN VARA FÖR ATT KÖPA' : 'KLICKA ELLER TRYCK 1-9 FÖR ATT KÖPA');
+  if (touchUI() || !tiles.length) setMsg(tiles.length ? 'TRYCK PÅ EN VARA' : '');
+  else mk.show(tiles[0].node, tiles[0].item);
 
   open('shop', node, e => {
     const d = digit(e);
     if (d) { if (tiles[d - 1]) buy(tiles[d - 1].item, tiles[d - 1].node); return true; }
     if (e.code === 'Escape') { leaveShop(); return true; }
     const all = tiles.map(t => t.node);
-    if (e.code === 'ArrowLeft' || e.code === 'ArrowUp') { moveFocus(all, -1); return true; }
-    if (e.code === 'ArrowRight' || e.code === 'ArrowDown') { moveFocus(all, 1); return true; }
+    if (/^Arrow/.test(e.code)) {
+      if (!all.includes(document.activeElement) && mk.node && all.includes(mk.node)) mk.node.focus({ preventScroll: true }); // pilarna utgår från den markerade varan
+      return gridMove(all, e, grid);
+    }
     return activate(e);
   });
+  head.style.paddingRight = (leave.offsetWidth + 12) + 'px'; // plats för LÄMNA i rubrikraden
+  head.style.minHeight = leave.offsetHeight + 'px';
 }
 
 // ---------- Kortlek ----------
@@ -969,6 +1053,7 @@ function deck(ownedIds, onClose, opts) {
 // picks (i info eller opts) visar "VALD X GÅNGER" i detaljrutan.
 // Sökrutan filtrerar på namn och text (bara sedda kort, utan hänsyn till prickar: "o" hittar "Ö"), och
 // rullistan visar ett set i taget. Tangent / (eller S) går till sökrutan, Esc i sökrutan tömmer den.
+// query (sökord) och set (set-id, 'alla' eller 'inget') i info eller opts ger sökrutan och rullistan ett startvärde.
 let codexFilter = 'alla', codexSet = 'alla';
 const fold = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/\s+/g, ' ');
 function codex(allCards, info, onClose, opts) {
@@ -997,8 +1082,10 @@ function codex(allCards, info, onClose, opts) {
   search.type = 'search'; search.className = 'cu-in cu-search'; search.placeholder = 'SÖK NAMN ELLER TEXT';
   search.setAttribute('aria-label', 'SÖK I KORTARKIVET'); search.autocomplete = 'off'; search.spellcheck = false;
   search.addEventListener('input', () => apply());
+  if (typeof info.query === 'string') search.value = info.query; // version 8: sökning och set kan ges från början
   const sets = C.SETS || {};
-  if (codexSet !== 'alla' && !sets[codexSet]) codexSet = 'alla';
+  if (typeof info.set === 'string' && (info.set === 'alla' || info.set === 'inget' || sets[info.set])) codexSet = info.set;
+  if (codexSet !== 'alla' && codexSet !== 'inget' && !sets[codexSet]) codexSet = 'alla';
   const setSel = document.createElement('select');
   setSel.className = 'cu-in cu-setsel'; setSel.setAttribute('aria-label', 'VISA SET');
   const opt = (v, t) => { const o = document.createElement('option'); o.value = v; o.textContent = t; setSel.appendChild(o); };
@@ -1108,7 +1195,7 @@ function refine(ownedIds, onPick, onCancel, opts) {
   const title = opts.title || 'FÖRÄDLA ETT KORT';
   node.setAttribute('aria-label', title);
   box.appendChild(el('h2', 'cu-title', title));
-  box.appendChild(el('p', 'cu-sub', opts.subtitle || 'VID LÄGERELDEN BLIR ETT KORT DIN STARKARE (+) VERSION. DET RÄCKER MED ETT EXEMPLAR.'));
+  box.appendChild(el('p', 'cu-sub', opts.subtitle || 'KORTET BLIR SIN STARKARE (+)-VERSION'));
   const list = el('div', 'cu-rlist'), rows = [];
   let done = false;
   const finish = id => {
@@ -1161,17 +1248,26 @@ function choice(opts, onPick) {
   const wrap = el('div', 'cu-wrap'); wrap.appendChild(box); node.appendChild(wrap);
   box.appendChild(el('h2', 'cu-title', opts.title));
   if (opts.subtitle) box.appendChild(el('p', 'cu-sub', opts.subtitle));
-  const list = el('div', 'cu-choices'), btns = [];
+  const list = el('div', 'cu-choices' + (opts.options.length > 8 ? ' many' : '')), btns = []; // många val (bossjakten): rutnät i stället för en lång lista
   let done = false;
   const finish = i => { if (done) return; done = true; sfx('pick'); close(true); onPick(i); };
+  // valens förklaringar visas bara för det markerade valet, i ett fält under listan (pekskärm: tryck två gånger)
+  const anyText = opts.options.some(o => o.text);
+  const desc = anyText ? descField() : null;
+  const mk = anyText ? marker(desc, (d, o) => { d.appendChild(fxLine(String(o.text), false)).classList.add('cu-fx'); }) : null;
   opts.options.forEach((o, i) => {
     const b = el('button', 'cu-btn cu-opt'); b.type = 'button';
     b.appendChild(el('div', 'cu-ol', (touchUI() ? '' : '[' + (i + 1) + '] ') + o.label));
-    if (o.text) b.appendChild(el('div', 'cu-ot', o.text));
-    b.addEventListener('click', ev => { ev.stopPropagation(); finish(i); });
+    if (o.text) b.setAttribute('aria-description', o.text);
+    b.addEventListener('click', ev => { ev.stopPropagation(); if (!mk || mk.tap(b, o, ev)) finish(i); });
+    if (mk) {
+      b.addEventListener('mouseenter', () => { if (mk.armed !== b) mk.show(b, o); if (!touchUI()) try { b.focus({ preventScroll: true }); } catch (err) { /* ingen fokus */ } });
+      b.addEventListener('focus', () => { if (mk.node !== b) mk.show(b, o); });
+    }
     list.appendChild(b); btns.push(b);
   });
   box.appendChild(list);
+  if (desc) box.appendChild(desc);
   open('choice', node, e => {
     const n = e.code.startsWith('Digit') ? +e.code.slice(5) - 1 : -1;
     if (n >= 0 && n < btns.length) { finish(n); return true; }
@@ -1181,6 +1277,291 @@ function choice(opts, onPick) {
     return activate(e);
   });
   if (cur) cur.timers.push(setTimeout(() => { try { btns[0].focus({ preventScroll: true }); } catch (e) { /* ingen fokus */ } }, 60));
+}
+
+// ---------- Talangval (version 8: nivå upp) ----------
+// talents(opts, onPick): välj en av talangerna i opts.options (normalt tre, fler med talentChoice).
+// opts: { title, subtitle, level,
+//         options: [{ id, name, text, branch: 'krigare'|'skugga'|'mystiker', icon, rank, maxRank, req }],
+//         owned: [{ id, rank }] (eller { id: rang }), tree: alla talanger [{ id, name, text, branch, req, maxRank, icon }],
+//         rerolls: antal omslag (valfritt), onReroll: () => nya options | { options, rerolls } | null }
+// rank i ett alternativ = rangen talangen får om man väljer den (utan rank: ägd rang + 1).
+// req: id, [id, ...] eller { id, rank } – talanger som måste ägas först.
+// icon: bild-URL (standard assets/gfx/talents/<id>.png); saknas bilden ritas grenens tecken i stället.
+// Tangenter: 1–n väljer, R slår om, T visar/döljer trädet, Esc stänger trädet (valet kan inte hoppas över).
+// onPick(alternativet) körs när ett val gjorts. CardUI.close() stänger utan val.
+const BRANCHES = {
+  krigare: { label: 'KRIGAREN', color: '#e0503a', map: ['........X', '.......XX', '......XX.', '.....XX..', 'X...XX...', '.X.XX....', '..XX.....', '.X.XX....', 'X...X....'] },
+  skugga: { label: 'SKUGGAN', color: '#b062e8', map: ['...XXXX..', '..XX.....', '.XX......', '.XX......', '.XX......', '.XX......', '..XX.....', '...XXXX..', '.........'] },
+  mystiker: { label: 'MYSTIKERN', color: '#4a9cf0', map: ['....X....', '....X....', '..X.X.X..', '...XXX...', 'XXXXXXXXX', '...XXX...', '..X.X.X..', '....X....', '....X....'] },
+};
+const BRANCH_ORDER = ['krigare', 'skugga', 'mystiker'];
+const branchOf = t => (t && BRANCHES[t.branch] ? t.branch : 'krigare');
+const TALENT_ARM = 300; // ms efter öppning då val ignoreras (spelaren kan ha en tangent nedtryckt när nivån kommer)
+function talentGlyph(branch) {
+  const b = BRANCHES[branch] || BRANCHES.krigare;
+  const h = b.map.length, w = b.map[0].length;
+  let rects = '';
+  b.map.forEach((line, y) => { for (let x = 0; x < w; x++) if (line[x] === 'X') rects += '<rect x="' + x + '" y="' + y + '" width="1" height="1"/>'; });
+  const box = el('div', 'cu-tglyph');
+  box.innerHTML = '<svg viewBox="-1 -1 ' + (w + 2) + ' ' + (h + 2) + '" aria-hidden="true">' + rects + '</svg>';
+  box.firstChild.setAttribute('fill', b.color);
+  return box;
+}
+function talentIcon(t, cls) {
+  const box = el('div', 'cu-tico' + (cls ? ' ' + cls : ''));
+  const src = typeof t.icon === 'string' && t.icon ? t.icon : 'assets/gfx/talents/' + t.id + '.png';
+  const url = /^(?:[a-z]+:|\/)/i.test(src) ? src : (api.base || '') + src;
+  const i = document.createElement('img');
+  i.alt = ''; i.draggable = false;
+  i.addEventListener('error', () => { i.remove(); box.classList.add('fb'); box.appendChild(talentGlyph(branchOf(t))); });
+  i.src = url;
+  box.appendChild(i);
+  return box;
+}
+function reqList(t) {
+  const r = t && t.req;
+  if (!r) return [];
+  return (Array.isArray(r) ? r : [r]).map(x => (typeof x === 'string' ? { id: x, rank: 1 } : x && x.id ? { id: x.id, rank: Math.max(1, +x.rank || 1) } : null)).filter(Boolean);
+}
+const rankTxt = (r, m) => 'RANG ' + r + '/' + m;
+function pips(r, m) {
+  const p = el('div', 'cu-tpips'); p.setAttribute('aria-hidden', 'true');
+  for (let i = 0; i < m; i++) p.appendChild(el('span', i < r ? 'on' : ''));
+  return p;
+}
+function talents(opts, onPick) {
+  opts = opts || {};
+  const tree = Array.isArray(opts.tree) ? opts.tree.filter(t => t && t.id) : [];
+  const byT = Object.create(null);
+  for (const t of tree) byT[t.id] = t;
+  const ownedRank = Object.create(null);
+  if (Array.isArray(opts.owned)) { for (const o of opts.owned) if (o && o.id) ownedRank[o.id] = Math.max(ownedRank[o.id] || 0, +o.rank || 1); } else if (opts.owned && typeof opts.owned === 'object') { for (const id in opts.owned) ownedRank[id] = +opts.owned[id] || 0; }
+  const rankOf = id => ownedRank[id] || 0;
+  const nameOf = id => (byT[id] && byT[id].name) || String(id).toUpperCase();
+  const maxOf = t => Math.max(1, +(t.maxRank || (byT[t.id] && byT[t.id].maxRank) || 1));
+  const full = o => Object.assign({}, byT[o.id] || {}, o); // alternativet med trädets uppgifter som reserv
+  let options = (opts.options || []).map(full);
+  let rerolls = Math.max(0, +opts.rerolls || 0);
+  const canReroll = () => rerolls > 0 && typeof opts.onReroll === 'function';
+  let done = false, treeOpen = false;
+  const t0 = Date.now();
+  const armed = () => Date.now() - t0 >= TALENT_ARM;
+
+  const node = el('div', 'cu-screen cu-talents');
+  const wrap = el('div', 'cu-wrap'); node.appendChild(wrap);
+  const title = opts.title || 'NY NIVÅ!';
+  node.setAttribute('aria-label', title + (opts.level != null ? ' NIVÅ ' + opts.level : ''));
+  const head = el('div', 'cu-thead');
+  if (opts.level != null) { const lv = el('div', 'cu-tlvl'); lv.appendChild(el('span', 'cu-tlvk', 'NIVÅ')); lv.appendChild(el('span', 'cu-tlvn', String(opts.level))); head.appendChild(lv); }
+  const ht = el('div', 'cu-thtxt');
+  ht.appendChild(el('h2', 'cu-title', title));
+  ht.appendChild(el('p', 'cu-sub', opts.subtitle || 'VÄLJ EN TALANG'));
+  head.appendChild(ht);
+  wrap.appendChild(head);
+  const row = el('div', 'cu-trow');
+  wrap.appendChild(row);
+  const msg = el('div', 'cu-msg'); msg.setAttribute('aria-live', 'polite');
+  const foot = el('div', 'cu-foot');
+  const treeBtn = el('button', 'cu-btn ghost cu-ttree-btn'); treeBtn.type = 'button';
+  treeBtn.setAttribute('aria-expanded', 'false');
+  treeBtn.addEventListener('click', ev => { ev.stopPropagation(); toggleTree(); });
+  let rrBtn = null;
+  if (typeof opts.onReroll === 'function' && opts.rerolls != null) {
+    rrBtn = el('button', 'cu-btn cu-treroll'); rrBtn.type = 'button';
+    rrBtn.addEventListener('click', ev => { ev.stopPropagation(); reroll(); });
+    foot.appendChild(rrBtn);
+  }
+  foot.appendChild(treeBtn);
+  wrap.appendChild(msg); wrap.appendChild(foot);
+  const hint = el('div', 'cu-hint');
+  wrap.appendChild(hint);
+  const setMsg = (t, cls) => { msg.textContent = t || ''; msg.className = 'cu-msg' + (cls ? ' ' + cls : ''); };
+  let cards = [];
+
+  function makeCard(o, i) {
+    const b = branchOf(o), B = BRANCHES[b], m = maxOf(o);
+    const r = Math.min(m, Math.max(1, +o.rank || rankOf(o.id) + 1));
+    const c = el('div', 'cu-tcard br-' + b);
+    c.style.setProperty('--tc', B.color);
+    c.style.setProperty('--tglow', hexA(B.color, 0.45));
+    c.style.setProperty('--d', (i * 0.09) + 's');
+    c.tabIndex = 0; c.setAttribute('role', 'button');
+    const reqs = reqList(o);
+    c.setAttribute('aria-label', (i + 1) + ': ' + (o.name || o.id) + ', ' + B.label + ', ' + rankTxt(r, m) + '. ' + String(o.text || '').replace(/\n/g, ', ')
+      + (reqs.length ? '. BYGGER PÅ ' + reqs.map(q => nameOf(q.id)).join(', ') : ''));
+    const top = el('div', 'cu-ttop');
+    top.appendChild(el('span', 'cu-tbr', B.label));
+    top.appendChild(el('span', 'cu-key', '[' + (i + 1) + ']'));
+    c.appendChild(top);
+    c.appendChild(talentIcon(o));
+    const body = el('div', 'cu-tbody');
+    body.appendChild(el('div', 'cu-tname', o.name || String(o.id).toUpperCase()));
+    const rk = el('div', 'cu-trank');
+    rk.appendChild(el('span', 'cu-trt', rankTxt(r, m)));
+    rk.appendChild(pips(r, m));
+    if (r > 1) rk.appendChild(el('span', 'cu-tnew up', 'UPPGRADERING'));
+    else rk.appendChild(el('span', 'cu-tnew', 'NY'));
+    body.appendChild(rk);
+    const fx = fxLines({ text: o.text || '' }); fx.classList.add('cu-ttext');
+    body.appendChild(fx);
+    if (reqs.length) body.appendChild(el('div', 'cu-treq', 'BYGGER PÅ ' + reqs.map(q => nameOf(q.id)).join(', ')));
+    c.appendChild(body);
+    c.addEventListener('click', ev => { ev.stopPropagation(); pick(cards.indexOf(c)); });
+    return c;
+  }
+  function build() {
+    row.textContent = '';
+    row.style.setProperty('--n', Math.max(1, options.length));
+    cards = options.map((o, i) => { const c = makeCard(o, i); row.appendChild(c); return c; });
+    if (!options.length) row.appendChild(el('div', 'cu-empty', 'INGA TALANGER ATT VÄLJA.'));
+    refresh();
+  }
+  function refresh() {
+    treeBtn.textContent = treeOpen ? (touchUI() ? 'DÖLJ TRÄDET' : 'DÖLJ TRÄDET (T)') : (touchUI() ? 'VISA TRÄDET' : 'VISA TRÄDET (T)');
+    treeBtn.setAttribute('aria-expanded', treeOpen ? 'true' : 'false');
+    if (rrBtn) {
+      rrBtn.textContent = (touchUI() ? 'SLÅ OM' : 'SLÅ OM (R)') + ' · ' + rerolls + ' KVAR';
+      rrBtn.classList.toggle('poor', !canReroll());
+      rrBtn.setAttribute('aria-disabled', canReroll() ? 'false' : 'true');
+    }
+    const n = Math.max(1, options.length);
+    hint.textContent = touchUI() ? 'TRYCK PÅ EN TALANG FÖR ATT VÄLJA' : 'KLICKA ELLER TRYCK 1-' + n + ' · PILTANGENTER OCH ENTER · T = TRÄDET' + (canReroll() ? ' · R = SLÅ OM' : '');
+  }
+  function pick(i) {
+    if (done || !options[i] || !cards[i]) return;
+    if (!armed()) return;
+    done = true; sfx('pick');
+    cards.forEach((c, k) => c.classList.add(k === i ? 'picked' : 'faded'));
+    const o = options[i];
+    const fin = () => { close(true); if (onPick) onPick(o); };
+    if (reduced()) fin(); else later(fin, 300);
+  }
+  function deny(n2, text) { sfx('deny'); setMsg(text, 'bad'); if (n2) { n2.classList.remove('shake'); void n2.offsetWidth; n2.classList.add('shake'); } }
+  function reroll() {
+    if (done) return;
+    if (!canReroll()) { deny(rrBtn, 'INGA OMSLAG KVAR'); return; }
+    let res = null;
+    try { res = opts.onReroll(); } catch (e) { res = null; }
+    const list = Array.isArray(res) ? res : res && Array.isArray(res.options) ? res.options : null;
+    if (!list || !list.length) { deny(rrBtn, 'INGA ANDRA TALANGER'); return; }
+    rerolls = res && typeof res.rerolls === 'number' ? Math.max(0, res.rerolls) : rerolls - 1;
+    options = list.map(full);
+    build();
+    setMsg('NYA TALANGER', 'ok');
+    sfx('flip');
+    try { cards[0].focus({ preventScroll: true }); } catch (e) { /* ingen fokus */ }
+  }
+
+  // ---- trädet: tre grenar med ägda, valbara och låsta talanger ----
+  const treeBox = el('div', 'cu-ttree'); treeBox.hidden = true;
+  treeBox.setAttribute('role', 'region'); treeBox.setAttribute('aria-label', 'TALANGTRÄDET');
+  node.appendChild(treeBox);
+  let treeTab = branchOf(options[0]);
+  function depthOf(t, seen) {
+    seen = seen || new Set();
+    if (seen.has(t.id)) return 0;
+    seen.add(t.id);
+    let d = 0;
+    for (const q of reqList(t)) if (byT[q.id]) d = Math.max(d, 1 + depthOf(byT[q.id], seen));
+    return d;
+  }
+  function buildTree() {
+    treeBox.textContent = '';
+    const inner = el('div', 'cu-ttin');
+    const th = el('div', 'cu-tthead');
+    th.appendChild(el('h3', 'cu-tth', 'TALANGTRÄDET'));
+    const pts = tree.reduce((s, t) => s + Math.min(rankOf(t.id), maxOf(t)), 0);
+    th.appendChild(el('div', 'cu-ttpts', pts + ' POÄNG' + (opts.level != null ? ' · NIVÅ ' + opts.level : '')));
+    const x = el('button', 'cu-btn ghost cu-ttclose', touchUI() ? 'STÄNG' : 'STÄNG (ESC)'); x.type = 'button';
+    x.addEventListener('click', ev => { ev.stopPropagation(); toggleTree(false); });
+    th.appendChild(x);
+    inner.appendChild(th);
+    const tabs = segmented(BRANCH_ORDER.map(b => [b, BRANCHES[b].label]), treeTab, v => { treeTab = v; cols.forEach(c => c.classList.toggle('on', c.dataset.b === v)); }, 'GREN');
+    tabs.classList.add('cu-ttabs');
+    inner.appendChild(tabs);
+    const grid = el('div', 'cu-tcols');
+    const offered = new Map(options.map((o, i) => [o.id, i]));
+    const cols = BRANCH_ORDER.map(b => {
+      const B = BRANCHES[b];
+      const col = el('div', 'cu-tcol' + (b === treeTab ? ' on' : ''));
+      col.dataset.b = b;
+      col.style.setProperty('--tc', B.color);
+      const list = tree.filter(t => branchOf(t) === b).map(t => ({ t, d: depthOf(t) })).sort((a, z) => a.d - z.d);
+      const bp = list.reduce((s, e) => s + Math.min(rankOf(e.t.id), maxOf(e.t)), 0);
+      const ch = el('div', 'cu-tch');
+      ch.appendChild(talentGlyph(b));
+      ch.appendChild(el('span', 'cu-tchn', B.label));
+      ch.appendChild(el('span', 'cu-tchp', bp + ' P'));
+      col.appendChild(ch);
+      for (const { t, d } of list) {
+        const m = maxOf(t), r = Math.min(rankOf(t.id), m);
+        const miss = reqList(t).filter(q => rankOf(q.id) < q.rank);
+        const st = r >= m ? 'max' : r > 0 ? 'own' : miss.length ? 'lock' : 'open';
+        const n = el('div', 'cu-tnode ' + st + (offered.has(t.id) ? ' offer' : ''));
+        n.style.setProperty('--depth', Math.min(3, d));
+        n.appendChild(talentIcon(t, 'sm'));
+        const nb = el('div', 'cu-tnb');
+        const nm = el('div', 'cu-tnn');
+        if (offered.has(t.id) && !touchUI()) nm.appendChild(el('span', 'cu-key', '[' + (offered.get(t.id) + 1) + '] '));
+        nm.appendChild(document.createTextNode(t.name || String(t.id).toUpperCase()));
+        nb.appendChild(nm);
+        const rr = el('div', 'cu-tnr');
+        rr.appendChild(el('span', '', st === 'lock' ? 'LÅST' : rankTxt(r, m)));
+        rr.appendChild(pips(r, m));
+        nb.appendChild(rr);
+        if (t.text) nb.appendChild(el('div', 'cu-tnt', String(t.text).replace(/\n/g, ' · ')));
+        const reqs = reqList(t);
+        if (reqs.length) nb.appendChild(el('div', 'cu-tnq' + (miss.length ? ' miss' : ''), 'KRÄVER ' + reqs.map(q => nameOf(q.id) + (q.rank > 1 ? ' ' + q.rank : '')).join(', ')));
+        n.appendChild(nb);
+        n.setAttribute('aria-label', (t.name || t.id) + ', ' + (st === 'lock' ? 'LÅST' : rankTxt(r, m)) + (offered.has(t.id) ? ', ERBJUDEN' : '') + (reqs.length ? ', KRÄVER ' + reqs.map(q => nameOf(q.id)).join(', ') : ''));
+        col.appendChild(n);
+      }
+      if (!list.length) col.appendChild(el('div', 'cu-empty', 'INGA TALANGER.'));
+      grid.appendChild(col);
+      return col;
+    });
+    inner.appendChild(grid);
+    const lg = el('div', 'cu-tlegend');
+    for (const [c, t] of [['own', 'ÄGD'], ['max', 'FULL RANG'], ['open', 'VALBAR'], ['lock', 'LÅST'], ['offer', 'ERBJUDS NU']]) { const s = el('span', 'cu-tlg ' + c); s.appendChild(el('i')); s.appendChild(document.createTextNode(t)); lg.appendChild(s); }
+    inner.appendChild(lg);
+    treeBox.appendChild(inner);
+    return x;
+  }
+  function toggleTree(on) {
+    if (done) return;
+    treeOpen = on == null ? !treeOpen : !!on;
+    if (treeOpen) {
+      treeTab = branchOf(options[0]);
+      const x = buildTree();
+      treeBox.hidden = false; wrap.classList.add('under');
+      wrap.setAttribute('aria-hidden', 'true');
+      sfx('flip');
+      try { x.focus({ preventScroll: true }); } catch (e) { /* ingen fokus */ }
+    } else {
+      treeBox.hidden = true; wrap.classList.remove('under');
+      wrap.removeAttribute('aria-hidden');
+      try { (cards[0] || treeBtn).focus({ preventScroll: true }); } catch (e) { /* ingen fokus */ }
+    }
+    refresh();
+  }
+
+  open('talents', node, e => {
+    if (done) return true;
+    const d = digit(e);
+    if (d) { if (treeOpen) toggleTree(false); pick(d - 1); return true; }
+    if (e.code === 'Escape') { if (treeOpen) toggleTree(false); return true; } // valet kan inte hoppas över
+    if (e.code === 'KeyT') { toggleTree(); return true; }
+    if (e.code === 'KeyR') { if (rrBtn) reroll(); return true; }
+    if (!treeOpen) {
+      if (e.code === 'ArrowLeft' || e.code === 'ArrowUp') { moveFocus(cards, -1); return true; }
+      if (e.code === 'ArrowRight' || e.code === 'ArrowDown') { moveFocus(cards, 1); return true; }
+    }
+    if ((e.code === 'Enter' || e.code === 'Space') && !armed()) return true;
+    return activate(e);
+  });
+  build();
+  later(() => { if (!treeOpen && cards[0]) try { cards[0].focus({ preventScroll: true }); } catch (e) { /* ingen fokus */ } }, 60);
 }
 
 // ---------- Panel och lista (inställningar, bestiarium, prestationer, profil) ----------
@@ -1235,7 +1616,7 @@ function toast(card, label) {
   sfx('toast');
 }
 
-Object.assign(api, { draft, shop, deck, codex, refine, toast, choice, panel, list, el, close: () => close(), isOpen: () => !!cur });
+Object.assign(api, { draft, shop, deck, codex, refine, toast, choice, talents, TALENT_BRANCHES: BRANCHES, panel, list, el, close: () => close(), isOpen: () => !!cur });
 window.CardUI = api;
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ensureRoot); else if (document.body) ensureRoot();
 })();

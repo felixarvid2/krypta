@@ -59,6 +59,7 @@ const MOD_KEYS = {
   stamina: 'Andel mer uthållighet',
   dashCd: 'Andel kortare återhämtning för rusning',
   airDmg: 'Andel extra skada medan man är i luften (hopp)',
+  coin: 'Pistolens högerklick kastar mynt som styr om skotten (1 = på, version 26)',
   backstab: 'Andel extra skada mot fiender som inte sett dig',
   comboGold: 'Extra guld per steg i kombomätaren (platt)',
   trapResist: 'Andel mindre skada från fällor, lava och gas',
@@ -116,6 +117,134 @@ const MOD_KEYS = {
   masteryXp: 'Andel snabbare vapenvana',
   pageSouls: 'Extra själar per krönikesida (platt)',
   goldFind: 'Andel mer guld från högar och sarkofager',
+  // version 8: simning, luft, erfarenhet, talanger, kristaller, vatten, Avgrunden och häxor
+  swimSpeed: 'Andel snabbare simning i djupt vatten',
+  airMax: 'Extra sekunder luft under vattnet (platt)',
+  xpMul: 'Andel mer erfarenhet',
+  talentChoice: 'Extra alternativ vid varje talangval (platt)',
+  crystalDmg: 'Andel extra skada mot kristallfiender och kristaller',
+  waterDmg: 'Andel extra skada när du står i vatten',
+  refract: 'Extra delning när skott träffar brytande kristaller (platt)',
+  abyssSouls: 'Andel fler själar i Avgrunden',
+  witchResist: 'Andel kortare förbannelser (häxor)',
+  levelHeal: 'HP som ges vid varje ny nivå (platt)',
+  // version 9: Klocktornet och Molnborgen – tidsbubblor, vind, fall, åska, knuff, kugghjul och urverk
+  // (extra hopp i luften finns redan som doubleJump)
+  timeResist: 'Andel mindre effekt av tidsbubblor (de saktar in dig mindre)',
+  windResist: 'Andel mindre knuff från vind och vindbyar',
+  fallSafe: 'Andel mindre fallskada när du faller i tomrummet',
+  lightningResist: 'Andel mindre blixtskada (åska och stormkallare)',
+  pushDmg: 'Andel extra skada när fiender knuffas in i väggar',
+  gearFind: 'Andel fler kugghjul',
+  clockSlow: 'Chans (0-1) att träffade fiender saktas in en stund',
+  skyGold: 'Andel mer guld i Molnborgen',
+  rewindHeal: 'HP du läker när du dödar en urverkssoldat (platt)',
+  // version 11: Svampriket och Spegelpalatset – sporer, studsplattor, teleporter, spegelväggar, illusioner, glas och piskan
+  sporeResist: 'Andel mindre effekt av sporer och förvirring (sporpölar, sporlingar)',
+  bounceHeight: 'Andel högre studs från studsplattor (svamphattar)',
+  teleportShield: 'Sekunder osårbarhet efter en teleport (platt)',
+  reflectDmg: 'Andel extra skada på skott som studsat mot spegelväggar eller skölden',
+  illusionSight: 'Chans (0-1) att direkt se igenom illusioner (illusionistens falska kopior)',
+  mirrorShards: 'Chans (0-1) att dödade fiender splittras i skärvor som skadar fiender runt omkring',
+  fungusHeal: 'HP du läker när du dödar en svampfiende (platt)',
+  whipReach: 'Extra räckvidd i rutor för piskan och närstrid (platt)',
+  // version 13: Det förbjudna biblioteket och Gjuteriet – bläck, rullband, ångventiler, runor, ånga, pulpeter, gjuterifiender och stansar
+  inkResist: 'Andel mindre effekt av bläck (bläckpölar och bläckslem: mindre mörker i kanten och mindre inbromsning)',
+  beltSpeed: 'Andel högre fart på rullband som går åt rätt håll (samma håll som du rör dig)',
+  ventResist: 'Andel mindre skada och knuff från ångventiler och ånga (ångautomaternas ångkon)',
+  runeDmg: 'Andel extra skada med runor (runbokens målsökande runor)',
+  steamDmg: 'Andel extra skada med ånga (ångkanonen och skållning)',
+  bookLore: 'Extra effekt när du läser en pulpet (platt: varje steg gör bokens tillfälliga bonus starkare och längre)',
+  forgeArmor: 'Rustning per dödad gjuterifiende (smältgolem, ångautomat, gnistdrönare; platt)',
+  pressResist: 'Andel mindre skada från stansar, pressar och andra fällor',
+  // version 15: Blodkatedralen och Bikupan – ljusstråk, välsignelse, honung, larver, rökelsekaret, bin, klockor och blodfuntar
+  blessDur: 'Andel längre välsignelse från ljusstråk (de blyinfattade fönstrens färgade ljus på golvet)',
+  honeyResist: 'Andel mindre inbromsning i honung (klibbiga honungsrutor)',
+  larvaDmg: 'Andel extra skada mot larver och larvsäckar',
+  censerHeal: 'Extra HP du läker per träff med rökelsekaret (platt)',
+  beeDmg: 'Andel extra skada med bin (bikastarens bin och drottningar)',
+  bellStun: 'Extra sekunder bedövning när du ringer i en klocka (platt)',
+  fontBreak: 'HP du läker när du slår sönder en blodfunt (platt)',
+  holyDmg: 'Andel extra skada medan du är välsignad (efter ett ljusstråk)',
+  // version 16: Den döda trädgården och Drömriket – taggrankor, stenänglar, saxen, drömstaven, sömnens dimma, fontäner, glidande väggar och sömn
+  thornResist: 'Andel mindre skada från taggrankor (taggrankornas rutor och de rotade taggrankorna)',
+  angelSight: 'Extra sekunder som stenänglar står kvar efter att du tittat bort (platt)',
+  shearDmg: 'Andel extra skada med trädgårdssaxen (klippen och kastet)',
+  dreamDmg: 'Andel extra skada med drömstaven (stjärnan och sömnsmällen)',
+  mistSight: 'Andel längre synvidd i sömnens dimma (fiender syns på längre avstånd)',
+  fountainHeal: 'Extra HP du läker när du dricker ur en fontän (platt)',
+  shiftSense: 'Andel kortare tid som glidande väggar står stängda (de öppnas snabbare)',
+  sleepResist: 'Andel mindre effekt av sömn och dåsighet (sömnens dimma, sömnpulver och drömstjärnor)',
+  // version 17: Spökskeppet och Laboratoriet – sköljt däck, kanoner, kedjekulor, syra, transmutation, teslaspolar och alembiker
+  deckGrip: 'Andel mer grepp på sköljt däck (mindre halka och mindre knuff av vågorna)',
+  cannonDmg: 'Andel extra skada med kanoner (kanonkulan och smällen)',
+  chainDmg: 'Andel extra skada med kedjekulekanonen',
+  acidDmg: 'Andel extra skada med syra (syrasprutan, syrapölar och syrakar mot fiender)',
+  acidResist: 'Andel mindre skada av syra (syrakar, slemmets syrapölar och frätningen av rustningen)',
+  transmuteLuck: 'Andel tur med transmutation: fiender är av guld längre och ger mer guld, och cirkelns dryck kommer oftare',
+  teslaResist: 'Andel mindre skada från teslaspolarnas blixtar',
+  brewLuck: 'Chans att alembiken brygger en stark dryck',
+  // version 18: Cirkusen och Djungeltemplet – rampljus, fallluckor, knivar, käglor, giftpilar, gift, idoler och lianer
+  showtime: 'Andel extra skada när du står i strålkastarens rampljus (utöver de vanliga 25 %)',
+  trapdoorSense: 'Andel längre varning innan fallluckorna öppnas, och mindre skada när du faller genom en',
+  knifeResist: 'Andel mindre skada av knivar (knivkastare, knivkastarhjul och direktörens knivar)',
+  pinDmg: 'Andel extra skada med käglekastarens käglor',
+  dartDmg: 'Andel extra skada med blåsrörets giftpilar',
+  poisonResist: 'Andel mindre gift: giftpilar, giftblommor och giftmoln förgiftar dig kortare tid',
+  idolLuck: 'Andel tur med idoler och lyckohjul: mer guld ur guldidolen, färre i bakhållet och bättre snurr',
+  vineWalk: 'Andel mindre inbromsning i lianer',
+  // version 19: Gruvan och Observatoriet – gruvvagnar, explosioner, malm, hackan, stjärnlansen, meteorer, låg tyngdkraft och teleskop
+  cartResist: 'Andel mindre skada och knuff från gruvvagnar',
+  blastResist: 'Andel mindre skada av explosioner: gasfickor, dynamit, gnistlyktor och kolgolemer',
+  oreLuck: 'Chans till dubbelt guld ur malmådror',
+  pickDmg: 'Andel extra skada med hackan',
+  lanceCharge: 'Andel snabbare laddning av stjärnlansen',
+  meteorSense: 'Andel längre varning för meteorer, och mindre skada av dem',
+  lowGrav: 'Andel högre och längre hopp på stjärnkartegolvet (lägre tyngdkraft)',
+  starSight: 'Andel längre tid som teleskopet visar alla fiender',
+  // version 20: Kloakerna och Öknen – slam, ånga, oaser, iglar, sandstorm, kroksabeln, björnsaxar och hetta
+  sludgeResist: 'Andel mindre inbromsning av slammet i kloakerna',
+  sprayResist: 'Andel mindre skada av ångan från sprutrören',
+  oasisHeal: 'Andel snabbare och större läkning ur oaser',
+  leechResist: 'Chans att en igel inte fäster sig',
+  stormSight: 'Andel bättre sikt i sandstormen',
+  scimitarDmg: 'Andel extra skada med kroksabeln',
+  trapDmg: 'Andel extra skada med björnsaxar',
+  // version 21: Järnfängelset och Fiskeläget – larmplattor, fisknät, krabbor, måsar, dimma, morgonstjärnan, trombonen och glödande järn
+  alarmQuiet: 'Chans att en larmplatta inte larmar',
+  netResist: 'Andel mindre inbromsning och kortare tid fast i fisknät',
+  crabCrack: 'Andel mer skada genom strandkrabbornas pansar',
+  gullResist: 'Andel mindre skada av måssvärmar',
+  fogSight: 'Andel bättre sikt i fiskelägets dimma',
+  flailDmg: 'Andel extra skada med morgonstjärnan',
+  blunderDmg: 'Andel extra skada med trombonen',
+  burnResist: 'Andel kortare tid i brand av glödande järn',
+  // version 22: Badhuset och Skärselden – heta bassänger, ånga, kallbad, sköldar, eldfloder, runcirklar, treudden och svavelmortern (sporerna använder sporeResist)
+  scaldResist: 'Andel mindre skada och inbromsning i heta bassänger',
+  steamSight: 'Andel bättre sikt i ångan från ånggallren',
+  coldPoolHeal: 'Andel snabbare och större läkning ur kallbad',
+  shieldBreak: 'Andel mer skada genom gladiatorernas sköldar',
+  streamResist: 'Andel mindre skada och svagare drag i eldfloder',
+  runeQuiet: 'Chans att en runcirkel inte kallar fram några demoner',
+  tridentDmg: 'Andel extra skada med treudden',
+  brimstoneDmg: 'Andel extra skada med svavelmortern',
+  // version 23: Slakteriet och Slagfältet – blodhalt golv, köttkvarnar, flugsvärmar, djup lera, katapultstenar, spöksoldaternas formationer, slaktarkroken och bombarden
+  slickGrip: 'Andel bättre grepp på blodhalt golv',
+  grinderResist: 'Andel mindre skada av köttkvarnar',
+  fliesResist: 'Andel mindre skada av flugsvärmar',
+  mudWalk: 'Andel mindre inbromsning i djup lera (100 % = du kan hoppa ur den)',
+  catapultSense: 'Andel längre varning för katapultstenar',
+  formationBreak: 'Andel mer skada genom spöksoldaternas sköldar',
+  hookDmg: 'Andel extra skada med slaktarkroken',
+  bombardDmg: 'Andel extra skada med bombarden',
+  // version 30: Ruinstaden och Glasbruket – rasande tak, grus, damm, glasskärvor, smält glas (hetta: heatResist ovan), slungan och glasbössan
+  collapseSense: 'Andel längre varning (och mindre skada) när taket rasar',
+  rubbleWalk: 'Andel mindre inbromsning i grus (100 % = ingen)',
+  dustSight: 'Andel bättre sikt i dammet',
+  shardStep: 'Andel mindre skada av glasskärvor',
+  moltenResist: 'Andel mindre skada av smält glas',
+  slingDmg: 'Andel extra skada med slungan',
+  glassgunDmg: 'Andel extra skada med glasbössan',
 };
 const KEYS = Object.keys(MOD_KEYS);
 
@@ -191,6 +320,7 @@ const DEFS = [
   ['sollinsen', 'BRÄNNGLASET', 'vanlig', { critChance: 0.04, burnChance: 0.05 }, 3, '+4 % KRITCHANS\n5 % BRANDCHANS'],
   ['glasogat', 'SPRUCKNA LUPPEN', 'vanlig', { critHeal: 1 }, 3, '+1 HP PER KRITISK TRÄFF'],
   ['akrobaten', 'GYCKLARENS SKUGGA', 'vanlig', { airDmg: 0.2 }, 3, '+20 % SKADA I LUFTEN'],
+  ['skarpskyttens_mynt', 'SKARPSKYTTENS MYNT', 'ovanlig', { coin: 1 }, 1, 'HÖGERKLICK MED PISTOLEN\nKASTAR ETT MYNT. SKJUT DET:\nKULAN TAR NÄRMASTE HUVUD\n2× SKADA, +1× PER MYNT', { unlock: 20 }], // version 26
   ['urtidsrunan', 'URTIDSURNAN', 'vanlig', { ammoRegen: 0.02 }, 3, '2 % AV ETT MAGASIN PER\nSEKUND TILL RESERVEN'],
   ['fyrkanten', 'RUNPLATTAN', 'vanlig', { shieldOnKill: 1 }, 3, '+1 SKÖLD PER DÖDAD FIENDE'],
   ['idolen', 'GULDIDOLEN', 'vanlig', { eliteGold: 0.3 }, 3, '+30 % GULD FRÅN ELIT\nOCH VÄKTARE'],
@@ -420,6 +550,541 @@ const DEFS = [
   // legendariska
   ['faraonens_mask', 'FARAONENS MASK', 'legendarisk', { goldFind: 0.4, goldMul: 0.15, bankInterest: 0.15, pageSouls: 1 }, 1, '+40 % GULD FRÅN HÖGAR\nOCH SARKOFAGER\n+15 % GULD\n+15 % RÄNTA PÅ BANKEN\n+1 SJÄL PER KRÖNIKESIDA', { unlock: 50 }],
   ['morkrets_furste', 'MÖRKRETS FURSTE', 'legendarisk', { stealthDmg: 0.6, noiseReduce: 0.3, detectSlow: 0.3, lampRadius: 1 }, 1, '+60 % SMYGSKADA\n30 % MINDRE LJUD\n30 % LÅNGSAMMARE UPPTÄCKT\n+1 LJUSRADIE FÖR LAMPAN', { unlock: 50 }],
+  // ---- version 8: pakter och uppgraderingar för harpunen, bumerangen och prismat ----
+  ['pakt_harpun', 'VALFÅNGARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR HARPUNER\n4 UNIKA UPPGRADERINGAR\nBARA HARPUN RESTEN AV RUNDAN', { pact: 'harpoon', bad: 1 }],
+  ['pakt_bumerang', 'STÄPPJÄGARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nBUMERANGEN BEHÖVER INGEN AMMO\n4 UNIKA UPPGRADERINGAR\nBARA BUMERANG RESTEN AV RUNDAN', { pact: 'boomerang', bad: 1 }],
+  ['pakt_prisma', 'LJUSBRYTARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR LJUSKRISTALLER\n4 UNIKA UPPGRADERINGAR\nBARA PRISMA RESTEN AV RUNDAN', { pact: 'prism', bad: 1 }],
+  ['ankarlinan', 'ANKARLINAN', 'sallsynt', {}, 1, 'HARPUNEN DRAR FIENDEN\nÄNDA FRAM TILL DIG', { weapon: 'harpoon', wup: 'hp_pull' }],
+  ['hullingen', 'HULLINGEN', 'ovanlig', {}, 1, 'HARPUNEN GER\nBLÖDNING', { weapon: 'harpoon', wup: 'hp_barb' }],
+  ['kedjeharpunen', 'KEDJEHARPUNEN', 'legendarisk', {}, 1, 'HARPUNEN FORTSÄTTER\nTILL NÄSTA FIENDE', { weapon: 'harpoon', wup: 'hp_chain' }],
+  ['snabbvinschen', 'SNABBVINSCHEN', 'ovanlig', {}, 1, 'SNABBARE OMLADDNING', { weapon: 'harpoon', wup: 'hp_reel' }],
+  ['tvillingkastet', 'TVILLINGKASTET', 'legendarisk', {}, 1, 'TVÅ BUMERANGER\nI VARJE KAST', { weapon: 'boomerang', wup: 'bm_twin' }],
+  ['eggbumerangen', 'EGGBUMERANGEN', 'sallsynt', {}, 1, 'BUMERANGEN GÅR IGENOM\nALLA FIENDER', { weapon: 'boomerang', wup: 'bm_blade' }],
+  ['sokarkastet', 'SÖKARKASTET', 'ovanlig', {}, 1, 'BUMERANGEN SVÄNGER\nMOT FIENDER', { weapon: 'boomerang', wup: 'bm_curve' }],
+  ['fangsten', 'FÅNGSTEN', 'sallsynt', {}, 1, 'FÅNGA BUMERANGEN:\nNÄSTA KAST GÖR\nMER SKADA', { weapon: 'boomerang', wup: 'bm_return' }],
+  ['trestralen', 'TRESTRÅLEN', 'legendarisk', {}, 1, 'STRÅLEN DELAS I TRE', { weapon: 'prism', wup: 'pr_split' }],
+  ['spegelstralen', 'SPEGELSTRÅLEN', 'ovanlig', {}, 1, 'STRÅLEN STUDSAR\nFLER GÅNGER', { weapon: 'prism', wup: 'pr_bounce' }],
+  ['fokuslinsen', 'FOKUSLINSEN', 'sallsynt', {}, 1, 'HÅLL INNE FÖR EN\nFOKUSERAD STRÅLE', { weapon: 'prism', wup: 'pr_focus' }],
+  ['solstralen', 'SOLSTRÅLEN', 'ovanlig', {}, 1, 'STRÅLEN TÄNDER\nELD PÅ FIENDEN', { weapon: 'prism', wup: 'pr_burn' }],
+  // ---- version 8: kristall, hav, kunskap och avgrund ----
+  // vanliga
+  ['simfenan', 'SIMFENAN', 'vanlig', { swimSpeed: 0.15 }, 4, '+15 % SIMHASTIGHET'],
+  ['parlbandet', 'PÄRLBANDET', 'vanlig', { airMax: 3 }, 3, '+3 S LUFT UNDER VATTNET'],
+  ['lardomens_ljus', 'LÄRDOMENS LJUS', 'vanlig', { xpMul: 0.15 }, 4, '+15 % ERFARENHET'],
+  ['roda_skarvan', 'RÖDA SKÄRVAN', 'vanlig', { crystalDmg: 0.2 }, 3, '+20 % SKADA MOT KRISTALLER'],
+  ['tidvattenstenen', 'TIDVATTENSTENEN', 'vanlig', { waterDmg: 0.15 }, 3, '+15 % SKADA NÄR DU\nSTÅR I VATTEN'],
+  ['skarvlinsen', 'SKÄRVLINSEN', 'vanlig', { refract: 1 }, 3, '+1 DELNING FRÅN\nBRYTANDE KRISTALLER'],
+  ['farjkarlens_obol', 'FÄRJKARLENS OBOL', 'vanlig', { abyssSouls: 0.15 }, 3, '+15 % SJÄLAR I AVGRUNDEN'],
+  ['ronnbarskransen', 'RÖNNBÄRSKRANSEN', 'vanlig', { witchResist: 0.2 }, 3, '20 % KORTARE\nFÖRBANNELSER'],
+  ['larlingens_dryck', 'LÄRLINGENS DRYCK', 'vanlig', { levelHeal: 10 }, 3, '+10 HP VID NY NIVÅ'],
+  ['sjoormen', 'SJÖORMEN', 'vanlig', { swimSpeed: 0.1, airMax: 2 }, 3, '+10 % SIMHASTIGHET\n+2 S LUFT UNDER VATTNET', { unlock: 10 }],
+  // ovanliga
+  ['visdomsstjarnan', 'VISDOMSSTJÄRNAN', 'ovanlig', { xpMul: 0.2, talentChoice: 1 }, 1, '+20 % ERFARENHET\n+1 TALANGVAL', { unlock: 20 }],
+  ['dykarklockan', 'DYKARKLOCKAN', 'ovanlig', { airMax: 4, swimSpeed: 0.1 }, 2, '+4 S LUFT UNDER VATTNET\n+10 % SIMHASTIGHET'],
+  ['kristallbrytaren', 'KRISTALLBRYTAREN', 'ovanlig', { crystalDmg: 0.3, refract: 1 }, 2, '+30 % SKADA MOT KRISTALLER\n+1 DELNING FRÅN\nBRYTANDE KRISTALLER', { unlock: 15 }],
+  ['krakens_vrede', 'KRAKENS VREDE', 'ovanlig', { waterDmg: 0.25, swimSpeed: 0.1 }, 2, '+25 % SKADA NÄR DU\nSTÅR I VATTEN\n+10 % SIMHASTIGHET'],
+  ['avgrundsfyren', 'AVGRUNDSFYREN', 'ovanlig', { abyssSouls: 0.2, levelHeal: 5 }, 2, '+20 % SJÄLAR I AVGRUNDEN\n+5 HP VID NY NIVÅ', { unlock: 20 }],
+  ['ronnskolden', 'RÖNNSKÖLDEN', 'ovanlig', { witchResist: 0.3, dodge: 0.03 }, 2, '30 % KORTARE\nFÖRBANNELSER\n+3 % CHANS ATT UNDVIKA'],
+  ['drunknarens_sang', 'DRUNKNARENS SÅNG', 'ovanlig', { waterDmg: 0.4, airMax: -4 }, 1, '+40 % SKADA NÄR DU\nSTÅR I VATTEN\n-4 S LUFT UNDER VATTNET', { curse: true, bad: 1 }],
+  // sällsynta
+  ['regnbagsslipan', 'REGNBÅGSSLIPAN', 'sallsynt', { refract: 2, crystalDmg: 0.25 }, 1, '+2 DELNINGAR FRÅN\nBRYTANDE KRISTALLER\n+25 % SKADA MOT KRISTALLER', { unlock: 30 }],
+  ['leviatans_fjall', 'LEVIATANS FJÄLL', 'sallsynt', { swimSpeed: 0.25, airMax: 5, waterDmg: 0.15 }, 1, '+25 % SIMHASTIGHET\n+5 S LUFT UNDER VATTNET\n+15 % SKADA NÄR DU\nSTÅR I VATTEN', { unlock: 30 }],
+  ['siarens_oga', 'SIARENS ÖGA', 'sallsynt', { xpMul: 0.3, talentChoice: 1, levelHeal: 5 }, 1, '+30 % ERFARENHET\n+1 TALANGVAL\n+5 HP VID NY NIVÅ'],
+  ['haxjagaren', 'HÄXJÄGAREN', 'sallsynt', { witchResist: 0.4, abyssSouls: 0.2 }, 1, '40 % KORTARE\nFÖRBANNELSER\n+20 % SJÄLAR I AVGRUNDEN'],
+  ['avgrundens_lofte', 'AVGRUNDENS LÖFTE', 'sallsynt', { abyssSouls: 0.5, xpMul: 0.2, maxHp: -25 }, 1, '+50 % SJÄLAR I AVGRUNDEN\n+20 % ERFARENHET\n-25 MAX HP', { curse: true, bad: 1 }],
+  // legendariska
+  ['glashjartat', 'GLASHJÄRTAT', 'legendarisk', { crystalDmg: 0.5, refract: 2, witchResist: 0.2 }, 1, '+50 % SKADA MOT KRISTALLER\n+2 DELNINGAR FRÅN\nBRYTANDE KRISTALLER\n20 % KORTARE FÖRBANNELSER', { unlock: 50 }],
+  ['avgrundens_arkivarie', 'AVGRUNDENS ARKIVARIE', 'legendarisk', { xpMul: 0.3, talentChoice: 1, abyssSouls: 0.3, levelHeal: 10 }, 1, '+30 % ERFARENHET\n+1 TALANGVAL\n+30 % SJÄLAR I AVGRUNDEN\n+10 HP VID NY NIVÅ', { unlock: 50 }],
+  // ---- version 9: pakter och uppgraderingar för sågbladskastaren, vindbössan och spjutet ----
+  ['pakt_sagblad', 'SÅGSMEDENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR KUGGHJUL\n4 UNIKA UPPGRADERINGAR\nBARA SÅGBLAD RESTEN AV RUNDAN', { pact: 'sawlauncher', bad: 1 }],
+  ['pakt_vindbossa', 'VINDMAKARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nINGEN AMMO: LADDAS AV SIG SJÄLV\n4 UNIKA UPPGRADERINGAR\nBARA VINDBÖSSA RESTEN AV RUNDAN', { pact: 'windgun', bad: 1 }],
+  ['pakt_spjut', 'SPJUTBÄRARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nSPJUTET BEHÖVER INGEN AMMO\n4 UNIKA UPPGRADERINGAR\nBARA SPJUT RESTEN AV RUNDAN', { pact: 'spear', bad: 1 }],
+  ['trebladet', 'TREBLADET', 'legendarisk', {}, 1, 'TRE KLINGOR\nI VARJE SKOTT', { weapon: 'sawlauncher', wup: 'sw_multi' }],
+  ['studsklingan', 'STUDSKLINGAN', 'ovanlig', {}, 1, 'KLINGORNA STUDSAR\nFLER GÅNGER', { weapon: 'sawlauncher', wup: 'sw_bounce' }],
+  ['blodklingan', 'BLODKLINGAN', 'ovanlig', {}, 1, 'KLINGORNA GER\nBLÖDNING', { weapon: 'sawlauncher', wup: 'sw_bleed' }],
+  ['aterklingan', 'ÅTERKLINGAN', 'sallsynt', {}, 1, 'KLINGORNA KOMMER\nTILLBAKA TILL DIG', { weapon: 'sawlauncher', wup: 'sw_return' }],
+  ['virvelvinden', 'VIRVELVINDEN', 'legendarisk', {}, 1, 'STÖTEN LÄMNAR EN VIRVEL\nSOM DRAR IHOP FIENDER', { weapon: 'windgun', wup: 'wg_cyclone' }],
+  ['murslaget', 'MURSLAGET', 'sallsynt', {}, 1, 'KNUFF IN I EN VÄGG\nGER DUBBEL SKADA', { weapon: 'windgun', wup: 'wg_slam' }],
+  ['nordanvinden', 'NORDANVINDEN', 'ovanlig', {}, 1, 'STÖTEN FRYSER\nFIENDERNA', { weapon: 'windgun', wup: 'wg_cold' }],
+  ['stormfronten', 'STORMFRONTEN', 'ovanlig', {}, 1, 'BREDARE STÖT', { weapon: 'windgun', wup: 'wg_wide' }],
+  ['genomkastet', 'GENOMKASTET', 'ovanlig', {}, 1, 'KASTET GÅR IGENOM\nFIENDERNA', { weapon: 'spear', wup: 'sp_pierce' }],
+  ['aterkallelsen', 'ÅTERKALLELSEN', 'sallsynt', {}, 1, 'SPJUTET FLYGER\nTILLBAKA TILL HANDEN', { weapon: 'spear', wup: 'sp_recall' }],
+  ['utfallet', 'UTFALLET', 'ovanlig', {}, 1, 'STÖTEN GÖR ETT\nUTFALL FRAMÅT', { weapon: 'spear', wup: 'sp_lunge' }],
+  ['askspjutet', 'ÅSKSPJUTET', 'legendarisk', {}, 1, 'EN BLIXT SLÅR NED\nDÄR SPJUTET LANDAR', { weapon: 'spear', wup: 'sp_storm' }],
+  // ---- version 9: urverk, tid, vind, storm och höjd (Klocktornet och Molnborgen) ----
+  // vanliga
+  ['kuggfickan', 'KUGGFICKAN', 'vanlig', { gearFind: 0.2 }, 3, '+20 % FLER KUGGHJUL'],
+  ['sandglaset', 'SANDGLASET', 'vanlig', { timeResist: 0.2 }, 3, 'TIDSBUBBLOR SAKTAR IN\nDIG 20 % MINDRE'],
+  ['vindflojeln', 'VINDFLÖJELN', 'vanlig', { windResist: 0.2 }, 3, '20 % MINDRE KNUFF\nFRÅN VIND'],
+  ['fjaderfallet', 'FJÄDERFALLET', 'vanlig', { fallSafe: 0.25 }, 3, '25 % MINDRE FALLSKADA'],
+  ['askledaren', 'ÅSKLEDAREN', 'vanlig', { lightningResist: 0.2 }, 3, '-20 % SKADA FRÅN BLIXTAR'],
+  ['vaggsmallen', 'VÄGGSMÄLLEN', 'vanlig', { pushDmg: 0.25 }, 3, '+25 % SKADA NÄR FIENDER\nKNUFFAS IN I VÄGGAR'],
+  ['stoppuret', 'STOPPURET', 'vanlig', { clockSlow: 0.06 }, 3, '+6 % CHANS ATT SAKTA\nIN TRÄFFADE FIENDER'],
+  ['molnmyntet', 'MOLNMYNTET', 'vanlig', { skyGold: 0.2 }, 3, '+20 % GULD I MOLNBORGEN'],
+  ['urnyckeln', 'URNYCKELN', 'vanlig', { rewindHeal: 4 }, 3, '+4 HP NÄR DU DÖDAR\nEN URVERKSSOLDAT'],
+  ['klattrarrepet', 'KLÄTTRARREPET', 'vanlig', { fallSafe: 0.15, windResist: 0.1 }, 3, '15 % MINDRE FALLSKADA\n10 % MINDRE KNUFF\nFRÅN VIND', { unlock: 10 }],
+  // ovanliga
+  ['massingsringen', 'MÄSSINGSRINGEN', 'ovanlig', { gearFind: 0.25, clockSlow: 0.05 }, 2, '+25 % FLER KUGGHJUL\n+5 % CHANS ATT SAKTA\nIN TRÄFFADE FIENDER', { unlock: 15 }],
+  ['pendelvikten', 'PENDELVIKTEN', 'ovanlig', { timeResist: 0.3, rewindHeal: 3 }, 2, 'TIDSBUBBLOR SAKTAR IN\nDIG 30 % MINDRE\n+3 HP PER URVERKSSOLDAT'],
+  ['stormhuvan', 'STORMHUVAN', 'ovanlig', { lightningResist: 0.3, windResist: 0.15 }, 2, '-30 % SKADA FRÅN BLIXTAR\n15 % MINDRE KNUFF\nFRÅN VIND'],
+  ['tryckvagen', 'TRYCKVÅGEN', 'ovanlig', { pushDmg: 0.3, knockback: 0.2 }, 2, '+30 % SKADA NÄR FIENDER\nKNUFFAS IN I VÄGGAR\n+20 % KNUFF'],
+  ['svalvingarna', 'SVALVINGARNA', 'ovanlig', { doubleJump: 1, fallSafe: 0.2 }, 1, 'DUBBELHOPP\n20 % MINDRE FALLSKADA', { unlock: 20 }],
+  ['guldmolnet', 'GULDMOLNET', 'ovanlig', { skyGold: 0.25, goldMul: 0.1 }, 2, '+25 % GULD I MOLNBORGEN\n+10 % GULD', { unlock: 15 }],
+  ['trasiga_klockan', 'DEN TRASIGA KLOCKAN', 'ovanlig', { clockSlow: 0.12, gearFind: 0.2, timeResist: -0.3 }, 1, '+12 % CHANS ATT SAKTA\nIN TRÄFFADE FIENDER\n+20 % FLER KUGGHJUL\nTIDSBUBBLOR 30 % STARKARE', { curse: true, bad: 1 }],
+  // sällsynta
+  ['askfangaren', 'ÅSKFÅNGAREN', 'sallsynt', { lightningResist: 0.4, shockChance: 0.1 }, 1, '-40 % SKADA FRÅN BLIXTAR\n+10 % BLIXTCHANS', { unlock: 30 }],
+  ['tidsvaktarens_sigill', 'TIDSVÄKTARENS SIGILL', 'sallsynt', { timeResist: 0.4, clockSlow: 0.08, activeCd: 0.1 }, 1, 'TIDSBUBBLOR SAKTAR IN\nDIG 40 % MINDRE\n+8 % CHANS ATT SAKTA\nIN TRÄFFADE FIENDER\n10 % KORTARE NEDRÄKNING', { unlock: 25 }],
+  ['virvelstenen', 'VIRVELSTENEN', 'sallsynt', { pushDmg: 0.4, windResist: 0.25 }, 1, '+40 % SKADA NÄR FIENDER\nKNUFFAS IN I VÄGGAR\n25 % MINDRE KNUFF\nFRÅN VIND'],
+  ['himlastegen', 'HIMLASTEGEN', 'sallsynt', { skyGold: 0.3, fallSafe: 0.3, doubleJump: 1 }, 1, '+30 % GULD I MOLNBORGEN\n30 % MINDRE FALLSKADA\nDUBBELHOPP', { unlock: 30 }],
+  ['stormens_skuld', 'STORMENS SKULD', 'sallsynt', { skyGold: 0.5, rewindHeal: 3, lightningResist: -0.3 }, 1, '+50 % GULD I MOLNBORGEN\n+3 HP PER URVERKSSOLDAT\nBLIXTAR GÖR 30 % MER SKADA', { curse: true, bad: 1 }],
+  // legendariska
+  ['urmakarens_hjarta', 'URMAKARENS HJÄRTA', 'legendarisk', { gearFind: 0.3, clockSlow: 0.12, rewindHeal: 6, timeResist: 0.3 }, 1, '+30 % FLER KUGGHJUL\n+12 % CHANS ATT SAKTA\nIN TRÄFFADE FIENDER\n+6 HP PER URVERKSSOLDAT\nTIDSBUBBLOR 30 % SVAGARE', { unlock: 50 }],
+  ['stormfagelns_fjader', 'STORMFÅGELNS FJÄDER', 'legendarisk', { windResist: 0.4, lightningResist: 0.4, pushDmg: 0.3, skyGold: 0.2 }, 1, '40 % MINDRE KNUFF FRÅN VIND\n-40 % SKADA FRÅN BLIXTAR\n+30 % SKADA NÄR FIENDER\nKNUFFAS IN I VÄGGAR\n+20 % GULD I MOLNBORGEN', { unlock: 50 }],
+  // ---- version 11: pakter och uppgraderingar för sporkastaren, spegelskölden och piskan ----
+  ['pakt_sporkastare', 'SVAMPODLARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR SPORER\n4 UNIKA UPPGRADERINGAR\nBARA SPORKASTARE RESTEN AV RUNDAN', { pact: 'sporelauncher', bad: 1 }],
+  ['pakt_spegelskold', 'SPEGELVÄKTARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nSKÖLDEN BEHÖVER INGEN AMMO\n4 UNIKA UPPGRADERINGAR\nBARA SPEGELSKÖLD RESTEN AV RUNDAN', { pact: 'mirrorshield', bad: 1 }],
+  ['pakt_piska', 'TÄMJARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nPISKAN BEHÖVER INGEN AMMO\n4 UNIKA UPPGRADERINGAR\nBARA PISKA RESTEN AV RUNDAN', { pact: 'whip', bad: 1 }],
+  ['sporstormen', 'SPORSTORMEN', 'sallsynt', {}, 1, 'STÖRRE SPORMOLN', { weapon: 'sporelauncher', wup: 'sl_cloud' }],
+  ['lakesporerna', 'LÄKESPORERNA', 'ovanlig', {}, 1, 'DINA SPORMOLN\nLÄKER DIG', { weapon: 'sporelauncher', wup: 'sl_heal' }],
+  ['smittobararen', 'SMITTOBÄRAREN', 'legendarisk', {}, 1, 'MOLNET SMITTAR VIDARE\nNÄR EN FIENDE DÖR', { weapon: 'sporelauncher', wup: 'sl_chain' }],
+  ['snabbsadden', 'SNABBSÅDDEN', 'ovanlig', {}, 1, 'SNABBARE OMLADDNING', { weapon: 'sporelauncher', wup: 'sl_fast' }],
+  ['speglingen', 'SPEGLINGEN', 'legendarisk', {}, 1, 'STUDSADE SKOTT GÖR\nDUBBEL SKADA', { weapon: 'mirrorshield', wup: 'ms_reflect' }],
+  ['skoldslaget', 'SKÖLDSLAGET', 'ovanlig', {}, 1, 'SLAGET KNUFFAR OCH\nBEDÖVAR FIENDEN', { weapon: 'mirrorshield', wup: 'ms_bash' }],
+  ['skyddsringen', 'SKYDDSRINGEN', 'sallsynt', {}, 1, 'SKÖLDEN SKYDDAR\nRUNT OMKRING DIG', { weapon: 'mirrorshield', wup: 'ms_aura' }],
+  ['pareringen', 'PARERINGEN', 'sallsynt', {}, 1, 'PERFEKT PARERING\nLADDAR NÄSTA SLAG', { weapon: 'mirrorshield', wup: 'ms_parry' }],
+  ['langsnarten', 'LÅNGSNÄRTEN', 'ovanlig', {}, 1, 'LÄNGRE RÄCKVIDD', { weapon: 'whip', wup: 'wh_reach' }],
+  ['eldsnarten', 'ELDSNÄRTEN', 'sallsynt', {}, 1, 'PISKAN BRINNER OCH\nTÄNDER ELD PÅ FIENDER', { weapon: 'whip', wup: 'wh_fire' }],
+  ['niosvansen', 'NIOSVANSEN', 'legendarisk', {}, 1, 'SLAGET TRÄFFAR\nTRE FIENDER', { weapon: 'whip', wup: 'wh_multi' }],
+  ['oxdraget', 'OXDRAGET', 'ovanlig', {}, 1, 'DRAR ÄVEN STÖRRE\nFIENDER TILL DIG', { weapon: 'whip', wup: 'wh_pull' }],
+  // ---- version 11: svamp, sporer, speglar, illusioner och glas (Svampriket och Spegelpalatset) ----
+  // vanliga
+  ['svamphatten', 'SVAMPHATTEN', 'vanlig', { sporeResist: 0.2 }, 3, '20 % MINDRE EFFEKT\nAV SPORER'],
+  ['studssvampen', 'STUDSSVAMPEN', 'vanlig', { bounceHeight: 0.2 }, 3, '+20 % HÖGRE STUDS'],
+  ['resestenen', 'RESESTENEN', 'vanlig', { teleportShield: 1 }, 3, '1 S OSÅRBAR EFTER\nEN TELEPORT'],
+  ['polerduken', 'POLERDUKEN', 'vanlig', { reflectDmg: 0.2 }, 3, '+20 % SKADA PÅ\nSTUDSADE SKOTT'],
+  ['klarsynsdroppen', 'KLARSYNSDROPPEN', 'vanlig', { illusionSight: 0.15 }, 3, '15 % CHANS ATT SE IGENOM\nILLUSIONER DIREKT'],
+  ['glassplittret', 'GLASSPLITTRET', 'vanlig', { mirrorShards: 0.06 }, 3, '6 % CHANS ATT FIENDER\nSPLITTRAS I SKÄRVOR'],
+  ['svampkorgen', 'SVAMPKORGEN', 'vanlig', { fungusHeal: 2 }, 3, '+2 HP NÄR DU DÖDAR\nEN SVAMPFIENDE'],
+  ['myceltraden', 'MYCELTRÅDEN', 'vanlig', { whipReach: 1 }, 2, '+1 RUTA RÄCKVIDD FÖR\nPISKA OCH NÄRSTRID'],
+  ['andningsduken', 'ANDNINGSDUKEN', 'vanlig', { sporeResist: 0.15, fungusHeal: 1 }, 3, '15 % MINDRE EFFEKT\nAV SPORER\n+1 HP PER SVAMPFIENDE', { unlock: 10 }],
+  ['irrblosset', 'IRRBLOSSET', 'vanlig', { illusionSight: 0.1, teleportShield: 1 }, 3, '10 % CHANS ATT SE IGENOM\nILLUSIONER\n1 S OSÅRBAR EFTER TELEPORT', { unlock: 10 }],
+  // ovanliga
+  ['mycelmattan', 'MYCELMATTAN', 'ovanlig', { fungusHeal: 3, sporeResist: 0.2 }, 2, '+3 HP PER SVAMPFIENDE\n20 % MINDRE EFFEKT\nAV SPORER', { unlock: 15 }],
+  ['fjaderskivlingen', 'FJÄDERSKIVLINGEN', 'ovanlig', { bounceHeight: 0.3, fallSafe: 0.15 }, 2, '+30 % HÖGRE STUDS\n15 % MINDRE FALLSKADA'],
+  ['skarvpansaret', 'SKÄRVPANSARET', 'ovanlig', { reflectDmg: 0.25, mirrorShards: 0.05 }, 2, '+25 % SKADA PÅ\nSTUDSADE SKOTT\n5 % CHANS ATT FIENDER\nSPLITTRAS I SKÄRVOR'],
+  ['portvaktarens_ring', 'PORTVAKTARENS RING', 'ovanlig', { teleportShield: 2, dodge: 0.03 }, 2, '2 S OSÅRBAR EFTER\nEN TELEPORT\n+3 % CHANS ATT UNDVIKA', { unlock: 15 }],
+  ['hyfkedjan', 'HYFKEDJAN', 'ovanlig', { whipReach: 1, meleeDmg: 0.1 }, 2, '+1 RUTA RÄCKVIDD FÖR\nPISKA OCH NÄRSTRID\n+10 % NÄRSTRIDSSKADA'],
+  ['maskbrytaren', 'MASKBRYTAREN', 'ovanlig', { illusionSight: 0.25, backstab: 0.15 }, 2, '25 % CHANS ATT SE IGENOM\nILLUSIONER DIREKT\n+15 % SKADA MOT\nOVETANDE FIENDER', { unlock: 20 }],
+  ['flugsvampen', 'FLUGSVAMPEN', 'ovanlig', { fungusHeal: 4, bounceHeight: 0.25, sporeResist: -0.3 }, 1, '+4 HP PER SVAMPFIENDE\n+25 % HÖGRE STUDS\nSPORER 30 % STARKARE', { curse: true, bad: 1 }],
+  // sällsynta
+  ['sporkokongen', 'SPORKOKONGEN', 'sallsynt', { sporeResist: 0.4, regen: 0.3 }, 1, '40 % MINDRE EFFEKT\nAV SPORER\n+0,3 HP PER SEKUND', { unlock: 25 }],
+  ['kalejdoskopet', 'KALEJDOSKOPET', 'sallsynt', { mirrorShards: 0.12, reflectDmg: 0.2 }, 1, '12 % CHANS ATT FIENDER\nSPLITTRAS I SKÄRVOR\n+20 % SKADA PÅ\nSTUDSADE SKOTT', { unlock: 30 }],
+  ['tvillingporten', 'TVILLINGPORTEN', 'sallsynt', { teleportShield: 3, illusionSight: 0.2 }, 1, '3 S OSÅRBAR EFTER\nEN TELEPORT\n20 % CHANS ATT SE IGENOM\nILLUSIONER', { unlock: 25 }],
+  ['mycelgreppet', 'MYCELGREPPET', 'sallsynt', { whipReach: 2, meleeDmg: 0.15, fungusHeal: 2 }, 1, '+2 RUTOR RÄCKVIDD FÖR\nPISKA OCH NÄRSTRID\n+15 % NÄRSTRIDSSKADA\n+2 HP PER SVAMPFIENDE', { unlock: 30 }],
+  ['glaskroppen', 'GLASKROPPEN', 'sallsynt', { mirrorShards: 0.15, reflectDmg: 0.3, healMul: -0.25 }, 1, '15 % CHANS ATT FIENDER\nSPLITTRAS I SKÄRVOR\n+30 % SKADA PÅ\nSTUDSADE SKOTT\n-25 % HELNING', { curse: true, bad: 1 }],
+  // legendariska
+  ['urmycelet', 'URMYCELET', 'legendarisk', { sporeResist: 0.4, fungusHeal: 4, bounceHeight: 0.3, poisonChance: 0.1 }, 1, '40 % MINDRE EFFEKT\nAV SPORER\n+4 HP PER SVAMPFIENDE\n+30 % HÖGRE STUDS\n10 % CHANS ATT FÖRGIFTA', { unlock: 50 }],
+  ['tusenspegeln', 'TUSENSPEGELN', 'legendarisk', { reflectDmg: 0.4, mirrorShards: 0.1, illusionSight: 0.3, teleportShield: 2 }, 1, '+40 % SKADA PÅ\nSTUDSADE SKOTT\n10 % CHANS TILL SKÄRVOR\n30 % SE IGENOM ILLUSIONER\n2 S OSÅRBAR EFTER TELEPORT', { unlock: 50 }],
+  // ---- version 13: pakter och uppgraderingar för runboken och ångkanonen ----
+  ['pakt_runbok', 'SKRIVARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR BLÄCK\n4 UNIKA UPPGRADERINGAR\nBARA RUNBOK RESTEN AV RUNDAN', { pact: 'runebook', bad: 1 }],
+  ['pakt_angkanon', 'PANNMÄSTARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR BRÄNSLE\n4 UNIKA UPPGRADERINGAR\nBARA ÅNGKANON RESTEN AV RUNDAN', { pact: 'steamcannon', bad: 1 }],
+  ['runklyvningen', 'RUNKLYVNINGEN', 'legendarisk', {}, 1, 'RUNORNA DELAR SIG\nVID TRÄFF', { weapon: 'runebook', wup: 'rb_split' }],
+  ['sokarrunan', 'SÖKARRUNAN', 'ovanlig', {}, 1, 'STARKARE MÅLSÖKNING', { weapon: 'runebook', wup: 'rb_seek' }],
+  ['pappersstormen', 'PAPPERSSTORMEN', 'sallsynt', {}, 1, 'SIDVIRVELN HÅLLER LÄNGRE\nOCH KASTAR TILLBAKA SKOTT', { weapon: 'runebook', wup: 'rb_ward' }],
+  ['blackstanket', 'BLÄCKSTÄNKET', 'sallsynt', {}, 1, 'TRÄFFAR LÄMNAR BLÄCK\nSOM SAKTAR FIENDER', { weapon: 'runebook', wup: 'rb_ink' }],
+  ['langroret', 'LÅNGRÖRET', 'ovanlig', {}, 1, 'LÄNGRE ÅNGKON', { weapon: 'steamcannon', wup: 'sc_range' }],
+  ['skallningen', 'SKÅLLNINGEN', 'sallsynt', {}, 1, 'ÅNGAN SKÅLLAR:\nSKADA ÖVER TID', { weapon: 'steamcannon', wup: 'sc_scald' }],
+  ['tryckstoten', 'TRYCKSTÖTEN', 'legendarisk', {}, 1, 'KNUFFAR HÅRDARE\nFIENDER SOM SLÅR I\nVÄGGAR TAR SKADA', { weapon: 'steamcannon', wup: 'sc_push' }],
+  ['overtrycket', 'ÖVERTRYCKET', 'ovanlig', {}, 1, 'SNABBARE TRYCK', { weapon: 'steamcannon', wup: 'sc_fast' }],
+  // ---- version 13: böcker, bläck, runor, ånga, smide och metall (Det förbjudna biblioteket och Gjuteriet) ----
+  // vanliga
+  ['blackhornet', 'BLÄCKHORNET', 'vanlig', { inkResist: 0.2 }, 3, '20 % MINDRE EFFEKT\nAV BLÄCK'],
+  ['runpennan', 'RUNPENNAN', 'vanlig', { runeDmg: 0.12 }, 3, '+12 % SKADA MED RUNOR'],
+  ['ventilnyckeln', 'VENTILNYCKELN', 'vanlig', { ventResist: 0.2 }, 3, '20 % MINDRE SKADA\nFRÅN ÅNGA'],
+  ['kopparmunstycket', 'KOPPARMUNSTYCKET', 'vanlig', { steamDmg: 0.12 }, 3, '+12 % SKADA MED ÅNGA'],
+  ['bokmarket', 'BOKMÄRKET', 'vanlig', { bookLore: 1 }, 2, '+1 EXTRA EFFEKT NÄR\nDU LÄSER EN PULPET'],
+  ['smidestangen', 'SMIDESTÅNGEN', 'vanlig', { forgeArmor: 2 }, 3, '+2 RUSTNING PER DÖDAD\nGJUTERIFIENDE'],
+  ['gjutarstovlarna', 'GJUTARSTÖVLARNA', 'vanlig', { beltSpeed: 0.2 }, 3, '+20 % FART PÅ RULLBAND\nÅT RÄTT HÅLL'],
+  ['nithandsken', 'NITHANDSKEN', 'vanlig', { pressResist: 0.2 }, 3, '20 % MINDRE SKADA\nFRÅN STANSAR'],
+  ['lasglaset', 'LÄSGLASET', 'vanlig', { bookLore: 1, inkResist: 0.1 }, 2, '+1 EXTRA PULPETEFFEKT\n10 % MINDRE EFFEKT\nAV BLÄCK', { unlock: 10 }],
+  ['angvisslan', 'ÅNGVISSLAN', 'vanlig', { ventResist: 0.15, steamDmg: 0.08 }, 3, '15 % MINDRE SKADA\nFRÅN ÅNGA\n+8 % SKADA MED ÅNGA', { unlock: 10 }],
+  // ovanliga
+  ['runstampeln', 'RUNSTÄMPELN', 'ovanlig', { runeDmg: 0.2, inkResist: 0.15 }, 2, '+20 % SKADA MED RUNOR\n15 % MINDRE EFFEKT\nAV BLÄCK', { unlock: 15 }],
+  ['anggallret', 'ÅNGGALLRET', 'ovanlig', { ventResist: 0.3, heatResist: 0.1 }, 2, '30 % MINDRE SKADA\nFRÅN ÅNGA\n-10 % HETTA OCH ELD'],
+  ['stalforkladet', 'STÅLFÖRKLÄDET', 'ovanlig', { forgeArmor: 3, pressResist: 0.15 }, 2, '+3 RUSTNING PER DÖDAD\nGJUTERIFIENDE\n15 % MINDRE SKADA\nFRÅN STANSAR', { unlock: 15 }],
+  ['assjans_klinga', 'ÄSSJANS KLINGA', 'ovanlig', { forgeArmor: 2, burnChance: 0.08 }, 2, '+2 RUSTNING PER DÖDAD\nGJUTERIFIENDE\n+8 % BRANDCHANS'],
+  ['kopistens_lupp', 'KOPISTENS LUPP', 'ovanlig', { bookLore: 2, critChance: 0.05 }, 2, '+2 EXTRA EFFEKT NÄR\nDU LÄSER EN PULPET\n+5 % KRITCHANS', { unlock: 20 }],
+  ['kilremmen', 'KILREMMEN', 'ovanlig', { beltSpeed: 0.3, moveSpeed: 0.05 }, 2, '+30 % FART PÅ RULLBAND\nÅT RÄTT HÅLL\n+5 % RÖRELSEHASTIGHET'],
+  ['svartblacket', 'SVARTBLÄCKET', 'ovanlig', { runeDmg: 0.3, inkResist: -0.3 }, 1, '+30 % SKADA MED RUNOR\nBLÄCK 30 % STARKARE', { curse: true, bad: 1 }],
+  // sällsynta
+  ['eldskriften', 'ELDSKRIFTEN', 'sallsynt', { runeDmg: 0.3, bookLore: 1, burnChance: 0.08 }, 1, '+30 % SKADA MED RUNOR\n+1 EXTRA PULPETEFFEKT\n+8 % BRANDCHANS', { unlock: 30 }],
+  ['angpannan', 'ÅNGPANNAN', 'sallsynt', { steamDmg: 0.3, ventResist: 0.3 }, 1, '+30 % SKADA MED ÅNGA\n30 % MINDRE SKADA\nFRÅN ÅNGA', { unlock: 25 }],
+  ['jattens_stad', 'JÄTTENS STÄD', 'sallsynt', { forgeArmor: 4, pressResist: 0.25 }, 1, '+4 RUSTNING PER DÖDAD\nGJUTERIFIENDE\n25 % MINDRE SKADA\nFRÅN STANSAR', { unlock: 30 }],
+  ['gjutarspaken', 'GJUTARSPAKEN', 'sallsynt', { beltSpeed: 0.4, pressResist: 0.2 }, 1, '+40 % FART PÅ RULLBAND\nÅT RÄTT HÅLL\n20 % MINDRE SKADA\nFRÅN STANSAR', { unlock: 25 }],
+  ['smalthjartat', 'SMÄLTHJÄRTAT', 'sallsynt', { forgeArmor: 5, steamDmg: 0.25, ventResist: -0.4 }, 1, '+5 RUSTNING PER DÖDAD\nGJUTERIFIENDE\n+25 % SKADA MED ÅNGA\nÅNGA GÖR 40 % MER SKADA', { curse: true, bad: 1 }],
+  // legendariska
+  ['forbjudna_folianten', 'FÖRBJUDNA FOLIANTEN', 'legendarisk', { bookLore: 2, runeDmg: 0.3, inkResist: 0.3, xpMul: 0.1 }, 1, '+2 EXTRA PULPETEFFEKT\n+30 % SKADA MED RUNOR\n30 % MINDRE EFFEKT AV BLÄCK\n+10 % ERFARENHET', { unlock: 50 }],
+  ['kolossens_hjarta', 'KOLOSSENS HJÄRTA', 'legendarisk', { forgeArmor: 4, steamDmg: 0.3, ventResist: 0.3, beltSpeed: 0.3 }, 1, '+4 RUSTNING PER DÖDAD\nGJUTERIFIENDE\n+30 % SKADA MED ÅNGA\n30 % MINDRE SKADA AV ÅNGA\n+30 % FART PÅ RULLBAND', { unlock: 50 }],
+  // ---- version 15: pakter och uppgraderingar för rökelsekaret och bikastaren ----
+  ['pakt_rokelsekar', 'MINISTRANTENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nRÖKELSEKARET BEHÖVER INGEN AMMO\n4 UNIKA UPPGRADERINGAR\nBARA RÖKELSEKAR RESTEN AV RUNDAN', { pact: 'censer', bad: 1 }],
+  ['pakt_bikastare', 'BIODLARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR BIN\n4 UNIKA UPPGRADERINGAR\nBARA BIKASTARE RESTEN AV RUNDAN', { pact: 'hivelauncher', bad: 1 }],
+  ['langkedjan', 'LÅNGKEDJAN', 'ovanlig', {}, 1, 'LÄNGRE RÄCKVIDD', { weapon: 'censer', wup: 'cs_reach' }],
+  ['vigda_roken', 'DEN VIGDA RÖKEN', 'sallsynt', {}, 1, 'RÖKEN LÄKER MER', { weapon: 'censer', wup: 'cs_heal' }],
+  ['skarselden', 'SKÄRSELDEN', 'legendarisk', {}, 1, 'GLÖDEN SÄTTER FYR\nPÅ FIENDERNA', { weapon: 'censer', wup: 'cs_fire' }],
+  ['snabbsvingen', 'SNABBSVINGEN', 'ovanlig', {}, 1, 'SNABBARE SVING', { weapon: 'censer', wup: 'cs_fast' }],
+  ['svarmtiden', 'SVÄRMTIDEN', 'sallsynt', {}, 1, 'FLER BIN PER SKOTT', { weapon: 'hivelauncher', wup: 'hl_swarm' }],
+  ['giftgadden', 'GIFTGADDEN', 'ovanlig', {}, 1, 'BINAS STICK FÖRGIFTAR', { weapon: 'hivelauncher', wup: 'hl_poison' }],
+  ['drottninggelen', 'DROTTNINGGELÉN', 'legendarisk', {}, 1, 'IBLAND FLYGER EN DROTTNING\nSOM GÖR TREFALDIG SKADA', { weapon: 'hivelauncher', wup: 'hl_queen' }],
+  ['flyghalet', 'FLYGHÅLET', 'ovanlig', {}, 1, 'SNABBARE SKOTT', { weapon: 'hivelauncher', wup: 'hl_fast' }],
+  // ---- version 15: katedral, blod, ljus, klockor, bin, honung och vax (Blodkatedralen och Bikupan) ----
+  // vanliga
+  ['glasmalningen', 'GLASMÅLNINGEN', 'vanlig', { blessDur: 0.2 }, 3, '+20 % LÄNGRE VÄLSIGNELSE\nFRÅN LJUSSTRÅK'],
+  ['vaxsulorna', 'VAXSULORNA', 'vanlig', { honeyResist: 0.2 }, 3, '20 % MINDRE INBROMSNING\nI HONUNG'],
+  ['larvkroken', 'LARVKROKEN', 'vanlig', { larvaDmg: 0.15 }, 3, '+15 % SKADA MOT LARVER'],
+  ['rokelsekornen', 'RÖKELSEKORNEN', 'vanlig', { censerHeal: 1 }, 2, '+1 HP PER TRÄFF MED\nRÖKELSEKARET'],
+  ['bigadden', 'BIGADDEN', 'vanlig', { beeDmg: 0.12 }, 3, '+12 % SKADA MED BIN'],
+  ['klockrepet', 'KLOCKREPET', 'vanlig', { bellStun: 1 }, 2, '+1 S LÄNGRE BEDÖVNING\nFRÅN KLOCKOR'],
+  ['offerskalen', 'OFFERSKÅLEN', 'vanlig', { fontBreak: 4 }, 3, '+4 HP NÄR DU KROSSAR\nEN BLODFUNT'],
+  ['helgonglorian', 'HELGONGLORIAN', 'vanlig', { holyDmg: 0.1 }, 3, '+10 % SKADA MEDAN DU\nÄR VÄLSIGNAD'],
+  ['vaxljuset', 'VAXLJUSET', 'vanlig', { blessDur: 0.15, censerHeal: 1 }, 2, '+15 % LÄNGRE VÄLSIGNELSE\n+1 HP PER RÖKELSETRÄFF', { unlock: 10 }],
+  ['honungskakan', 'HONUNGSKAKAN', 'vanlig', { honeyResist: 0.15, larvaDmg: 0.08 }, 3, '15 % MINDRE INBROMSNING\nI HONUNG\n+8 % SKADA MOT LARVER', { unlock: 10 }],
+  // ovanliga
+  ['kyrkklockan', 'KYRKKLOCKAN', 'ovanlig', { bellStun: 2, holyDmg: 0.08 }, 2, '+2 S LÄNGRE BEDÖVNING\nFRÅN KLOCKOR\n+8 % SKADA SOM VÄLSIGNAD', { unlock: 15 }],
+  ['blodkalken', 'BLODKALKEN', 'ovanlig', { fontBreak: 6, lifesteal: 0.02 }, 2, '+6 HP NÄR DU KROSSAR\nEN BLODFUNT\n2 % AV SKADAN BLIR HP'],
+  ['biodlarhandskarna', 'BIODLARHANDSKARNA', 'ovanlig', { beeDmg: 0.2, honeyResist: 0.15 }, 2, '+20 % SKADA MED BIN\n15 % MINDRE INBROMSNING\nI HONUNG', { unlock: 15 }],
+  ['larvsaxen', 'LARVSAXEN', 'ovanlig', { larvaDmg: 0.25, poisonChance: 0.05 }, 2, '+25 % SKADA MOT LARVER\n+5 % CHANS ATT FÖRGIFTA'],
+  ['myrran', 'MYRRAN', 'ovanlig', { censerHeal: 2, healMul: 0.1 }, 2, '+2 HP PER TRÄFF MED\nRÖKELSEKARET\n+10 % HELNING', { unlock: 20 }],
+  ['rosettfonstret', 'ROSETTFÖNSTRET', 'ovanlig', { blessDur: 0.3, holyDmg: 0.1 }, 2, '+30 % LÄNGRE VÄLSIGNELSE\n+10 % SKADA SOM VÄLSIGNAD'],
+  ['sota_fallan', 'DEN SÖTA FÄLLAN', 'ovanlig', { beeDmg: 0.3, honeyResist: -0.3 }, 1, '+30 % SKADA MED BIN\nHONUNG BROMSAR 30 % MER', { curse: true, bad: 1 }],
+  // sällsynta
+  ['klockarens_hammare', 'KLOCKARENS HAMMARE', 'sallsynt', { bellStun: 2, meleeDmg: 0.15, fontBreak: 5 }, 1, '+2 S LÄNGRE BEDÖVNING\nFRÅN KLOCKOR\n+15 % NÄRSTRIDSSKADA\n+5 HP PER KROSSAD FUNT', { unlock: 30 }],
+  ['helgonreliken', 'HELGONRELIKEN', 'sallsynt', { holyDmg: 0.25, blessDur: 0.25 }, 1, '+25 % SKADA MEDAN DU\nÄR VÄLSIGNAD\n+25 % LÄNGRE VÄLSIGNELSE', { unlock: 25 }],
+  ['yngelvaktaren', 'YNGELVAKTAREN', 'sallsynt', { larvaDmg: 0.3, honeyResist: 0.25 }, 1, '+30 % SKADA MOT LARVER\n25 % MINDRE INBROMSNING\nI HONUNG', { unlock: 30 }],
+  ['rokelsemolnet', 'RÖKELSEMOLNET', 'sallsynt', { censerHeal: 3, regen: 0.2 }, 1, '+3 HP PER TRÄFF MED\nRÖKELSEKARET\n+0,2 HP PER SEKUND', { unlock: 25 }],
+  ['blodsdopet', 'BLODSDOPET', 'sallsynt', { fontBreak: 10, holyDmg: 0.2, healMul: -0.25 }, 1, '+10 HP PER KROSSAD FUNT\n+20 % SKADA SOM VÄLSIGNAD\n-25 % HELNING', { curse: true, bad: 1 }],
+  // legendariska
+  ['kardinalens_ring', 'KARDINALENS RING', 'legendarisk', { holyDmg: 0.3, blessDur: 0.4, bellStun: 2, fontBreak: 6 }, 1, '+30 % SKADA SOM VÄLSIGNAD\n+40 % LÄNGRE VÄLSIGNELSE\n+2 S LÄNGRE KLOCKBEDÖVNING\n+6 HP PER KROSSAD FUNT', { unlock: 50 }],
+  ['drottningens_krona', 'BIDROTTNINGENS KRONA', 'legendarisk', { beeDmg: 0.3, larvaDmg: 0.3, honeyResist: 0.3, poisonChance: 0.1 }, 1, '+30 % SKADA MED BIN\n+30 % SKADA MOT LARVER\n30 % MINDRE INBROMSNING\nI HONUNG\n10 % CHANS ATT FÖRGIFTA', { unlock: 50 }],
+  // ---- version 16: pakter och uppgraderingar för trädgårdssaxen och drömstaven ----
+  ['pakt_tradgardssax', 'HÄCKKLIPPARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nSAXEN BEHÖVER INGEN AMMO\n4 UNIKA UPPGRADERINGAR\nBARA TRÄDGÅRDSSAX RESTEN AV RUNDAN', { pact: 'shears', bad: 1 }],
+  ['pakt_dromstav', 'DRÖMVÄVARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR DRÖMMAR\n4 UNIKA UPPGRADERINGAR\nBARA DRÖMSTAV RESTEN AV RUNDAN', { pact: 'dreamstaff', bad: 1 }],
+  ['treklippet', 'TREKLIPPET', 'legendarisk', {}, 1, 'TRE KLIPP I STÄLLET\nFÖR TVÅ', { weapon: 'shears', wup: 'sh_triple' }],
+  ['blodklippet', 'BLODKLIPPET', 'sallsynt', {}, 1, 'KLIPPEN GER BLÖDNING', { weapon: 'shears', wup: 'sh_bleed' }],
+  ['saxkastet', 'SAXKASTET', 'sallsynt', {}, 1, 'KASTET GÖR MER SKADA', { weapon: 'shears', wup: 'sh_throw' }],
+  ['snabbklippet', 'SNABBKLIPPET', 'ovanlig', {}, 1, 'SNABBARE KLIPP', { weapon: 'shears', wup: 'sh_fast' }],
+  ['trogheten', 'TRÖGHETEN', 'ovanlig', {}, 1, 'STJÄRNAN SAKTAR NED\nI EN STÖRRE RADIE', { weapon: 'dreamstaff', wup: 'ds_slow' }],
+  ['stjarnregnet', 'STJÄRNREGNET', 'legendarisk', {}, 1, 'STJÄRNAN SMÄLLER I\nTRE MINDRE STJÄRNOR', { weapon: 'dreamstaff', wup: 'ds_split' }],
+  ['djupsomnen', 'DJUPSÖMNEN', 'sallsynt', {}, 1, 'FIENDERNA SOVER LÄNGRE', { weapon: 'dreamstaff', wup: 'ds_sleep' }],
+  ['stjarnfallet', 'STJÄRNFALLET', 'ovanlig', {}, 1, 'SNABBARE STJÄRNA', { weapon: 'dreamstaff', wup: 'ds_fast' }],
+  // ---- version 16: trädgård, rosor, törne, statyer, drömmar, sömn och mardrömmar (Den döda trädgården och Drömriket) ----
+  // vanliga
+  ['rosenhandsken', 'ROSENHANDSKEN', 'vanlig', { thornResist: 0.2 }, 3, '20 % MINDRE SKADA\nFRÅN TAGGRANKOR'],
+  ['stenblicken', 'STENBLICKEN', 'vanlig', { angelSight: 1 }, 2, 'STENÄNGLAR STÅR STILLA\n+1 S EFTER ATT DU\nTITTAT BORT'],
+  ['grensaxen', 'GRENSAXEN', 'vanlig', { shearDmg: 0.12 }, 3, '+12 % SKADA MED SAXEN'],
+  ['somnsanden', 'SÖMNSANDEN', 'vanlig', { dreamDmg: 0.12 }, 3, '+12 % SKADA MED\nDRÖMSTAVEN'],
+  ['dimlyktan', 'DIMLYKTAN', 'vanlig', { mistSight: 0.2 }, 3, '+20 % SIKT I\nSÖMNENS DIMMA'],
+  ['fontanmyntet', 'FONTÄNMYNTET', 'vanlig', { fountainHeal: 5 }, 3, '+5 HP NÄR DU DRICKER\nUR EN FONTÄN'],
+  ['dromnyckeln', 'DRÖMNYCKELN', 'vanlig', { shiftSense: 0.2 }, 3, 'GLIDANDE VÄGGAR ÖPPNAS\n20 % SNABBARE'],
+  ['tuppfjadern', 'TUPPFJÄDERN', 'vanlig', { sleepResist: 0.2 }, 3, '20 % MINDRE EFFEKT\nAV SÖMN'],
+  ['rosenvattnet', 'ROSENVATTNET', 'vanlig', { fountainHeal: 3, thornResist: 0.1 }, 2, '+3 HP FRÅN FONTÄNER\n10 % MINDRE SKADA\nFRÅN TAGGRANKOR', { unlock: 10 }],
+  ['nattljuset', 'NATTLJUSET', 'vanlig', { mistSight: 0.15, sleepResist: 0.1 }, 3, '+15 % SIKT I\nSÖMNENS DIMMA\n10 % MINDRE EFFEKT AV SÖMN', { unlock: 10 }],
+  // ovanliga
+  ['barkhuden', 'BARKHUDEN', 'ovanlig', { thornResist: 0.25, thorns: 3 }, 2, '25 % MINDRE SKADA\nFRÅN TAGGRANKOR\n+3 TAGGSKADA'],
+  ['stenangelns_tar', 'STENÄNGELNS TÅR', 'ovanlig', { angelSight: 2, dodge: 0.03 }, 2, 'STENÄNGLAR STÅR STILLA\n+2 S EFTER ATT DU\nTITTAT BORT\n+3 % CHANS ATT UNDVIKA', { unlock: 15 }],
+  ['rosensaxen', 'ROSENSAXEN', 'ovanlig', { shearDmg: 0.2, bleedChance: 0.05 }, 2, '+20 % SKADA MED SAXEN\n+5 % CHANS TILL BLÖDNING'],
+  ['stjarnstoftet', 'STJÄRNSTOFTET', 'ovanlig', { dreamDmg: 0.2, slowChance: 0.05 }, 2, '+20 % SKADA MED\nDRÖMSTAVEN\n+5 % CHANS ATT SAKTA NED', { unlock: 20 }],
+  ['vakarstenen', 'VÄCKARSTENEN', 'ovanlig', { sleepResist: 0.25, mistSight: 0.15 }, 2, '25 % MINDRE EFFEKT AV SÖMN\n+15 % SIKT I\nSÖMNENS DIMMA'],
+  ['nackrosen', 'NÄCKROSEN', 'ovanlig', { fountainHeal: 8, healMul: 0.1 }, 2, '+8 HP FRÅN FONTÄNER\n+10 % HELNING', { unlock: 15 }],
+  ['valmon', 'VALMON', 'ovanlig', { dreamDmg: 0.3, sleepResist: -0.3 }, 1, '+30 % SKADA MED\nDRÖMSTAVEN\nSÖMN 30 % STARKARE', { curse: true, bad: 1 }],
+  // sällsynta
+  ['rankornas_moder', 'RANKORNAS MODER', 'sallsynt', { thornResist: 0.35, meleeResist: 0.1 }, 1, '35 % MINDRE SKADA\nFRÅN TAGGRANKOR\n10 % MINDRE NÄRSTRIDSSKADA', { unlock: 25 }],
+  ['marmorhjartat', 'MARMORHJÄRTAT', 'sallsynt', { angelSight: 3, maxHp: 15 }, 1, 'STENÄNGLAR STÅR STILLA\n+3 S EFTER ATT DU\nTITTAT BORT\n+15 MAX HP', { unlock: 30 }],
+  ['mastersaxen', 'MÄSTARSAXEN', 'sallsynt', { shearDmg: 0.3, meleeDmg: 0.1, thornResist: 0.15 }, 1, '+30 % SKADA MED SAXEN\n+10 % NÄRSTRIDSSKADA\n15 % MINDRE SKADA\nFRÅN TAGGRANKOR', { unlock: 25 }],
+  ['ariadnes_trad', 'ARIADNES TRÅD', 'sallsynt', { shiftSense: 0.3, mistSight: 0.25 }, 1, 'GLIDANDE VÄGGAR ÖPPNAS\n30 % SNABBARE\n+25 % SIKT I\nSÖMNENS DIMMA', { unlock: 30 }],
+  ['mardromsmasken', 'MARDRÖMSMASKEN', 'sallsynt', { dreamDmg: 0.35, mistSight: 0.3, sleepResist: -0.4 }, 1, '+35 % SKADA MED\nDRÖMSTAVEN\n+30 % SIKT I DIMMAN\nSÖMN 40 % STARKARE', { curse: true, bad: 1 }],
+  // legendariska
+  ['svarta_rosen', 'DEN SVARTA ROSEN', 'legendarisk', { thornResist: 0.4, shearDmg: 0.3, fountainHeal: 6, angelSight: 2 }, 1, '40 % MINDRE SKADA\nFRÅN TAGGRANKOR\n+30 % SKADA MED SAXEN\n+6 HP FRÅN FONTÄNER\nSTENÄNGLAR STÅR STILLA +2 S', { unlock: 50 }],
+  ['jon_blunds_paraply', 'JON BLUNDS PARAPLY', 'legendarisk', { dreamDmg: 0.3, sleepResist: 0.4, mistSight: 0.3, shiftSense: 0.25 }, 1, '+30 % SKADA MED DRÖMSTAVEN\n40 % MINDRE EFFEKT AV SÖMN\n+30 % SIKT I DIMMAN\nGLIDANDE VÄGGAR ÖPPNAS\n25 % SNABBARE', { unlock: 50 }],
+  // ---- version 17: pakter och uppgraderingar för kedjekulekanonen och syrasprutan ----
+  ['pakt_kedjekanon', 'KAPARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR KEDJEKULOR\n4 UNIKA UPPGRADERINGAR\nBARA KEDJEKANON RESTEN AV RUNDAN', { pact: 'chaincannon', bad: 1 }],
+  ['pakt_syraspruta', 'ALKEMISTENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR SYRA\n4 UNIKA UPPGRADERINGAR\nBARA SYRASPRUTA RESTEN AV RUNDAN', { pact: 'acidsprayer', bad: 1 }],
+  ['genomslaget', 'GENOMSLAGET', 'legendarisk', {}, 1, 'KULAN GÅR IGENOM\nSJU FIENDER', { weapon: 'chaincannon', wup: 'cc_pierce' }],
+  ['virvelkulan', 'VIRVELKULAN', 'sallsynt', {}, 1, 'KULAN SNURRAR BREDARE\nOCH BEDÖVAR', { weapon: 'chaincannon', wup: 'cc_spin' }],
+  ['brandkulan', 'BRANDKULAN', 'sallsynt', {}, 1, 'KULAN TÄNDER ELD', { weapon: 'chaincannon', wup: 'cc_fire' }],
+  ['snabbladdaren', 'SNABBLADDAREN', 'ovanlig', {}, 1, 'SNABBARE OMLADDNING', { weapon: 'chaincannon', wup: 'cc_fast' }],
+  ['fratsaret', 'FRÄTSÅRET', 'legendarisk', {}, 1, 'FRÄTNINGEN GER 35 %\nMER SKADA OCH VARAR LÄNGRE', { weapon: 'acidsprayer', wup: 'as_corrode' }],
+  ['bredstralen', 'BREDSTRÅLEN', 'ovanlig', {}, 1, 'BREDARE STRÅLE', { weapon: 'acidsprayer', wup: 'as_spread' }],
+  ['giftangorna', 'GIFTÅNGORNA', 'sallsynt', {}, 1, 'STRÅLEN LÄMNAR\nSYRAPÖLAR', { weapon: 'acidsprayer', wup: 'as_fumes' }],
+  ['tryckpumpen', 'TRYCKPUMPEN', 'ovanlig', {}, 1, 'LÄNGRE STRÅLE', { weapon: 'acidsprayer', wup: 'as_fast' }],
+  // ---- version 17: skeppet, kanoner, pirater, syra, flaskor, transmutation och teslaspolar (Spökskeppet och Laboratoriet) ----
+  // vanliga
+  ['sjobenen', 'SJÖBENEN', 'vanlig', { deckGrip: 0.2 }, 3, '20 % MER GREPP\nPÅ SKÖLJT DÄCK'],
+  ['krutpungen', 'KRUTPUNGEN', 'vanlig', { cannonDmg: 0.15 }, 3, '+15 % SKADA MED KANONER'],
+  ['kedjelanken', 'KEDJELÄNKEN', 'vanlig', { chainDmg: 0.12 }, 3, '+12 % SKADA MED\nKEDJEKULOR'],
+  ['syrakolven', 'SYRAKOLVEN', 'vanlig', { acidDmg: 0.12 }, 3, '+12 % SKADA MED SYRA'],
+  ['gummiforkladet', 'GUMMIFÖRKLÄDET', 'vanlig', { acidResist: 0.2 }, 3, '20 % MINDRE SKADA\nAV SYRA'],
+  ['blysmycket', 'BLYSMYCKET', 'vanlig', { transmuteLuck: 0.2 }, 3, '+20 % TUR MED\nTRANSMUTATION'],
+  ['jordkabeln', 'JORDKABELN', 'vanlig', { teslaResist: 0.25 }, 3, '25 % MINDRE SKADA\nFRÅN TESLASPOLAR'],
+  ['destillatet', 'DESTILLATET', 'vanlig', { brewLuck: 0.15 }, 3, '15 % CHANS TILL STARK\nBRYGD I ALEMBIKEN'],
+  ['tjarat_rep', 'TJÄRAT REP', 'vanlig', { deckGrip: 0.12, cannonDmg: 0.08 }, 2, '12 % MER GREPP\nPÅ SKÖLJT DÄCK\n+8 % SKADA MED KANONER', { unlock: 10 }],
+  ['skyddsglasogonen', 'SKYDDSGLASÖGONEN', 'vanlig', { acidResist: 0.12, teslaResist: 0.12 }, 3, '12 % MINDRE SKADA AV SYRA\n12 % MINDRE SKADA\nFRÅN TESLASPOLAR', { unlock: 10 }],
+  // ovanliga
+  ['kaparbrevet', 'KAPARBREVET', 'ovanlig', { cannonDmg: 0.2, goldMul: 0.1 }, 2, '+20 % SKADA MED KANONER\n+10 % GULD'],
+  ['kedjesmeden', 'KEDJESMEDEN', 'ovanlig', { chainDmg: 0.2, dmg: 0.04 }, 2, '+20 % SKADA MED\nKEDJEKULOR\n+4 % SKADA'],
+  ['syrastanket', 'SYRASTÄNKET', 'ovanlig', { acidDmg: 0.2, poisonChance: 0.05 }, 2, '+20 % SKADA MED SYRA\n+5 % CHANS ATT FÖRGIFTA', { unlock: 15 }],
+  ['guldlovet', 'GULDLÖVET', 'ovanlig', { transmuteLuck: 0.3, goldMul: 0.05 }, 2, '+30 % TUR MED\nTRANSMUTATION\n+5 % GULD'],
+  ['faradays_bur', 'FARADAYS BUR', 'ovanlig', { teslaResist: 0.4, shockChance: 0.05 }, 2, '40 % MINDRE SKADA\nFRÅN TESLASPOLAR\n+5 % CHANS TILL BLIXT', { unlock: 15 }],
+  ['brygdboken', 'BRYGDBOKEN', 'ovanlig', { brewLuck: 0.25, potionPower: 0.1 }, 2, '25 % CHANS TILL STARK\nBRYGD I ALEMBIKEN\n+10 % STARKARE DRYCKER'],
+  ['rombuteljen', 'ROMBUTELJEN', 'ovanlig', { cannonDmg: 0.3, deckGrip: -0.3 }, 1, '+30 % SKADA MED KANONER\nDÄCKET 30 % HALARE', { curse: true, bad: 1 }],
+  // sällsynta
+  ['kaptenens_kompass', 'KAPTENENS KOMPASS', 'sallsynt', { deckGrip: 0.35, cannonDmg: 0.2, moveSpeed: 0.05 }, 1, '35 % MER GREPP\nPÅ SKÖLJT DÄCK\n+20 % SKADA MED KANONER\n+5 % RÖRELSEHASTIGHET', { unlock: 25 }],
+  ['ankarkettingen', 'ANKARKETTINGEN', 'sallsynt', { chainDmg: 0.3, meleeResist: 0.1 }, 1, '+30 % SKADA MED\nKEDJEKULOR\n10 % MINDRE NÄRSTRIDSSKADA', { unlock: 30 }],
+  ['salamanderhuden', 'SALAMANDERHUDEN', 'sallsynt', { acidResist: 0.35, maxHp: 15 }, 1, '35 % MINDRE SKADA\nAV SYRA\n+15 MAX HP', { unlock: 25 }],
+  ['vises_sten', 'DE VISES STEN', 'sallsynt', { transmuteLuck: 0.4, brewLuck: 0.2, goldMul: 0.1 }, 1, '+40 % TUR MED\nTRANSMUTATION\n20 % CHANS TILL STARK BRYGD\n+10 % GULD', { unlock: 30 }],
+  ['kvicksilverbagaren', 'KVICKSILVERBÄGAREN', 'sallsynt', { acidDmg: 0.35, transmuteLuck: 0.2, acidResist: -0.3 }, 1, '+35 % SKADA MED SYRA\n+20 % TUR MED\nTRANSMUTATION\nSYRA SKADAR 30 % MER', { curse: true, bad: 1 }],
+  // legendariska
+  ['hollandarens_ror', 'HOLLÄNDARENS ROR', 'legendarisk', { deckGrip: 0.4, cannonDmg: 0.3, chainDmg: 0.3, goldMul: 0.1 }, 1, '40 % MER GREPP PÅ DÄCK\n+30 % SKADA MED KANONER\n+30 % SKADA MED\nKEDJEKULOR\n+10 % GULD', { unlock: 50 }],
+  ['smaragdtavlan', 'SMARAGDTAVLAN', 'legendarisk', { acidDmg: 0.3, acidResist: 0.3, transmuteLuck: 0.3, brewLuck: 0.2 }, 1, '+30 % SKADA MED SYRA\n30 % MINDRE SKADA AV SYRA\n+30 % TUR MED\nTRANSMUTATION\n20 % CHANS TILL STARK BRYGD', { unlock: 50 }],
+  // ---- version 18: pakter och uppgraderingar för käglekastaren och blåsröret ----
+  ['pakt_kaglekastare', 'JONGLÖRENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR KÄGLOR\n4 UNIKA UPPGRADERINGAR\nBARA KÄGLEKASTARE RESTEN AV RUNDAN', { pact: 'pinthrower', bad: 1 }],
+  ['pakt_blasror', 'SCHAMANENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR GIFTPILAR\n4 UNIKA UPPGRADERINGAR\nBARA BLÅSRÖR RESTEN AV RUNDAN', { pact: 'blowgun', bad: 1 }],
+  ['studskaglan', 'STUDSKÄGLAN', 'legendarisk', {}, 1, 'KÄGLORNA STUDSAR\nFYRA GÅNGER', { weapon: 'pinthrower', wup: 'pt_bounce' }],
+  ['femte_kaglan', 'FEMTE KÄGLAN', 'sallsynt', {}, 1, 'FEM KÄGLOR PER KAST', { weapon: 'pinthrower', wup: 'pt_split' }],
+  ['eldkaglorna', 'ELDKÄGLORNA', 'sallsynt', {}, 1, 'KÄGLORNA TÄNDER ELD', { weapon: 'pinthrower', wup: 'pt_fire' }],
+  ['snabba_hander', 'SNABBA HÄNDER', 'ovanlig', {}, 1, 'SNABBARE OMLADDNING', { weapon: 'pinthrower', wup: 'pt_fast' }],
+  ['pilgiftsgrodan', 'PILGIFTSGRODAN', 'sallsynt', {}, 1, 'GIFTET VARAR\nDUBBELT SÅ LÄNGE', { weapon: 'blowgun', wup: 'bg_poison' }],
+  ['smygjagaren', 'SMYGJÄGAREN', 'ovanlig', {}, 1, 'TYST SKOTT OCH DUBBEL\nSKADA MOT OVETANDE', { weapon: 'blowgun', wup: 'bg_silent' }],
+  ['ornogat', 'ÖRNÖGAT', 'legendarisk', {}, 1, 'HUVUDTRÄFFAR GER\nTREDUBBEL SKADA', { weapon: 'blowgun', wup: 'bg_crit' }],
+  ['lungkraften', 'LUNGKRAFTEN', 'ovanlig', {}, 1, 'SNABBARE OMLADDNING', { weapon: 'blowgun', wup: 'bg_fast' }],
+  // ---- version 18: rampljus, fallluckor, knivar, käglor, giftpilar, gift, idoler och lianer (Cirkusen och Djungeltemplet) ----
+  // vanliga
+  ['rampfebern', 'RAMPFEBERN', 'vanlig', { showtime: 0.1 }, 3, '+10 % SKADA I RAMPLJUSET'],
+  ['scenvanan', 'SCENVANAN', 'vanlig', { trapdoorSense: 0.2 }, 3, '20 % LÄNGRE VARNING\nFÖR FALLLUCKOR'],
+  ['ladervasten', 'LÄDERVÄSTEN', 'vanlig', { knifeResist: 0.2 }, 3, '20 % MINDRE SKADA\nAV KNIVAR'],
+  ['kagelkulan', 'KÄGELKULAN', 'vanlig', { pinDmg: 0.12 }, 3, '+12 % SKADA MED KÄGLOR'],
+  ['pilspetsen', 'PILSPETSEN', 'vanlig', { dartDmg: 0.12 }, 3, '+12 % SKADA MED\nGIFTPILAR'],
+  ['motgiftet', 'MOTGIFTET', 'vanlig', { poisonResist: 0.2 }, 3, '20 % MINDRE GIFT'],
+  ['lyckoamuletten', 'LYCKOAMULETTEN', 'vanlig', { idolLuck: 0.15 }, 3, '+15 % TUR MED IDOLER\nOCH LYCKOHJUL'],
+  ['macheten', 'MACHETEN', 'vanlig', { vineWalk: 0.25 }, 3, '25 % MINDRE INBROMSNING\nI LIANER'],
+  ['clownnasan', 'CLOWNNÄSAN', 'vanlig', { showtime: 0.06, trapdoorSense: 0.12 }, 2, '+6 % SKADA I RAMPLJUSET\n12 % LÄNGRE VARNING\nFÖR FALLLUCKOR', { unlock: 10 }],
+  ['myggnatet', 'MYGGNÄTET', 'vanlig', { poisonResist: 0.12, vineWalk: 0.12 }, 3, '12 % MINDRE GIFT\n12 % MINDRE INBROMSNING\nI LIANER', { unlock: 10 }],
+  // ovanliga
+  ['cirkusaffischen', 'CIRKUSAFFISCHEN', 'ovanlig', { showtime: 0.15, goldMul: 0.05 }, 2, '+15 % SKADA I RAMPLJUSET\n+5 % GULD'],
+  ['jonglorens_handskar', 'JONGLÖRENS HANDSKAR', 'ovanlig', { pinDmg: 0.2, dmg: 0.04 }, 2, '+20 % SKADA MED KÄGLOR\n+4 % SKADA'],
+  ['curaren', 'CURAREN', 'ovanlig', { dartDmg: 0.2, poisonChance: 0.05 }, 2, '+20 % SKADA MED\nGIFTPILAR\n+5 % CHANS ATT FÖRGIFTA', { unlock: 15 }],
+  ['knivtavlan', 'KNIVTAVLAN', 'ovanlig', { knifeResist: 0.35, meleeResist: 0.05 }, 2, '35 % MINDRE SKADA\nAV KNIVAR\n5 % MINDRE NÄRSTRIDSSKADA'],
+  ['tempelkartan', 'TEMPELKARTAN', 'ovanlig', { idolLuck: 0.25, goldMul: 0.05 }, 2, '+25 % TUR MED IDOLER\nOCH LYCKOHJUL\n+5 % GULD', { unlock: 15 }],
+  ['ormskinnet', 'ORMSKINNET', 'ovanlig', { poisonResist: 0.3, maxHp: 10 }, 2, '30 % MINDRE GIFT\n+10 MAX HP'],
+  ['falska_bottnen', 'DEN FALSKA BOTTNEN', 'ovanlig', { pinDmg: 0.3, trapdoorSense: -0.3 }, 1, '+30 % SKADA MED KÄGLOR\n-30 % LUCKVARNING', { curse: true, bad: 1 }],
+  // sällsynta
+  ['direktorens_hatt', 'DIREKTÖRENS HATT', 'sallsynt', { showtime: 0.25, trapdoorSense: 0.25, goldMul: 0.05 }, 1, '+25 % SKADA I RAMPLJUSET\n25 % LÄNGRE VARNING\nFÖR FALLLUCKOR\n+5 % GULD', { unlock: 25 }],
+  ['lejontamjarens_piska', 'LEJONTÄMJARENS PISKA', 'sallsynt', { knifeResist: 0.25, meleeResist: 0.1 }, 1, '25 % MINDRE SKADA\nAV KNIVAR\n10 % MINDRE NÄRSTRIDSSKADA', { unlock: 30 }],
+  ['jaguartanden', 'JAGUARTANDEN', 'sallsynt', { dartDmg: 0.3, critChance: 0.04 }, 1, '+30 % SKADA MED\nGIFTPILAR\n+4 % KRITCHANS', { unlock: 25 }],
+  ['solidolen', 'SOLIDOLEN', 'sallsynt', { idolLuck: 0.4, goldMul: 0.1, vineWalk: 0.2 }, 1, '+40 % TUR MED IDOLER\nOCH LYCKOHJUL\n+10 % GULD\n20 % MINDRE INBROMSNING\nI LIANER', { unlock: 30 }],
+  ['ormgiftet', 'ORMGIFTET', 'sallsynt', { dartDmg: 0.35, poisonChance: 0.05, poisonResist: -0.3 }, 1, '+35 % SKADA MED\nGIFTPILAR\n+5 % CHANS ATT FÖRGIFTA\n-30 % GIFTSKYDD', { curse: true, bad: 1 }],
+  // legendariska
+  ['manegens_krona', 'MANEGENS KRONA', 'legendarisk', { showtime: 0.3, pinDmg: 0.3, knifeResist: 0.3, trapdoorSense: 0.3 }, 1, '+30 % SKADA I RAMPLJUSET\n+30 % SKADA MED KÄGLOR\n30 % MINDRE SKADA AV KNIVAR\n30 % LÄNGRE LUCKVARNING', { unlock: 50 }],
+  ['ormens_fjader', 'ORMENS FJÄDER', 'legendarisk', { dartDmg: 0.3, poisonResist: 0.3, idolLuck: 0.3, vineWalk: 0.3 }, 1, '+30 % SKADA MED GIFTPILAR\n30 % MINDRE GIFT\n+30 % TUR MED IDOLER\n30 % LÄTTARE I LIANER', { unlock: 50 }],
+  // ---- version 19: pakter och uppgraderingar för hackan och stjärnlansen ----
+  ['pakt_hacka', 'GRUVFOGDENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nHACKAN BEHÖVER INGEN AMMO\n4 UNIKA UPPGRADERINGAR\nBARA HACKA RESTEN AV RUNDAN', { pact: 'pickaxe', bad: 1 }],
+  ['pakt_stjarnlans', 'STJÄRNTYDARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR STJÄRNSTOFT\n4 UNIKA UPPGRADERINGAR\nBARA STJÄRNLANS RESTEN AV RUNDAN', { pact: 'starlance', bad: 1 }],
+  ['diamantspetsen', 'DIAMANTSPETSEN', 'sallsynt', {}, 1, 'HACKAN HAR 25 %\nHÖGRE KRITCHANS', { weapon: 'pickaxe', wup: 'px_crit' }],
+  ['bergskakaren', 'BERGSKAKAREN', 'legendarisk', {}, 1, 'SLAGET SKAKAR\nALLA FIENDER RUNT DIG', { weapon: 'pickaxe', wup: 'px_quake' }],
+  ['malmnasan', 'MALMNÄSAN', 'sallsynt', {}, 1, 'DUBBELT GULD UR MALM\nGULD UR STENBUMLINGAR', { weapon: 'pickaxe', wup: 'px_ore' }],
+  ['latta_skaftet', 'LÄTTA SKAFTET', 'ovanlig', {}, 1, 'SNABBARE SLAG', { weapon: 'pickaxe', wup: 'px_fast' }],
+  ['genomlysningen', 'GENOMLYSNINGEN', 'legendarisk', {}, 1, 'STRÅLEN GÅR\nGENOM VÄGGAR', { weapon: 'starlance', wup: 'sl_pierce' }],
+  ['trippelstjarnan', 'TRIPPELSTJÄRNAN', 'sallsynt', {}, 1, 'TVÅ EXTRA STRÅLAR\nÅT SIDORNA', { weapon: 'starlance', wup: 'sl_split' }],
+  ['snabbladdningen', 'SNABBLADDNINGEN', 'ovanlig', {}, 1, 'SNABBARE LADDNING\nOCH OMLADDNING', { weapon: 'starlance', wup: 'sl_quick' }],
+  ['supernovan', 'SUPERNOVAN', 'sallsynt', {}, 1, '+30 % SKADA VID\nFULL LADDNING', { weapon: 'starlance', wup: 'sl_power' }],
+  // ---- version 19: gruvvagnar, explosioner, malm, hackan, stjärnlansen, meteorer, låg tyngdkraft och teleskop (Gruvan och Observatoriet) ----
+  // vanliga
+  ['gruvhjalmen', 'GRUVHJÄLMEN', 'vanlig', { cartResist: 0.2 }, 3, '20 % MINDRE SKADA\nAV GRUVVAGNAR'],
+  ['laderforkladet', 'LÄDERFÖRKLÄDET', 'vanlig', { blastResist: 0.2 }, 3, '20 % MINDRE SKADA\nAV EXPLOSIONER'],
+  ['slagrutan', 'SLAGRUTAN', 'vanlig', { oreLuck: 0.15 }, 3, '15 % CHANS TILL DUBBELT\nGULD UR MALM'],
+  ['hackskaftet', 'HACKSKAFTET', 'vanlig', { pickDmg: 0.12 }, 3, '+12 % SKADA MED HACKAN'],
+  ['linsputsen', 'LINSPUTSEN', 'vanlig', { lanceCharge: 0.15 }, 3, '15 % SNABBARE LADDNING\nAV STJÄRNLANSEN'],
+  ['kupolkartan', 'KUPOLKARTAN', 'vanlig', { meteorSense: 0.2 }, 3, '20 % LÄNGRE VARNING\nFÖR METEORER'],
+  ['manstovlarna', 'MÅNSTÖVLARNA', 'vanlig', { lowGrav: 0.2 }, 3, '20 % HÖGRE HOPP PÅ\nSTJÄRNKARTEGOLV'],
+  ['okularet', 'OKULARET', 'vanlig', { starSight: 0.25 }, 3, '25 % LÄNGRE TID MED\nTELESKOPET'],
+  ['karbidlampan', 'KARBIDLAMPAN', 'vanlig', { oreLuck: 0.08, cartResist: 0.12 }, 2, '8 % CHANS TILL DUBBELT\nGULD UR MALM\n12 % MINDRE SKADA\nAV GRUVVAGNAR', { unlock: 10 }],
+  ['sextanten', 'SEXTANTEN', 'vanlig', { meteorSense: 0.12, starSight: 0.12 }, 3, '12 % LÄNGRE VARNING\nFÖR METEORER\n12 % LÄNGRE TID MED\nTELESKOPET', { unlock: 10 }],
+  // ovanliga
+  ['rallarens_spade', 'RALLARENS SPADE', 'ovanlig', { cartResist: 0.35, meleeResist: 0.05 }, 2, '35 % MINDRE SKADA\nAV GRUVVAGNAR\n5 % MINDRE NÄRSTRIDSSKADA'],
+  ['dynamitbaltet', 'DYNAMITBÄLTET', 'ovanlig', { blastResist: 0.3, dmg: 0.04 }, 2, '30 % MINDRE SKADA\nAV EXPLOSIONER\n+4 % SKADA', { unlock: 15 }],
+  ['guldvaskarens_panna', 'GULDVASKARENS PANNA', 'ovanlig', { oreLuck: 0.25, goldMul: 0.05 }, 2, '25 % CHANS TILL DUBBELT\nGULD UR MALM\n+5 % GULD', { unlock: 15 }],
+  ['brytjarnet', 'BRYTJÄRNET', 'ovanlig', { pickDmg: 0.2, critChance: 0.03 }, 2, '+20 % SKADA MED HACKAN\n+3 % KRITCHANS'],
+  ['slipade_glaset', 'DET SLIPADE GLASET', 'ovanlig', { lanceCharge: 0.25, dmg: 0.04 }, 2, '25 % SNABBARE LADDNING\nAV STJÄRNLANSEN\n+4 % SKADA'],
+  ['planisfaren', 'PLANISFÄREN', 'ovanlig', { lowGrav: 0.3, meteorSense: 0.15 }, 2, '30 % HÖGRE HOPP PÅ\nSTJÄRNKARTEGOLV\n15 % LÄNGRE VARNING\nFÖR METEORER'],
+  ['svartkrutet', 'SVARTKRUTET', 'ovanlig', { pickDmg: 0.3, blastResist: -0.3 }, 1, '+30 % SKADA MED HACKAN\n-30 % SPRÄNGSKYDD', { curse: true, bad: 1 }],
+  // sällsynta
+  ['formannens_visselpipa', 'FÖRMANNENS VISSELPIPA', 'sallsynt', { cartResist: 0.25, blastResist: 0.25, goldMul: 0.05 }, 1, '25 % MINDRE SKADA\nAV GRUVVAGNAR\n25 % MINDRE SKADA\nAV EXPLOSIONER\n+5 % GULD', { unlock: 25 }],
+  ['astrolabiet', 'ASTROLABIET', 'sallsynt', { meteorSense: 0.25, starSight: 0.25, lowGrav: 0.15 }, 1, '25 % LÄNGRE VARNING\nFÖR METEORER\n25 % LÄNGRE TELESKOPTID\n15 % HÖGRE HOPP', { unlock: 30 }],
+  ['moderlodet', 'MODERLODET', 'sallsynt', { oreLuck: 0.4, goldMul: 0.1 }, 1, '40 % CHANS TILL DUBBELT\nGULD UR MALM\n+10 % GULD', { unlock: 25 }],
+  ['kometsvansen', 'KOMETSVANSEN', 'sallsynt', { lanceCharge: 0.35, critChance: 0.04 }, 1, '35 % SNABBARE LADDNING\nAV STJÄRNLANSEN\n+4 % KRITCHANS', { unlock: 30 }],
+  ['fallande_stjarnan', 'DEN FALLANDE STJÄRNAN', 'sallsynt', { lanceCharge: 0.4, meteorSense: -0.3 }, 1, '40 % SNABBARE LADDNING\nAV STJÄRNLANSEN\n-30 % METEORVARNING', { curse: true, bad: 1 }],
+  // legendariska
+  ['bergets_hjarta', 'BERGETS HJÄRTA', 'legendarisk', { cartResist: 0.3, blastResist: 0.3, oreLuck: 0.3, pickDmg: 0.3 }, 1, '30 % MINDRE SKADA AV VAGNAR\n30 % SPRÄNGSKYDD\n30 % TUR MED MALM\n+30 % SKADA MED HACKAN', { unlock: 50 }],
+  ['himlavalvet', 'HIMLAVALVET', 'legendarisk', { meteorSense: 0.3, lowGrav: 0.3, starSight: 0.3, lanceCharge: 0.3 }, 1, '30 % LÄNGRE METEORVARNING\n30 % HÖGRE HOPP\n30 % LÄNGRE TELESKOPTID\n30 % SNABBARE LANSLADDNING', { unlock: 50 }],
+  // ---- version 20: pakter och uppgraderingar för kroksabeln och fällkastaren ----
+  ['pakt_kroksabel', 'NOMADENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nSABELN BEHÖVER INGEN AMMO\n4 UNIKA UPPGRADERINGAR\nBARA KROKSABEL RESTEN AV RUNDAN', { pact: 'scimitar', bad: 1 }],
+  ['pakt_fallkastare', 'PÄLSJÄGARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR FÄLLOR\n4 UNIKA UPPGRADERINGAR\nBARA FÄLLKASTARE RESTEN AV RUNDAN', { pact: 'trapthrower', bad: 1 }],
+  ['sabelutfallet', 'SABELUTFALLET', 'sallsynt', {}, 1, 'UTFALLSSTEGET ÄR\nKLART PÅ 1,2 S', { weapon: 'scimitar', wup: 'sc_dash' }],
+  ['blodrannan', 'BLODRÄNNAN', 'ovanlig', {}, 1, 'HUGGEN FÅR\nFIENDEN ATT BLÖDA', { weapon: 'scimitar', wup: 'sc_bleed' }],
+  ['breda_svepet', 'DET BREDA SVEPET', 'sallsynt', {}, 1, 'BREDARE SVEP', { weapon: 'scimitar', wup: 'sc_wide' }],
+  ['latta_klingan', 'LÄTTA KLINGAN', 'ovanlig', {}, 1, 'SNABBARE HUGG', { weapon: 'scimitar', wup: 'sc_swift' }],
+  ['dubbelsaxen', 'DUBBELSAXEN', 'legendarisk', {}, 1, 'KASTAR TVÅ SAXAR\nPÅ EN GÅNG', { weapon: 'trapthrower', wup: 'tt_double' }],
+  ['giftbettet', 'GIFTBETTET', 'sallsynt', {}, 1, 'SAXARNA FÖRGIFTAR', { weapon: 'trapthrower', wup: 'tt_poison' }],
+  ['jarngreppet', 'JÄRNGREPPET', 'sallsynt', {}, 1, 'SAXARNA HÅLLER\nFAST I 5 S', { weapon: 'trapthrower', wup: 'tt_hold' }],
+  ['snabbspannet', 'SNABBSPÄNNET', 'ovanlig', {}, 1, 'SNABBARE KAST\nOCH OMLADDNING', { weapon: 'trapthrower', wup: 'tt_fast' }],
+  // ---- version 20: slam, ånga, oaser, iglar, sandstorm, kroksabeln, björnsaxar och hetta (Kloakerna och Öknen) ----
+  // vanliga
+  ['gummistovlarna', 'GUMMISTÖVLARNA', 'vanlig', { sludgeResist: 0.2 }, 3, '20 % MINDRE INBROMSNING\nI SLAMMET'],
+  ['angskyddet', 'ÅNGSKYDDET', 'vanlig', { sprayResist: 0.25 }, 3, '25 % MINDRE SKADA\nAV ÅNGAN'],
+  ['vattenskinnet', 'VATTENSKINNET', 'vanlig', { oasisHeal: 0.2 }, 3, '20 % MER LÄKNING\nUR OASER'],
+  ['saltpasen', 'SALTPÅSEN', 'vanlig', { leechResist: 0.2 }, 3, '20 % CHANS ATT IGLAR\nINTE FÄSTER'],
+  ['slojan', 'SLÖJAN', 'vanlig', { stormSight: 0.2 }, 3, '20 % BÄTTRE SIKT\nI SANDSTORMEN'],
+  ['brynet', 'BRYNET', 'vanlig', { scimitarDmg: 0.12 }, 3, '+12 % SKADA MED\nKROKSABELN'],
+  ['spannfjadern', 'SPÄNNFJÄDERN', 'vanlig', { trapDmg: 0.15 }, 3, '+15 % SKADA MED\nBJÖRNSAXAR', { unlock: 10 }],
+  // ovanliga
+  ['turbanen', 'TURBANEN', 'ovanlig', { heatResist: 0.25, stormSight: 0.15 }, 2, '25 % SKYDD MOT HETTA\n15 % BÄTTRE SIKT\nI SANDSTORMEN'],
+  ['kloakkartan', 'KLOAKKARTAN', 'ovanlig', { sludgeResist: 0.3, sprayResist: 0.2 }, 2, '30 % MINDRE INBROMSNING\nI SLAMMET\n20 % MINDRE ÅNGSKADA', { unlock: 15 }],
+  ['jagarens_snara', 'JÄGARENS SNARA', 'ovanlig', { trapDmg: 0.25, dmg: 0.04 }, 2, '+25 % SKADA MED\nBJÖRNSAXAR\n+4 % SKADA', { unlock: 15 }],
+  ['damaskusstalet', 'DAMASKUSSTÅLET', 'ovanlig', { scimitarDmg: 0.2, critChance: 0.03 }, 2, '+20 % SKADA MED\nKROKSABELN\n+3 % KRITCHANS'],
+  ['igelburken', 'IGELBURKEN', 'ovanlig', { oasisHeal: 0.4, leechResist: -0.3 }, 1, '40 % MER LÄKNING\nUR OASER\n-30 % IGELSKYDD', { curse: true, bad: 1 }],
+  // sällsynta
+  ['karavanledaren', 'KARAVANLEDAREN', 'sallsynt', { oasisHeal: 0.3, stormSight: 0.3, heatResist: 0.2 }, 1, '30 % MER LÄKNING UR OASER\n30 % BÄTTRE STORMSIKT\n20 % SKYDD MOT HETTA', { unlock: 25 }],
+  ['rattfangaren', 'RÅTTFÅNGAREN', 'sallsynt', { trapDmg: 0.3, leechResist: 0.3 }, 1, '+30 % SKADA MED\nBJÖRNSAXAR\n30 % CHANS ATT IGLAR\nINTE FÄSTER', { unlock: 25 }],
+  ['sandens_kniv', 'SANDENS KNIV', 'sallsynt', { scimitarDmg: 0.4, heatResist: -0.3 }, 1, '+40 % SKADA MED\nKROKSABELN\n-30 % SKYDD MOT HETTA', { curse: true, bad: 1 }],
+  // legendariska
+  ['sfinxens_gata', 'SFINXENS GÅTA', 'legendarisk', { stormSight: 0.3, heatResist: 0.3, oasisHeal: 0.3, scimitarDmg: 0.3 }, 1, '30 % BÄTTRE STORMSIKT\n30 % SKYDD MOT HETTA\n30 % MER OASLÄKNING\n+30 % SKADA MED SABELN', { unlock: 50 }],
+  // ---- version 21: pakter och uppgraderingar för morgonstjärnan och trombonen ----
+  ['pakt_morgonstjarna', 'STUPSTOCKENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nSTJÄRNAN BEHÖVER INGEN AMMO\n4 UNIKA UPPGRADERINGAR\nBARA MORGONSTJÄRNA RESTEN AV RUNDAN', { pact: 'flail', bad: 1 }],
+  ['pakt_trombon', 'SMUGGLARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR SKROT\n4 UNIKA UPPGRADERINGAR\nBARA TROMBON RESTEN AV RUNDAN', { pact: 'blunderbuss', bad: 1 }],
+  ['snabba_snurret', 'SNABBA SNURRET', 'sallsynt', {}, 1, 'SNURRET TRÄFFAR\nOFTARE', { weapon: 'flail', wup: 'fl_spin' }],
+  ['blykulan', 'BLYKULAN', 'ovanlig', {}, 1, 'TYNGRE SLAG OCH\nSNABBARE GÅNG I SNURRET', { weapon: 'flail', wup: 'fl_heavy' }],
+  ['hjarnskakan', 'HJÄRNSKAKAN', 'sallsynt', {}, 1, 'SLAGEN BEDÖVAR', { weapon: 'flail', wup: 'fl_stun' }],
+  ['langa_kedjan', 'LÅNGA KEDJAN', 'ovanlig', {}, 1, 'LÄNGRE RÄCKVIDD', { weapon: 'flail', wup: 'fl_reach' }],
+  ['trattmynningen', 'TRATTMYNNINGEN', 'sallsynt', {}, 1, 'FLER HAGEL I SKUREN', { weapon: 'blunderbuss', wup: 'bb_wide' }],
+  ['krutladdningen', 'KRUTLADDNINGEN', 'ovanlig', {}, 1, 'KRAFTIGARE KNUFF', { weapon: 'blunderbuss', wup: 'bb_knock' }],
+  ['glodskrotet', 'GLÖDSKROTET', 'legendarisk', {}, 1, 'SKROTET SÄTTER\nFIENDER I BRAND', { weapon: 'blunderbuss', wup: 'bb_fire' }],
+  ['skrotladdaren', 'SKROTLADDAREN', 'ovanlig', {}, 1, 'SNABBARE OMLADDNING\nOCH DUBBELLADDNING', { weapon: 'blunderbuss', wup: 'bb_fast' }],
+  // ---- version 21: larmplattor, fisknät, krabbor, måsar, dimma, morgonstjärnan, trombonen och brand (Järnfängelset och Fiskeläget) ----
+  // vanliga
+  ['tysta_sulor', 'TYSTA SULOR', 'vanlig', { alarmQuiet: 0.2 }, 3, '20 % CHANS ATT\nLARMPLATTOR ÄR TYSTA'],
+  ['natkniven', 'NÄTKNIVEN', 'vanlig', { netResist: 0.25 }, 3, '25 % MINDRE INSNÄRJNING\nI FISKNÄT'],
+  ['krabbtangen', 'KRABBTÅNGEN', 'vanlig', { crabCrack: 0.15 }, 3, '+15 % SKADA GENOM\nKRABBORNAS PANSAR'],
+  ['mashatten', 'MÅSHATTEN', 'vanlig', { gullResist: 0.2 }, 3, '20 % MINDRE SKADA\nAV MÅSAR'],
+  ['mistlyktan', 'MISTLYKTAN', 'vanlig', { fogSight: 0.2 }, 3, '20 % BÄTTRE SIKT\nI DIMMAN'],
+  ['kulkedjan', 'KULKEDJAN', 'vanlig', { flailDmg: 0.12 }, 3, '+12 % SKADA MED\nMORGONSTJÄRNAN'],
+  ['krutpasen', 'KRUTPÅSEN', 'vanlig', { blunderDmg: 0.12 }, 3, '+12 % SKADA MED\nTROMBONEN', { unlock: 10 }],
+  // ovanliga
+  ['brannsalvan', 'BRÄNNSALVAN', 'ovanlig', { burnResist: 0.3, alarmQuiet: 0.15 }, 2, '30 % KORTARE BRAND\n15 % CHANS ATT\nLARMPLATTOR ÄR TYSTA', { unlock: 15 }],
+  ['nyckelknippan', 'NYCKELKNIPPAN', 'ovanlig', { alarmQuiet: 0.3, dmg: 0.04 }, 2, '30 % CHANS ATT\nLARMPLATTOR ÄR TYSTA\n+4 % SKADA'],
+  ['skrotsmedjan', 'SKROTSMEDJAN', 'ovanlig', { blunderDmg: 0.2, crabCrack: 0.15 }, 2, '+20 % SKADA MED\nTROMBONEN\n+15 % SKADA GENOM\nKRABBPANSAR', { unlock: 15 }],
+  ['tungviktaren', 'TUNGVIKTAREN', 'ovanlig', { flailDmg: 0.2, critChance: 0.03 }, 2, '+20 % SKADA MED\nMORGONSTJÄRNAN\n+3 % KRITCHANS'],
+  ['sjodimman', 'SJÖDIMMAN', 'ovanlig', { netResist: 0.4, fogSight: -0.3 }, 1, '40 % MINDRE INSNÄRJNING\nI FISKNÄT\n-30 % SIKT I DIMMAN', { curse: true, bad: 1 }],
+  // sällsynta
+  ['vaktarens_ring', 'VAKTARENS RING', 'sallsynt', { alarmQuiet: 0.3, burnResist: 0.3, flailDmg: 0.2 }, 1, '30 % TYSTA LARMPLATTOR\n30 % KORTARE BRAND\n+20 % SKADA MED\nMORGONSTJÄRNAN', { unlock: 25 }],
+  ['fyrvaktaren', 'FYRVAKTAREN', 'sallsynt', { fogSight: 0.3, gullResist: 0.3, netResist: 0.2 }, 1, '30 % BÄTTRE SIKT I DIMMAN\n30 % MINDRE SKADA AV MÅSAR\n20 % MINDRE INSNÄRJNING', { unlock: 25 }],
+  ['glodande_jarnet', 'DET GLÖDANDE JÄRNET', 'sallsynt', { flailDmg: 0.4, burnResist: -0.3 }, 1, '+40 % SKADA MED\nMORGONSTJÄRNAN\n-30 % SKYDD MOT BRAND', { curse: true, bad: 1 }],
+  // legendariska
+  ['tidvattnets_snacka', 'TIDVATTNETS SNÄCKA', 'legendarisk', { fogSight: 0.3, crabCrack: 0.3, gullResist: 0.3, blunderDmg: 0.3 }, 1, '30 % BÄTTRE SIKT I DIMMAN\n+30 % GENOM KRABBPANSAR\n30 % MINDRE SKADA AV MÅSAR\n+30 % SKADA MED TROMBONEN', { unlock: 50 }],
+  // ---- version 22: pakter och uppgraderingar för treudden och svavelmortern ----
+  ['pakt_treudd', 'GLADIATORNS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nTREUDDEN BEHÖVER INGEN AMMO\n4 UNIKA UPPGRADERINGAR\nBARA TREUDD RESTEN AV RUNDAN', { pact: 'trident', bad: 1 }],
+  ['pakt_svavelmorter', 'DEMONJÄGARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR SVAVEL\n4 UNIKA UPPGRADERINGAR\nBARA SVAVELMORTER RESTEN AV RUNDAN', { pact: 'brimstone', bad: 1 }],
+  ['langskaftet', 'LÅNGSKAFTET', 'ovanlig', {}, 1, 'LÄNGRE STÖT', { weapon: 'trident', wup: 'tr_reach' }],
+  ['spjutudden', 'SPJUTUDDEN', 'sallsynt', {}, 1, 'STÖTEN GÅR IGENOM\nTRE FIENDER', { weapon: 'trident', wup: 'tr_pierce' }],
+  ['linan', 'LINAN', 'ovanlig', {}, 1, 'TREUDDEN KOMMER\nTILLBAKA FORTARE', { weapon: 'trident', wup: 'tr_return' }],
+  ['snabba_stoten', 'SNABBA STÖTEN', 'ovanlig', {}, 1, 'SNABBARE STÖTAR', { weapon: 'trident', wup: 'tr_fast' }],
+  ['stora_klotet', 'STORA KLOTET', 'sallsynt', {}, 1, 'STÖRRE EXPLOSION', { weapon: 'brimstone', wup: 'bs_big' }],
+  ['eviga_elden', 'EVIGA ELDEN', 'ovanlig', {}, 1, 'ELDEN BRINNER\nDUBBELT SÅ LÄNGE', { weapon: 'brimstone', wup: 'bs_burn' }],
+  ['tre_klot', 'TRE KLOT', 'legendarisk', {}, 1, 'TRE KLOT PÅ EN GÅNG', { weapon: 'brimstone', wup: 'bs_triple' }],
+  ['svavelskopan', 'SVAVELSKOPAN', 'ovanlig', {}, 1, 'SNABBARE SKOTT', { weapon: 'brimstone', wup: 'bs_fast' }],
+  // ---- version 22: heta bassänger, ånga, kallbad, sköldar, eldfloder, runcirklar, treudden och svavlet (Badhuset och Skärselden) ----
+  // vanliga
+  ['badtofflorna', 'BADTOFFLORNA', 'vanlig', { scaldResist: 0.2 }, 3, '20 % MINDRE SKÅLLNING\nI HETA BASSÄNGER'],
+  ['anglasogonen', 'ÅNGGLASÖGONEN', 'vanlig', { steamSight: 0.2 }, 3, '20 % BÄTTRE SIKT\nI ÅNGAN'],
+  ['isbiten', 'ISBITEN', 'vanlig', { coldPoolHeal: 0.2 }, 3, '20 % MER LÄKNING\nUR KALLBAD'],
+  ['murbrackan', 'MURBRÄCKAN', 'vanlig', { shieldBreak: 0.15 }, 3, '+15 % SKADA GENOM\nSKÖLDAR'],
+  ['askmanteln', 'ASKMANTELN', 'vanlig', { streamResist: 0.2 }, 3, '20 % MINDRE SKADA OCH DRAG\nI ELDFLODER'],
+  ['spetsslipen', 'SPETSSLIPEN', 'vanlig', { tridentDmg: 0.12 }, 3, '+12 % SKADA MED\nTREUDDEN'],
+  ['svavelstickan', 'SVAVELSTICKAN', 'vanlig', { brimstoneDmg: 0.12 }, 3, '+12 % SKADA MED\nSVAVELMORTERN', { unlock: 10 }],
+  // ovanliga
+  ['benkritan', 'BENKRITAN', 'ovanlig', { runeQuiet: 0.3, streamResist: 0.15 }, 2, '30 % CHANS ATT RUNCIRKLAR\nÄR TOMMA\n15 % MINDRE SKADA OCH DRAG\nI ELDFLODER', { unlock: 15 }],
+  ['badhandduken', 'BADHANDDUKEN', 'ovanlig', { coldPoolHeal: 0.3, scaldResist: 0.15 }, 2, '30 % MER LÄKNING\nUR KALLBAD\n15 % MINDRE SKÅLLNING'],
+  ['arenasanden', 'ARENASANDEN', 'ovanlig', { shieldBreak: 0.25, critChance: 0.03 }, 2, '+25 % SKADA GENOM\nSKÖLDAR\n+3 % KRITCHANS', { unlock: 15 }],
+  ['havsgaffeln', 'HAVSGAFFELN', 'ovanlig', { tridentDmg: 0.2, dmg: 0.04 }, 2, '+20 % SKADA MED\nTREUDDEN\n+4 % SKADA'],
+  ['eldtungan', 'ELDTUNGAN', 'ovanlig', { brimstoneDmg: 0.4, streamResist: -0.3 }, 1, '+40 % SKADA MED\nSVAVELMORTERN\n-30 % SKYDD MOT ELDFLODER', { curse: true, bad: 1 }],
+  // sällsynta
+  ['termernas_nyckel', 'TERMERNAS NYCKEL', 'sallsynt', { steamSight: 0.3, coldPoolHeal: 0.3, scaldResist: 0.2 }, 1, '30 % BÄTTRE SIKT I ÅNGAN\n30 % MER LÄKNING UR KALLBAD\n20 % MINDRE SKÅLLNING', { unlock: 25 }],
+  ['den_fordomdes_kedja', 'DEN FÖRDÖMDES KEDJA', 'sallsynt', { runeQuiet: 0.3, streamResist: 0.3, tridentDmg: 0.2 }, 1, '30 % TOMMA RUNCIRKLAR\n30 % SKYDD MOT ELDFLODER\n+20 % SKADA MED\nTREUDDEN', { unlock: 25 }],
+  ['havsgudens_vrede', 'HAVSGUDENS VREDE', 'sallsynt', { tridentDmg: 0.4, steamSight: -0.3 }, 1, '+40 % SKADA MED\nTREUDDEN\n-30 % SIKT I ÅNGAN', { curse: true, bad: 1 }],
+  // legendariska
+  ['eldfurstens_horn', 'ELDFURSTENS HORN', 'legendarisk', { streamResist: 0.3, runeQuiet: 0.3, brimstoneDmg: 0.3, shieldBreak: 0.3 }, 1, '30 % SKYDD MOT ELDFLODER\n30 % TOMMA RUNCIRKLAR\n+30 % SKADA MED SVAVLET\n+30 % GENOM SKÖLDAR', { unlock: 50 }],
+  // ---- version 23: pakter och uppgraderingar för slaktarkroken och bombarden ----
+  ['pakt_slaktarkrok', 'STYCKMÄSTARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nKROKEN BEHÖVER INGEN AMMO\n4 UNIKA UPPGRADERINGAR\nBARA SLAKTARKROK RESTEN AV RUNDAN', { pact: 'hookchain', bad: 1 }],
+  ['pakt_bombard', 'ARTILLERISTENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR KANONKULOR\n4 UNIKA UPPGRADERINGAR\nBARA BOMBARD RESTEN AV RUNDAN', { pact: 'bombard', bad: 1 }],
+  ['langa_kattingen', 'LÅNGA KÄTTINGEN', 'ovanlig', {}, 1, 'KROKEN NÅR\nTVÅ RUTOR LÄNGRE', { weapon: 'hookchain', wup: 'hk_reach' }],
+  ['block_och_talja', 'BLOCK OCH TALJA', 'sallsynt', {}, 1, 'KROKEN DRAR IN\nSTÖRRE FIENDER', { weapon: 'hookchain', wup: 'hk_pull' }],
+  ['snabba_handen', 'SNABBA HANDEN', 'ovanlig', {}, 1, 'KORTARE NEDKYLNING', { weapon: 'hookchain', wup: 'hk_fast' }],
+  ['hullingkroken', 'HULLINGKROKEN', 'sallsynt', {}, 1, 'KROKEN FÅR\nFIENDER ATT BLÖDA', { weapon: 'hookchain', wup: 'hk_bleed' }],
+  ['hardade_kulan', 'HÄRDADE KULAN', 'sallsynt', {}, 1, 'KULAN TAPPAR MINDRE\nKRAFT GENOM FIENDER', { weapon: 'bombard', wup: 'bd_pierce' }],
+  ['vallstudsen', 'VALLSTUDSEN', 'ovanlig', {}, 1, 'KULAN STUDSAR\nTRE GÅNGER', { weapon: 'bombard', wup: 'bd_bounce' }],
+  ['karteschen', 'KARTESCHEN', 'legendarisk', {}, 1, 'TOLV KULOR I\nDRUVHAGLET', { weapon: 'bombard', wup: 'bd_grape' }],
+  ['laddstaken', 'LADDSTAKEN', 'ovanlig', {}, 1, 'SNABBARE SKOTT', { weapon: 'bombard', wup: 'bd_fast' }],
+  // ---- version 23: blodhalt golv, köttkvarnar, flugor, lera, katapulter, formationer, kroken och bombarden (Slakteriet och Slagfältet) ----
+  // vanliga
+  ['vaxduksforkladet', 'VAXDUKSFÖRKLÄDET', 'vanlig', { slickGrip: 0.2 }, 3, '20 % BÄTTRE GREPP\nPÅ BLODHALT GOLV'],
+  ['kedjehandskarna', 'KEDJEHANDSKARNA', 'vanlig', { grinderResist: 0.2 }, 3, '20 % MINDRE SKADA\nAV KÖTTKVARNAR'],
+  ['flugsmallan', 'FLUGSMÄLLAN', 'vanlig', { fliesResist: 0.2 }, 3, '20 % MINDRE SKADA\nAV FLUGSVÄRMAR'],
+  ['lerstovlarna', 'LERSTÖVLARNA', 'vanlig', { mudWalk: 0.2 }, 3, '20 % LÄTTARE\nI DJUP LERA'],
+  ['vaktposten', 'VAKTPOSTEN', 'vanlig', { catapultSense: 0.2 }, 3, '20 % LÄNGRE VARNING\nFÖR KATAPULTSTENAR'],
+  ['slaktarkniven', 'SLAKTARKNIVEN', 'vanlig', { hookDmg: 0.12 }, 3, '+12 % SKADA MED\nSLAKTARKROKEN'],
+  ['krutkaggen', 'KRUTKAGGEN', 'vanlig', { bombardDmg: 0.12 }, 3, '+12 % SKADA MED\nBOMBARDEN', { unlock: 10 }],
+  // ovanliga
+  ['stormstegen', 'STORMSTEGEN', 'ovanlig', { formationBreak: 0.15, catapultSense: 0.15 }, 2, '+15 % SKADA GENOM\nSPÖKSKÖLDAR\n15 % LÄNGRE VARNING\nFÖR KATAPULTSTENAR', { unlock: 15 }],
+  ['kylrumsnyckeln', 'KYLRUMSNYCKELN', 'ovanlig', { grinderResist: 0.3, fliesResist: 0.15 }, 2, '30 % MINDRE SKADA\nAV KÖTTKVARNAR\n15 % MINDRE SKADA\nAV FLUGSVÄRMAR', { unlock: 15 }],
+  ['fanbararen', 'FANBÄRAREN', 'ovanlig', { formationBreak: 0.25, critChance: 0.03 }, 2, '+25 % SKADA GENOM\nSPÖKSKÖLDAR\n+3 % KRITCHANS'],
+  ['styckaren', 'STYCKAREN', 'ovanlig', { hookDmg: 0.2, dmg: 0.04 }, 2, '+20 % SKADA MED\nSLAKTARKROKEN\n+4 % SKADA'],
+  ['kanonmynningen', 'KANONMYNNINGEN', 'ovanlig', { bombardDmg: 0.4, slickGrip: -0.3 }, 1, '+40 % SKADA MED\nBOMBARDEN\n-30 % GREPP I BLODET', { curse: true, bad: 1 }],
+  // sällsynta
+  ['slaktmastarens_forklade', 'SLAKTMÄSTARENS FÖRKLÄDE', 'sallsynt', { slickGrip: 0.3, grinderResist: 0.3, fliesResist: 0.2 }, 1, '30 % BÄTTRE GREPP\nPÅ BLODHALT GOLV\n30 % SKYDD MOT KVARNAR\n20 % SKYDD MOT FLUGOR', { unlock: 25 }],
+  ['krigsherrens_fana', 'KRIGSHERRENS FANA', 'sallsynt', { mudWalk: 0.3, formationBreak: 0.3, bombardDmg: 0.2 }, 1, '30 % LÄTTARE I LERAN\n+30 % GENOM SPÖKSKÖLDAR\n+20 % SKADA MED\nBOMBARDEN', { unlock: 25 }],
+  ['kvarnstenen', 'KVARNSTENEN', 'sallsynt', { hookDmg: 0.4, grinderResist: -0.3 }, 1, '+40 % SKADA MED\nSLAKTARKROKEN\n-30 % SKYDD MOT KVARNAR', { curse: true, bad: 1 }],
+  // legendariska
+  ['det_sista_slaget', 'DET SISTA SLAGET', 'legendarisk', { catapultSense: 0.3, mudWalk: 0.3, hookDmg: 0.3, fliesResist: 0.3 }, 1, '30 % LÄNGRE KATAPULTVARNING\n30 % LÄTTARE I LERAN\n+30 % SKADA MED KROKEN\n30 % SKYDD MOT FLUGOR', { unlock: 50 }],
+  // ---- version 30: pakter och uppgraderingar för slungan och glasbössan ----
+  ['pakt_slunga', 'STENKASTARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR STENAR\n4 UNIKA UPPGRADERINGAR\nBARA SLUNGA RESTEN AV RUNDAN', { pact: 'sling', bad: 1 }],
+  ['pakt_glasbossa', 'GLASBLÅSARENS ED', 'sallsynt', { dmg: 0.15 }, 1, '+15 % SKADA\nALL AMMO BLIR GLAS\n4 UNIKA UPPGRADERINGAR\nBARA GLASBÖSSA RESTEN AV RUNDAN', { pact: 'glassgun', bad: 1 }],
+  ['studsstenen', 'STUDSSTENEN', 'ovanlig', {}, 1, 'STENEN STUDSAR\nTRE GÅNGER', { weapon: 'sling', wup: 'sg_bounce' }],
+  ['kastremmen', 'KASTREMMEN', 'sallsynt', {}, 1, 'SNABBARE TUNGT KAST\n+30 % TUNG SKADA', { weapon: 'sling', wup: 'sg_heavy' }],
+  ['ullsnoret', 'ULLSNÖRET', 'ovanlig', {}, 1, 'HELT TYSTA KAST\n+50 % MOT OVETANDE', { weapon: 'sling', wup: 'sg_quiet' }],
+  ['snabbslungan', 'SNABBSLUNGAN', 'ovanlig', {}, 1, 'SNABBARE KAST', { weapon: 'sling', wup: 'sg_fast' }],
+  ['vida_mynningen', 'VIDA MYNNINGEN', 'ovanlig', {}, 1, 'TOLV SKÄRVOR\nI KONEN', { weapon: 'glassgun', wup: 'gg_spread' }],
+  ['hullingglaset', 'HULLINGGLASET', 'sallsynt', {}, 1, 'LÄNGRE BLÖDNING', { weapon: 'glassgun', wup: 'gg_bleed' }],
+  ['spruckna_kulan', 'SPRUCKNA KULAN', 'legendarisk', {}, 1, 'GLASKULAN SPRICKER\nVIDARE OCH HÅRDARE', { weapon: 'glassgun', wup: 'gg_burst' }],
+  ['blasarlungan', 'BLÅSARLUNGAN', 'ovanlig', {}, 1, 'SNABBARE SKOTT\nOCH OMLADDNING', { weapon: 'glassgun', wup: 'gg_fast' }],
+  // ---- version 30: rasande tak, grus, damm, skärvor, smält glas, hetta, slungan och glasbössan (Ruinstaden och Glasbruket) ----
+  // vanliga
+  ['murarhjalmen', 'MURARHJÄLMEN', 'vanlig', { collapseSense: 0.2 }, 3, '20 % LÄNGRE VARNING\nNÄR TAKET RASAR'],
+  ['grussulorna', 'GRUSSULORNA', 'vanlig', { rubbleWalk: 0.2 }, 3, '20 % LÄTTARE\nI GRUSET'],
+  ['filtsulorna', 'FILTSULORNA', 'vanlig', { shardStep: 0.2 }, 3, '20 % MINDRE SKADA\nAV GLASSKÄRVOR'],
+  ['ugnshandskarna', 'UGNSHANDSKARNA', 'vanlig', { heatResist: 0.2 }, 3, '20 % SKYDD MOT HETTA\nOCH UGNSMUNNAR'],
+  ['asbestforkladet', 'ASBESTFÖRKLÄDET', 'vanlig', { moltenResist: 0.2 }, 3, '20 % MINDRE SKADA\nAV SMÄLT GLAS'],
+  ['flodstenen', 'FLODSTENEN', 'vanlig', { slingDmg: 0.12 }, 3, '+12 % SKADA MED\nSLUNGAN'],
+  ['blaspipan', 'BLÅSPIPAN', 'vanlig', { glassgunDmg: 0.12 }, 3, '+12 % SKADA MED\nGLASBÖSSAN', { unlock: 10 }],
+  // ovanliga
+  ['dammduken', 'DAMMDUKEN', 'ovanlig', { dustSight: 0.3, critChance: 0.02 }, 2, '30 % BÄTTRE SIKT\nI DAMMET\n+2 % KRITCHANS', { unlock: 15 }],
+  ['stadsvaktens_lykta', 'STADSVAKTENS LYKTA', 'ovanlig', { dustSight: 0.25, collapseSense: 0.15 }, 2, '25 % BÄTTRE SIKT\nI DAMMET\n15 % LÄNGRE VARNING\nNÄR TAKET RASAR'],
+  ['kylugnsluckan', 'KYLUGNSLUCKAN', 'ovanlig', { heatResist: 0.25, moltenResist: 0.15 }, 2, '25 % SKYDD MOT HETTA\n15 % MINDRE SKADA\nAV SMÄLT GLAS', { unlock: 15 }],
+  ['slungarens_oga', 'SLUNGARENS ÖGA', 'ovanlig', { slingDmg: 0.2, headshot: 0.1 }, 2, '+20 % SKADA MED\nSLUNGAN\n+10 % VID HUVUDTRÄFF'],
+  ['glodande_glaset', 'GLÖDANDE GLASET', 'ovanlig', { glassgunDmg: 0.4, moltenResist: -0.3 }, 1, '+40 % SKADA MED\nGLASBÖSSAN\n-30 % SKYDD MOT\nSMÄLT GLAS', { curse: true, bad: 1 }],
+  // sällsynta
+  ['borgmastarens_kedja', 'BORGMÄSTARENS KEDJA', 'sallsynt', { collapseSense: 0.3, rubbleWalk: 0.3, dustSight: 0.2 }, 1, '30 % LÄNGRE VARNING\nNÄR TAKET RASAR\n30 % LÄTTARE I GRUSET\n20 % SIKT I DAMMET', { unlock: 25 }],
+  ['glasmastarens_pipa', 'GLASMÄSTARENS PIPA', 'sallsynt', { shardStep: 0.3, heatResist: 0.3, glassgunDmg: 0.2 }, 1, '30 % SKYDD MOT SKÄRVOR\n30 % SKYDD MOT HETTA\n+20 % SKADA MED\nGLASBÖSSAN', { unlock: 25 }],
+  ['raset', 'RASET', 'sallsynt', { slingDmg: 0.4, collapseSense: -0.3 }, 1, '+40 % SKADA MED\nSLUNGAN\n-30 % VARNING\nNÄR TAKET RASAR', { curse: true, bad: 1 }],
+  // legendariska
+  ['den_rasade_staden', 'DEN RASADE STADEN', 'legendarisk', { collapseSense: 0.3, rubbleWalk: 0.3, slingDmg: 0.3, shardStep: 0.3 }, 1, '30 % LÄNGRE RASVARNING\n30 % LÄTTARE I GRUSET\n+30 % SKADA MED SLUNGAN\n30 % SKYDD MOT SKÄRVOR', { unlock: 50 }],
 ];
 
 // ---------- Set och synergier ----------
@@ -438,12 +1103,67 @@ const SETS = {
   skuggor: { name: 'NATTENS VÄG', text: '+25 % SMYGSKADA\n20 % MINDRE LJUD\n15 % LÅNGSAMMARE UPPTÄCKT', mods: { stealthDmg: 0.25, noiseReduce: 0.2, detectSlow: 0.15 } },
   oknen:  { name: 'ÖKNENS GÅTA',      text: '+25 % GULD FRÅN HÖGAR OCH SARKOFAGER\n+1 SJÄL PER KRÖNIKESIDA\n-15 % SKADA FRÅN FÄLLOR', mods: { goldFind: 0.25, pageSouls: 1, trapResist: 0.15 } },
   jakt:   { name: 'JÄGARENS LÄRA',    text: '+20 % SKADA VID HUVUDTRÄFF\n10 % CHANS ATT PILEN KOMMER TILLBAKA\n+10 % TRÄFFSÄKERHET', mods: { headshot: 0.2, arrowRetrieve: 0.1, accuracy: 0.1 } },
+  // version 8: DJUPETS VÄG (hav, simning och tidvatten) och PRISMANS VÄG (kristaller och ljusbrytning)
+  djupet: { name: 'DJUPETS VÄG',      text: '+20 % SIMHASTIGHET\n+4 S LUFT UNDER VATTNET\n+20 % SKADA I VATTEN', mods: { swimSpeed: 0.2, airMax: 4, waterDmg: 0.2 } },
+  prisman: { name: 'PRISMANS VÄG',    text: '+25 % SKADA MOT KRISTALLER\n+1 DELNING FRÅN BRYTANDE KRISTALLER\n+10 % ERFARENHET', mods: { crystalDmg: 0.25, refract: 1, xpMul: 0.1 } },
+  // version 9: URVERKETS VÄG (Klocktornet: kugghjul, urverk och tid) och STORMENS VÄG (Molnborgen: åska och vind)
+  urverket: { name: 'URVERKETS VÄG',  text: '+20 % FLER KUGGHJUL\n+5 % CHANS ATT SAKTA IN TRÄFFADE FIENDER\n+3 HP PER URVERKSSOLDAT', mods: { gearFind: 0.2, clockSlow: 0.05, rewindHeal: 3 } },
+  stormen: { name: 'STORMENS VÄG',    text: '-25 % SKADA FRÅN BLIXTAR\n20 % MINDRE KNUFF FRÅN VIND\n+20 % SKADA NÄR FIENDER KNUFFAS IN I VÄGGAR', mods: { lightningResist: 0.25, windResist: 0.2, pushDmg: 0.2 } },
+  // version 11: MYCELIETS VÄG (Svampriket: svampar och sporer) och SPEGELNS VÄG (Spegelpalatset: speglar, illusioner och glas)
+  myceliet: { name: 'MYCELIETS VÄG',  text: '25 % MINDRE EFFEKT AV SPORER\n+2 HP PER DÖDAD SVAMPFIENDE\n+20 % HÖGRE STUDS', mods: { sporeResist: 0.25, fungusHeal: 2, bounceHeight: 0.2 } },
+  spegeln: { name: 'SPEGELNS VÄG',    text: '+25 % SKADA PÅ STUDSADE SKOTT\n8 % CHANS ATT FIENDER SPLITTRAS I SKÄRVOR\n20 % CHANS ATT SE IGENOM ILLUSIONER', mods: { reflectDmg: 0.25, mirrorShards: 0.08, illusionSight: 0.2 } },
+  // version 13: ARKIVETS VÄG (Det förbjudna biblioteket: böcker, bläck och runor) och SMEDJANS VÄG (Gjuteriet: smide, ånga och metall)
+  arkivet: { name: 'ARKIVETS VÄG',    text: '25 % MINDRE EFFEKT AV BLÄCK\n+20 % SKADA MED RUNOR\n+1 EXTRA EFFEKT NÄR DU LÄSER EN PULPET', mods: { inkResist: 0.25, runeDmg: 0.2, bookLore: 1 } },
+  smedjan: { name: 'SMEDJANS VÄG',    text: '+2 RUSTNING PER DÖDAD GJUTERIFIENDE\n+20 % SKADA MED ÅNGA\n20 % MINDRE SKADA FRÅN STANSAR', mods: { forgeArmor: 2, steamDmg: 0.2, pressResist: 0.2 } },
+  // version 15: KATEDRALENS VÄG (Blodkatedralen: ljus, välsignelse och blod) och KUPANS VÄG (Bikupan: bin, honung och larver)
+  katedralen: { name: 'KATEDRALENS VÄG', text: '+25 % LÄNGRE VÄLSIGNELSE FRÅN LJUSSTRÅK\n+15 % SKADA MEDAN DU ÄR VÄLSIGNAD\n+5 HP NÄR DU KROSSAR EN BLODFUNT', mods: { blessDur: 0.25, holyDmg: 0.15, fontBreak: 5 } },
+  kupan:  { name: 'KUPANS VÄG',       text: '+20 % SKADA MED BIN\n25 % MINDRE INBROMSNING I HONUNG\n+20 % SKADA MOT LARVER', mods: { beeDmg: 0.2, honeyResist: 0.25, larvaDmg: 0.2 } },
+  // version 16: TRÄDGÅRDENS VÄG (Den döda trädgården: törne, statyer och fontäner) och DRÖMMENS VÄG (Drömriket: dimma, sömn och drömstaven)
+  tradgarden: { name: 'TRÄDGÅRDENS VÄG', text: '25 % MINDRE SKADA FRÅN TAGGRANKOR\nSTENÄNGLAR STÅR STILLA +1 S EFTER ATT DU TITTAT BORT\n+5 HP FRÅN FONTÄNER', mods: { thornResist: 0.25, angelSight: 1, fountainHeal: 5 } },
+  // version 17: SKEPPETS VÄG (Spökskeppet: däck, kanoner och kedjekulor) och LABORATORIETS VÄG (Laboratoriet: syra, transmutation och brygder)
+  skeppet: { name: 'SKEPPETS VÄG',    text: '25 % MER GREPP PÅ SKÖLJT DÄCK\n+25 % SKADA MED KANONER\n+20 % SKADA MED KEDJEKULOR', mods: { deckGrip: 0.25, cannonDmg: 0.25, chainDmg: 0.2 } },
+  // version 18: CIRKUSENS VÄG (Cirkusen: rampljus, fallluckor och knivar) och TEMPLETS VÄG (Djungeltemplet: gift, idoler och lianer)
+  cirkusen: { name: 'CIRKUSENS VÄG', text: '+25 % SKADA I RAMPLJUSET\n25 % LÄNGRE VARNING FÖR FALLLUCKOR\n20 % MINDRE SKADA AV KNIVAR', mods: { showtime: 0.25, trapdoorSense: 0.25, knifeResist: 0.2 } },
+  // version 19: GRUVANS VÄG (Gruvan: vagnar, explosioner och malm) och OBSERVATORIETS VÄG (Observatoriet: meteorer, låg tyngdkraft och teleskop)
+  gruvan: { name: 'GRUVANS VÄG', text: '25 % MINDRE SKADA AV GRUVVAGNAR\n25 % MINDRE SKADA AV EXPLOSIONER\n20 % CHANS TILL DUBBELT MALMGULD', mods: { cartResist: 0.25, blastResist: 0.25, oreLuck: 0.2 } },
+  observatoriet: { name: 'OBSERVATORIETS VÄG', text: '25 % LÄNGRE VARNING FÖR METEORER\n25 % HÖGRE HOPP PÅ STJÄRNKARTAN\n+25 % TID MED TELESKOPET', mods: { meteorSense: 0.25, lowGrav: 0.25, starSight: 0.25 } },
+  // version 20: KLOAKERNAS VÄG (Kloakerna: slam, ånga och iglar) och ÖKNENS VÄG (Öknen: oaser, sandstorm och hetta; id karavanen eftersom oknen redan finns sedan version 7)
+  kloakerna: { name: 'KLOAKERNAS VÄG', text: '25 % MINDRE INBROMSNING I SLAM\n25 % MINDRE SKADA AV ÅNGAN\n20 % CHANS ATT IGLAR INTE FÄSTER', mods: { sludgeResist: 0.25, sprayResist: 0.25, leechResist: 0.2 } },
+  // version 21: FÅNGENS VÄG (Järnfängelset: larmplattor, brand och morgonstjärnan) och FISKARENS VÄG (Fiskeläget: dimma, nät och måsar)
+  // version 22: BADGÄSTENS VÄG (Badhuset: skållning, ånga och kallbad) och DEN FÖRDÖMDES VÄG (Skärselden: eldfloder, runcirklar och svavel)
+  badhuset: { name: 'BADGÄSTENS VÄG', text: '25 % MINDRE SKÅLLNING\n25 % BÄTTRE SIKT I ÅNGAN\n20 % MER LÄKNING UR KALLBAD', mods: { scaldResist: 0.25, steamSight: 0.25, coldPoolHeal: 0.2 } },
+  fordomda: { name: 'DEN FÖRDÖMDES VÄG', text: '25 % SKYDD MOT ELDFLODER\n25 % CHANS ATT RUNCIRKLAR ÄR TOMMA\n+20 % SKADA MED SVAVELMORTERN', mods: { streamResist: 0.25, runeQuiet: 0.25, brimstoneDmg: 0.2 } },
+  fangelset: { name: 'FÅNGENS VÄG', text: '25 % CHANS ATT LARMPLATTOR ÄR TYSTA\n25 % KORTARE BRAND\n+20 % SKADA MED MORGONSTJÄRNAN', mods: { alarmQuiet: 0.25, burnResist: 0.25, flailDmg: 0.2 } },
+  fiskelaget: { name: 'FISKARENS VÄG', text: '25 % BÄTTRE SIKT I DIMMAN\n25 % MINDRE INSNÄRJNING I NÄT\n20 % MINDRE SKADA AV MÅSAR', mods: { fogSight: 0.25, netResist: 0.25, gullResist: 0.2 } },
+  // version 23: SLAKTARENS VÄG (Slakteriet: blodhalt golv, köttkvarnar och flugor) och FÄLTHERRENS VÄG (Slagfältet: lera, katapulter och formationer)
+  slakteriet: { name: 'SLAKTARENS VÄG', text: '25 % BÄTTRE GREPP PÅ BLODHALT GOLV\n25 % MINDRE SKADA AV KÖTTKVARNAR\n20 % MINDRE SKADA AV FLUGSVÄRMAR', mods: { slickGrip: 0.25, grinderResist: 0.25, fliesResist: 0.2 } },
+  slagfaltet: { name: 'FÄLTHERRENS VÄG', text: '25 % LÄTTARE I DJUP LERA\n25 % LÄNGRE VARNING FÖR KATAPULTSTENAR\n+20 % SKADA GENOM SPÖKSKÖLDAR', mods: { mudWalk: 0.25, catapultSense: 0.25, formationBreak: 0.2 } },
+  stadsvakten: { name: 'STADSVAKTENS VÄG', text: '25 % LÄNGRE VARNING NÄR TAKET RASAR\n25 % LÄTTARE I GRUSET\n20 % BÄTTRE SIKT I DAMMET', mods: { collapseSense: 0.25, rubbleWalk: 0.25, dustSight: 0.2 } },
+  glasblasaren: { name: 'GLASBLÅSARENS VÄG', text: '25 % MINDRE SKADA AV GLASSKÄRVOR\n25 % MINDRE SKADA AV SMÄLT GLAS\n20 % SKYDD MOT HETTA', mods: { shardStep: 0.25, moltenResist: 0.25, heatResist: 0.2 } },
+  karavanen: { name: 'KARAVANENS VÄG', text: '25 % MER LÄKNING UR OASER\n25 % BÄTTRE SIKT I SANDSTORMEN\n20 % SKYDD MOT HETTA', mods: { oasisHeal: 0.25, stormSight: 0.25, heatResist: 0.2 } },
+  templet: { name: 'TEMPLETS VÄG', text: '25 % MINDRE GIFT\n+25 % TUR MED IDOLER OCH LYCKOHJUL\n25 % MINDRE INBROMSNING I LIANER', mods: { poisonResist: 0.25, idolLuck: 0.25, vineWalk: 0.25 } },
+  laboratoriet: { name: 'LABORATORIETS VÄG', text: '25 % MINDRE SKADA AV SYRA\n+25 % TUR MED TRANSMUTATION\n20 % CHANS TILL STARK BRYGD', mods: { acidResist: 0.25, transmuteLuck: 0.25, brewLuck: 0.2 } },
+  drommen: { name: 'DRÖMMENS VÄG',    text: '+25 % SIKT I SÖMNENS DIMMA\n25 % MINDRE EFFEKT AV SÖMN\n+20 % SKADA MED DRÖMSTAVEN', mods: { mistSight: 0.25, sleepResist: 0.25, dreamDmg: 0.2 } },
 };
 // Synergitaggar: kort med samma tagg spelar bra ihop (t.ex. eld + explosion, krit + kritskada).
 const SYN = { eld: 'ELD', krit: 'KRIT', gift: 'GIFT', frost: 'FROST', blixt: 'BLIXT', skold: 'SKÖLD', guld: 'GULD', liv: 'LIV', rusning: 'RUSNING', skugga: 'SKUGGA', granat: 'GRANAT',
   dryck: 'DRYCK', flock: 'FLOCK', blod: 'BLOD', narstrid: 'NÄRSTRID',
   runa: 'RUNOR', mana: 'MANA', jakt: 'JAKT', mat: 'MÅLTID', formaga: 'FÖRMÅGA', hemlig: 'HEMLIGHET',
-  ljus: 'LAMPAN', spel: 'SPEL OCH BANK', vana: 'VAPENVANA', sjal: 'SJÄLAR' };
+  ljus: 'LAMPAN', spel: 'SPEL OCH BANK', vana: 'VAPENVANA', sjal: 'SJÄLAR',
+  hav: 'HAVET', kristall: 'KRISTALL', kunskap: 'KUNSKAP', avgrund: 'AVGRUNDEN', hax: 'HÄXOR',
+  urverk: 'URVERK', tid: 'TIDEN', vind: 'VINDEN', storm: 'STORMEN', hojd: 'HÖJDEN',
+  svamp: 'SVAMPAR', spor: 'SPORER', spegel: 'SPEGLAR', illusion: 'ILLUSIONER', glas: 'GLAS',
+  bok: 'BÖCKER', black: 'BLÄCK', anga: 'ÅNGA', smide: 'SMIDE', metall: 'METALL',
+  kyrka: 'KATEDRALEN', helig: 'HELIGT LJUS', klocka: 'KLOCKOR', bi: 'BIN', honung: 'HONUNG', vax: 'VAX',
+  tradgard: 'TRÄDGÅRDEN', ros: 'ROSOR', torne: 'TÖRNE', staty: 'STATYER', drom: 'DRÖMMAR', somn: 'SÖMN', mardrom: 'MARDRÖMMAR',
+  skepp: 'SKEPPET', kanon: 'KANONER', pirat: 'PIRATER', syra: 'SYRA', flaska: 'FLASKOR', transmut: 'TRANSMUTATION', tesla: 'TESLASPOLAR',
+  cirkus: 'CIRKUSEN', rampljus: 'RAMPLJUSET', kniv: 'KNIVAR', kagla: 'KÄGLOR', pil: 'GIFTPILAR', idol: 'IDOLER', djungel: 'DJUNGELN',
+  gruva: 'GRUVAN', vagn: 'GRUVVAGNAR', malm: 'MALM', stjarna: 'STJÄRNOR', meteor: 'METEORER',
+  kloak: 'KLOAKERNA', slam: 'SLAM', oken: 'ÖKNEN', sabel: 'SABEL', falla: 'FÄLLOR',
+  fangelse: 'FÄNGELSET', hamn: 'FISKELÄGET', morgon: 'MORGONSTJÄRNAN', skrot: 'SKROT',
+  slakteri: 'SLAKTERIET', slagfalt: 'SLAGFÄLTET', krok: 'SLAKTARKROKEN', bombard: 'BOMBARDEN',
+  ruin: 'RUINSTADEN', glasbruk: 'GLASBRUKET', slunga: 'SLUNGAN', glasbossa: 'GLASBÖSSAN',
+  badhus: 'BADHUSET', skarseld: 'SKÄRSELDEN', treudd: 'TREUDDEN', svavel: 'SVAVEL' };
 // set och syn för alla kort samlas här: id: [set eller '', syn-taggar...]
 const TAGS = {
   // eld och explosioner
@@ -496,6 +1216,97 @@ const TAGS = {
   nattblinda_ogat: ['', 'skugga', 'ljus'], lyktbararen: ['', 'ljus'], lyktsmeden: ['', 'ljus'],
   lyckostjarnan: ['', 'spel'], guldfrot: ['', 'spel', 'guld'], bankirens_sigill: ['', 'spel', 'guld'], skuldbrevet: ['', 'spel'],
   ovningssvardet: ['', 'vana'], vapenboken: ['', 'vana'], blodiga_kronikan: ['', 'vana', 'sjal'], sjalastenen: ['', 'sjal'],
+  // version 8: DJUPETS VÄG (havet) och PRISMANS VÄG (kristaller); kunskap, Avgrunden och häxor
+  tidvattenstenen: ['djupet', 'hav'], dykarklockan: ['djupet', 'hav'], krakens_vrede: ['djupet', 'hav'], leviatans_fjall: ['djupet', 'hav'], sjoormen: ['djupet', 'hav'],
+  roda_skarvan: ['prisman', 'kristall'], skarvlinsen: ['prisman', 'kristall'], kristallbrytaren: ['prisman', 'kristall'], regnbagsslipan: ['prisman', 'kristall'], glashjartat: ['prisman', 'kristall', 'hax'],
+  simfenan: ['', 'hav'], parlbandet: ['', 'hav'], drunknarens_sang: ['', 'hav'],
+  lardomens_ljus: ['', 'kunskap'], larlingens_dryck: ['', 'kunskap', 'liv'], visdomsstjarnan: ['', 'kunskap'], siarens_oga: ['', 'kunskap'],
+  farjkarlens_obol: ['', 'avgrund'], avgrundsfyren: ['', 'avgrund', 'kunskap'], avgrundens_lofte: ['', 'avgrund', 'kunskap'], avgrundens_arkivarie: ['', 'avgrund', 'kunskap'],
+  ronnbarskransen: ['', 'hax'], ronnskolden: ['', 'hax'], haxjagaren: ['', 'hax', 'avgrund'],
+  // version 9: URVERKETS VÄG (Klocktornet) och STORMENS VÄG (Molnborgen); tid, vind och höjd
+  kuggfickan: ['urverket', 'urverk'], stoppuret: ['urverket', 'urverk', 'tid'], massingsringen: ['urverket', 'urverk', 'tid'],
+  pendelvikten: ['urverket', 'urverk', 'tid'], urmakarens_hjarta: ['urverket', 'urverk', 'tid'],
+  askledaren: ['stormen', 'storm'], vindflojeln: ['stormen', 'vind'], stormhuvan: ['stormen', 'storm', 'vind'],
+  askfangaren: ['stormen', 'storm', 'blixt'], stormfagelns_fjader: ['stormen', 'storm', 'vind', 'hojd'],
+  urnyckeln: ['', 'urverk', 'liv'], trasiga_klockan: ['', 'urverk', 'tid'], sandglaset: ['', 'tid'], tidsvaktarens_sigill: ['', 'tid', 'formaga'],
+  vaggsmallen: ['', 'vind'], tryckvagen: ['', 'vind'], virvelstenen: ['', 'vind', 'storm'], klattrarrepet: ['', 'hojd', 'vind'],
+  fjaderfallet: ['', 'hojd'], svalvingarna: ['', 'hojd'], molnmyntet: ['', 'hojd', 'guld'], guldmolnet: ['', 'hojd', 'guld'],
+  himlastegen: ['', 'hojd', 'guld'], stormens_skuld: ['', 'storm', 'guld'],
+  // version 11: MYCELIETS VÄG (Svampriket) och SPEGELNS VÄG (Spegelpalatset); svampar, sporer, speglar, illusioner och glas
+  svamphatten: ['myceliet', 'svamp', 'spor'], svampkorgen: ['myceliet', 'svamp', 'liv'], mycelmattan: ['myceliet', 'svamp', 'spor'],
+  mycelgreppet: ['myceliet', 'svamp', 'narstrid'], urmycelet: ['myceliet', 'svamp', 'spor', 'gift'],
+  polerduken: ['spegeln', 'spegel'], klarsynsdroppen: ['spegeln', 'illusion'], skarvpansaret: ['spegeln', 'spegel', 'glas'],
+  maskbrytaren: ['spegeln', 'illusion', 'skugga'], kalejdoskopet: ['spegeln', 'glas', 'spegel'], tusenspegeln: ['spegeln', 'spegel', 'illusion', 'glas'],
+  studssvampen: ['', 'svamp'], andningsduken: ['', 'spor', 'svamp'], fjaderskivlingen: ['', 'svamp', 'hojd'], flugsvampen: ['', 'svamp', 'spor'],
+  sporkokongen: ['', 'spor', 'liv'], myceltraden: ['', 'svamp', 'narstrid'], hyfkedjan: ['', 'svamp', 'narstrid'],
+  resestenen: ['', 'spegel'], portvaktarens_ring: ['', 'spegel'], irrblosset: ['', 'illusion', 'spegel'], tvillingporten: ['', 'spegel', 'illusion'],
+  glassplittret: ['', 'glas'], glaskroppen: ['', 'glas', 'spegel'],
+  // version 13: ARKIVETS VÄG (biblioteket) och SMEDJANS VÄG (gjuteriet); böcker, bläck, runor, ånga, smide och metall
+  blackhornet: ['arkivet', 'black'], runpennan: ['arkivet', 'black', 'runa'], runstampeln: ['arkivet', 'runa', 'black'],
+  eldskriften: ['arkivet', 'runa', 'bok', 'eld'], forbjudna_folianten: ['arkivet', 'bok', 'runa', 'black'],
+  smidestangen: ['smedjan', 'smide', 'metall'], ventilnyckeln: ['smedjan', 'anga', 'metall'], stalforkladet: ['smedjan', 'smide', 'metall'],
+  angpannan: ['smedjan', 'anga', 'metall'], kolossens_hjarta: ['smedjan', 'smide', 'anga', 'metall'],
+  bokmarket: ['', 'bok'], lasglaset: ['', 'bok', 'black'], kopistens_lupp: ['', 'bok', 'krit'], svartblacket: ['', 'black', 'runa'],
+  kopparmunstycket: ['', 'anga', 'metall'], angvisslan: ['', 'anga'], anggallret: ['', 'anga', 'metall'], smalthjartat: ['', 'smide', 'anga'],
+  gjutarstovlarna: ['', 'metall', 'rusning'], kilremmen: ['', 'metall', 'rusning'], gjutarspaken: ['', 'metall'],
+  nithandsken: ['', 'smide', 'metall'], assjans_klinga: ['', 'smide', 'eld'], jattens_stad: ['', 'smide', 'metall'],
+  // version 15: KATEDRALENS VÄG (Blodkatedralen) och KUPANS VÄG (Bikupan); katedralen, heligt ljus, klockor, blod, bin, honung och vax
+  glasmalningen: ['katedralen', 'helig', 'kyrka'], offerskalen: ['katedralen', 'kyrka', 'blod'], blodkalken: ['katedralen', 'blod', 'kyrka'],
+  helgonreliken: ['katedralen', 'helig', 'kyrka'], kardinalens_ring: ['katedralen', 'kyrka', 'helig', 'klocka'],
+  bigadden: ['kupan', 'bi', 'gift'], vaxsulorna: ['kupan', 'vax', 'honung'], biodlarhandskarna: ['kupan', 'bi', 'honung'],
+  yngelvaktaren: ['kupan', 'bi', 'honung'], drottningens_krona: ['kupan', 'bi', 'honung', 'vax', 'gift'],
+  rokelsekornen: ['', 'kyrka', 'liv'], myrran: ['', 'kyrka', 'liv'], rokelsemolnet: ['', 'kyrka', 'liv'], vaxljuset: ['', 'vax', 'helig'],
+  helgonglorian: ['', 'helig'], rosettfonstret: ['', 'helig', 'glas'], blodsdopet: ['', 'blod', 'helig'],
+  klockrepet: ['', 'klocka'], kyrkklockan: ['', 'klocka', 'kyrka'], klockarens_hammare: ['', 'klocka', 'narstrid'],
+  larvkroken: ['', 'bi'], honungskakan: ['', 'honung', 'vax', 'bi'], larvsaxen: ['', 'bi', 'gift'], sota_fallan: ['', 'bi', 'honung'],
+  // version 16: TRÄDGÅRDENS VÄG (Den döda trädgården) och DRÖMMENS VÄG (Drömriket); trädgården, rosor, törne, statyer, drömmar, sömn och mardrömmar
+  rosenhandsken: ['tradgarden', 'torne', 'ros'], stenblicken: ['tradgarden', 'staty'], nackrosen: ['tradgarden', 'ros', 'tradgard', 'liv'],
+  rankornas_moder: ['tradgarden', 'torne', 'tradgard'], svarta_rosen: ['tradgarden', 'ros', 'torne', 'staty', 'tradgard'],
+  somnsanden: ['drommen', 'somn', 'drom'], dimlyktan: ['drommen', 'drom', 'ljus'], vakarstenen: ['drommen', 'somn'],
+  ariadnes_trad: ['drommen', 'drom'], jon_blunds_paraply: ['drommen', 'drom', 'somn', 'mardrom'],
+  grensaxen: ['', 'tradgard', 'narstrid'], fontanmyntet: ['', 'tradgard', 'liv'], rosenvattnet: ['', 'ros', 'tradgard', 'liv'],
+  barkhuden: ['', 'torne', 'tradgard'], rosensaxen: ['', 'ros', 'tradgard', 'blod'], mastersaxen: ['', 'tradgard', 'narstrid', 'torne'],
+  stenangelns_tar: ['', 'staty'], marmorhjartat: ['', 'staty', 'liv'],
+  dromnyckeln: ['', 'drom'], tuppfjadern: ['', 'somn'], nattljuset: ['', 'somn', 'drom'], stjarnstoftet: ['', 'drom'],
+  valmon: ['', 'somn', 'mardrom'], mardromsmasken: ['', 'mardrom', 'drom', 'somn'],
+  // version 17: SKEPPETS VÄG (Spökskeppet) och LABORATORIETS VÄG (Laboratoriet); skeppet, kanoner, pirater, syra, flaskor, transmutation och teslaspolar
+  sjobenen: ['skeppet', 'skepp'], krutpungen: ['skeppet', 'kanon'], kaptenens_kompass: ['skeppet', 'skepp', 'pirat'], ankarkettingen: ['skeppet', 'kanon', 'skepp'], hollandarens_ror: ['skeppet', 'skepp', 'pirat', 'kanon'],
+  gummiforkladet: ['laboratoriet', 'syra'], blysmycket: ['laboratoriet', 'transmut', 'guld'], guldlovet: ['laboratoriet', 'transmut', 'guld'], salamanderhuden: ['laboratoriet', 'syra', 'flaska'], smaragdtavlan: ['laboratoriet', 'transmut', 'syra', 'flaska'],
+  kedjelanken: ['', 'kanon', 'skepp'], syrakolven: ['', 'syra', 'flaska'], jordkabeln: ['', 'tesla', 'blixt'], destillatet: ['', 'flaska', 'dryck'], tjarat_rep: ['', 'skepp', 'kanon'], skyddsglasogonen: ['', 'syra', 'tesla'],
+  kaparbrevet: ['', 'pirat', 'kanon', 'guld'], kedjesmeden: ['', 'kanon', 'metall'], syrastanket: ['', 'syra', 'gift'], faradays_bur: ['', 'tesla', 'blixt'], brygdboken: ['', 'flaska', 'dryck', 'transmut'],
+  rombuteljen: ['', 'pirat', 'skepp'], vises_sten: ['', 'transmut', 'guld', 'flaska'], kvicksilverbagaren: ['', 'syra', 'transmut', 'flaska'],
+  // version 18: CIRKUSENS VÄG (Cirkusen) och TEMPLETS VÄG (Djungeltemplet); cirkus, rampljus, knivar, käglor, giftpilar, idoler och djungeln
+  rampfebern: ['cirkusen', 'rampljus', 'cirkus'], scenvanan: ['cirkusen', 'cirkus'], cirkusaffischen: ['cirkusen', 'rampljus', 'cirkus', 'guld'], direktorens_hatt: ['cirkusen', 'rampljus', 'cirkus'], manegens_krona: ['cirkusen', 'rampljus', 'kagla', 'kniv'],
+  motgiftet: ['templet', 'gift', 'djungel'], lyckoamuletten: ['templet', 'idol'], ormskinnet: ['templet', 'gift', 'djungel', 'liv'], solidolen: ['templet', 'idol', 'djungel', 'guld'], ormens_fjader: ['templet', 'pil', 'idol', 'djungel'],
+  ladervasten: ['', 'kniv'], kagelkulan: ['', 'kagla', 'cirkus'], pilspetsen: ['', 'pil', 'gift'], macheten: ['', 'djungel'], clownnasan: ['', 'cirkus', 'rampljus'], myggnatet: ['', 'djungel', 'gift'],
+  jonglorens_handskar: ['', 'kagla', 'cirkus'], curaren: ['', 'pil', 'gift'], knivtavlan: ['', 'kniv', 'cirkus'], tempelkartan: ['', 'idol', 'guld'], falska_bottnen: ['', 'kagla', 'cirkus'],
+  lejontamjarens_piska: ['', 'kniv', 'cirkus'], jaguartanden: ['', 'pil', 'djungel', 'krit'], ormgiftet: ['', 'pil', 'gift', 'idol'],
+  // version 19: GRUVANS VÄG (Gruvan) och OBSERVATORIETS VÄG (Observatoriet); gruvan, vagnar, malm, stjärnor och meteorer
+  gruvhjalmen: ['gruvan', 'gruva', 'vagn'], laderforkladet: ['gruvan', 'gruva'], karbidlampan: ['gruvan', 'gruva', 'malm', 'vagn'], formannens_visselpipa: ['gruvan', 'gruva', 'vagn', 'guld'], bergets_hjarta: ['gruvan', 'gruva', 'malm', 'vagn'],
+  kupolkartan: ['observatoriet', 'meteor', 'stjarna'], manstovlarna: ['observatoriet', 'stjarna'], sextanten: ['observatoriet', 'meteor', 'stjarna'], astrolabiet: ['observatoriet', 'stjarna', 'meteor'], himlavalvet: ['observatoriet', 'stjarna', 'meteor'],
+  slagrutan: ['', 'malm', 'guld'], hackskaftet: ['', 'malm', 'gruva'], linsputsen: ['', 'stjarna'], okularet: ['', 'stjarna'], rallarens_spade: ['', 'vagn', 'gruva'], dynamitbaltet: ['', 'gruva'],
+  guldvaskarens_panna: ['', 'malm', 'guld'], brytjarnet: ['', 'malm', 'krit'], slipade_glaset: ['', 'stjarna'], planisfaren: ['', 'stjarna', 'meteor'], svartkrutet: ['', 'malm', 'gruva'],
+  moderlodet: ['', 'malm', 'guld'], kometsvansen: ['', 'stjarna', 'meteor', 'krit'], fallande_stjarnan: ['', 'stjarna', 'meteor'],
+  // version 20: KLOAKERNAS VÄG (Kloakerna) och KARAVANENS VÄG (Öknen); kloaken, slam, öknen, sabeln och fällor
+  gummistovlarna: ['kloakerna', 'kloak', 'slam'], angskyddet: ['kloakerna', 'kloak'], saltpasen: ['kloakerna', 'kloak', 'slam'], kloakkartan: ['kloakerna', 'kloak', 'slam'], rattfangaren: ['kloakerna', 'kloak', 'falla'],
+  vattenskinnet: ['karavanen', 'oken'], slojan: ['karavanen', 'oken'], turbanen: ['karavanen', 'oken'], karavanledaren: ['karavanen', 'oken'], sfinxens_gata: ['karavanen', 'oken', 'sabel'],
+  // version 21: FÅNGENS VÄG (Järnfängelset) och FISKARENS VÄG (Fiskeläget); fängelset, fiskeläget, morgonstjärnan och skrot
+  // version 22: BADGÄSTENS VÄG (Badhuset) och DEN FÖRDÖMDES VÄG (Skärselden); badhuset, skärselden, treudden och svavlet
+  badtofflorna: ['badhuset', 'badhus'], anglasogonen: ['badhuset', 'badhus'], isbiten: ['badhuset', 'badhus'], badhandduken: ['badhuset', 'badhus'], termernas_nyckel: ['badhuset', 'badhus'],
+  askmanteln: ['fordomda', 'skarseld'], benkritan: ['fordomda', 'skarseld'], den_fordomdes_kedja: ['fordomda', 'skarseld', 'treudd'], eldfurstens_horn: ['fordomda', 'skarseld', 'svavel'],
+  murbrackan: ['', 'badhus'], spetsslipen: ['', 'treudd'], svavelstickan: ['', 'svavel'], arenasanden: ['', 'badhus', 'krit'], havsgaffeln: ['', 'treudd'], eldtungan: ['', 'svavel', 'skarseld'], havsgudens_vrede: ['', 'treudd', 'badhus'],
+  tysta_sulor: ['fangelset', 'fangelse'], brannsalvan: ['fangelset', 'fangelse'], nyckelknippan: ['fangelset', 'fangelse'], vaktarens_ring: ['fangelset', 'fangelse', 'morgon'],
+  natkniven: ['fiskelaget', 'hamn'], mashatten: ['fiskelaget', 'hamn'], mistlyktan: ['fiskelaget', 'hamn'], fyrvaktaren: ['fiskelaget', 'hamn'], tidvattnets_snacka: ['fiskelaget', 'hamn', 'skrot'],
+  krabbtangen: ['', 'hamn'], kulkedjan: ['', 'morgon'], krutpasen: ['', 'skrot'], skrotsmedjan: ['', 'skrot', 'hamn'], tungviktaren: ['', 'morgon', 'krit'], sjodimman: ['', 'hamn'], glodande_jarnet: ['', 'morgon', 'fangelse'],
+  // version 23: SLAKTARENS VÄG (Slakteriet) och FÄLTHERRENS VÄG (Slagfältet); slakteriet, slagfältet, kroken och bombarden
+  vaxduksforkladet: ['slakteriet', 'slakteri'], kedjehandskarna: ['slakteriet', 'slakteri'], flugsmallan: ['slakteriet', 'slakteri'], kylrumsnyckeln: ['slakteriet', 'slakteri'], slaktmastarens_forklade: ['slakteriet', 'slakteri', 'krok'],
+  lerstovlarna: ['slagfaltet', 'slagfalt'], vaktposten: ['slagfaltet', 'slagfalt'], fanbararen: ['slagfaltet', 'slagfalt', 'krit'], krigsherrens_fana: ['slagfaltet', 'slagfalt', 'bombard'], det_sista_slaget: ['slagfaltet', 'slagfalt', 'krok'],
+  slaktarkniven: ['', 'krok'], krutkaggen: ['', 'bombard'], stormstegen: ['', 'slagfalt'], styckaren: ['', 'krok'], kanonmynningen: ['', 'bombard', 'slakteri'], kvarnstenen: ['', 'krok', 'slakteri'],
+  // version 30: STADSVAKTENS VÄG (Ruinstaden) och GLASBLÅSARENS VÄG (Glasbruket); ruinstaden, glasbruket, slungan och glasbössan
+  murarhjalmen: ['stadsvakten', 'ruin'], grussulorna: ['stadsvakten', 'ruin'], dammduken: ['stadsvakten', 'ruin', 'krit'], stadsvaktens_lykta: ['stadsvakten', 'ruin'], borgmastarens_kedja: ['stadsvakten', 'ruin', 'slunga'],
+  filtsulorna: ['glasblasaren', 'glasbruk'], ugnshandskarna: ['glasblasaren', 'glasbruk'], asbestforkladet: ['glasblasaren', 'glasbruk'], kylugnsluckan: ['glasblasaren', 'glasbruk'], glasmastarens_pipa: ['glasblasaren', 'glasbruk', 'glasbossa'],
+  flodstenen: ['', 'slunga'], blaspipan: ['', 'glasbossa'], slungarens_oga: ['', 'slunga', 'krit'], glodande_glaset: ['', 'glasbossa', 'glasbruk'], raset: ['', 'slunga', 'ruin'], den_rasade_staden: ['', 'ruin', 'slunga', 'glasbruk'],
+  brynet: ['', 'sabel'], spannfjadern: ['', 'falla'], jagarens_snara: ['', 'falla'], damaskusstalet: ['', 'sabel', 'krit'], igelburken: ['', 'slam', 'oken'], sandens_kniv: ['', 'sabel', 'oken'],
 };
 
 const ALL = DEFS.map(([id, name, rarity, mods, max, text, extra]) => {
@@ -596,6 +1407,7 @@ const FMT = {
   shieldOnKill: ['n', 'SKÖLD PER DÖDAD'], ammoRegen: ['p', 'MAGASIN PER S I RESERVEN'], knockback: ['p', 'KNUFF'],
   chestChoice: ['n', 'VAL I KISTOR'], freeReroll: ['n', 'GRATIS NYA KORT PER VÅNING'], hazardImmune: ['f', 'IMMUN MOT LAVA, VATTEN, IS OCH NÄT'],
   doubleJump: ['f', 'DUBBELHOPP'],
+  coin: ['f', 'MYNTKAST MED PISTOLEN'],
   potionPower: ['p', 'STARKARE DRYCKER'], potionChance: ['p', 'FLER DRYCKER'], petPower: ['p', 'STARKARE FÖLJESLAGARE'],
   meleeDmg: ['p', 'NÄRSTRIDSSKADA'], fireDmg: ['p', 'BRANDSKADA'], coldResist: ['p', 'SKYDD MOT KÖLD OCH FROST'],
   headshot: ['p', 'SKADA VID HUVUDTRÄFF'], bleedChance: ['p', 'CHANS TILL BLÖDNING'], allyChance: ['p', 'CHANS TILL ALLIERADE'],
@@ -608,6 +1420,40 @@ const FMT = {
   lampBattery: ['p', 'LAMPANS BATTERITID'], lampRadius: ['n', 'LAMPANS LJUSRADIE'], gambleLuck: ['p', 'BÄTTRE ODDS HOS SPELAREN'],
   bankInterest: ['p', 'RÄNTA PÅ BANKEN'], masteryXp: ['p', 'SNABBARE VAPENVANA'], pageSouls: ['n', 'SJÄLAR PER KRÖNIKESIDA'],
   goldFind: ['p', 'GULD FRÅN HÖGAR OCH SARKOFAGER'],
+  swimSpeed: ['p', 'SIMHASTIGHET'], airMax: ['n', 'S LUFT UNDER VATTNET'], xpMul: ['p', 'ERFARENHET'], talentChoice: ['n', 'TALANGVAL'],
+  crystalDmg: ['p', 'SKADA MOT KRISTALLER'], waterDmg: ['p', 'SKADA I VATTEN'], refract: ['n', 'KRISTALLDELNINGAR'],
+  abyssSouls: ['p', 'SJÄLAR I AVGRUNDEN'], witchResist: ['p', 'KORTARE FÖRBANNELSER'], levelHeal: ['n', 'HP VID NY NIVÅ'],
+  timeResist: ['p', 'SKYDD MOT TIDSBUBBLOR'], windResist: ['p', 'SKYDD MOT VIND'], fallSafe: ['p', 'SKYDD MOT FALL'],
+  lightningResist: ['p', 'SKYDD MOT BLIXTAR'], pushDmg: ['p', 'SKADA VID KNUFF IN I VÄGG'], gearFind: ['p', 'FLER KUGGHJUL'],
+  clockSlow: ['p', 'CHANS ATT SAKTA IN TRÄFFADE'], skyGold: ['p', 'GULD I MOLNBORGEN'], rewindHeal: ['n', 'HP PER URVERKSSOLDAT'],
+  sporeResist: ['p', 'SKYDD MOT SPORER'], bounceHeight: ['p', 'HÖGRE STUDS'], teleportShield: ['n', 'S OSÅRBAR EFTER TELEPORT'],
+  reflectDmg: ['p', 'SKADA PÅ STUDSADE SKOTT'], illusionSight: ['p', 'CHANS ATT SE IGENOM ILLUSIONER'], mirrorShards: ['p', 'CHANS TILL SKÄRVOR'],
+  fungusHeal: ['n', 'HP PER SVAMPFIENDE'], whipReach: ['n', 'RUTOR RÄCKVIDD FÖR PISKA'],
+  inkResist: ['p', 'SKYDD MOT BLÄCK'], beltSpeed: ['p', 'FART PÅ RULLBAND'], ventResist: ['p', 'SKYDD MOT ÅNGA'],
+  runeDmg: ['p', 'SKADA MED RUNOR'], steamDmg: ['p', 'SKADA MED ÅNGA'], bookLore: ['n', 'EXTRA PULPETEFFEKT'],
+  forgeArmor: ['n', 'RUSTNING PER GJUTERIFIENDE'], pressResist: ['p', 'SKYDD MOT STANSAR'],
+  blessDur: ['p', 'LÄNGRE VÄLSIGNELSE'], honeyResist: ['p', 'SKYDD MOT HONUNG'], larvaDmg: ['p', 'SKADA MOT LARVER'],
+  censerHeal: ['n', 'HP PER RÖKELSETRÄFF'], beeDmg: ['p', 'SKADA MED BIN'], bellStun: ['n', 'S LÄNGRE KLOCKBEDÖVNING'],
+  fontBreak: ['n', 'HP PER KROSSAD BLODFUNT'], holyDmg: ['p', 'SKADA SOM VÄLSIGNAD'],
+  thornResist: ['p', 'SKYDD MOT TAGGRANKOR'], angelSight: ['n', 'S STILLA STENÄNGLAR'], shearDmg: ['p', 'SKADA MED SAXEN'],
+  dreamDmg: ['p', 'SKADA MED DRÖMSTAVEN'], mistSight: ['p', 'SIKT I SÖMNENS DIMMA'], fountainHeal: ['n', 'HP FRÅN FONTÄNER'],
+  shiftSense: ['p', 'SNABBARE GLIDANDE VÄGGAR'], sleepResist: ['p', 'SKYDD MOT SÖMN'],
+  deckGrip: ['p', 'GREPP PÅ SKÖLJT DÄCK'], cannonDmg: ['p', 'SKADA MED KANONER'], chainDmg: ['p', 'SKADA MED KEDJEKULOR'], acidDmg: ['p', 'SKADA MED SYRA'],
+  acidResist: ['p', 'SKYDD MOT SYRA'], transmuteLuck: ['p', 'TUR MED TRANSMUTATION'], teslaResist: ['p', 'SKYDD MOT TESLASPOLAR'], brewLuck: ['p', 'CHANS TILL STARK BRYGD'],
+  showtime: ['p', 'SKADA I RAMPLJUSET'], trapdoorSense: ['p', 'VARNING FÖR FALLLUCKOR'], knifeResist: ['p', 'SKYDD MOT KNIVAR'], pinDmg: ['p', 'SKADA MED KÄGLOR'],
+  dartDmg: ['p', 'SKADA MED GIFTPILAR'], poisonResist: ['p', 'SKYDD MOT GIFT'], idolLuck: ['p', 'TUR MED IDOLER'], vineWalk: ['p', 'LÄTTARE I LIANER'],
+  cartResist: ['p', 'SKYDD MOT GRUVVAGNAR'], blastResist: ['p', 'SPRÄNGSKYDD'], oreLuck: ['p', 'TUR MED MALM'], pickDmg: ['p', 'SKADA MED HACKAN'],
+  lanceCharge: ['p', 'SNABBARE LANSLADDNING'], meteorSense: ['p', 'METEORVARNING'], lowGrav: ['p', 'HÖGRE HOPP PÅ STJÄRNKARTAN'], starSight: ['p', 'TID MED TELESKOPET'],
+  sludgeResist: ['p', 'SLAMSKYDD'], sprayResist: ['p', 'ÅNGSKYDD'], oasisHeal: ['p', 'LÄKNING UR OASER'], leechResist: ['p', 'IGELSKYDD'],
+  stormSight: ['p', 'SIKT I SANDSTORMEN'], scimitarDmg: ['p', 'SKADA MED KROKSABELN'], trapDmg: ['p', 'SKADA MED BJÖRNSAXAR'],
+  alarmQuiet: ['p', 'TYSTA LARMPLATTOR'], netResist: ['p', 'SKYDD MOT FISKNÄT'], crabCrack: ['p', 'SKADA GENOM KRABBPANSAR'], gullResist: ['p', 'SKYDD MOT MÅSAR'],
+  fogSight: ['p', 'SIKT I DIMMAN'], flailDmg: ['p', 'SKADA MED MORGONSTJÄRNAN'], blunderDmg: ['p', 'SKADA MED TROMBONEN'], burnResist: ['p', 'SKYDD MOT BRAND'],
+  scaldResist: ['p', 'SKYDD MOT SKÅLLNING'], steamSight: ['p', 'SIKT I ÅNGAN'], coldPoolHeal: ['p', 'LÄKNING UR KALLBAD'], shieldBreak: ['p', 'SKADA GENOM SKÖLDAR'],
+  streamResist: ['p', 'SKYDD MOT ELDFLODER'], runeQuiet: ['p', 'TOMMA RUNCIRKLAR'], tridentDmg: ['p', 'SKADA MED TREUDDEN'], brimstoneDmg: ['p', 'SKADA MED SVAVELMORTERN'],
+  slickGrip: ['p', 'GREPP PÅ BLODHALT GOLV'], grinderResist: ['p', 'SKYDD MOT KÖTTKVARNAR'], fliesResist: ['p', 'SKYDD MOT FLUGSVÄRMAR'], mudWalk: ['p', 'LÄTTARE I DJUP LERA'],
+  catapultSense: ['p', 'VARNING FÖR KATAPULTSTENAR'], formationBreak: ['p', 'SKADA GENOM SPÖKSKÖLDAR'], hookDmg: ['p', 'SKADA MED SLAKTARKROKEN'], bombardDmg: ['p', 'SKADA MED BOMBARDEN'],
+  collapseSense: ['p', 'VARNING NÄR TAKET RASAR'], rubbleWalk: ['p', 'LÄTTARE I GRUSET'], dustSight: ['p', 'SIKT I DAMMET'], shardStep: ['p', 'SKYDD MOT GLASSKÄRVOR'],
+  moltenResist: ['p', 'SKYDD MOT SMÄLT GLAS'], slingDmg: ['p', 'SKADA MED SLUNGAN'], glassgunDmg: ['p', 'SKADA MED GLASBÖSSAN'],
 };
 const INVERT = { damageTaken: true };
 const num = v => String(Math.round(v * 100) / 100).replace('.', ',');
@@ -632,7 +1478,7 @@ function modLines(cardOrMods) {
 // ett steg sällsyntare (högst legendarisk) och samma bild. Pakter, vapenuppgraderingar och kort
 // som bara kan tas en gång kan inte smältas.
 const FUSE_MUL = 1.6;
-const PLURAL = { KULA: 'KULOR', RUTA: 'RUTOR', GRANAT: 'GRANATER', RUNPLATS: 'RUNPLATSER', SJÄL: 'SJÄLAR' }; // '+1 KULA' blir '+2 KULOR'
+const PLURAL = { KULA: 'KULOR', RUTA: 'RUTOR', GRANAT: 'GRANATER', RUNPLATS: 'RUNPLATSER', SJÄL: 'SJÄLAR', DELNING: 'DELNINGAR' }; // '+1 KULA' blir '+2 KULOR'
 function isFused(id) { return typeof id === 'string' && id.length > 1 && id.charAt(id.length - 1) === '+'; }
 function baseId(id) { return isFused(id) ? id.slice(0, -1) : id; }
 function fusable(card) { return !!card && !card.fused && !card.pact && !card.weapon && !card.active && card.max >= 2; }
@@ -660,7 +1506,7 @@ function fuseText(card, mods) {
     text = text.slice(0, at) + b + text.slice(at + a.length);
     pos = at + b.length;
   }
-  if (text != null) return { text: text.replace(/\b(\d+) (MAX )?(KULA|RUTA|GRANAT|RUNPLATS|SJÄL)(?![A-ZÅÄÖ])/g, (m, n, mx, w) => (n === '1' ? m : n + ' ' + (mx || '') + PLURAL[w])), bad: card.bad || 0 };
+  if (text != null) return { text: text.replace(/\b(\d+) (MAX )?(KULA|RUTA|GRANAT|RUNPLATS|SJÄL|DELNING)(?![A-ZÅÄÖ])/g, (m, n, mx, w) => (n === '1' ? m : n + ' ' + (mx || '') + PLURAL[w])), bad: card.bad || 0 };
   const lines = modLines(mods), good = lines.filter(l => l.good), bad = lines.filter(l => !l.good);
   return { text: good.concat(bad).map(l => l.text).join('\n'), bad: bad.length };
 }
@@ -753,7 +1599,7 @@ function preview(card, mods, ownedIds) {
 // ---------- Dragning ----------
 // Vikten skiftar mot sällsyntare med djup (våning, 0..) och luck (summan av luck-modden, 0.1 per kort).
 const CURSE_WEIGHT = 0.8; // förbannade kort dyker upp ibland
-const PACT_WEIGHT = 0.82, UPGRADE_WEIGHT = 7; // sjutton pakter (vikten sänkt så att de syns lika ofta som de fjorton förut): en pakt i ungefär var fjärde dragning; efter pakten kommer uppgraderingarna tätt
+const PACT_WEIGHT = 0.44, UPGRADE_WEIGHT = 18; // version 20: fyrtio pakter (0,42 -> 0,44), uppgraderingarna 17 -> 18 // version 19: trettioåtta pakter (0,4 -> 0,42 så att pakterna syns lika ofta när korthögen vuxit), uppgraderingarna 15 -> 17 // trettiosex pakter (vikten sänkt så att alla pakter tillsammans syns lika ofta som de fjorton förut; version 13: 0,53 -> 0,49, version 15: 0,49 -> 0,46, version 16: 0,46 -> 0,43, version 17: 0,43 -> 0,4, version 18: oförändrad 0,4 med trettiosex pakter); uppgraderingarna väger lite mer sedan korthögen växt (version 11: 8 -> 9, version 13: 9 -> 10, version 15: 10 -> 11, version 16: 11 -> 12, version 17: 12 -> 13, version 18: 13 -> 15): en pakt i ungefär var fjärde dragning; efter pakten kommer uppgraderingarna tätt
 function rarityWeight(rarity, depth, luck) {
   const t = Math.max(0, (depth || 0) * 0.25 + (luck || 0) * 2.5); // 0 = början av rundan
   const base = RARITY[rarity].weight;
@@ -812,7 +1658,10 @@ const canSell = card => sellPrice(card, 0) > 0;
 
 const WEAPON_NAME = { pistol: 'PISTOL', shotgun: 'HAGELGEVÄR', rifle: 'GEVÄR', smg: 'KPIST', dbshotgun: 'DUBBELBÖSSA', crossbow: 'ARMBORST', flaregun: 'SIGNALPISTOL', sniper: 'PRICKSKYTTE',
   axe: 'YXA', flamer: 'ELDKASTARE', launcher: 'GRANATKASTARE', nailgun: 'SPIKGEVÄR', staff: 'BLIXTSTAV', bow: 'LÅNGBÅGE',
-  knives: 'KASTKNIVAR', hammer: 'STRIDSHAMMARE', musket: 'MUSKÖT' };
+  knives: 'KASTKNIVAR', hammer: 'STRIDSHAMMARE', musket: 'MUSKÖT', harpoon: 'HARPUN', boomerang: 'BUMERANG', prism: 'PRISMA',
+  sawlauncher: 'SÅGBLAD', windgun: 'VINDBÖSSA', spear: 'SPJUT', sporelauncher: 'SPORKASTARE', mirrorshield: 'SPEGELSKÖLD', whip: 'PISKA',
+  runebook: 'RUNBOK', steamcannon: 'ÅNGKANON', censer: 'RÖKELSEKAR', hivelauncher: 'BIKASTARE',
+  shears: 'TRÄDGÅRDSSAX', dreamstaff: 'DRÖMSTAV', chaincannon: 'KEDJEKANON', acidsprayer: 'SYRASPRUTA', pinthrower: 'KÄGLEKASTARE', blowgun: 'BLÅSRÖR', pickaxe: 'HACKA', starlance: 'STJÄRNLANS', scimitar: 'KROKSABEL', flail: 'MORGONSTJÄRNA', blunderbuss: 'TROMBON', trident: 'TREUDD', brimstone: 'SVAVELMORTER', trapthrower: 'FÄLLKASTARE', hookchain: 'SLAKTARKROK', bombard: 'BOMBARD', sling: 'SLUNGA', glassgun: 'GLASBÖSSA' };
 // etikett ovanför kortets namn: förbannelse, pakt, aktiv förmåga ('AKTIV · 8 S'), vilket vapen uppgraderingen hör till eller sammansmält
 const activeTag = card => 'AKTIV · ' + num(card.cd || 0) + ' S';
 function tag(card) {

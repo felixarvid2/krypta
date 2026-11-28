@@ -143,6 +143,32 @@ Spelare och gränssnitt
 53. Positionsljud i stereo som dämpas bakom väggar.
 54. Fotsteg i takt med farten.
 
+## Gränssnittet och språket (efter moderna boomer shooters)
+- **Språk:** spelet är på engelska som standard; svenska väljs under INSTÄLLNINGAR → SPRÅK / LANGUAGE (sidan laddas om). Källtexten är fortfarande svensk: `js/i18n.js` översätter varje text när den visas (canvas via `plain()`/`wrapText()`, DOM via en MutationObserver) med ordlistan `js/i18n_en.js`, först hela strängen och sedan bit för bit, så att sammansatta texter också blir engelska. Ordlistan byggs med `node tools/i18n/build.mjs` av `tools/i18n/en/part_*.json` (översatta bitar ur `node tools/i18n/extract.mjs`) och `tools/i18n/en/manual.json` (rättelser, vinner). `node tools/i18n/coverage.mjs` och `coverage_play.mjs` listar texter som fortfarande är svenska. Testerna kör på svenska (`?nolock=1` utan `&lang=en`).
+- **HUD:** ingen statuslist; hälsa (kors + siffra) och skydd (sköld) i ena hörnet, ammo i det andra, inga etiketter. Ett kort meddelande i taget, fiendepresentationer bara "NEW ENEMY: NAMN", målet som en kort rad under minikartan, effekter som ikoner. På pekskärm ligger hörnen uppe.
+- **Telefonen:** fem fasta knappar (avfyra, alt, hoppa, rusa, paus); ANVÄND, LADDA OM, GRANAT, DRYCK, FÖRMÅGA och LAMPA dyker upp när de går att använda. Tryck på ammo byter vapen, tryck på minikartan visar kartan. "ALLA KNAPPAR" i inställningarna ger tillbaka den gamla layouten.
+- **Menyer:** startskärmen är en lodrät lista (PLAY, MODES, CUSTOMIZE, COLLECTIONS, SETTINGS) med undermenyer; CUSTOMIZE har en rad per inställning med ◀ ▶; pausen sex val; dödsskärm med RETRY/MENU; nivåslut med uppräkning och betyg; affär, kortval och andra dialoger visar ikon + namn + pris och beskrivningen bara för det markerade valet.
+- **Verktyg:** `node tools/ui/shots.mjs <etikett>` tar skärmdumpar på dator, liggande och stående telefon (`LANG_UI=sv` för svenska). Tester: t97 (HUD), t98 (pek), t99 (menyer), t100 (dialoger), t101 (lägen och tillbaka-flöden), t102 (språket).
+
+## Grafik och animationer
+
+All rörelse är procedurell eller ritad i kod (inga nya renderingar). Varje del har ett eget block i `js/game.js` och en egen krok i `window.__game` med tillstånd, av/på och mätning. Allt det tunga stängs av med `settings.lowfx` (och det automatiska lågeffektläget); `noFlash`, `shake`, `bob` och minskad rörelse respekteras.
+
+- **Vapnen (`__game.wfx`, `wproj`):** omladdning per vapentyp (magasin ut/in, pump med patroner, bruten pipa, tunga vapen, armborst, musköt), aktiv omladdning med snärt, vapenbyte med överslag, hylsor (röda för hagel), mynningsrök och glödande pipa, landningsdipp, språng- och sidledslutning, inspektion, svepspår för närstridsvapen och viloliv (glöd vid magiska vapens spets, vibrerande sågar, tändlåga, guldglimt på legendariska). Explosioner i flera steg (blixt, eldklot, rökmoln som dröjer, chockvåg, skräp, ljus som falnar), rök- och ljusspår på projektiler, fiendeskott med svans i sin färg och nedslag efter väggens material.
+- **Fienderna (`__game.gfxE`):** squash & stretch och knuff vid träff, glöd före skott, andning och gångstuds, dödsglid med blodpöl, gibs efter material (kött, ben, slem, metall), spawn ur golvet, flygarskuggor, synliga statuseffekter (brinner, fryst, gift, blöder, rädd, bedövad, el), kontur på eliter, frysta fiender splittras i is och brinnande förkolnas. Bossar: tyngre träffar, fasbyte med chockvåg, död i flera steg och ett intro med band och namn som slår in.
+- **Världen (`__game.gfxW`):** rinnande och pulserande vätskor, fladdrande ljus (styrka och radie), åska, luftpartiklar per biom, föremål som snurrar och glimtar, kistlock, dörr- och väggdamm, fällor, spakar och tryckplattor som rör sig, fotsteg som plaskar och dammar, en vajande fana, sotmärken efter explosioner, utgången som en ljuspelare och fiender som plaskar eller fräser när de dör i vätska.
+- **Skärmen och menyerna (`__game.meny`):** levande kameraflykt genom en riktig bana bakom startskärmen, toning mellan våningar, HUD-juice (blink, skak, "+N"), skadebåge åt rätt håll, pulserande vinjett vid låg hälsa, färgade kanter vid upplockning, fartlinjer, gift/eld/under ytan, dödskamera som glider ned och lägger sig på sidan, "YOU DIED" som slår in, uppräkning och betygsstämpel, kort som delas ut och lyfts.
+- **Verktyg och tester:** skript för före/efter-bilder och mätning i `tools/gfx/<del>/` (bilderna hamnar i `out/`, som inte checkas in). Tester: t103 (vapen), t104 (fiender), t105 (världen), t106 (skärmen och menyerna), t107 (projektiler och explosioner).
+
+## Förbättringsloopen
+
+Spelet har en självförbättrande loop för Claude Code i grafform: **mät → planera → (bygg ∥ testa blint) → sammanför och revidera → granska → checka in → lär**.
+
+- **Mät:** `node tools/playtest/measure.mjs` kör bangeneratorns och kortens tester, hela speltestsviten och spelrobotar utan gudläge i varje biom, och skriver `tools/playtest/out/report.md`.
+- **Planera, bygga, granska, slå ihop:** arbetsflödet `.claude/workflows/forbattra.js` (skillen `forbattra`) låter en planerare välja små, testbara förbättringar ur rapporten. För varje förbättring skriver en byggare koden medan en annan agent samtidigt skriver acceptanstestet utan att se koden; en sammanförare kör testet mot koden och skickar tillbaka till byggaren vid rött (högst två varv); en oberoende granskare läser diffen, och bara det som är grönt checkas in. Underkända ändringar sparas som patch och återställs.
+- **Lär:** loopens minne är `tools/playtest/LOOP_NOTES.md` (backlogg, historik, lärdomar), som varje runda läser och uppdaterar.
+- **Testriggen:** `tools/playtest/` (Playwright-tester, bottar), `tools/artifact/` (bygget av claude.ai-artefakten med stabila paket och tester för dator och telefon).
+
 ## Version 3: biomer, väktarrum och 100 förbättringar
 
 ### Biomerna ser och låter olika
@@ -1261,6 +1287,1132 @@ Version 7 lägger till 200 förbättringar:
 
 Kombinerade utmaningar multiplicerar själarna. Sparplatsen väljs på startskärmen, och `?fro=XXXX` i adressen fyller i ett delat frö.
 
+## Version 30: Ruiner och glas – två nya biomer, väggar som rasar, förbundets altare och ändlöst läge
+
+### Ruinstaden
+- **Banan:** torg, gränder, rasade hus och rådhusets trappor under en gråockra himmel. Ruinstaden kommer aldrig före plats 3 i första varvet.
+- **Faror:**
+  - **Spruckna tak** knastrar och dammar i 0,8 sekunder efter att någon klivit in under dem, och rasar sedan. Raset gör 25 skada i rutan och 12 intill. Larmade fiender utlöser taken också.
+  - **Grus** saktar dig och fienderna med 25 %.
+  - **Dammvirvlar** drar dig till sig och tjocknar dammet.
+- **Fiender:**
+  - **Plundraren** kastar knivar och flyr en gång.
+  - **Stengolemen** kastar block i båge som kan rasa spruckna väggar.
+  - **Takskytten** skjuter med armborst och byter plats efter tre skott.
+  - **Dammvirveln.**
+- **Borgmästaren** väntar i det raserade rådhuset. Han slår med staven, river ned taket över dig, kastar husrester och kallar på plundrare. I andra fasen rasar rådhuset i kanterna.
+
+### Glasbruket
+- **Banan:** ugnshallar, blåsverkstäder, glaslager och kylgallerier, där smältugnar glöder mot kallt blått glas. Glasbruket kommer aldrig före plats 4 i första varvet.
+- **Faror:**
+  - **Smält glas** bränner, också fiender.
+  - **Skärvor** skär den som springer eller landar på dem.
+  - **Ugnsmunnar** glöder i 0,6 sekunder innan de sprutar hetta.
+  - **Glashyllorna** går att skjuta, spränga och sparka sönder, och fönstren är av glas.
+- **Fiender:**
+  - **Glasblåsaren** blåser bubblor som spricker till skärvor.
+  - **Glasgolemen** låter skotten studsa av, men smällar och slag biter dubbelt.
+  - **Slaggkryparen** lämnar smält glas efter sig.
+  - **Ugnsanden** dyker in i en smältugn och ut ur en annan.
+- **Glasmästaren** sveper med pipan, blåser glaskupor runt dig, skickar vågor av smält glas och gör glaskopior. I andra fasen sprutar ugnsmunnarna oftare.
+
+### Två nya vapen
+- **Slungan** är tyst. Stenen studsar en gång och gör dubbel skada mot huvudet. Högerklick laddar ett tungt kast som knuffar och river spruckna väggar.
+- **Glasbössan** skjuter en kon av glasskärvor som får fienden att blöda. Högerklick skjuter en glaskula som spricker i en ring.
+- Stenar och glas finns också i de andra biomerna, i ammolådor, utmaningsrum och pakter.
+
+### Väggar som rasar
+- En del väggar är spruckna, och sprickorna syns tvärs över biomens vägg.
+- En smäll river en sprucken vägg direkt. Annars rasar den efter tre tunga träffar: en spark, stridshammaren, hackan, slagan, ett tungt skott eller slungans tunga kast.
+- Raset lämnar en gångbar grushög, och fiender intill väggen tar skada, också på andra sidan.
+- Spruckna väggar är alltid genvägar mellan delar som redan hänger ihop. De leder aldrig förbi en låst dörr, ett galler eller en hemlig vägg. Ruinstaden har flest.
+- Statyer, benpelare och fristående pelare faller av en smäll, bort från smällen, och krossar fienden som står i vägen.
+
+### Förbundets altare
+- På ungefär var tredje vanlig våning står ett violett altare. Tryck E och välj ett av tre förbund: alltid en förbannelse ihop med en välsignelse, som gäller resten av rundan.
+- Exempel: FIENDERNA EXPLODERAR NÄR DE DÖR – +30 % SKADA, INGEN LÄKNING AV DRYCKER – +50 % GULD och ELITER ÖVERALLT – KISTOR BLIR GULDKISTOR. Det finns 14 olika.
+- Du får bära högst tre. Med tre kan altaret i stället bryta ett, och du kan alltid gå därifrån.
+- Förbunden syns i pausen, i statistiken och på dödsskärmen, och de sparas med rundan.
+
+### ÄNDLÖST
+- Ett nytt läge under LÄGEN: våning efter våning utan slut, med alla biomer i slumpad ordning. Fienderna blir fler och starkare för varje våning.
+- Var femte våning är en bossvåning. Efter bossen på var tionde våning stiger förbundets altare ur golvet.
+- Poängen räknas på djupet, de dödade fienderna och farten. De tio bästa rundorna står på topplistan med datum, djup, biom och frö. Topplistan syns i menyn, i statistiken och på dödsskärmen.
+
+### Mer
+- **Kort:** 16 nya kort, två set (STADSVAKTENS VÄG och GLASBLÅSARENS VÄG) och två pakter med fyra uppgraderingar var.
+- **Prestationer, nyheter och handbok** för allt det nya.
+- **Ljud och musik:** egna spår för båda biomerna och båda bossarna, bakgrundsljud och 27 nya ljudeffekter.
+- **Bilder:** nya väggar, golv, rekvisita, åtta fiender, två bossar och de två vapnen.
+
+### Bra att veta
+- Rundor som startats med samma frö i en tidigare version kan få andra biomer, vapen och bossar, eftersom listorna har blivit längre. Banorna för en given biom är oförändrade.
+- Balansen i de nya biomerna är inte provspelad av människor än.
+- Glasbruket är mörkt med RENDERING CPU. Med WebGL är det lättare att se.
+- **Tester:** t185–t188, t190–t193, t200–t204 och gen-test.
+
+## Version 29: Glas och blod – fönster som går sönder, ljus i grafikkortet, nya utmaningar och blodfursten
+
+### Glas och rostiga galler
+- **Glasfönster:**
+  - En del fönster är blyinfattat glas i biomens ram, med en lätt färgton och reflex. Det gäller fönster mot ett rum längre fram och ibland vakttornets fönster.
+  - Glaset stoppar kulor och fiendernas blickar.
+  - Det spricker av ett skott och går sönder av tre. En smäll, en spark eller ett yxhugg krossar det direkt.
+  - Den krossade rutan blir en öppen ram som man ser, skjuter och klättrar igenom, och det kan fienderna också.
+- **Rostiga galler:** vakttornet och balkongens bortre ände kan ha ett rostigt galler märkt med ett kritkryss. En smäll eller tre sparkar böjer upp det till en genväg. Vanliga galler är som förut.
+- **Placering:** glas och rost placeras när våningen laddas, med ett eget slumpflöde.
+  - De sitter bara där vägen runt redan är öppen, så de blir en genväg men aldrig en väg förbi ett lås.
+  - Bangeneratorn är orörd.
+- **Livmätare bakom galler:** en fiende som syns genom ett galler eller fönster visar sin livmätare och sina skadesiffror. Bakom en vägg gör den det inte.
+- **Kartan:** rum man bara har skymtat genom ett galler eller fönster syns svagt och räknas inte som utforskade.
+- **Fängelsets gallerpelare** ritas som hela pelare igen, så bödelns gård ser inte längre ut som en bur.
+- **Tester:** t165–t169.
+
+### Ljus, vatten och luft i grafikkortet
+Med RENDERING WEBGL (eller AUTO) gör grafikkortet nu mer än bloom.
+
+- **LJUS** (under BILD, PÅ/AV):
+  - Eld, glödande partiklar, mynningsflammor, smällar, magi och eldklot lyser upp väggar, golv, tak och fiender runt sig i sin färg, med ett lätt flimmer.
+  - Ljuset läggs på ytans färg och lyfter bara mörka och halvmörka ytor. Ett redan ljust rum blir inte ljusare. Medelljuset ökar med högst cirka 8 % i de ljusaste biomerna.
+  - Facklor, lava och eldkastaren lyser som förut och räknas inte dubbelt.
+- **VATTEN** (PÅ/AV):
+  - Under ytan böljar bilden, blir blågrön och ljuset bryts i kaustik.
+  - Golv med vatten speglar väggarna och ljuset svagt och krusigt.
+- **LUFT** (PÅ/AV): luften dallrar över lava och eld. På kyrkogården, i hamnen, på skeppet och i träsket driver dimbankar sakta över golvet.
+- **Pausen** (med oskärpa), **fotoläget**, **simningen** och **startskärmens kameraflykt** ritas nu också av grafikkortet, så bloom och vinjett finns kvar där.
+  - Döden gråar bilden i grafikkortet.
+  - F9 sparar WebGL-bilden med HUD:en.
+- **Inställningar som påverkar effekterna:**
+  - MINSKADE EFFEKTER (och det automatiska lågeffektläget) stänger av allt det nya.
+  - MINSKADE BLIXTAR dämpar ljuset.
+  - MINSKA RÖRELSE stoppar vågorna och dallret.
+- **Om något inte fungerar på en enhet:** går ett av de nya shaderprogrammen inte att bygga stängs bara den effekten av. Med RENDERING CPU är bilden exakt som förut.
+- **Tester:** t175–t179.
+
+### Utmaningsvåningen: fyra nya regler
+- **ETT VAPEN:** bara vapnet du bär när du kommer in. +25 guld.
+- **GLASKANON:** du och fienderna gör dubbel skada. +30 guld.
+- **MOT KLOCKAN:**
+  - Klara våningen innan tiden tar slut. Tiden räknas i speltid, syns i HUD och varje dödad fiende ger 4 sekunder till.
+  - Hinner du får du 40 + 15 guld per djup extra.
+  - Tar tiden slut kommer en straffvåg, och den extra belöningen försvinner.
+- **HUNGER:** hälsan sjunker en poäng var 1,5 sekund, aldrig under en fjärdedel. Varje dödad fiende ger 6 tillbaka. +25 guld.
+- **Visning:** regeln syns i HUD under meddelandena. De sista tio sekunderna av MOT KLOCKAN blir klockan röd och tickar. Det följer INGA BLIXTAR, MINSKA RÖRELSE, färgblindläget och LJUDSIGNALER.
+- **Portalen** väljer en av de nya reglerna ungefär hälften av gångerna.
+- Alla regler går att kombinera med blodvåningen. Regeln sparas med rundan och släpps på nästa våning.
+
+### Blodvåningen: blodaltaret och blodfursten
+- **Blodaltaret** står på varje blodvåning. Tryck E och offra en fjärdedel av hälsan för en blodpakt.
+  - En pakt ger +10 % skada resten av rundan, högst +60 %.
+  - Pakterna visas på dödsskärmen och i statistiken.
+- **Blodfursten** väntar på varannan blodvåning och på alla från våning 8.
+  - Han är en förstärkt röd elit som läker av blodpölar på golvet.
+  - Skjut, spräng eller sparka sönder pölarna så slutar läkningen.
+  - Fälld ger han en kista och guld.
+- **BLOD AV** fungerar med allt.
+- **Bangeneratorn** väljer altarets plats och furstens sal i ett eget pass. Kartan ändras inte, och `opts.v29off` ger exakt version 28:s bana.
+- **Tester:** t173, t174 och gen-test.
+
+### Rättningar
+- **Balkongskyttarna** och vakttornets skytt stannar på avsatsen, också när de jagar dig.
+- **Under BARA NÄRSTRID** gör sparken, kolvslaget, rusningen, flygsparken och parerade skott full skada. Skott och sprängningar gör fortfarande en fjärdedel.
+- **Labyrintläget** spelar nu sitt eget spår, som gjordes i version 7 men aldrig kopplades in.
+- **Utmaningsportalen** är provad i riktiga rundor för varje regel: regeln, belöningen, sparning och laddning samt att regeln släpps på nästa våning (t172).
+- **Tester:** t170–t172.
+
+### Stabilare speltester och en rättning
+- **Testerna väntar nu i speltid i stället för väggtid.** Spelets klocka räknar högst 0,05 s per bildruta. På en belastad dator går den därför långsammare än väggklockan, och en fast väntan gav för lite speltid. Då föll testerna trots att spelet gjorde rätt.
+  - `tools/playtest/head.mjs` har fått `until`, `gwait` och `gsample`.
+  - `gsample` gör en mätning i varje bildruta.
+- **Andra orsaker till flakiga tester:**
+  - Några tester mätte bara ett ögonblick av något som rör sig eller lever kort, till exempel bossarnas specialanfall, lågor och projektiler. Nu mäts det över flera bildrutor.
+  - Några tester berodde på slumpen. Nu används fasta frön.
+- **Starten är robustare:**
+  - Ett test som möter en upptagen port väntar tills den blir ledig.
+  - Sidan får två minuter på sig att ladda.
+  - `runall.sh` ger varje test tio minuter.
+- **Konstgjord last:** `PW_THROTTLE=12` stryper processorn, så att man kan se om ett test klarar en långsam dator.
+- **Tio tester är stabila nu:** t42, t50, t74, t89, t92, t93, t96, t108, t110 och t150.
+  - t117 är rättat, men slutversionen är bara körd fyra gånger.
+  - t112 föll fortfarande på två olika AI-rader, en gång var. Ingen av dem beror på väggtid och ingen är utredd.
+  - t130 gick inte att få att fallera, så den är inte ändrad.
+- **Rättning i spelet:** en fastsatt igel knuffade spelaren bakåt flera rutor i sekunden. Nu sitter man still medan den suger.
+
+### Världen i grafikkortet, i högre upplösning
+Med RENDERING WEBGL (eller AUTO) kan grafikkortet nu också rita själva världen.
+- **VÄRLD** (under BILD, bara med WebGL): CPU eller GRAFIKKORT. Standard är **CPU**, alltså som förut.
+  - Med GRAFIKKORT kastar CPU:n bara strålarna per kolumn, och grafikkortet fyller väggar, golv, tak och himmel bildpunkt för bildpunkt.
+  - Ljus, dimma, MÖRKER, ficklampan, takblodet och himlarna (med måne, moln, stjärnfall och blixt) ser ut som med CPU:n.
+  - Sprites, väggmärken, galler, fönster och glas ritas av CPU:n som förut och läggs ovanpå.
+- **UPPLÖSNING** (AUTO, 1×, 2×, 3×): hur tätt grafikkortet ritar världen.
+  - Texturerna är fortfarande skarpa pixlar, men det som är långt bort flimrar mindre och kanterna blir rakare.
+  - AUTO följer skärmens storlek på datorn (högst 4×) och ger 2× på telefonen.
+  - Hinner telefonen inte med går AUTO ned till 1×. MINSKADE EFFEKTER ger alltid 1×.
+- **Snabbare:** med GRAFIKKORT 2× tar en bildruta cirka 3,4 ms CPU-tid mot 14 ms för CPU-världen i 1× (4× strypning).
+- **Reserv:** går världens shaderprogram inte att bygga, eller tappar webbläsaren grafikkortet, ritar CPU:n världen igen i samma bildruta.
+- **Paritet:** testat för alla 35 biomer. I 1× är minst 99,8 % av bildpunkterna lika.
+- **Tester:** t180–t184. t180 och t182 tar 10–15 minuter och körs bäst för sig.
+
+### Mindre paket
+- **Storlekarna:**
+  - .deb-paketet är 50 MB i stället för 54.
+  - Webbzippen är 54 MB i stället för 58.
+- **Förlustfri omkodning:** 1 677 bilder i gfx, wall och touch har kodats om, med palett och lägre färgtyp där det går. De är hälften så stora och avkodas till exakt samma pixlar.
+  - Det är kontrollerat med Pillow, ffmpeg och Chromium.
+- **Nya verktyg:**
+  - `tools/assets/pngopt.py <katalog>` kodar om bilder förlustfritt.
+  - `tools/assets/png_verify.py <ny> <kopia>` kontrollerar att pixlarna är oförändrade.
+- **Ljud och musik är oförändrade.** Musiken ligger redan på 80 kbps och effekterna på 22 kHz mono.
+
+## Version 28: Genom gallret – blod i taket, fönster, nya bantyper och WebGL
+
+### Blod i taket
+- **Stänk i taket.** När en köttfiende sprängs (överdöd), avrättas eller dör i en smäll inomhus stänker blodet upp i taket ovanför, i fiendens materialfärg, och droppar ned en stund.
+- **Sot.** En stor smäll inomhus sotar taket.
+- **Tak för antalet:** högst 48 fläckar (MYCKET), 24 (NORMAL) eller 12 (MINSKADE EFFEKTER), äldsta först. MINSKADE EFFEKTER ger inga droppar. BLOD AV ger inget blod i taket.
+- **Billigt.** Fläckarna ligger i en karta med en byte per ruta. Golv- och takslingan läser den bara på takrader och bara när banan har fläckar.
+- **Tester:** t151 och t152 (mätning).
+
+### Galler och fönster man ser igenom
+- **Fönster (`ǂ`).** Ett nytt kartecken: en vägg med en öppning och järngaller, med en ram i biomens vägg. Man ser igenom men kan inte gå eller skjuta igenom, och fiender ser och skjuter inte genom fönstret.
+- **Cellgallren (`Ɉ`)** i Järnfängelset går också att se igenom. Fängelsets målade cellfronter mot en vägg ser ut som förut.
+- **Det som syns bakom** ritas med rätt djup: rum, golv, tak och fiender. Gallret ritas ovanpå och sprites framför gallret ovanpå det.
+- **Högst två genomsiktliga lager per kolumn** (ett med MINSKADE EFFEKTER).
+- **Kartan** visar fönster och galler som ett streck i väggen.
+- **Tester:** t150 och t153 (riktiga fängelsevåningar och mätning).
+
+### Nya bantyper
+- **Den översvämmade salen.** Grunt vatten över hela salen, några torra öar och djupa bassänger som man simmar i. Bassängerna är aldrig enda vägen.
+- **Vakttornet.** Ett inhägnat torn mitt i salen med galler på tre sidor och en smal ingång. En skytt sitter inne: du ser den genom gallret men måste gå runt.
+- **Balkongen.** En avsats längs väggen bakom galler. Skyttarna på den nås bara från ena änden eller genom en sidogång.
+- **Fönster mot rum längre fram.** Galler i tunna väggar ger en glimt av utgången, skattkammaren eller nyckeln långt innan du når dit.
+- Allt nytt i bangeneratorn ligger i ett eget pass med eget slumpflöde. Med `opts.v28off` blir banorna exakt som i version 27.
+
+### Särskilda våningar
+- **Blodvåningen** kommer ungefär var tolfte våning från våning 3, eller via en blodröd portal. Den har 60 % fler fiender, två extra kistor och guldhögar, blod på väggarna från start, röd färgton och dov musik. Med BLOD AV blir det inget väggblod.
+- **Utmaningsvåningen.** Ibland står en tredje portal bredvid portalerna till nästa våning. Den leder till en våning med en regel: BARA NÄRSTRID, INGEN LÄKNING, SNABBA FIENDER eller MÖRKER. Klarar du våningen får du 60 + 20 guld per djup, och den räknas som en klarad utmaning.
+- **Tester:** gen-test (version 28-blocket) och t155–t158.
+
+### WebGL: grafikkortet ritar
+- **RENDERING** under BILD: AUTO (standard), CPU eller WEBGL. AUTO använder grafikkortet (WebGL2) om det finns, annars CPU som förut. Går WebGL inte att starta, eller förloras kontexten, fortsätter spelet direkt med CPU i samma bildruta.
+- **Grafikkortet ritar ut bilden**: färgton, färgblindläge, gråning vid låg hälsa, upp/ned-blicken och lutningen görs i grafikkortet. HUD, menyer och text ser ut som förut. Pausen, fotoläget, simning och startskärmen ritas med CPU.
+- **BLOOM** (på som standard): eld, magi, explosioner och andra ljusa, varma ljus får ett mjukt sken. Dessutom en mjuk vinjett och en lätt färgförskjutning när du tar skada. MINSKADE BLIXTAR dämpar skenet och MINSKADE EFFEKTER stänger av det.
+- **Partiklar i grafikkortet**: blod, gnistor, rök och eld ritas av grafikkortet som instansierade quads, skarpare men fortfarande pixliga. De syns inte genom väggar, döljs av fiender som står framför och syns genom galler och fönster. 3000 partiklar kostar cirka 2 ms CPU-tid med WebGL mot cirka 35 ms med CPU (4× strypning). Med WebGL har PARTIKLAR ett högre tak: HÖG ×8, MAX ×16, AUTO upp till ×8.
+- Väggar, golv och tak ritas fortfarande av raycastern på processorn. Nästa steg är att flytta golv och tak till grafikkortet, och därefter ett läge med 2× upplösning.
+- **Tester:** t160–t164.
+
+### Koden är uppdelad
+- `js/game.js` byggs nu av 64 delar i `src/game/`, en per system (se `src/game/README.md`). `node tools/build-game.mjs` bygger, `--check` kontrollerar att filen stämmer och `--syntax` kontrollerar varje del och att inget namn på toppnivå finns i två delar.
+- Engelska texter per arbetsområde ligger i `tools/i18n/en/`.
+
+## Version 27: Blodbad – mer blod, fler effekter och fler banor
+
+### Mer blod
+- **Blodstänk på väggarna.** När en fiende träffas eller dödas nära en vägg stänker det på väggen bakom den, i skottets riktning, och dropparna rinner nedåt. Färgen följer fiendens material: kött är rött, insekter gulgröna, slem har sin egen färg, odöda är mörka och skelett dammar. Metall, spöken, eld och urverk lämnar inget stänk.
+- **Riktade blodstrålar** sprutar ut ur fiendens baksida. Hagel och tunga vapen ger mer.
+- **Överdöd** ger en fontän, köttbitar som studsar och lämnar fläckar, och flera väggstänk. Intill en vägg fastnar några bitar på väggen och glider långsamt ned med ett blodspår efter sig.
+- **Golvet.**
+  - Pölarna är bredare och växer en stund.
+  - Går du genom en pöl lämnar du blodiga fotspår några steg.
+  - En smäll som dödar köttfiender lämnar en stjärnformad blodfläck runt sig.
+- **Lik går att skjuta och sparka sönder,** som i Doom och ULTRAKILL. Lik som ghoulen äter, lik som nekromanten kan väcka och lik efter bossar och väktare går inte sönder. Högst 40 hela lik ligger kvar samtidigt.
+- **Sårade fiender.**
+  - De får blodfläckar på kroppen som växer med skadan.
+  - Under 40 % hälsa droppar de blod och lämnar ett spår.
+  - Under 20 % haltar köttfiender och går 20 % långsammare.
+- **Närstrid.**
+  - Sparkar, kolvslag, närstridsvapen och avrättningar stänker mer.
+  - Närstridsvapnet blir blodigt i förstapersonsvyn och blodet tonas bort efter några sekunder.
+  - Sprängs en fiende nära dig stänker det i skärmens hörn, men aldrig över siktet.
+- **Inställningen BLOD** under BILD har lägena AV, NORMAL och MYCKET. AV ger damm och stenflisor i stället för blod. Standard är MYCKET på dator och NORMAL på telefon.
+- **Tester:** t135–t139d.
+
+### Fler effekter
+- **Mynningsflammor per vapentyp:** hagel, gevär, kpist, magi i vapnets färg och tunga vapen. Ljuset från mynningen får vapnets färg.
+- **Nedslag efter material:**
+  - metall: gnistor som studsar och svalnar
+  - sten: dammoln
+  - trä: snurrande flisor
+  - is och glas: glitter
+  - vatten och lava: stänk och fräsande lava
+- **Explosioner** får en chockvåg längs golvet (Effekseer), en dammvåg, skräp som studsar och ryker, glöd som falnar och rök som dröjer kvar.
+- **Dödseffekter för fiender som inte blöder:**
+  - metall sprutar gnistor och tappar skruvar och kugghjul
+  - spöken löses upp i en stigande spiral
+  - slem stänker
+  - kristall och is splittras
+  - eldväsen flammar upp och lämnar aska
+- **Spår efter fiendernas skott:** eldklot ryker, magiska kulor gnistrar, pilar drar en strimma och syra droppar.
+- **Statuseffekter syns tydligare:**
+  - bedövade fiender har fåglar runt huvudet
+  - den som vacklar och kan avrättas får en ring och en markör
+  - frusna fiender ångar
+  - förgiftade droppar grönt
+  - brinnande fiender syns på avstånd
+  - fiender som kastas upp i luften får fartlinjer
+- **Rök ur pipan** efter tunga skott och långa salvor.
+- **Miljö:** snö och damm under fötterna, lava som fräser, gnistor från sågklingor och glimmer från kistor.
+- **Fiender som dyker upp mitt i striden gör det på biomens sätt:** eld ur golvet i vulkanen, is i frosten, slem i kloaken, sand och rök i gravkammaren, glitter i kristallgrottorna, löv i skogen och vattenstänk i hamnen.
+- **Bossar** får en smäll och en chockvåg när de byter fas. När de dör kommer smällar, en ljuspelare i guld och guldgnistor.
+- **Prestanda.** Blod och effekter delar en gemensam partikelbudget, så explosionerna alltid får plats. Det automatiska lågeffektläget stänger av allt nytt. Med processorn strypt sex gånger, ungefär en mellantelefon, går en stor strid i cirka 30 bilder per sekund med eller utan version 27.
+- **Källor och tester:** två nya Effekseer-strippar (CC0, cirka 19 kB). Tester: t140–t144b.
+- **Partikelbudget: inställningen PARTIKLAR** under BILD har lägena AUTO, LÅG, NORMAL, HÖG och MAX. Alla partikeltak multipliceras med samma faktor:
+  - LÅG: 0,6
+  - NORMAL: 1, samma tak som före version 27
+  - HÖG: 4, alltså 1 040 partiklar i stället för 260
+  - MAX: 8, alltså 2 080 partiklar
+- **Tätare effekter.** Över NORMAL kan varje ny partikel få en tvilling, så att blod, skräp, gnistor, rök och glöd blir fler per händelse. Med HÖG blir det ungefär 1,9 gånger så många och med MAX dubbelt så många.
+  - I en stor strid blev det cirka 430–500 partiklar i median mot 175 på NORMAL.
+  - Det kostade ungefär 0,5 ms mer per bildruta på testdatorn, och 1,5–2 ms mer med processorn strypt fyra gånger.
+- **Grafikkortet spelar ingen roll.** Krypta ritar i JavaScript på processorn, så det är processorn som avgör hur mycket som går. På en laptop med RTX 5060 (ofta Core i7-13650HX eller 14650HX, Core 7 240H eller Ryzen 7 260) bör MAX fungera bra i 60 bilder per sekund.
+  - **AUTO** är standard. Spelet mäter bildtiden löpande. Med god marginal höjs budgeten långsamt mot ×4, och nära gränsen för det automatiska lågeffektläget sänks den snabbt igen. AUTO går aldrig under dagens nivå, så en telefon får samma tak som förut.
+  - **När listan är full** tas rök, damm och glöd bort först. Explosionskärnor, blod och nedslag ligger kvar. En ny explosion får ta platsen från den äldsta Effekseer-lågan eller giftvirveln.
+  - **Kostnad:** med processorn strypt fyra gånger kostar 520 partiklar i en strid ungefär 1 ms mer per bildruta än inga alls.
+  - **Test:** t147.
+
+### Fler banor: planritningar, scener och handgjorda rumsmallar
+- **Planritningar.** Från våning 2 byggs ungefär var femte vanlig våning efter en planritning. Planritningens namn visas när våningen börjar. Det finns fyra:
+  - **RINGBORGEN:** salarna ligger i en sluten ring runt vaktarens sal.
+  - **KORSFÄSTNINGEN:** fyra flyglar kring en mittgård, med torn i hörnen.
+  - **STORMLÖPET:** en lång, slingrande kedja av salar fram till vaktaren.
+  - **BORGGÅRDEN:** en stor öppen gård med byggnader runt om.
+- **Scener:** PELARSALEN, KORSGÅNGEN (fiender gömmer sig i nischerna), HYLLGÅNGARNA (en liten labyrint), TRONSALEN (skatten ligger bakom tronen) och BRON ÖVER LAVAN (bara i vulkanen). Scenens namn visas första gången du går in i rummet.
+- **16 handgjorda rumsmallar,** till exempel vaktpost, gästabud, kryptrad, vapenförråd, benhög och altarring. De vrids och speglas slumpvis.
+- **Stabilitet.** Antalet fiender och skatter är detsamma som förut. Allt ligger i ett eget pass i gen.js med eget slumpflöde, och `opts.v27off` ger exakt samma banor som version 26.
+- **Förhandsvisa** med `node tools/gen-preview.js dungeon 5 3 --plan=court` eller `--scene=throne`.
+- **Tester:** t145–t146.
+
+## Version 26: Samspel – efter moderna boomer shooters
+
+Inför version 26 gick vi igenom ett femtontal moderna boomer shooters och jämförde dem med det Krypta redan har:
+- ULTRAKILL, DUSK, Prodeus och Cultic
+- Ion Fury, Amid Evil och Turbo Overkill
+- Warhammer 40K: Boltgun, Dread Templar och Nightmare Reaper
+- HROT, Selaco, Wrath och Forgive Me Father
+
+Det mesta som de spelen gör bra fanns redan, till exempel stilmätare, avrättningar, musik i lager för striden, tillgänglighet och nycklar och valv. Det som saknades var tre saker:
+- att skott, sparkar och sprängämnen spelar ihop
+- närstrid som går att läsa
+- rörelse som hör ihop med striden
+
+### Sprängskott (ULTRAKILL, Cultic)
+- Ett träffskott på din egen granat (handgranat eller granatkastare), ett sparkat krutfat eller fiendens granat spränger den direkt, i luften eller där den ligger och piper. Smällen blir 1,5 gånger större, och dina egna sprängämnen gör 1,5 gånger mer skada ("SPRÄNGSKOTT!", +SPRÄNG).
+- Två spärrar: ett sprängämne närmare än 1,6 rutor smäller inte, och bara ett nytt tryck på avtryckaren räknas. En kpist som hålls in spränger alltså inte granaten du nyss kastade.
+- Bara vapen med träffskott kan göra det, inte vapen som skjuter projektiler.
+
+### Myntet: kortet SKARPSKYTTENS MYNT (ULTRAKILL)
+- Nytt ovanligt kort. Med kortet kastar pistolens högerklick (ALT på pekskärm, LT på handkontroll) ett mynt i båge i stället för att sikta.
+- Skjuter du myntet studsar kulan vidare, i den här ordningen:
+  1. andra mynt, vilket ger en kedja
+  2. dina sprängämnen
+  3. fiendens skott och granater
+  4. närmaste fiendes huvud
+- En fiendeträff räknas som huvudträff och gör minst dubbel skada, plus en gång till per mynt i kedjan.
+- Du har högst fyra mynt, och ett nytt laddas var fjärde sekund. Mynten syns vid ammoräknaren: ett fyllt mynt är redo och en ring laddas.
+
+### Markslag, studshopp, väggstuds och spränghopp (ULTRAKILL, Dread Templar)
+- **Markslag:** ducka i luften för att slå ned mot golvet. Det är Ctrl eller duckknappen; på pekskärm RUSA i luften utan att föra spaken framåt.
+  - Stötvågen har radie 2,2. Den skadar, bedövar och knuffar fiender, kastar lätta fiender upp i luften och krossar krukor och lådor.
+- **Studshopp:** hoppar du direkt efter landningen blir hoppet högre.
+- **Väggstuds:** hoppa i luften intill en vägg för att studsa ut från den, högst tre gånger per hopp.
+- **Spränghopp:** smäller din egen granat eller ett krutfat nära dig medan du är i luften kastas du uppåt och bort och tar bara halva skadan (+LUFTFÄRD). På så sätt kommer du över lava och tomrum.
+
+**Tester:** t120–t124.
+
+### Närstrid som går att läsa (ULTRAKILL, Cultic)
+- **Markeringen:** närstridsfiendernas slag syns komma. Strax före träffen blinkar fienden **gult och får en gul romb** ovanför sig.
+- **Parering:** sparka i rätt ögonblick så parerar du (V, sparkknappen på handkontrollen eller handen på pekskärmen).
+  - Slaget uteblir, fienden vacklar och nästa spark avrättar.
+  - Du får +10 överhälsa och +PARERING.
+  - Eliter och champions bedövas bara en kort stund.
+- **Blått med ett kryss** går inte att parera. Det gäller explosiva eliter, orkkrigarens stormning och det tända bombskelettet.
+- Ett kort "ting" hörs när ett slag går att parera.
+- Med FÄRGBLIND eller INGA BLIXTAR blinkar inget: ljuset lyser fast och formen blir större. Markeringen kan stängas av med PARERINGSMARKERING.
+- **Bossar och väktare:** deras hugg, klor, bett och piskor blinkar också gult.
+  - En parering tar bort slaget och bedövar bossen en kort stund, men en boss vacklar aldrig och kan inte avrättas.
+  - Efter en parering dröjer det 4 s innan nästa går.
+  - Markslag med chockvågor, rusningar, dyk och början av specialanfallen är blå och måste undvikas.
+
+### Flygspark (Boltgun, Dread Templar)
+- Sparkar du mot en vacklande fiende under hårkorset, upp till 4,5 rutor bort, kastar du dig fram och avrättar den. Det fungerar även i luften.
+- Flygsparken kostar uthållighet och har 1,2 s nedkylning.
+- Den går inte genom väggar och dörrar, och inte ut över tomrum eller lava.
+
+### Tillbaka till avsändaren (HROT, Cultic)
+- En fiendegranat som landat framför dig, eller en kanonkula eller eldkruka som håller på att landa, kan sparkas tillbaka.
+- Den flyger till kastaren och smäller där (+RETUR).
+
+### Jonglering (ULTRAKILL)
+- Explosioner nära en fiende, och hagelgeväret eller dubbelbössan på nära håll, kastar lätta fiender upp i luften.
+- I luften kan de inte anfalla. De tar 25 % mer skada, och varje träff håller dem kvar en stund till.
+- Dödar du en fiende innan den landat får du +JONGLERING.
+- Landningen gör lite skada, och den som landar i tomrummet faller.
+- Tunga fiender, flygare, bossar och väktare står kvar.
+
+### Huvudet lossnar (Selaco)
+- Ett dödande huvudskott på en fiende av kött eller ben skjuter iväg huvudet. Det skärs ut ur fiendens egen bild, så inga nya bilder behövs.
+- Kroppen står huvudlös ett ögonblick med en kort blodfontän och segnar sedan ned i golvet. Benfiender dammar i stället för att blöda.
+- Fiender som inte står upprätt, som fåglar, hundar och krabbor, dör som förut. Skelett som inte går att skära ut tappar dödskallen.
+- Allt är kortlivat: ett huvud, högst sex droppar och en liten fläck som försvinner efter 8 s.
+- MINSKADE EFFEKTER och HUVUDEN LOSSNAR (under BILD) stänger av det.
+
+### Musiken följer stilen (ULTRAKILL)
+- Stilrangen höjer musikens intensitet ovanpå striden: lite på rang A, nästan fullt från rang S.
+- En ny rang från A till SSS ger en kort syntad stinger och en ram som växer ut från rangbokstaven.
+- STILMÄTARE av eller MUSIKEN FÖLJER STILEN av (under LJUD) stänger av det.
+
+### Hån (Boltgun)
+- Y väcker fienderna inom 10 rutor, och de närmaste anfaller direkt. Tangenten går att byta.
+- Dödar du någon inom 4 s får du +HÅNAD och mer stil. Nedkylningen är 8 s.
+- På handkontrollen väljer du knapp under HANDKONTROLLEN. På pekskärmen finns klockknappen med ALLA KNAPPAR.
+
+### Balansmätning
+- **Upplägg:** spelbottar körde version 23 och version 26 tre gånger var i fem biomer, cirka 190 våningar per version.
+- **Resultat:** dödsfall per våning (0,38 mot 0,39), dödanden per minut och tid per våning ligger inom bruset. Attackpoletterna, befälhavarna och eldkrukan har alltså inte gjort spelet tydligt svårare eller lättare för bottarna.
+- **Inte mätt:** bottarna campar aldrig, så version 25:s granat utlöstes aldrig och är inte mätt.
+
+**Tester:** t125–t133.
+
+## Version 25.1: röster, himlar och fler effekter
+
+### Röster till fiendernas utrop
+- Truppens utrop hörs nu som korta, förvrängda radioröster på svenska eller engelska, efter språkinställningen. Det gäller till exempel "FLANKERA!", "GRANAT!" och "BEFÄLET ÄR DÖTT!".
+  - Soldater och riddare har djup röst.
+  - Spöken och fångar har hes röst.
+  - Kultister, ödlor och schakaler väser.
+- Rösten kommer från fienden i rummet. Inställningen RÖSTER under LJUD stänger av dem, och då hörs bara morrandet som förut.
+- Rösterna är genererade lokalt med espeak-ng och ffmpeg (`tools/sounds/make25_voice.sh`). espeak-ng är GPL-3.0, men ljud som programmet skapar får användas fritt.
+- Test: t116.
+
+### Egna himlar för fler biomer
+- Sex biomer har fått egna himlar:
+  - Öknen: het dis och sandstorm.
+  - Skärselden: blodröd himmel av rök och eld.
+  - Molnborgen: åskmoln med blixtsken.
+  - Vulkanen: askmoln med röd glöd underifrån.
+  - Djungeln: grön dimma.
+  - Fiskeläget: havsdimma.
+- Himlarna går runt 360° och syns också när du tittar uppåt.
+- Biomer med egen himmel har ingen måne, inga nattmoln och inga stjärnfall. Blixtar lyser fortfarande upp himlen.
+- Vulkanens gamla röda ton läggs inte längre ovanpå.
+- Himlarna är gjorda med flux-1-schnell på Cloudflare Workers AI och efterbehandlade lokalt till 512×96 med biomens färger (`tools/cfart/skies.py`, prompterna i `tools/cfart/README.md`).
+- Test: t118.
+
+### Fler Effekseer-effekter
+Sju nya förrenderade effekter från Effekseers CC0-exempel, i spelets pixelstil:
+- **Eld:** brinnande fiender, brinnande mark och eldmoln får lågor.
+- **Gift:** förgiftade fiender och giftmoln får gröna virvlar.
+- **Is:** frusna fiender splittras i is när de dör.
+- **Blixt:** blixtstaven, kedjeblixten och stormrunan slår ut i en blå urladdning, och åsknedslagen från stormfågeln, kardinalen och stormkallaren smäller.
+- **Bossar:** bossarnas chockvågor börjar med en smäll.
+- **Teleport:** när du själv teleporterar dig eller går genom en portal syns en lila portalring mitt i bilden, i stället för den vita puffen som fyllde skärmen.
+- **Helning:** när du helas glittrar det vid hälsan.
+
+Gemensamt för effekterna:
+- Högst 10 effekter syns samtidigt, och brand och gift ger alltid plats åt träffar och explosioner.
+- MINSKADE EFFEKTER ger de gamla effekterna. INGA BLIXTAR dämpar blixtar, smällar och portalen.
+- Alla tio effektstrippar väger tillsammans cirka 52 kB.
+- Källor och licenser står i `tools/effekseer/CREDITS.md`. Test: t117.
+
+### Eldkastarens ljus
+- Eldkastarens stråle lyser upp golv och väggar hela vägen fram. Där strålen slår i en vägg glöder det mest, och ljuset fladdrar.
+- Fiender som träffas börjar brinna, och brinnande fiender och mark som brinner lyser upp omgivningen med ett fladdrande orange sken.
+- Ljuset slocknar när du slutar spruta.
+- Rättning: värmen från strålen stannade kvar efter första skottet. Den släpper nu när du slutar spruta.
+- Test: t119.
+
+### Rättningar
+- **Lobbade skott:** granater, kanonjärens kula, eldkrukan, slammet och svavelklotet går aldrig genom en vägg. De landar före första väggen eller stängda dörren, och den blinkande ringen visar var.
+- **Explosioner** skadar bara den som har fri sikt från smällen. Står du bakom en vägg är du skyddad. Krutfat sätter fortfarande igång varandra, och spruckna väggar rasar som förut.
+- **Sköldvakter:** dödsriddaren håller linjen framför skytten. Den levande rustningen är ingen sköldvakt längre, eftersom den saknar sköld framifrån.
+- **Artefakten:** de gamla paketen `pack1–6.json` (cirka 62 MB) är borttagna.
+
+## Version 25: Befälet – fienderoller och Effekseer-effekter
+
+### Fienderoller: sköldvakt, befälhavare och granatkastare
+Tre nya roller i version 24:s trupper. Undantagen är desamma som i version 24: bossar, väktare, minions och arenafiender får inga roller, och i KLOCKAN finns inga roller alls.
+- **Sköldvakt:**
+  - Sköldbäraren och dödsriddaren ställer sig en dryg ruta framför truppens skytt, på linjen mot dig, med skölden vänd mot dig. Truppens egna skott går igenom vakten.
+  - Går du nära bryter den formationen och anfaller. Dör skytten anfaller den direkt. Den ropar "SKÖLDAR UPP!".
+- **Befälhavare:**
+  - En per trupp med minst tre fiender bär en krigsfana över huvudet. Helst blir det ledaren, en elit eller en champion, annars den talande fienden med mest hp.
+  - Truppen inom 6 rutor går 15 % fortare, laddar om 15 % snabbare, backar mindre och flyr inte ("FRAMÅT!", "HÅLL LINJEN!").
+  - Dör befälhavaren tvekar truppen en sekund, den svagaste flyr och ingen tar befälet på en stund ("BEFÄLET ÄR DÖTT!"). Döda officeren först.
+- **Granatkastare:**
+  - Gömmer du dig för truppen i mer än tre sekunder kastar en kultist, armborstskytt, urverkssoldat, spöksoldat, spökpirat eller gruvarbetare en granat i båge dit de senast såg dig.
+  - Granaten piper allt tätare i 1–1,5 s inom en blinkande röd ring innan den smäller, så spring ut ur ringen. Med INGA BLIXTAR växer ringen i stället för att blinka.
+  - Varje trupp kastar högst en granat på 9–12 s, och granaterna delar nedkylning med eldkrukan från version 24.
+- **Allmänt:**
+  - Allt följer SMART FIENDE-AI, och när den stängs av återställs fart, nedkylning och roller.
+  - Rollerna kostar cirka 1–5 % av fiendeloopen, mätt med 36 fiender och fyrfaldigt strypt processor.
+  - Testkroken heter `__game.roles` och testet t114.
+
+### Effekter från Effekseer (förrenderade)
+Explosioner, magiträffar, magisk laddning och teleporter har nya effekter. De är gjorda i partikelverktyget [Effekseer](https://effekseer.github.io/), som är MIT-licensierat, renderade offline bildruta för bildruta och bearbetade till spelets pixelstil. Spelet innehåller ingen Effekseer-runtime, och de tre nya stripparna är tillsammans cirka 22 kB.
+- **Explosioner** från granater, krutfat och bomber får ett eldklot med chockvåg.
+- **Magiska skott**, både dina och fiendernas, slocknar i en stjärnburst i skottets färg.
+- **Laddning:** kultister, nekromanter och shamaner samlar ljus i handen innan de skjuter.
+- **Teleporter, portaler och fiender som dyker upp** får en ljuspelare som stiger från en ring på golvet.
+- Med MINSKADE EFFEKTER, eller när spelet slår på det automatiskt, visas de gamla effekterna. Med INGA BLIXTAR tonas explosionen in och dämpas.
+- **Källor:** effekterna bygger på Effekseers exempeleffekter av Effekseer Project och tktk, som är CC0.
+- **Pipeline och test:** pipelinen finns i `tools/effekseer/`, och den använder EffekseerForWebGL i headless Chromium. Källor och licenser står i `CREDITS.md`, och testet är t115.
+
+### Också sedan version 24
+- **Slagfältet:** egen grå stridshimmel och nya golv för leran och skyttegravarna. Varje biom kan nu ha en egen himmel i `gfx/sky_<biom>.png`.
+
+## Version 24: Jakten – bandesign, spelloop och fiende-AI
+
+Version 24 bygger om hur fienderna slåss tillsammans och hur banorna hänger ihop. Förebilderna är F.E.A.R. för fiende-AI:n, DOOM (2016) och DOOM Eternal för stridens takt, och DUSK, Ion Fury och Prodeus (de klassiska Doom- och Quake-banorna) för bandesignen.
+
+### Förebilderna och vad vi tog
+
+| Förebild | Hur den fungerar | I Krypta |
+|---|---|---|
+| **F.E.A.R.** (Jeff Orkin, ["Three States and a Plan"](https://pages.cs.wisc.edu/~dyer/cs540/handouts/gdc2006_orkin_jeff_fear.pdf), GDC 2006) | Varje soldat har bara tre tillstånd (gå, animera, använd objekt). En GOAP-planerare söker med A* fram en kedja handlingar mot ett mål. Sensorer fyller ett arbetsminne, och fienden vet bara vad den har uppfattat. En truppkoordinator delar ut roller (ta skydd, avancera, nedhållande eld, flankera, sök). Barks gör beteendet läsbart. | Sensorer och arbetsminne, skyddspunkter, truppkoordinator med fyra roller och barks. I stället för A* används en målväljare, eftersom kedjorna är högst tre steg långa (gå till skydd, kliv ut, skjut). Det ger samma beteende för en bråkdel av CPU:n. |
+| **DOOM** ([Embracing Push Forward Combat](https://gdcvault.com/play/1024940/Embracing-Push-Forward-Combat-in), GDC 2017) | Attackpoletter: bara några fiender får anfalla åt gången, och resten rör sig och positionerar sig. Anfallen förvarnas. Spelaren ska trycka framåt, inte gömma sig. | Attackpoletter i två pooler (närstrid och skott), en glöd som förvarning och press mot den som campar. Laddar du om rusar närstridarna fram. |
+| **DUSK, Ion Fury, Prodeus** ([Game Informer](https://gameinformer.com/2023/10/13/inside-the-rise-of-boomer-shooters)) | Sammanflätade banor med genvägar som öppnas från andra sidan, nycklar som utlöser bakhåll, landmärken, hemligheter med ledtrådar och föremål som brödsmulor. | Genvägar (en del enkelriktade), bakhåll vid nyckeln och kistan, landmärken, brödsmulor, skydd i stridsrum, lugna rum efter svåra strider och ledtrådar vid hemliga väggar. |
+
+### Fiende-AI
+- **Attackpoletter:** högst N närstridare och N skyttar anfaller samtidigt (N = 2 + djupet/2: −1 på lätt och berättelse, +1 på svår, +2 på mardröm).
+  - De andra håller avståndet strax utanför räckhåll, går i sidled och hotar.
+  - Den som väntat längst går först. Den som just anfallit backar om andra väntar.
+  - Skyttarna glöder kort innan de skjuter.
+- **Vakthunden:** ingen fiende står inom räckhåll mer än cirka 4 s utan att få anfalla, så arenavågor, KLOCKAN och partider fungerar som förut.
+- **Sensorer och arbetsminne:** var spelaren senast syntes, om du står still och om du laddar om. Siktkontrollerna har en budget per bildruta.
+- **Skydd:** skyttar (eldskelett, kultister, armborstskyttar, spökbågskyttar) väljer en skyddspunkt som är skymd från dig men har skottlinje från sidosteget. De kliver ut, skjuter och kliver tillbaka. Skyddet används först efter första skottet, så första anfallet kommer lika snabbt som förut.
+- **Truppen**, två gånger i sekunden för alerterade fiender inom 8 rutor från varandra:
+  - UNDERTRYCK: skyttarna som ser dig skjuter först.
+  - AVANCERA: de andra skyttarna flyttar fram mellan skydd.
+  - FLANK: en närstridare går runt och kommer från sidan.
+  - SÖK: när du försvinner sprider de ut sig där de senast såg dig. De fuskar inte.
+- **Press:** står du still bakom skydd i mer än 4 s kommer en eldkruka eller två flankerare.
+- **Barks:** talande fiender säger vad de gör: "FLANKERA!", "HAN LADDAR OM!", "VAR ÄR HAN?", "TÄCK MIG!", "I SKYDD!", "DÄR ÄR HAN!", "MAN NERE!".
+- **Undantag:** bossar och väktare påverkas inte. Arenafiender, eliter, minions och fiender med egna specialbeteenden behåller sitt beteende men följer poletterna. I KLOCKAN är rollerna avstängda.
+- Allt stängs av med INSTÄLLNINGAR → SPEL → SMART FIENDE-AI. Testkroken heter `__game.ai` och testet t112.
+
+### Bandesign
+- **Genvägar:** banorna slingrar tillbaka. Där två delar ligger nära på kartan men långt isär längs vägen öppnar generatorn en dörr i väggen.
+- **Enkelriktade genvägar:** ungefär hälften är låsta från den sida du når först ("ÖPPNAS FRÅN ANDRA SIDAN", rött märke) och öppnas från andra sidan (gult märke, "GENVÄG ÖPPNAD"). Fiender går inte igenom dem medan de är stängda, och de syns röda på kartan.
+- **Bakhåll:** när du tar nyckeln, eller öppnar kistan i ett skattrum, glider en dold nisch i väggen upp och fiender kliver ut ("BAKHÅLL!"). De skapas först då, så andelen dödade fiender och KLOCKAN stämmer.
+- **Landmärke:** en staty med fyra ljus i en central sal och en svag ljuspelare som syns på håll.
+- **Brödsmulor:** ammo och hälsa i gångarna leder mot nyckeln eller utgången.
+- **Takt:** lådor som skydd i stora stridsrum, och en hälsa i första lugna rummet efter ett elitrum eller en arena.
+- **Hemliga väggar:** de ger sig till känna med ett svagt ljus och damm som silar ut.
+- Allt ligger i ett eget pass ovanpå den gamla banan (`content24`, med eget slumpflöde). Samma frö ger samma grundlayout, `opts.v24off` ger exakt version 23, och arenor, hemliga våningar och labyrinter rörs inte. Testa med `node tools/gen-preview.js frost t113-99 2` och testet t113.
+
+### Inte gjort
+- Utsiktsfönster mot rum man når senare: strålkastningen stannar vid första väggen, och att ändra det skulle kräva ändringar i den heta renderloopen.
+- Inga nya nycklar eller lås: bakhållen använder de nycklar och kistor som redan finns.
+
+## Version 23: Slakteriet och Slagfältet
+
+- **Slakteriet (`abattoir`):** inomhus på djup 2–5. Kaklade slakthallar med slaktkakel (ɼ) och kylrumsväggar (ɽ), kylrum med köttkrokar (ʁ, i taket, gungar och knarrar), slaktbänkar (ʂ) och bandsågar (ʃ). Testa med `?biome=abattoir`.
+  - Blodhalt golv (ɿ) har svag friktion: farten bromsas långsamt och du glider. Fiender glider också.
+  - Köttkvarnar (ʀ) gör 12 skada i sekunden. Fiender som knuffas in tar dubbel skada. Bangeneratorn gör dem aldrig till enda vägen.
+  - Flugsvärmar dras till liken.
+- **Det eviga slagfältet (`battlefield`):** utomhus under grå himmel med rök och glöd, djup 4–5 (en sen biom). Lera, skyttegravar, palissader (ʈ), jordvallar (ʉ), trasiga katapulter (ʍ), krigsfanor (ʎ) som vajar och spjutpålar (ʏ). Testa med `?biome=battlefield`.
+  - Djup lera (ʋ) gör dig 45 % långsammare, och du kan inte hoppa ur den.
+  - Katapultmål (ʌ): var sjunde sekund (i olika takt för varje ruta) landar en sten. En skugga och ett visslande kommer 1 s före. Stenen gör 30 skada inom en ruta och lämnar en krater (bara ett märke). En bana har högst åtta mål.
+  - Spjutpålarna gör 4 skada när du går in i dem.
+  - Slagfältets lergolv (`floor_battlemud`) saktar inte, till skillnad från den gamla leran.
+  - Himlen (`gfx/sky_battlefield.png`), lergolvet och skyttegravsgolvet är AI-texturer från Cloudflare Workers AI, efterbehandlade till spelets palett (se `tools/cfart/`). Varje biom kan ha en egen himmel i `gfx/sky_<biom>.png`.
+- **Vapen:**
+  - **Slaktarkroken (ʔ):** kastar en krok på kedja som når 6 rutor. Små fiender dras in till dig. Stora fiender, väktare och bossar drar i stället in dig till dem. Sedan slår kroken (45 skada). Ingen ammo, 1,2 s nedkylning.
+  - **Bombarden (ʕ, ammo kanonkulor från kulpåsar ʖ):** en handkanon med en tung kanonkula (80 skada). Kulan går igenom fiender, tappar 25 % per fiende och studsar en gång i väggar. Högerklick skjuter druvhagel: 8 kulor på kort håll.
+  - Båda har pakter med fyra uppgraderingar var.
+- **Fiender i slakteriet:** slaktaren (ʄ) kastar köttyxor i båge och slåss i närstrid. Grismannen (ʅ) rusar och knuffar dig – kliv åt sidan, så slår den i väggen och blir yr. Flugsvärmen (ʆ) är svag och flyger i moln om tre. Den styckade (ʇ) kryper snabbt längs golvet.
+- **Fiender på slagfältet:** spöksoldaterna (ʐ) går i grupper om tre. Skölden tar 65 % framifrån så länge formationen håller och 35 % när de andra är döda. Spökbågskytten (ʑ) skjuter pilskurar om tre. Spökryttaren (ʒ) rusar i långa raka linjer, vänder och rusar igen (högst två per bana). Kråkorna (ʓ) kommer i flock och dyker.
+- **Bossar:**
+  - **Slaktmästaren:** hugger med köttyxan och kastar en krok som drar dig till honom. Han slänger köttbitar som blir flugsvärmar, sätter igång köttkvarnar i arenan i 6 s och kallar på grismän.
+  - **Krigsherren:** slår med svärdet, svingar en svärdsvirvel och rider i raka linjer. Han blåser i hornet och kallar en formation spöksoldater och beordrar katapultsalvor över arenan.
+  - Båda kan också vara väktare.
+- **Kort:** 16 nya kort, åtta nya kortnycklar och två set: SLAKTARENS VÄG och FÄLTHERRENS VÄG. De nya nycklarna är `slickGrip`, `grinderResist`, `fliesResist`, `mudWalk`, `catapultSense`, `formationBreak`, `hookDmg` och `bombardDmg`. Kortbilderna ritas i `tools/card-art/make.py` (`v23`).
+- **Namnbyten:** lergolvet heter `floor_battlemud` och sköldljudet `ghost_shield_bash`. Ammot heter KANONKULOR (inte KULOR, som musköten redan använder).
+- **Test:** `tools/playtest/t110.mjs` (port 9810).
+
+## Version 22: Badhuset och Skärselden
+
+- **Badhuset (`bathhouse`):** inomhus på mellandjup. Ett romerskt badhus i förfall med mosaikmarmor (ɠ), pelargångar (ɡ), kakel och mosaikgolv, statyer (ɦ), fontäner (ɧ) och bänkar (ɨ).
+  - Heta bassänger (ɣ) gör dig 25 % långsammare och skållar dig med 3 skada i sekunden. Fiender skållas också.
+  - Ånggaller (ɤ) väller upp ånga i 2 s var sjätte sekund, i olika takt för varje ruta. Inom 3 rutor tjocknar dimman kraftigt, men ångan skadar inte. Ångvålnaderna syns bara i ångan och på nära håll.
+  - Kallbad (ɥ) släcker brand direkt och läker 2 hp/s upp till halva hälsan. Varje bad ger högst 30 hp och tar sedan slut.
+- **Skärselden (`purgatory`):** utomhus under blodröd himmel med askregn. Det är en sen biom. Där finns köttmurar (ɭ), benmurar (ɮ), askfält och svavel, kedjade själar (ɲ) som gungar och jämrar sig, benpelare (ɳ) och svavelgrytor (ɴ) som lyser.
+  - Eldfloder (ɰ) gör 6 skada i sekunden och drar dig 1,2 rutor/s med strömmen. Riktningen tas från `level.streams = [{x,y,dx,dy}]`. Saknas fältet räknas riktningen ut från grannrutorna.
+  - Runcirklar (ɱ) lyser upp i 0,8 s när du kliver i dem och kallar sedan fram två eldimpar. Varje cirkel gör det en gång, och en bana har högst tre.
+  - Ljuset mäts i t109: bilden är tydligt röd (rött > 1,3 × blått) men läsbar.
+- **Vapen:**
+  - **Treudden (ɹ):** en stöt utan ammo som når 2,2 rutor, gör 40 skada och går igenom två fiender. Högerklick kastar den (90 skada), och den kommer tillbaka efter 1,2 s. Under tiden slåss du med nävarna.
+  - **Svavelmortern (ɺ, ammo svavel från svavelklumpar ɻ):** lobbar ett brinnande svavelklot i båge. Klotet landar vid fienden i siktet, exploderar (60 skada, 2 rutors radie) och lämnar eld i 3 s. Högerklick ger ett kort skott rakt fram som exploderar vid träff.
+  - Båda har pakter med fyra uppgraderingar var.
+- **Fiender i badhuset:**
+  - Badvakten (ɩ) snärtar med en blöt handduk som gör dig långsam i 1 s.
+  - Ångvålnaden (ɪ) är nästan osynlig och sliter på dig när den är nära.
+  - Gladiatorn (ɫ) har en sköld som tar 75 % av skadan framifrån, kastar ett nät som snärjer och slåss med en treudd.
+  - Mögelkryparen (ɬ) lämnar giftiga sporer där den dör. Sporerna använder den gamla nyckeln `sporeResist`, och eld bränner bort dem.
+- **Fiender i skärselden:**
+  - Eldimpen (ɵ) är snabb och kastar eldklot som bränner kort.
+  - Den plågade själen (ɶ) störtar mot dig och exploderar. Högst fyra per bana.
+  - Köttbjässen (ɷ) rusar och slår i marken så att en chockvåg går ut (hoppa över den). Högst två per bana.
+  - Askvandraren (ɸ) går sönder i aska och reser sig igen en gång efter 3 s, om den inte sprängs eller bränns.
+- **Bossar:**
+  - **Badmästaren:** slår med skopan och kastar skållhett vatten som lämnar en het bassäng i 4 s. Han fyller arenan med ånga, kallar på badvakter och dyker ner i en bassäng för att komma upp i en annan.
+  - **Eldfursten:** slår med klon och låter eld regna ned (med varningsringar). En eldpelare följer efter dig. Han öppnar sprickor med eld i marken i 5 s och kallar på eldimpar och plågade själar.
+  - Båda kan också vara väktare.
+- **Kort:** 16 nya kort, åtta nya kortnycklar och två set: BADGÄSTENS VÄG och DEN FÖRDÖMDES VÄG. De nya nycklarna är `scaldResist`, `steamSight`, `coldPoolHeal`, `shieldBreak`, `streamResist`, `runeQuiet`, `tridentDmg` och `brimstoneDmg`. Kortbilderna ritas i `tools/card-art/make.py` (`v22`).
+- **Namnbyten:** golvet `floor_ashfield`, fontänen `prop_bathfountain` och ljudet `mold_spore_burst`. Fontänljudet är det gamla `fountain`.
+- **Test:** `tools/playtest/t109.mjs` (port 9809).
+
+## Version 21: Järnfängelset och Fiskeläget
+
+- **Järnfängelset (`prison`):** inomhus på mellandjup, med fängelsesten (ɇ), cellgaller (Ɉ), halm och smutsig sten. Där finns cellrader, vaktrum, tortyrkammare och en galggård.
+  - Larmplattor (ɍ) lyser svagt rött. Kliver du på en ringer en klocka: alla fiender inom 14 rutor larmas, och två nyckelknektar kommer in vid närmaste dörr. Varje platta larmar en gång, och en bana har högst tre. Hoppa över dem.
+  - Hängande burar (ɏ) hänger i taket och faller av 25 skada. De släpper ett föremål, och ibland kravlar en kedjefånge ut.
+  - Sträckbänkar (ɐ) och en galge (ɑ) som gungar lätt. Galler som öppnas med spak (|) finns som förut.
+- **Fiskeläget (`harbor`):** utomhus, en sen biom. Det har bryggor över mörkt vatten, kajer av sten (ɋ), bodar (Ɋ), kullersten och bryggplank.
+  - Dimman rullar in och ut i en period på 36 sekunder, och ett mistlur hörs när den är som tätast. Dimman är grå, inte svart (ljuset mäts i t108).
+  - En fyr sveper sin ljuskägla över banan. Den utgår från `level.lighthouse` (om fältet finns), annars från den första fyrlyktan (ɒ).
+  - Fisknät (Ɏ) saktar dig 50 %. Går du in i ett nät fastnar du i 0,6 s, en gång per nät och fjärde sekund. Eld bränner bort näten.
+  - Fisktunnor (ɓ) går sönder av skott och ger ammo, skrot eller fiskrens (5 hp). Ankare (ɔ) står i vägen. Djupvattnet och de ruttna plankorna finns kvar från tidigare biomer.
+- **Vapen:**
+  - **Morgonstjärnan (ɝ):** ett tungt slag (35 skada) som inte kräver ammo. Håll inne högerklick så snurrar kedjan över huvudet och träffar allt inom 1,5 rutor var fjärdedels sekund (18 skada), men du går långsammare.
+  - **Trombonen (ɞ, ammo skrot från skrotpåsar ɟ):** 12 hagel à 7 skada med kort räckvidd, och fienderna knuffas hårt bakåt. Högerklick avfyrar båda laddningarna på en gång, med dubbel rekyl och längre omladdning.
+  - Båda har pakter med fyra uppgraderingar var.
+- **Fiender i fängelset:**
+  - Nyckelknekten (ɕ) blåser i visselpipan när den ser dig. Då larmas alla fiender inom 10 rutor (en gång).
+  - Kedjefången (ɖ) är långsam och svingar kula och kedja i en bred båge som når två rutor.
+  - Tortyrmästaren (ɗ) kastar glödande järn som sätter dig i brand en kort stund. Högst två per bana.
+  - Vakthundarna (ɘ) är snabba och kommer i par.
+- **Fiender i fiskeläget:**
+  - Den drunknade fiskaren (ə) stöter med harpunen två rutor bort.
+  - Fiskmannen (ɚ) gömmer sig i djupvattnet vid bryggkanten och hoppar i en båge mot dig. Högst tre per bana.
+  - Strandkrabban (ɛ) går i sidled och tar 75 % mindre skada framifrån. Från sidan, bakifrån eller med explosioner tar den full skada.
+  - Måssvärmen (ɜ) är svag, flyger i flock, dyker och hackar.
+- **Bossar:**
+  - **Bödeln:** hugger med yxan och skickar en huggvåg längs golvet (hoppa över den). Han kastar en kedjekrok som drar dig till sig. Vid inlåsning fälls galler ned som delar arenan i 8 s. Han kallar också på nyckelknektar.
+  - **Tidvattenprästen:** slår med snäckstaven och låter tentakler skjuta upp nära dig (bubblor varnar 0,7 s innan). Han höjer vattnet i arenan så att du blir långsam, sänder en våg som knuffar dig och kallar på fiskmän.
+  - Båda kan också vara väktare.
+- **Kort:** 16 nya kort, åtta nya kortnycklar och två set: FÅNGENS VÄG och FISKARENS VÄG. De nya nycklarna är `alarmQuiet`, `netResist`, `crabCrack`, `gullResist`, `fogSight`, `flailDmg`, `blunderDmg` och `burnResist`. Kortbilderna ritas i `tools/card-art/make.py` (`v21`).
+- **Test:** `tools/playtest/t108.mjs` (port 9808).
+
+## Version 20: Kloakerna och Öknen
+
+- **Kloakerna (`sewer`):** inomhus, med valvat tegel (Ȭ) och rörväggar (ȭ), fuktig sten och galler på golvet.
+  - Slam (Ȳ) saktar dig 40 % och ger 2 skada i sekunden. Fiender saktas också.
+  - Sprutrör (ȳ) sprutar het ånga i 1 s var fjärde sekund (fasen beror på rutan). Ett väsande varnar 0,5 s innan, och ångan gör 8 skada.
+  - Slussar (ȷ, `level.sluices = [{x,y,open}]`) är vägg när de är stängda och slam när de är öppna. Slussratten (ȶ) öppnar eller stänger alla slussar på våningen, men en sluss som någon står i stängs inte. Saknas `level.sluices` letas slussarna upp i kartan.
+  - Råttbon (ȸ) släpper ut två eller tre råttor var tolfte sekund när du är nära, högst åtta åt gången, tills boet slagits sönder (30 skada).
+- **Öknen (`desert`):** utomhus under stark sol, med sanddyner och sandsten (ȯ), klippor (Ȱ), sand och ruinplattor. Öknen är en sen biom.
+  - Sandstorm: var trettionde sekund tjocknar dimman i sex sekunder, och sand blåser förbi. Sandvålnaderna blir nästan osynliga.
+  - Oaser (ȴ) läker 3 hp/s upp till 60 % av maxhälsan, högst 40 hp per oas. Sedan torkar oasen ut.
+  - Hägringar (ȵ) ser ut som oasvatten på mer än fyra rutors avstånd men är sand när du kommer nära. Kvicksand (¯) finns kvar från gravkammaren.
+  - Kaktusar (ȹ) ger 4 skada om du går in i dem. Amforor (Ⱥ) går sönder av skott och släpper ett föremål, eller ibland en skorpion. Eldkrukor (Ȼ) lyser.
+- **Vapen:**
+  - **Kroksabeln (Ʉ):** snabba närstridssvep (30 skada) som träffar alla i bågen. Högerklick ger ett utfallssteg tre rutor framåt med ett hugg (nedkylning 2 s). Den behöver ingen ammo.
+  - **Fällkastaren (Ʌ, ammo fällådor Ɇ):** kastar en björnsax som landar och slår igen om en fiende som kliver på den (60 skada och fast i 3 s). Högst fyra saxar ligger ute samtidigt.
+  - Båda har pakter med fyra uppgraderingar var.
+- **Fiender i kloakerna:**
+  - Alligatorn (ȼ) ligger gömd under slammet, rusar fram och biter. Högst två per bana.
+  - Slamvarelsen (Ƚ) kastar slamklumpar som lämnar slam där de landar.
+  - Rörmokaren (Ⱦ) är tålig och blir snabbare när den är skadad.
+  - Igeln (ȿ) fäster sig vid dig och suger blod tills du skjuter den eller hoppar tre gånger.
+- **Fiender i öknen:**
+  - Skorpionen (ɀ) är snabb, och svanshugget förgiftar.
+  - Nomaden (Ɂ) kliver undan åt sidan när du siktar på honom.
+  - Sandvålnaden (ɂ) är en flygande sandvirvel som sliter på dig när du är nära.
+  - Gamen (Ƀ) cirklar ovanför dig och dyker först när du har under halva hälsan.
+- **Bossar:**
+  - **Råttkungen:** biter, spyr slam, kallar på råttsvärmar och gräver sig in i väggen för att komma ut någon annanstans.
+  - **Sfinxen:** slår med tassen, skjuter ögonstrålar, kallar på mumier och skorpioner och frammanar en sandstorm i arenan.
+- **Kort:** 16 nya kort, sju nya kortnycklar (hettan använder den gamla `heatResist`) och två set: KLOAKERNAS VÄG och KARAVANENS VÄG. Kortbilderna ritas i `tools/card-art/make.py` (`v20`).
+
+## Version 19: Gruvan och Observatoriet
+
+- **Den övergivna gruvan (`mine`):** inomhus, med timrade stollar (Ȑ) och malmådror (ȑ) som väggar, och gruvjord och plankgolv på golvet.
+  - Räls (Ȗ) är gångbar. Gruvvagnar rullar längs rälsen (`level.carts`, en sluten slinga eller en sträcka fram och tillbaka). Träffas du av en vagn tar du 15 skada och knuffas i färdriktningen. Fiender som träffas tar 40 skada. Rälsens bild väljs efter grannrutorna: vågrät, lodrät eller korsning.
+  - Gasfickor (ȗ) ger 1 skada i sekunden. Eld eller en explosion på rutan ger en explosion med radie 2, och elden sprider sig till gasen intill.
+  - Knakande tak (Ș): står du kvar under det i 0,8 s rasar det. Du tar 12 skada, hamnar på en fri grannruta, och rutan blir en stenbumling.
+  - En gruvvagn i vila (ț) kan du puffa med E. Den rullar då sex rutor rakt fram och gör 60 skada på fiender i vägen.
+  - Dynamitlådor (Ȝ) smäller av skott, eld och explosioner, med radie 3 och 50 skada. Karbidlampor (ȝ) lyser.
+  - Ett skott i en malmåder ger 1 guld första gången. Hackan bryter ut åderns malm för 3 guld, och åderns ruta blir en vanlig stollvägg.
+- **Stjärnobservatoriet (`observatory`):** inomhus högt upp, med mässingspaneler (ȓ, bilden `wall_brass2`) och stjärnkartor (Ȕ).
+  - Stjärnkartegolvet (ș) har låg tyngdkraft: hoppen blir dubbelt så höga och långa.
+  - Kupolspringor (Ț): var 5–8 s faller en meteor på en springruta nära dig. En ring varnar 1 s innan, och nedslaget gör 20 skada i radie 1,2, även på fiender.
+  - Stjärnportar (Ƞ) går i par (`level.starports`) som spegelpalatsets teleportrar.
+  - Planetariet (Ȟ) visar utgången och hemligheterna på kartan. Teleskopet (ȟ) visar alla fiender på kartan i 20 s. Båda går att använda en gång.
+  - Observatoriet är en sen biom och kommer aldrig först i en omgång eller i Avgrundens sexvåningsvarv. Gruvan kan komma först.
+- **Vapen:**
+  - **Hackan (ȩ):** tunga närstridsslag (45 skada) som också slår sönder stenbumlingar, knakande tak och malmådror. Den behöver ingen ammo.
+  - **Stjärnlansen (Ȫ, ammo stjärnstoftsflaskor ȫ):** håll inne avtryckaren 0,2–1,2 s och släpp. Då går en stjärnstråle genom alla fiender i en linje och gör 25–90 skada efter laddningen.
+  - Båda har pakter med fyra uppgraderingar var.
+- **Fiender i gruvan:**
+  - Gruvarbetaren (ȡ) slåss med hackan och kastar ibland en dynamitstav, som landar där ringen lyser.
+  - Kolgolemen (Ȣ) gör 25 % mer skada när den står i eld och exploderar i glöd när den dör. Högst två per bana.
+  - Mullvadsmannen (ȣ) gräver ned sig och kommer upp bredvid dig.
+  - Gnistlyktan (Ȥ) flyger, tänder gasfickor och exploderar svagt intill dig.
+- **Fiender i observatoriet:**
+  - Den stjärnfödda (ȥ) flyger och skjuter stjärnskott som delar sig i tre.
+  - Astronomen (Ȧ) håller avstånd och kallar ned små meteorer där du står.
+  - Urverksugglan (ȧ) dyker mot dig och reflekterar ungefär vart femte skott.
+  - Tomrumsväktaren (Ȩ) är ett svävande öga. Dess stråle av stjärnkyla gör dig långsam i 2 s. Högst två per bana.
+- **Bossar:**
+  - **Gruvförmannen:** slår med släggan, kastar dynamit, släpper gruvvagnar mot dig och får taket att rasa.
+  - **Stjärnskådaren:** skjuter stjärnbilder, låter meteorer regna, öppnar gravitationsbrunnar som drar dig till sig och teleporterar mellan stjärnportarna. Hon kallar också fram stjärnfödda.
+- **Kort:** 24 nya kort, åtta nya kortnycklar och två set: GRUVANS VÄG och OBSERVATORIETS VÄG. Kortbilderna ritas i `tools/card-art/make.py` (`v19`).
+
+## Version 18: Cirkusen och Djungeltemplet
+
+- **Den övergivna cirkusen (`circus`):** inomhus under randiga tält, med tältduk (Ǯ) och djurburar (ǯ) som väggar och sågspån och manegens röda matta på golvet.
+  - Fallluckor (Ǳ) öppnas 1,5 s var sjätte sekund, och varje lucka har sin egen fas. En halv sekund innan skakar de. Står du på en lucka när den öppnas tar du 10 skada och hamnar på senaste säkra ruta. Fiender som står där faller och dör, men inte bossar, väktare eller flygande.
+  - Strålkastare (ǲ) sätter dig i rampljuset: du gör 25 % mer skada, men så länge du står där vet alla fiender på våningen var du är.
+  - Knivkastarhjul (ǳ) skjuter fyra knivar var andra sekund och vrider sig 45° mellan kasten (6 skada). Hjulet går sönder av 40 skada.
+  - Lyckohjulet (Ǵ) kostar 10 guld och kan snurras högst tre gånger. Det ger guld, en dryck, ammo eller ett kort, eller så hoppar en clown fram.
+  - Ballongklasar (ǵ) smäller när du skjuter dem och släpper ett föremål. Girlanger av glödlampor (Ƕ) lyser.
+- **Djungeltemplet (`jungle`):** utomhus, med mossig tempelsten (ǿ) och tät djungel (Ȁ).
+  - Pirayavatten (Ȃ) ger 3 skada var halv sekund och saktar ned 30 %. Fiender som inte flyger tar också skada.
+  - Lianer (ȃ) saktar ned 40 % och brinner bort av eld, precis som taggrankorna.
+  - Guldidolen (Ȅ) ger 40 guld, men utlöser ett bakhåll: 3–5 fiender ur våningens egen pool dyker upp runt dig. Har bangeneratorn lagt ett stenblock i närheten börjar det också rulla.
+  - Pilidoler (ȅ) skjuter en giftpil när du står i linje med dem (räckvidd 8, var 1,5 s).
+  - Giftblommor (Ȇ) sprutar ett giftmoln när du kommer närmare än 1,5 rutor. Tikifacklor (ȇ) lyser.
+  - Cirkusen och djungeltemplet är sena biomer, som trädgården, drömriket och laboratoriet: de kommer aldrig först i en omgång eller i Avgrundens sexvåningsvarv.
+- **Vapen:**
+  - **Käglekastaren (ǽ, ammo kägellådor Ǿ):** kastar tre jonglörkäglor (18 skada var) som studsar två gånger mot väggarna.
+  - **Blåsröret (Ȏ, ammo pilkoger ȏ):** en tyst och snabb giftpil (12 skada och gift i 3 s). En träff nära mitten av fienden är en huvudträff och gör dubbel skada.
+  - Båda har pakter med fyra uppgraderingar var.
+- **Fiender i cirkusen:**
+  - Clownen (Ƿ) tutar och släpper två ballonger när den dör. Ballongerna flyger mot dig och smäller i konfetti, men du kan skjuta ned dem.
+  - Jonglören (Ǹ) kastar tre käglor som studsar en gång.
+  - Styltgångaren (ǹ) sparkar hårt. Skjuter du på benen på nära håll tar den dubbel skada och faller omkull i 2 s.
+  - Knivkastaren (Ǻ) kastar tre knivar i solfjäder.
+  - Cirkuslejonet (ǻ) tar sats och flyger mot dig i ett långt språng.
+  - Marionetten (Ǽ) rycker fram i sina trådar. När den dör faller den ihop och reser sig en gång efter 3 s, om du inte skjuter den medan den ligger.
+- **Fiender i templet:**
+  - Ödlekrigaren (Ȉ) har en sköld som tar halva skadan framifrån.
+  - Blåsrörsjägaren (ȉ) är nästan osynlig tills den skjuter giftpilar.
+  - Apan (Ȋ) stjäl fem ammo till vapnet du håller och flyr. Dödar du den får du tillbaka dubbelt.
+  - Jaguaren (ȋ) är osynlig på mer än fem rutors avstånd och tar språng.
+  - Myggsvärmen (Ȍ) flyger, suger 2 hp per bett och läker sig själv.
+  - Tempelväktaren (ȍ) är en stenstaty som står still tills du kommer nära. Sedan glöder ögonen, och efter en varning kommer en laserstråle som varar 1 s.
+- **Bossar:**
+  - **Cirkusdirektören:** smäller med piskan och kastar knivar. En strålkastare följer dig och sätter eld på marken där ljuset står. Han kallar fram nummer (clowner, lejon och knivkastare) och öppnar fallluckor i manegen runt dig.
+  - **Den fjädrade ormen:** dyker ned i marken och kommer upp under dig, där en ring varnar först. Den spottar gift i bågar, sveper med svansen och kallar på myggsvärmar.
+- **Kort:** 24 nya kort, åtta nya kortnycklar och två set: CIRKUSENS VÄG och TEMPLETS VÄG.
+
+## Version 17: Spökskeppet och Laboratoriet
+
+- **Spökskeppet (`ship`):** ett skepp på ett nattsvart hav, med däck under himlen och kajutor och lastrum under däck. Väggarna är skrov (ǒ) och master med rigg (Ǔ).
+  - Ruttna plankor (Ǎ) brakar igenom om du står kvar 0,6 s: 10 skada, och du hamnar på senaste säkra ruta. Fiender som går på dem bryter dem också (stora direkt), tar skada och kliver upp bredvid.
+  - Sköljt däck (Ǐ) är halt som is, och var sjätte sekund knuffar en våg allt som står på det.
+  - Kanoner (ǎ) avfyras med E dit du tittar, en gång: 60 skada i en linje och en smäll. Skeppslyktor (ǐ) och krutfat (Ǒ) som smäller.
+- **Laboratoriet (`lab`):** kakel (Ǡ) och hyllor med burkar (ǡ).
+  - Syrakar (Ǜ) fräter: först 2 rustning, sedan 4 skada var halv sekund.
+  - En fiende på en transmutationscirkel (ǜ) blir av guld i 3 s: den står still, tar dubbel skada och ger guld om den dör. Själv får du en slumpad dryckeseffekt, högst var 20:e sekund.
+  - Teslaspolar (Ǟ) slår en blixt mot det närmaste levande inom fyra rutor, dig eller en fiende.
+  - Flaskhyllor (ǝ) går sönder i ett moln av gift, frost eller eld. I alembiker (ǟ) brygger du en dryck för 20 guld, högst två gånger.
+  - Laboratoriet kommer, som trädgården och drömriket, aldrig först i en omgång. I Avgrunden är första våningen i varje sexvåningsvarv aldrig en av de tre.
+- **Vapen:**
+  - **Kedjekulekanonen (Ǫ, ammo kulkistor ǫ):** en snurrande kedjekula som går igenom upp till fyra fiender. Två skott och sedan en lång omladdning.
+  - **Syrasprutan (Ǭ, ammo syraflaskor ǭ):** en kort grön stråle. Den skadar över tid och fräter, så att fienden tar 20 % mer skada i 3 s.
+  - Båda har pakter med fyra uppgraderingar var.
+- **Fiender på skeppet:**
+  - Spökpiraten (Ǖ) blir genomskinlig och immun i 1 s efter en träff.
+  - Kanonjären (ǖ) lobbar kanonkulor som landar där en ring lyser.
+  - Den drunknade matrosen (Ǘ) saktar ned dig och lämnar en vattenpöl.
+  - Papegojspöket (ǘ) dyker och stjäl tre guld.
+  - Tentakeln (Ǚ) slår över en ring på 2,2 rutor och dyker upp på ett nytt ställe var åttonde sekund.
+  - Skeppsråttor (ǚ) kommer i flock.
+- **Fiender i laboratoriet:**
+  - Homunkulusen (ǣ) delar sig en gång.
+  - Slemmet (Ǥ) lämnar syrapölar, tar mindre skada av kulor och mer av eld.
+  - Lärlingen (ǥ) kastar flaskor med gift, frost eller eld.
+  - Kvicksilvergolemen (Ǧ) reser sig en gång, om den inte dör av eld eller en explosion.
+  - Flaskgasten (ǧ) smäller vid kontakt.
+  - Kimären (Ǩ) växlar mellan bett, eld och giftspott.
+- **Bossar:**
+  - **Spökkaptenen:** sabel och flintlåspistol. Han blir till dimma och är då immun, kallar på besättningen och skjuter kanonsalvor med varningsringar.
+  - **Alkemisten:** dricker drycker som gör honom till jätte, blixtsnabb eller osynlig (han syns bara när han kastar). Han kastar flaskor, förvandlar golvet till syra och väcker homunkulusar och flaskgastar.
+- **Kort:** 24 nya kort, åtta nya kortnycklar och två set: SKEPPETS VÄG och LABORATORIETS VÄG.
+
+## Version 16: Trädgården och Drömriket
+
+- **Den döda trädgården (`garden`):** utomhus, med häckar (Ɵ), murar (Ơ), fontäner (Ƨ) som läker en gång och stenstatyer (ƨ). Taggrankor (ƥ) river och saktar ned, och de brinner bort av eldkastaren, brinnande mark och eld.
+- **Drömriket (`dream`):**
+  - Drömväggar (Ƣ) och glidande väggar (ƣ, `level.shifts`) som är uppe 2 s och nere 2 s. De stänger aldrig på någon.
+  - Falska dörrar (Ʃ) som väcker en drömätare.
+  - Drömlyktor (ƪ).
+  - Sömnens dimma (Ʀ): fiender längre bort än 4 rutor blir nästan osynliga, och du blir dåsig.
+- **Banorna:** trädgården byggs utomhus med häckgångar, murade trädgårdar, statygångar och fontängårdar; drömriket med schackbrädesalar, salar med rader av glidande väggar och rum med falska dörrar. Båda kommer aldrig först i en omgång. Bossarenorna `garden` och `dream` finns, och trädgårdsmästaren och Jon Blund vaktar även vanliga våningar.
+- **Vapen:**
+  - **Trädgårdssaxen (Ʊ):** två snabba klipp. Högerklick kastar saxen, som kommer tillbaka.
+  - **Drömstaven (Ʋ, ammo drömflaskor Ƴ):** en långsam stjärna som saktar ned allt den passerar och smäller i sömn (bedövar).
+- **Fiender:**
+  - Stenängeln (ƫ) rör sig bara när du inte tittar på den.
+  - Taggrankan (Ƭ) är rotad men når långt.
+  - Trädgårdsdrängen (ƭ).
+  - Drömätaren (Ʈ) äter ljus och släcker lampan.
+  - Speglingen (Ư) skjuter när du skjuter och rör sig spegelvänt.
+  - Sömngångaren (ư) går inte att smyga förbi och spricker i sömnpulver.
+- **Bossar:**
+  - **Trädgårdsmästaren:** saxhugg, frön och rankor, och väcker statyer.
+  - **Jon Blund:** sömnsand och språng. Han släcker ljuset och väcker dina spegelbilder.
+
+## Version 15: Katedralen och Bikupan
+
+- **Blodkatedralen (`cathedral`):**
+  - Ljusstråk (ƍ) välsignar dig, vilket ger +30 % skada en stund.
+  - Blodfuntar (Ə) läker fiender inom 4 rutor. Slå sönder dem med E.
+  - Klockor (Ɛ) bedövar fiender inom 6 rutor men väcker resten av våningen.
+  - Kyrkbänkar (Ǝ).
+- **Bikupan (`hive`):** honung (Ɩ) som klibbar fast. Larvsäckar (Ɨ) kläcks när du kommer nära, men går att krossa med E innan dess.
+- **Banorna:** katedralen har ett långhus med bänkrader, kor och altare, dopkapell och klocktorn; bikupan sexkantiga vaxceller, larvkammare och honungssalar, och arbetsbin i svärmar om 3–6. Bossarenorna `cathedral` och `hive` finns, och kardinalen och bidrottningen vaktar även vanliga våningar.
+- **Vapen:**
+  - **Rökelsekaret (ƛ):** ett varv runt dig som träffar allt omkring, och röken läker dig lite.
+  - **Bikastaren (Ɲ, ammo bikupor ƞ):** bin som söker upp fiender och sticker dem tre gånger.
+- **Fiender:**
+  - Korgossen (Ƒ) läker och skyddar fiender omkring sig.
+  - Botgöraren (ƒ) blir snabbare ju mer skadad den är.
+  - Keruben (Ɯ) skriker så att siktet hoppar.
+  - Arbetsbiet (Ƙ).
+  - Gaddkrigaren (ƙ) rusar med gadden och förgiftar.
+  - Larven (ƚ) spottar syra.
+- **Bossar:**
+  - **Kardinalen:** heligt ljus slår ned, eldringar, blodmässa och en kör.
+  - **Bidrottningen:** rusning, honungspölar, svärmar och ägg.
+
+## Version 14: Arenorna
+
+- **Arenarum (`level.arenas`):** när du går in fälls gallren ned i dörröppningarna och två eller tre vågor av våningens fiender kommer. När den sista är död går gallren upp, och en belöning (ett kortval, guld och hälsa eller ammo) ligger i mitten.
+- **Arenornas regler:** från våning 2 i ungefär varannan bana i biomerna med raka rum (aldrig start-, väktar- eller utgångsrummet). Ålar och jordmaskar kommer inte i vågorna, och en våg som inte går att döda släpper efter 45 sekunder.
+- **Sjutton nya rumstyper**, en per gammal biom: till exempel pelarsalen, stencirkeln, bron över lavan, kristallkatedralen och läsesalen. Ungefär var fjärde bana får en.
+- **Sex fiender i de mellersta biomerna:**
+  - Snöfantomen (Ƅ, frost): nästan osynlig tills den är nära.
+  - Lavaormen (ƅ, vulkan): dyker ned och bryter upp och spottar lava.
+  - Skarabéprästen (Ɔ, gravkammaren): väcker skarabéer och lägger en sandförbannelse.
+  - Kristallspindeln (Ƈ, kristall): nät som saktar ned.
+  - Marulken (ƈ, sjunkna staden): lockar med ljus och drar ned dig.
+  - Vindanden (Ɖ, molnborgen): blåser dig mot kanten och tar nästan ingen skada innan den fäster sig.
+
+## Version 13: Biblioteket och Gjuteriet
+
+- **Det förbjudna biblioteket (`library`):**
+  - Bokhyllor (ũ) i rader och pulpeter (Ű), där en bok ger kartan, läkning, raseri eller kunskap.
+  - Kandelabrar (ű).
+  - Bläck (Ŭ) som gör dig halvblind och långsam.
+- **Gjuteriet (`foundry`):**
+  - Rullband (Ÿ, `level.belts`) som för med sig dig, fiender och föremål. Texturen vrids efter riktningen och animeras.
+  - Smält metall (Ź).
+  - Ångventiler (ź) som väser innan de blåser.
+  - Stansar (Ż) som slår ned var tredje sekund.
+- **Vapen:**
+  - **Runboken (ƀ, ammo bläck Ƃ):** målsökande runor. Högerklick ger en virvel av sidor som fångar skott.
+  - **Ångkanonen (Ɓ, bränsle):** en kon av skållande ånga som knuffar och blåser bort skott.
+- **Fiender:**
+  - Flygande bok (Ų).
+  - Bläckslem (ų): delar sig och lämnar bläck.
+  - Arkivariespöke (Ŵ): blinkar och väcker böcker.
+  - Smältgolem (Ž): lämnar brinnande metall.
+  - Ångautomat (ž): sprutar ånga.
+  - Gnistdrönare (ſ): exploderar.
+- **Bossar:**
+  - **Bibliotekarien:** runor, bläck, språng mellan hyllorna och en storm av sidor.
+  - **Smideskolossen:** markslag med chockvågor, smält metall ur ugnen, rusning och eld runt sig.
+
+Nya bossar kommer med i turordningen först när bangeneratorn kan bygga deras arena.
+
+## Version 12: Blodets rytm
+
+Version 12 gör om stridens grundloop. Den jämfördes först med tolv moderna boomer shooters: vad belönar de, vad driver spelaren framåt och vad saknade Krypta?
+
+**Jämförelsen**
+
+| Spel | Loopens kärna | Fanns i Krypta? | Version 12 tar |
+|---|---|---|---|
+| DOOM Eternal | Avrättning ger hälsa, eld ger skydd, motorsåg ger ammo: resurserna tas från fienderna | Delvis (livsstöldkort) | Avrättningar, resursloopen |
+| ULTRAKILL | Stilmätare D–SSS, blod läker när du är nära, parering läker, betyg per bana | Kombo i guld | Stilmätaren, blodläkning, sparkparering, betyg |
+| Klassiska DOOM | Fiender som träffar varandra börjar slåss inbördes | Nej | Inbördes strid |
+| Quake | Megahälsa över max som sjunker tillbaka | Nej | Överhälsa |
+| DUSK | Snabb rörelse, glidning, hemligheter, tabell per bana | Glidning, hemligheter, tabell | Glidhopp |
+| Turbo Overkill | Glidningen är ett vapen (motorsågsben) | Nej | Glidspark |
+| Mullet MadJack | Tio sekunder att leva, dödanden köper tid | Nej | Utmaningen KLOCKAN |
+| Amid Evil | Själsläge som laddas av dödanden | Förmågekort som laddas av dödanden | – |
+| Ion Fury | Förstörbar miljö, många hemligheter | Ja (krutfat, krukor, hemligheter) | – |
+| Prodeus | Köttbitar, tydliga resurser, automap | Ja | Föremål dras till dig |
+| Cultic | Glidning, vapenhjul som saktar tiden | Ja (vapenhjulet saktar tiden) | – |
+| Warhammer 40K: Boltgun | Tung närstrid som en del av skjutandet | Yxa, hammare, spark | Närstrid avrättar och ger ammo |
+| Nightmare Reaper | Roguelite med slumpade vapen | Kort, pakter och legendariska vapen | – |
+
+Snabba vapenbyten är gemensamt för nästan alla tolv, så bytet är nu ungefär en tredjedel snabbare.
+
+**Listan, och vad som är gjort**
+1. **Stilmätaren (stor):**
+   - Varje död ger poäng, och variation ger mer: nytt vapen, i luften, glidning, huvudträff, flerdöd, smygdöd, i bitar, sprängd, närstrid, avrättning, parering och inbördes strid.
+   - Att använda samma vapen gång på gång halverar poängen, och skada sänker mätaren.
+   - Nivåerna är D (DÖDANDE), C (CHOCKERANDE), B (BRUTALT), A (ANARKISTISKT), S (SKONINGSLÖST), SS (SADISTISKT) och SSS (KRYPTISKT). Från B ger varje död extra guld, och från A extra erfarenhet.
+   - Mätaren är en ruta till höger och kan stängas av i inställningarna.
+2. **Avrättningar (stor):** fiender på 25 % hälsa vacklar och blinkar blåvitt. En spark eller ett närstridsslag avrättar dem direkt och ger 15 hälsa och kort osårbarhet.
+3. **Sparkparering (mellan):** V sparkar tillbaka skott framför dig. De flyger mot skytten med 2,5 gånger skadan och ger 10 hälsa och stilpoäng.
+4. **Överhälsa (liten):** avrättningar och pareringar kan ge upp till 150 % hälsa. Överskottet sjunker två hälsa i sekunden, och vanlig läkning sänker det aldrig.
+5. **Resursloopen (mellan):**
+   - Dödanden närmare än två rutor läker 3.
+   - Fiender som brinner när de dör ger 6 skydd.
+   - Närstridsdödanden ger ammo till alla vapen du bär.
+6. **Inbördes strid (mellan):**
+   - Fiendernas skott skadar andra sorters fiender, och den som träffas ger igen i sex sekunder.
+   - Närstridsfiender går fram och slår, och skyttar skjuter tillbaka.
+   - Samma sort skadar inte varandra.
+7. **Glidspark och glidhopp (liten):** glidningen sparkar undan fiender i vägen, och ett hopp mitt i en glidning behåller farten.
+8. **Våningsbetyg (mellan):**
+   - Tid mot par (25 s + 5 s per fiende), andel dödade, hemligheter, skada och högsta stil ger betyget S, A, B, C eller D.
+   - Betyget ger 50, 30, 15, 5 eller 0 guld och visas stort i våningens tabell.
+9. **KLOCKAN (mellan):** en ny utmaning som kan kombineras med de andra.
+   - Du har tio sekunder att leva. En död ger 3 sekunder, en snygg död 4,5 och en avrättning fyller på allt, upp till 12.
+   - Klockan står still när det inte finns något att döda. Träffar på bossen ger lite tid, och läget ger +60 % själar.
+10. **Snabbare vapenbyten (liten):** fram 0,22 s och undan 0,14 s, tidigare 0,32 och 0,22.
+11. **Magnet (liten):** guld, hälsa, ammo och andra småsaker som fiender tappar dras till dig inom två rutor.
+12. **Fem prestationer:** BÖDELN, PARERINGSMÄSTAREN, KRYPTISKT, FELFRI och SPLIT OCH HÄRSKA.
+
+Sådant som redan fanns i Krypta och inte behövde göras om: själsläget (förmågekorten laddas av dödanden), förstörbar miljö, hemligheter, kombo, glidning, vapenhjulet och slumpade vapen (legendariska vapen och pakter).
+
+## Version 11: Svampriket och Spegelpalatset
+
+Version 11 lägger till två nya biomer med egna mekaniker:
+- **Bilder:** ritas med `tools/props9/make.py`.
+- **Ljud och musik:** byggs med `tools/sounds/make9.sh`.
+- **Bangeneratorn:** har fått biomerna, arenorna och väktarna.
+
+**Två nya biomer**
+- **Svampriket (`fungus`):**
+  - Grottor med glödsvampar (Ŧ) som lyser.
+  - Studsplattor (ţ) kastar dig långt i den riktning du går, med lång lufttid.
+  - Sporpölar (Ť) vänder på styrningen en stund och ger syner av fiender som inte finns.
+- **Spegelpalatset (`mirror`):**
+  - Marmorsalar med spegelväggar (š) som studsar alla skott, både dina och fiendernas. Kulor kan studsa upp till tre gånger och träffa runt hörn.
+  - Teleportrar (ť) går i par (`level.teleports`).
+  - Spegelstatyer (ŧ).
+
+**Tre nya vapen, med pakter och uppgraderingar**
+- **Sporkastaren (Ŕ, ammo sporsäckar Ũ):** sporbollar i båge som lämnar giftmoln. Svampfolket läker sig i molnen.
+- **Spegelskölden (ŕ):**
+  - Slaget knuffar fiender.
+  - Höger musknapp håller upp skölden. Skott framifrån studsar då tillbaka, och slag framifrån tar bara en fjärdedel av skadan.
+  - Den som höjer skölden precis före träffen parerar: skottet går tillbaka mot skytten.
+- **Piskan (Ŗ):**
+  - Lång räckvidd, och spetsen smäller hårdast.
+  - Drar mindre fiender till dig.
+
+**Sex nya fiender**
+- **Sporling:** spricker i ett giftmoln.
+- **Mycelbest:** läker sig i sporer.
+- **Svampshaman:** kastar sporbollar och väcker sporlingar.
+- **Spegelriddare:** studsar skott framifrån när skölden är uppe.
+- **Illusionist:** byter plats med falska kopior som försvinner vid en träff.
+- **Glasskärva:** splittras i skärvor när den dör.
+
+**Två nya bossar**, som även kan dyka upp som väktare:
+- **Mycelmodern (boss9):** sporbollar, mycel som växer upp under dig, ett tungt markslag och ett sporfält som hon läker sig i.
+- **Spegelkungen (boss10):** glasskärvor och en speglande ställning som skickar tillbaka skotten. Han delar sig också i spegelbilder och byter plats med en av dem, och när den äkta kungen träffas krossas bilderna.
+
+**Mer**
+- 24 nya kort, två nya set och åtta nya kortegenskaper:
+  - sporeResist, bounceHeight, teleportShield, reflectDmg
+  - illusionSight, mirrorShards, fungusHeal, whipReach
+- Tre nya prestationer. Nyheterna och handboken är uppdaterade.
+
+**Lugnare gränssnitt**
+
+Förebilderna är Doom, Quake, Wolfenstein 3D och Ultrakill: bilden ska vara ren, och informationen ska ligga där man vet att den finns.
+- **Statuslisten:** fem lika fält (hälsa, skydd, ammo, vapen, våning), med en stor siffra och en liten etikett under.
+  - Vapenrutorna, dödsräknaren och kortantalet är borta från listen; de finns i målet, pausen och kortlistan.
+  - Granater, nycklar och vapennivå ligger på en rad under vapnets namn.
+- **Meddelanden:** ett i taget, och det förra bleknar under det.
+  - De väntar medan titelkortet visas och läggs under bossens livmätare.
+  - Samma meddelande visas inte två gånger.
+- **Titelkortet:** bara namn och undertitel, plus högst en rad om händelse eller förbannelse.
+  - Bossens entré visas inte samtidigt som våningens titelkort.
+- **Minikartan och målet:**
+  - Minikartan är mindre och genomskinligare.
+  - Målet syns tydligt när det ändras och bleknar sedan.
+  - Medan en boss eller väktare syns visas livmätaren i stället för målet.
+- **Pausen:** en lugn panel med rundans uppgifter och två rader tangenter. Hela tangentlistan finns i handboken.
+- **Våningsstatistiken och dödsskärmen:** raka tabeller utan överlapp. Tipset och tangenterna ligger längst ned.
+- **Startskärmen:** NY RUNDA och DAGENS RUNDA först, sedan LÄGRET, KAMPANJEN och FLER LÄGEN.
+  - Svårighet, klass, följeslagare, utmaningar och sparplats samlas under ANPASSA RUNDAN, med en sammanfattning bredvid.
+  - Fröet ligger under FLER LÄGEN, och känslighet och synfält finns i inställningarna.
+- **Kortvalet:** FÖRE → EFTER visas bara när kortet ändrar något man redan har.
+
+## Version 10: Nya invånare
+
+Version 10 fyller de tidiga biomerna, som man ser oftast, med nytt liv:
+- **Bilder:** ritas med `tools/props8/make.py`.
+- **Ljud och musik:** byggs med `tools/sounds/make8.sh`.
+- **Bangeneratorn:** har fått nya fiender i de gamla biomerna och legendaltaret.
+
+**Sex nya fiender i de gamla biomerna**
+- **Fångvaktaren (kryptan):** kastar en kedja som binder dig.
+- **Grävaren (grottorna):** gräver under marken och bryter upp under dig.
+- **Likgrävaren (kyrkogården):** väcker döda kroppar till skelett.
+- **Rotvättet (skogen):** låter rötter skjuta upp där du står.
+- **Armborstskytten (borggården):** skjuter långt och söker skydd.
+- **Paddjätten (träsket):** drar dig med tungan och hoppar.
+
+**Legendariska vapen**
+- Sex varianter av befintliga vapen, med egna bilder och ljud:
+  - **Drakbössan:** sätter fyr.
+  - **Frostgeväret:** fryser.
+  - **Själapistolen:** läker.
+  - **Åskstaven:** blixtar.
+  - **Blodyxan:** livsstöld och raseri.
+  - **Månbågen:** märker fienden så att den tar mer skada.
+- Hittas sällan hos eliter och väktare, eller köps vid legendaltaret (Œ) för guld eller själar.
+
+**Följeslagare**
+- Eldflugan, stengolemen och ugglan är nya, och själaaltarets FLOCKEN har sex nivåer.
+- Alla sex följeslagare har nu egna bilder, även korpen, lyktan och vargvalpen som tidigare lånade andra fienders bilder.
+
+**Banbyggaren**
+- Rita egna banor på ett rutnät av 32 × 24 rutor (FLER LÄGEN → BANBYGGAREN). Det går med mus eller finger.
+- Det finns väggar, dörrar, start och utgång, nio fiender, föremål och faror, och man väljer vilken biom banan ska se ut som.
+- PROVSPELA kontrollerar först att utgången går att nå. När man når utgången kommer man tillbaka till byggaren.
+- DELA LÄNK kopierar en länk med banan inbakad (`?bana=…`), så att andra kan spela den.
+
+**Mer**
+- Startskärmen är städad: de vanligaste valen syns direkt, resten ligger under FLER LÄGEN och SAMLINGAR.
+- Egen musik i Lägret och en fanfar när ett kampanjkapitel börjar.
+- Två prestationer för legendariska vapen.
+
+## Version 9: Klocktornet och Molnborgen
+
+Version 9 lägger till två biomer, tre vapen, sex fiender och två bossar, så att det finns tolv bossar totalt:
+- **Bilder:** ritas med `tools/props7/make.py` och `tools/weapon-frames`.
+- **Ljud och musik:** byggs med `tools/sounds/make7.sh`.
+- **Kort:** byggs med `tools/card-art/make.py` (`make.py . v9`).
+- **Bangeneratorn:** har fått biomerna Klocktornet och Molnborgen, två arenor och två väktare.
+
+**Klocktornet**
+- Sågklingor åker fram och tillbaka i spår i golvet.
+- Tidsbubblor saktar in allt inuti dem: dig, fienderna och skotten.
+- Urverk ger ljus, och ett klockspel (Ň) stannar urverken en stund.
+
+**Molnborgen**
+- Flytande öar över ett tomrum. Faller du hamnar du på senaste säkra plats och tar skada.
+- Vindrutor knuffar dig, och vindbyar kommer med jämna mellanrum.
+- Åskan slår ned där marken glöder, men blixtstänger drar till sig den.
+- Molnkistor kan öppnas.
+
+**Tre nya vapen**
+- **Sågbladskastaren:** klingor som studsar mot väggar och går igenom fiender. Ammon är kugghjul.
+- **Vindbössan:** laddas av sig själv. Den knuffar fiender in i väggar eller ut i tomrummet och blåser tillbaka skott.
+- **Spjutet:** stöter med vänsterklick och kastas med högerklick. Gå över spjutet för att plocka upp det.
+
+**Sex nya fiender**
+- Urverkssoldat, som lindas upp igen en gång efter döden.
+- Kuggspindel.
+- Tidsväktare, som lägger tidsbubblor.
+- Harpya, som dyker ned.
+- Stormkallare, som kallar på blixtar.
+- Molnjätte, som blåser bort dig.
+
+**Två nya bossar**
+- **Urmakaren:** sågklingor, tidsbubblor och urverkssoldater. Han kan vrida tillbaka tiden och få tillbaka hälsa.
+- **Stormfågeln:** dyker, kallar ned åskstormar, skickar harpyor och blåser dig mot kanten.
+
+**Kampanjen**
+- Sex kapitel i fast ordning:
+  1. Kryptan
+  2. De dödas marker
+  3. Is och eld
+  4. Sanden
+  5. Djupet
+  6. Himlen
+- Varje kapitel har en kort berättelse, två våningar i bestämda biomer och en bestämd boss.
+- Senare kapitel börjar med fler vapen, mer guld och fler talangval.
+- Kapitlen nås med knappen KAMPANJEN eller från en portal i Lägret.
+- När hela kampanjen är klar öppnas Krönikans slut.
+
+**Krönikans slut**
+- När alla krönikesidor är hittade öppnas en portal i Lägret till den hemliga slutbossen, Den förste munken.
+- Han strider i tre faser med krafter från Faraonen, Kristalldrottningen och Stormfågeln, och kan dessutom vrida tillbaka tiden som Urmakaren.
+- Segern ger 150 själar, en prestation och titeln DEN SISTE MUNKEN.
+
+**Mer**
+- Klassen Spjutbäraren.
+- Skjutbanan i Lägret: provdockor som visar skada per sekund.
+- Fyra nya elitegenskaper: tidsbunden, åskande, prismatisk och stormvind.
+- Vapenmästaren i Lägret, där vapen med 100 dödanden kan väljas som startvapen.
+- Fjädrar ger dubbelhopp en våning.
+- 6 prestationer, 4 krönikesidor och nya kort.
+
+## Version 8: Avgrunden
+
+Version 8 gör spelet större med två biomer, ett talangsystem, ett nytt läge och mycket nytt innehåll:
+- **Bilder:** ritas med `tools/props6/make.py` och `tools/weapon-frames`.
+- **Ljud och musik:** byggs med `tools/sounds/make6.sh`.
+- **Kort:** byggs med `tools/card-art/make.py` (`make.py . v8`).
+- **Bangeneratorn:** har fått biomerna Kristallgrottorna och Den sjunkna staden, två nya bossarenor och två nya väktare.
+
+**Erfarenhet och talanger**
+- Dödanden, kunskapsböcker (Ģ) och talangaltare (Ġ) ger erfarenhet. Varje ny nivå ger ett val av tre talanger.
+- Det finns 30 talanger i tre grenar: Krigaren, Skuggan och Mystikern. Några kräver en annan talang först, och många har flera rangar.
+- Talangskärmen (`CardUI.talents`):
+  - 1–3 väljer en talang, R slår om och T visar hela trädet.
+  - Pausmenyn visar dina talanger.
+
+**Två nya biomer**
+- **Kristallgrottorna:**
+  - Glödande kristaller och kristallådror ger färgat ljus, och kristallspikar skadar.
+  - Brytande kristaller (Ė) delar varje skott, även prismans strålar, i tre.
+- **Den sjunkna staden:**
+  - I djupt vatten (Đ) simmar du långsamt och kan inte hoppa.
+  - En luftmätare töms under vattnet, och luftbubblor (Ĝ) fyller på.
+  - Tidvattenrutor (Ĕ) blir djupa med jämna mellanrum.
+  - Vrakkistor kan innehålla skatter, eller vara en mimic.
+
+**Tre nya vapen** (med pakter och fyra uppgraderingar vardera)
+- **Harpunen:** drar fienden till dig. Träffar den en vägg drar den dig dit.
+- **Bumerangen:** flyger ut, träffar och kommer tillbaka.
+- **Prisman:** en kristallstråle som studsar mot väggar.
+
+**Åtta nya fiender**
+- Kristallgolem, som slår sönder marken.
+- Skärvirrbloss, som skjuter skärvor och hoppar undan.
+- Drunknad sjöman, med en båtshake som drar.
+- Ål, som bara finns i djupt vatten.
+- Siren, vars sång drar dig mot henne.
+- Jättekrabba, med ett skal som skyddar framifrån.
+- Skuggjägare, som bara syns i ljus.
+- Häxa, som förhäxar dig och teleporterar sig.
+
+**Två nya bossar**
+- **Kristalldrottningen:** skärvsalvor, studsande strålar och en spegelsköld som skickar tillbaka skotten.
+- **Leviatan:** dyker i bassängen och kommer upp någon annanstans, sprutar vatten, skickar vågor och kallar på ålar.
+
+**Avgrunden**
+- Ett nytt läge med oändlig nedstigning genom slumpade biomer.
+- Varje våning är svårare än den förra, och det kommer en boss var sjätte våning.
+- Djupaste våningen sparas som rekord.
+
+**Lägret**
+- Ett gångbart nav mellan rundorna (knappen LÄGRET).
+- Portaler leder till Ny runda, Dagens runda, Avgrunden, Dagens avgrund, Labyrinten, Bossjakten och Fortsätt.
+- Figurerna ger själaaltaret, kortarkivet med bestiarium och statistik, upplåsningar, övning och krönikan.
+- Det står en staty för varje boss du har besegrat.
+
+**Mer**
+- Dagens avgrund: samma frö för alla en dag, med topplista.
+- Våningshändelserna Visdomens natt, Resonans (kristall) och Stormflod (sjunken stad).
+- Själaaltaret: Visdomen, Ödets tärning och Förberedelsen.
+- Handkontrollen styr alla menyer.
+- Förstagångstips för de nya systemen.
+- Kartografen säljer kartor och hemligheter.
+- Den nya klassen Dykaren.
+- 24 nya kort och två nya set: Djupets väg och Prismans väg.
+- 10 nya prestationer och nya dagliga uppdrag.
+- Statistik för Avgrunden och nivåer.
+
+**Rättelser**
+- Kastknivarna drog två knivar per kast.
+- Kvicksanden sänkte aldrig kameran.
+- Laddhinten visades för närstridsvapen.
+
 ## Assets som används
 
 | Vad | Källa |
@@ -1306,6 +2458,20 @@ Kombinerade utmaningar multiplicerar själarna. Sparplatsen väljs på startskä
 | Version 7: mumie, schakalkrigare, ficktjuv, skarabé, dubbelgångare, Faraonen, NPC:er, Gravkammarens texturer, rekvisita, föremål, partiklar och ikoner | `tools/props5/make.py`. Faraonen bygger på TinyRPG *Demon* och dubbelgångaren på Warped *cyberpunk-detective* (Legacy Collection, Ansimuz, CC0); mumien, schakalen, ficktjuven och NPC:erna på *Pixel Crawler 2.11* (Anokolisa); ytor från Kenney *retro-textures-fantasy* och *Classic64* (CC0); resten ritas i skriptet |
 | Version 7: 47 ljud och musiken för Gravkammaren, Faraonen, smyg och labyrinten | `tools/sounds/make5.sh`: Kenney *impact-sounds*, *rpg-audio*, *casino-audio* och *voiceover-pack* (CC0), 400 Sounds Pack (CC0); musiken och rösterna syntetiseras i skriptet |
 | Version 7: 35 nya kortbilder | `tools/card-art/make.py` ur `assets/ashfall-ai/flux` och effektbilder; pakternas vapen ritas i skriptet |
+| Version 8: harpun, bumerang, prisma | harpunen ur KayKit *Fantasy Weapons Bits* (`spear_A`, CC0), prisman byggd på *Guns&Explosives*, bumerangen och handen byggda av enkla former i `tools/weapon-frames` |
+| Version 8: åtta fiender, Kristalldrottningen, Leviatan, kristall- och ruintexturer, vatten, props, partiklar, ikoner och 30 talangikoner | `tools/props6/make.py`. Sjömannen, häxan och kartografen bygger på *Pixel Crawler 2.11* (Anokolisa), sirenen på Gothicvania *Dancing Girl*, skuggjägaren på *WereWolf* och Kristalldrottningen på TinyRPG *Witch* (Legacy Collection, Ansimuz, CC0); ytor från Kenney *retro-textures-fantasy* och *Classic64* (CC0); golemen, ålen, krabban, Leviatan och resten ritas i skriptet |
+| Version 8: 45 ljud och musiken för Kristallgrottorna, Den sjunkna staden, två bossar och Avgrunden | `tools/sounds/make6.sh`: Kenney *impact-sounds*, *rpg-audio* och *voiceover-pack* (CC0), 400 Sounds Pack (CC0); musiken och rösterna syntetiseras i skriptet |
+| Version 8: 39 nya kortbilder | `tools/card-art/make.py . v8` ur `assets/ashfall-ai/flux` och `assets/ashfall-ai/meshy/icons`; pakternas vapen ritas i skriptet |
+| Version 9: sågbladskastare, vindbössa, spjut | sågbladskastaren och vindbössan byggda på *Guns&Explosives* (GreaseGun, Luger), spjutet ur KayKit *Fantasy Weapons Bits* (`spear_A`, CC0), renderade med `tools/weapon-frames` |
+| Version 9: sex fiender, Urmakaren, Stormfågeln, mässings-, kugg-, moln- och stormtexturer, props, partiklar och ikoner | `tools/props7/make.py`. Urverkssoldaten och stormkallaren bygger på *Pixel Crawler 2.11* (Anokolisa); ytor från Kenney *retro-textures-fantasy* och *Classic64* (CC0); tidsväktaren, kuggspindeln, harpyan, molnjätten, bossarna och resten ritas i skriptet |
+| Version 9: 38 ljud och musiken för Klocktornet, Molnborgen, Urmakaren och Stormfågeln | `tools/sounds/make7.sh`: Kenney *impact-sounds* och *rpg-audio* (CC0), 400 Sounds Pack; musiken syntetiseras i skriptet |
+| Version 9: 39 nya kortbilder | `tools/card-art/make.py . v9` ur `assets/ashfall-ai` och Kenney *particle-pack* (CC0); pakternas vapen ritas i skriptet |
+| Version 10: sex fiender, sex följeslagare, legendaltaret, legendariska vapen, partiklar och ikoner | `tools/props8/make.py`. Fångvaktaren, likgrävaren och armborstskytten bygger på *Pixel Crawler 2.11* (Anokolisa); de legendariska vapnen är omfärgningar av spelets egna vapenbilder; resten ritas i skriptet |
+| Version 10: 27 ljud, Lägrets musik och kapitelfanfaren | `tools/sounds/make8.sh`: 400 Sounds Pack och Kenney *impact-sounds* och *rpg-audio* (CC0); musiken syntetiseras i skriptet |
+| Version 11: sex fiender, två bossar, svamp- och marmorväggar, spegelväggen, golvrutor, rekvisita, partiklar och ikoner | `tools/props9/make.py`. Spegelriddaren och illusionisten bygger på Body_A ur Pixel Crawler Free Pack 2.11 (Anokolisa; fri kommersiell användning, ändringar tillåtna, ingen vidareförsäljning). Marmorns ådror kommer från Classic 64 Asset Pack 0.6 (CC0). Resten ritas i skriptet |
+| Version 11: förstapersonsvapnen sporkastaren, spegelskölden och piskan | `tools/weapon-frames` (static-defs.json, pack.py). Spegelsköldens svärd är `sword_B` ur KayKit Fantasy Weapons Bits (CC0) |
+| Version 11: 25 ljud och musik för Svampriket, Spegelpalatset, Mycelmodern och Spegelkungen | `tools/sounds/make9.sh`: Kenney *impact-sounds* och *rpg-audio* samt 400 Sounds Pack (CC0); musiken syntetiseras i skriptet |
+| Version 11: 39 kortbilder | `tools/card-art/make.py . v11`: meshy-ikoner, vfx och partiklar som inte använts tidigare; pakternas vapen ritas som siluetter |
 | Typsnitt | Press Start 2P (OFL) |
 
 Se licensfilerna i respektive källpaket.

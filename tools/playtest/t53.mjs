@@ -1,0 +1,15 @@
+import { chromium, CHROMIUM } from './head.mjs'; import http from 'http'; import fs from 'fs'; import path from 'path';
+const root = process.env.KRYPTA_ROOT || path.resolve(path.dirname(new URL(import.meta.url).pathname), '../..'), PORT = 8885;
+const srv = http.createServer((q, r) => { let p = decodeURIComponent(q.url.split('?')[0]); if (p.endsWith('/')) p += 'index.html'; const f = path.join(root, p); if (fs.existsSync(f) && fs.statSync(f).isFile()) { r.setHeader('content-type', { '.js': 'text/javascript', '.html': 'text/html', '.png': 'image/png', '.ogg': 'audio/ogg', '.css': 'text/css' }[path.extname(f)] || ''); return r.end(fs.readFileSync(f)); } r.statusCode = 404; r.end(); }).listen(PORT);
+const b = await chromium.launch({ executablePath: CHROMIUM, args: ['--use-gl=swiftshader', '--no-sandbox'] });
+const ctx = await b.newContext({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true, deviceScaleFactor: 1 });
+const pg = await ctx.newPage(); const errs = []; pg.on('pageerror', e => errs.push(e.message));
+await pg.goto(`http://localhost:${PORT}/index.html?nolock=1&biome=sunken&seed=9`); await pg.waitForFunction('!document.getElementById("start").disabled', { timeout: 90000 });
+await pg.screenshot({ path: 'out/m_title.png' });
+await pg.evaluate(() => { __game.profile.tutDone = true; __game.begin('new'); }); await pg.waitForTimeout(1500);
+await pg.evaluate(() => { if (CardUI.isOpen()) CardUI.close(); }); await pg.waitForTimeout(300);
+await pg.evaluate(() => { __game.closeUI ? __game.closeUI() : 0; __game.gainXp(120); }); await pg.waitForTimeout(1500);
+await pg.screenshot({ path: 'out/m_talent.png' });
+const sw = await pg.evaluate(() => document.documentElement.scrollWidth > innerWidth + 2);
+console.log(sw ? 'FAIL sidoskroll' : 'OK   ingen sidoskroll', 'fel:', errs.join(' / ') || 'inga');
+await b.close(); srv.close();

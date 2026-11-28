@@ -79,3 +79,260 @@ python3 pack.py pick ../../ knives,hammer,musket      # knivarnas upplockningsbi
 ```
 `render-static.mjs` hittar `assets/3d-models` även när `retrofps` är en symlänk (den provar också `$PWD/../../../assets`).
 
+
+Version 8: harpungeväret (`harpoon`), bumerangen (`boomerang`) och prismat (`prism`).
+Harpungeväret är Guns&Explosives `Shotgun` med KayKit `spear_A` (CC0) som harpun längs pipan, en linrulle och en lina av
+enkla former (`parts`). Nytt i `static.html` är `partPose` per bildruta, `{delnamn: {hide, show, move, rot, scale, emissive}}`,
+som döljer, flyttar eller tänder namngivna delar efter att bilden centrerats (så att utsnittet står still), och `hidden` på
+en del som bara syns där en ruta visar den. Skjutrutorna döljer harpunen och `pack.py` ritar repet från mynningen mot
+`AIM` (`ROPE`). Skjutvapen kan nu också ha fler lägen med `extra` (som närstridens `melee.extra`): harpunens `reload` är
+fem rutor där geväret lutas och harpunen glider tillbaka i pipan. I `js/weapons.js` blir det
+`states: {idle:[0], fire:[1..5], reload:[6..10]}` och `dur: {fire, reload}`.
+Bumerangen har ingen modell (`"model": "none"`, en osynlig ruta `base` ger måttet): bumerangen och en handskklädd hand med
+ärm är enkla former. Den hålls i närstridsläget; skjutrutorna är kastet (armen tar sats, bumerangen släpps och försvinner,
+`partPose: {boom: {hide: true}}`) och läget `empty` (`melee.extra`) är handen utan bumerang medan den är i luften:
+`states: {idle:[0], fire:[1..4], empty:[5]}`. `sidePose` döljer handen och `sideYaw` vrider sidovyn till upplockningsbilden.
+Prismat är Guns&Explosives `Suomi_KP` (trummagasinet dolt med `hide`) med en stor kristall (`"prim": "oct"`, utdragen med
+`stretch`) i en mässingsklo vid mynningen och kristallceller i stället för magasinet; skjutrutorna tänder kristallen
+(`emissive`, `scale`) och `pack.py` ritar en ljusblixt med regnbågsstrålar vid mynningen (`FLASH`).
+
+```bash
+node render-static.mjs fp harpoon,prism,boomerang
+node render-static.mjs side harpoon,prism,boomerang
+python3 pack.py xframes ../../ harpoon,prism,boomerang   # övriga poster i js/weapons.js lämnas orörda
+python3 pack.py pick ../../ harpoon,prism,boomerang      # upplockningsbilderna pick_harpoon/_prism/_boomerang
+```
+
+Version 9: sågbladskastaren (`sawlauncher`), vindbössan (`windgun`) och spjutet (`spear`).
+Sågbladskastaren är Guns&Explosives `GreaseGun` (mässingstonad) med en liggande sågklinga ovanpå (två åttakantiga
+`cyl` vridna 22,5° mot varandra ger tänderna, `name: saw`), en mässingskåpa och en skena. Skjutrutorna döljer klingan och
+`pack.py` ritar klingan som snurrar iväg mot `AIM` (`SAWFLY`); läget `reload` (`extra`) sänker ned en ny klinga ovanifrån:
+`states: {idle:[0], fire:[1..5], reload:[6..9]}`, `dur: {fire, reload}`.
+Vindbössan är Guns&Explosives `Luger` (mässingstonad) med ett mässingsrör, en utsvängd tratt (`cyl` med olika radier,
+`open`) och en blåsbälg av lädersektioner (`name: bellows`) som trycks ihop i skjutrutorna (`partPose scale`); `pack.py` ritar
+luftstöten vid trattmynningen (`GUST`): `states: {idle:[0], fire:[1..5]}`.
+Spjutet är KayKit `spear_A` (CC0) i bumerangens hand (`model: none`, närstrid). `fire` är en stöt framåt, `throw`
+(`melee.extra`) är kastet (armen tar sats, spjutet släpps och döljs) och `empty` är den tomma handen när spjutet ligger
+på marken: `states: {idle:[0], fire:[1..4], throw:[5..8], empty:[9]}`, `dur: {fire, throw, empty}`. `pack.py` tar nu
+även läget `throw` (före `empty`).
+
+```bash
+node render-static.mjs fp sawlauncher,windgun,spear
+node render-static.mjs side sawlauncher,windgun,spear
+python3 pack.py xframes ../../ sawlauncher,windgun,spear   # övriga poster i js/weapons.js lämnas orörda
+python3 pack.py pick ../../ sawlauncher,windgun,spear      # pick_sawlauncher/_windgun/_spear
+```
+
+Version 11: sporkastaren (`sporelauncher`), spegelskölden (`mirrorshield`) och piskan (`whip`).
+Sporkastaren har ingen modell (`"model": "none"`): en rundad svampkanon byggd av enkla former, kolv och pistolgrepp av trä,
+en mässingskammare, ett grovt rör med mässingsringar, en lila svamphatt med vita prickar över röret (`name: cap`), en utsvängd
+mässingsmynning (`name: muzzle`, mynningen) och en grön sporburk på kolven (`name: jar`) som lyser upp i skjutrutorna
+(`partPose emissive`). `pack.py` ritar sporpuffen vid mynningen och sporbollen på väg mot `AIM` (`SPOREFLY`). Läget `reload`
+(`extra`) lutar kanonen, lyfter ur burken och sätter i en ny: `states: {idle:[0], fire:[1..5], reload:[6..10]}`, `dur: {fire, reload}`.
+Spegelskölden är två renderingar i närstridsläget: `mirrorshield` är ett kort svärd (KayKit `sword_B`, CC0) i spjutets hand och
+`mirrorshield_s` är den runda spegelskölden (skiva, guldkant, ljusa reflexer och en buckla av enkla former) på vänster underarm.
+`pack.py` lägger sköldrenderingen över varje ruta i samma läge (`MERGE`), så båda måste ha lika många rutor per läge.
+`fire` är ett slag från höger till vänster och `block` (`melee.extra`) lyfter upp skölden mitt framför kameran (sista rutan
+är den hållna posen): `states: {idle:[0], fire:[1..5], block:[6..8]}`, `dur: {fire, block}`. `pack.py` tar nu läget `block`
+(efter `empty`), och upplockningsbilden tas ur sköldens sidovy (`PICK_SIDE`).
+Piskan är ett skaft av läder med mässingsringar i spjutets hand och en hoprullad snärt (`name: coil`, tre torusar) som döljs i
+skjutrutorna; `pack.py` ritar själva snärten från skaftets spets (`nozzle: tip`) ut i bilden (`LASH`): slängd bakåt, en båge
+framåt, utsträckt mot `WAIM` med en smäll, en våg tillbaka och fallande: `states: {idle:[0], fire:[1..5]}`, `dur: {fire}`.
+
+```bash
+cd retrofps/tools/weapon-frames     # via symlänken, så att render-static.mjs hittar assets/3d-models
+node render-static.mjs fp sporelauncher,mirrorshield,mirrorshield_s,whip
+node render-static.mjs side sporelauncher,mirrorshield,mirrorshield_s,whip
+python3 pack.py xframes ../../ sporelauncher,mirrorshield,whip   # övriga poster i js/weapons.js lämnas orörda
+python3 pack.py pick ../../ sporelauncher,mirrorshield,whip      # pick_sporelauncher/_mirrorshield/_whip
+```
+
+Version 13: runboken (`runebook`) och ångkanonen (`steamcannon`).
+Runboken har ingen modell (`"model": "none"`): en öppen grimoar av enkla former (två läderpärmar i ett grunt V, tjocka
+sidblock, guldhörn, ett bokmärke och gyllene runstreck, `name: rune`, som tänds med `partPose emissive`) som vilar i en
+handskklädd hand med ärmen bakåt mot kameran. Den hålls i närstridsläget; mynningen är sidornas mitt (`nozzle: pages`).
+`fire` lyfter och tänder boken och `pack.py` ritar runan (en lysande skiva med ett tecken) som far mot `AIM` (`RUNEFLY`).
+Läget `ward` (`melee.extra`, tre rutor, den sista är den hållna posen) lyfter upp boken mitt framför kameran och `pack.py`
+ritar en virvel av lösa sidor runt den (`WARD`, effekten ritas nu även i andra lägen än `fire`, `steps_for(tab, 'ward')`):
+`states: {idle:[0], fire:[1..4], ward:[5..7]}`, `dur: {fire, ward}`. Upplockningsbilden `pick_runebook.png` ritas i
+`tools/props10/make.py` (sidovyn visar bara bokens kant).
+Ångkanonen är byggd av enkla former: kolv och pistolgrepp av trä, en kopparpanna med järnband, en mässingspipa med
+kopparband och en utsvängd mynning (`name: muzzle`), en tryckmätare ovanpå med en visare (`name: needle`, vriden med
+`partPose rot`), en röd ventil (`name: valve`) och en hoprullad slang. `pack.py` ritar ångmolnet ur mynningen (`STEAMFX`);
+`reload` (`extra`) lutar kanonen, vrider ventilen och låter visaren stiga: `states: {idle:[0], fire:[1..5], reload:[6..10]}`,
+`dur: {fire, reload}`.
+
+```bash
+cd retrofps/tools/weapon-frames     # via symlänken, så att render-static.mjs hittar assets/3d-models
+node render-static.mjs fp runebook,steamcannon
+node render-static.mjs side runebook,steamcannon
+python3 pack.py xframes ../../ runebook,steamcannon   # övriga poster i js/weapons.js lämnas orörda
+python3 pack.py pick ../../ steamcannon               # pick_steamcannon (pick_runebook kommer från tools/props10)
+```
+
+Version 15: rökelsekaret (`censer`) och bikastaren (`hivelauncher`).
+Rökelsekaret har ingen modell (`"model": "none"`, `base: [2,2,2]` så att greppet hamnar i origo och längden blir känd): ett
+mässingskar (klot, band, kupat lock med knopp, `name: pot`, mynningen) i en kedja av omväxlande vridna torusar, med glöd
+(`name: ember`) i hålen. Handen med ärmen är en egen rendering, `censer_h`, som `pack.py` lägger över varje ruta (`MERGE`, som
+spegelskölden), så att karet kan snurra runt handen utan att ärmen följer med. `fire` är ett helt varv (åtta rutor): karet
+lyfts, svänger ut framför, runt åt vänster, svischar förbi tätt framför kameran och kommer tillbaka från höger; `pack.py` ritar
+en röksvans längs karets tidigare lägen (`CENSERFX`): `states: {idle:[0], fire:[1..8]}`, `dur: {fire}`. Ställningarna anges
+som handens läge och kedjans riktning; vinklarna räknas fram i `tools/props12/fp_defs.py`.
+Bikastaren är byggd av enkla former: kolv och grepp av trä, en bikupa av trästavar med mässingsband och ett litet tak
+(`name: lid`), en vaxad front med sexkantiga celler (`name: comb`, lyser i skjutrutorna), honungsdroppar och en mässingspipa med
+utsvängd mynning. `pack.py` ritar bina som surrar ut ur pipan mot `AIM` (`BEEFLY`); `reload` (`extra`) lutar kastaren och lyfter
+taket: `states: {idle:[0], fire:[1..5], reload:[6..10]}`, `dur: {fire, reload}`. Upplockningsbilderna `pick_censer.png` och
+`pick_hivelauncher.png` ritas i `tools/props12/make.py`.
+
+```bash
+cd retrofps/tools/weapon-frames
+node render-static.mjs fp censer,censer_h,hivelauncher
+python3 pack.py xframes ../../ censer,hivelauncher   # censer_h läggs över censer (MERGE); övriga poster i js/weapons.js lämnas orörda
+```
+
+Version 16: trädgårdssaxen (`shears`) och drömstaven (`dreamstaff`).
+Båda har ingen modell (`"model": "none"`, `base: [2,2,2]` som rökelsekaret, så att greppet hamnar i origo) och hålls i
+närstridsläget. Saxen är två stålblad med slipad egg, träskaft med mässingshylsor och en mässingsbult i en handskklädd hand
+med en mossgrön ärm. Den övre halvan (bladet, skaftet och hylsan, `name: sb0`–`sb5`) vrids stelt kring bulten per bildruta:
+`static.html` vrider varje del kring sin egen mittpunkt (`partPose.rot`), så `tools/props13/fp_defs.py` ger varje del en egen
+rotation kring bultens axel och den förflyttning (`move`) som för dess mittpunkt runt bulten. `fire` är ett snabbt dubbelklipp
+(sex rutor: upp, klipp, upp, klipp, tillbaka) och `pack.py` ritar ett vitt blänk där eggarna möts i klipprutorna (`SNIP`);
+`throw` (`melee.extra`, fyra rutor) tar sats och kastar saxen (döljs, `hide`) och `empty` är den tomma handen medan saxen är i
+luften: `states: {idle:[0], fire:[1..6], throw:[7..10], empty:[11]}`, `dur: {fire, throw, empty}`.
+Drömstaven är ett mörklila skaft med guldringar, en månskära av sfärer och en femuddig stjärna (fem koner kring en kula,
+`name: star`, mynningen) som lyser upp och växer i skjutrutorna (`partPose emissive`, `scale`); `pack.py` ritar stjärnan som
+flyger mot `AIM` med ett lila stoftspår (`STARFLY`). `reload` (`extra`) lutar staven, släcker stjärnan och tänder den igen:
+`states: {idle:[0], fire:[1..4], reload:[5..9]}`, `dur: {fire, reload}`. Upplockningsbilderna `pick_shears.png` och
+`pick_dreamstaff.png` ritas i `tools/props13/make.py`.
+
+```bash
+python3 tools/props13/fp_defs.py /tmp/defs16.json   # ger posterna shears och dreamstaff (läggs in i static-defs.json, json indent 1)
+cd retrofps/tools/weapon-frames
+node render-static.mjs fp shears,dreamstaff
+python3 pack.py xframes ../../ shears,dreamstaff   # övriga poster i js/weapons.js lämnas orörda
+```
+
+Version 17: kedjekulekanonen (`chaincannon`) och syrasprutan (`acidsprayer`).
+Båda är skjutvapen utan modell (`"model": "none"`, `base: [1,0.1,0.1]` som ångkanonen och bikastaren) byggda av enkla former;
+delarna står i `tools/props14/fp_defs.py`. Kedjekulekanonen är en kort järnkanon på en ekstock med pistolgrepp: en tjock svart
+pipa med bronsringar, en utsvängd mynning (`name: muzzle`) och en kedjekula (två järnkulor med en kedja, `name: ball`) i
+mynningen. Skjutrutorna döljer kulan och `pack.py` ritar krutröken, eldblixten och kedjekulan som snurrar iväg mot `AIM`
+(`CHAINFLY`); `reload` (`extra`) lutar kanonen och sänker ned en ny kedjekula i mynningen:
+`states: {idle:[0], fire:[1..5], reload:[6..10]}`, `dur: {fire, reload}`.
+Syrasprutan är en mässingsspruta med en grön glastank (`name: tank`, syran lyser med `partPose emissive` i skjutrutorna), en
+pumpstång, en slangrulle och ett långt munstycke med grön spets (`name: muzzle`). Den är automatisk som eldkastaren: fyra små
+skakrutor där den sista leder tillbaka till den första, och spelet ritar själva strålen; `pack.py` ritar ett litet grönt stänk vid
+munstycket (`ACIDFX`): `states: {idle:[0], fire:[1..4]}`, `dur: {fire}`. Upplockningsbilderna `pick_chaincannon.png` och
+`pick_acidsprayer.png` ritas i `tools/props14/make.py`.
+
+```bash
+python3 tools/props14/fp_defs.py /tmp/defs17.json   # ger posterna chaincannon och acidsprayer (läggs sist i static-defs.json, json indent 1)
+cd retrofps/tools/weapon-frames
+node render-static.mjs fp chaincannon,acidsprayer
+python3 pack.py xframes ../../ chaincannon,acidsprayer   # övriga poster i js/weapons.js lämnas orörda
+```
+
+Version 18: käglekastaren (`pinthrower`) och blåsröret (`blowgun`).
+Båda saknar modell (`"model": "none"`, `base: [1,0.1,0.1]`) och är byggda av enkla former; delarna står i
+`tools/props15/fp_defs.py`. Käglekastaren är en jonglörkägla (vit kropp, röda band och en röd knopp, `name: pin`) som hålls i
+halsen av bumerangens handskklädda hand med ärm, i närstridsläget. `fire` är kastet: armen tar sats, svingar framåt, käglan
+släpps (döljs) och en ny kommer upp i handen underifrån; `pack.py` ritar tre käglor som snurrar iväg i en solfjäder mot `AIM`
+(`PINFLY`): `states: {idle:[0], fire:[1..5]}`, `dur: {fire}`.
+Blåsröret är ett långt bamburör med noder, röda trådlindningar, ett snidat munstycke av trä, en fjädertofs och en benring längst
+fram (`name: muzzle`). `fire` är tre små rutor och `pack.py` ritar andningspuffen och giftpilen mot `AIM` (`DARTFLY`); `reload`
+(`extra`) lutar röret och för ned en ny pil (`name: dart`, `hidden` utom i de rutorna) i munstycket:
+`states: {idle:[0], fire:[1..3], reload:[4..7]}`, `dur: {fire, reload}`. Upplockningsbilderna `pick_pinthrower.png` och
+`pick_blowgun.png` ritas i `tools/props15/make.py`.
+
+```bash
+python3 tools/props15/fp_defs.py /tmp/defs18.json   # ger posterna pinthrower och blowgun (läggs sist i static-defs.json, json indent 1)
+cd retrofps/tools/weapon-frames
+node render-static.mjs fp pinthrower,blowgun
+python3 pack.py xframes ../../ pinthrower,blowgun   # övriga poster i js/weapons.js lämnas orörda
+```
+
+Version 19: hackan (`pickaxe`) och stjärnlansen (`starlance`).
+Båda saknar modell (`"model": "none"`, `base: [1,0.1,0.1]`) och är byggda av enkla former; delarna står i
+`tools/props16/fp_defs.py`. Hackan är ett askskaft med läderlindning och ett järnhuvud med två spetsar som böjer sig lite nedåt
+(`name: pick`), i bumerangens handskklädda hand med ärm, i närstridsläget. `fire` är det tunga slaget: armen häver hackan upp och
+bakåt, svingar den framåt och ned, spetsen tar och armen kommer upp igen; `pack.py` ritar gnistan och stenflisorna där spetsen tar
+(`PICKHIT`): `states: {idle:[0], fire:[1..6]}`, `dur: {fire}`.
+Stjärnlansen är ett mörkt trägrepp med mässingsknopp, ett mässingsskaft med ringar, en krona av fyra mässingsuddar och en
+femuddig kristallstjärna längst fram (`name: star`, mynningen). `charge` (`extra`, fyra rutor) är laddningen medan avtryckaren
+hålls in: lansen dras tillbaka lite och stjärnan växer och lyser starkare för varje ruta (`partPose emissive`, `scale`) och
+`pack.py` ritar en växande ljusring runt den (`LANCEGLOW`); spelet väljer rutan efter laddningen och håller den sista vid full
+laddning. `fire` är tre rutor med ett stjärnblänk vid stjärnan (`LANCEFLASH`; själva strålen ritar spelet, som prismans), och `reload` (`extra`) lutar lansen, släcker och krymper
+stjärnan och tänder den igen: `states: {idle:[0], fire:[1..3], charge:[4..7], reload:[8..11]}`, `dur: {fire, charge, reload}`.
+Upplockningsbilderna `pick_pickaxe.png` och `pick_starlance.png` ritas i `tools/props16/make.py`.
+
+```bash
+python3 tools/props16/fp_defs.py /tmp/defs19.json   # ger posterna pickaxe och starlance (läggs sist i static-defs.json, json indent 1)
+cd retrofps/tools/weapon-frames
+node render-static.mjs fp pickaxe,starlance
+python3 pack.py xframes ../../ pickaxe,starlance   # övriga poster i js/weapons.js lämnas orörda
+```
+
+Version 20: kroksabeln (`scimitar`) och fällkastaren (`trapthrower`).
+Båda saknar modell (`"model": "none"`, `base: [1,0.1,0.1]`) och är byggda av enkla former; delarna står i
+`tools/props17/fp_defs.py`. Kroksabeln har ett mörkt läderfäste med mässingsknopp och mässingsparerstång och en stålklinga
+byggd av korta lådor som böjer sig allt mer åt höger och vidgar sig lite före spetsen (`name: blade`), i bumerangens
+handskklädda hand med ärm, i närstridsläget. `fire` är det snabba svepet: klingan tar sats upp åt höger och sveper över till
+nedre vänstra hörnet; `pack.py` ritar ett blekt svep bakom eggen (`SWEEP`). `dash` (`melee.extra`, tre rutor, nytt läge i
+`pack.py`) är utfallet: armen stöter klingan rakt framåt och drar tillbaka den:
+`states: {idle:[0], fire:[1..5], dash:[6..8]}`, `dur: {fire, dash}`.
+Fällkastaren är en björnsax (`name: trap`: en ring av järnkäftar med tänder runt insidan, en mässingsplatta och två
+fjäderarmar) som hålls i sin kedja av samma hand. `fire` är kastet: armen tar sats, svingar framåt, saxen släpps (döljs) och
+handen kommer tillbaka tom; `pack.py` ritar den öppna saxen som snurrar iväg mot `AIM` (`TRAPFLY`). `reload` (`melee.extra`)
+för upp en ny sax i handen underifrån: `states: {idle:[0], fire:[1..4], reload:[5..8]}`, `dur: {fire, reload}`.
+Upplockningsbilderna `pick_scimitar.png` och `pick_trapthrower.png` ritas i `tools/props17/make.py`.
+
+```bash
+python3 -B tools/props17/fp_defs.py /tmp/defs20.json   # ger posterna scimitar och trapthrower (läggs sist i static-defs.json, json indent 1)
+cd retrofps/tools/weapon-frames
+node render-static.mjs fp scimitar,trapthrower
+python3 pack.py xframes ../../ scimitar,trapthrower   # övriga poster i js/weapons.js lämnas orörda
+```
+
+Version 21: pixelstil. De formbyggda vapnen (version 5 och framåt) körs genom `pixelstyle.py`, som ger dem de äldre vapnens
+grova, slitna look: gryn, repor, rost, träådring, mörk kontur, kantglans, ordnad dithering och en fast smutsig palett.
+Bara RGB ändras – storlek, rutor och alfa är orörda, så `js/weapons.js` behöver inte ändras. De ostilade originalen ligger i
+`orig_v20/`; filtret är inte idempotent, så kör alltid därifrån. Se filhuvudet i `pixelstyle.py` för alla flaggor.
+
+```bash
+python3 pixelstyle.py --all                                                   # orig_v20/{fp,pick}_*.png -> assets/gfx/
+python3 pixelstyle.py orig_v20/fp_axe.png ../../assets/gfx/fp_axe.png         # ett vapen
+python3 pixelstyle.py ny/fp_x.png ../../assets/gfx/fp_x.png --opts smoke      # inritad krutrök lämnas ren
+```
+Kontaktark före/efter ligger i `pixelstyle_ark/`, skärmbilder ur spelet tas med `node tools/gfx/vapen/stil.mjs`.
+
+Version 21: morgonstjärnan (`flail`) och trombonen (`blunderbuss`). Definitionerna byggs av `tools/props18/fp_defs.py` och
+ligger i en egen fil i stället för i `static-defs.json` (`DEFS=` till `render-static.mjs`, egen utkatalog). Morgonstjärnan är ett
+askskaft med järnband och skenor, en järnhätta, en kedja med sex länkar (`c0`–`c5`) och en stor spikklubba (`name: ball`, mynningen) i
+en egen läderhandske (knogar, fingrar, tumme, manschett och en kort ärm, `name: hand`), i närstridsläget. Kedjans riktning anges per bildruta i kamerans rum och räknas om till vapnets egen ram, och
+länkarna och klubban flyttas dit med `partPose move`. `fire` är det tunga slaget (sex rutor, `pack.py` ritar svepet, `SWEEP`)
+och `spin` (`melee.extra`, fyra rutor som går runt, nytt läge i `pack.py`) är kedjan som snurras över huvudet medan högerklick
+hålls in: `states: {idle:[0], fire:[1..6], spin:[7..10]}`, `dur: {fire, spin}`. Trombonen är en valnötskolv med mässingsbeslag,
+ett flintlås av järn (låsbleck, hane med flinta, eldstål och panna) och en åttkantig mässingspipa med järnband som vidgar sig till
+en bred klocka (`name: muzzle`). `fire` är fem tunga rekylrutor med en grå, oregelbunden krutrök som sprids och glesnar (rastrerad,
+utan kontur, `BLUNDERSMOKE`) och `reload` (`extra`) lutar vapnet och kör ned en laddstake (`name: rod`, `hidden`) i klockan:
+`states: {idle:[0], fire:[1..5], reload:[6..10]}`, `dur: {fire, reload}`. De ostilade, packade remsorna ligger i
+`tools/props18/fp_orig/`. Upplockningsbilderna ritas i `tools/props18/make.py`.
+
+```bash
+python3 -B tools/props18/fp_defs.py /tmp/defs21.json
+cd retrofps/tools/weapon-frames
+DEFS=/tmp/defs21.json node render-static.mjs fp flail,blunderbuss /tmp/xframes21
+mkdir -p /tmp/w21/js /tmp/w21/assets/gfx && cp ../../js/weapons.js /tmp/w21/js/
+python3 pack.py /tmp/xframes21 /tmp/w21/ flail,blunderbuss       # skriver bara i /tmp/w21; posterna läggs sist i js/weapons.js för hand
+cp /tmp/w21/assets/gfx/fp_flail.png /tmp/w21/assets/gfx/fp_blunderbuss.png ../props18/fp_orig/
+python3 pixelstyle.py ../props18/fp_orig/fp_flail.png ../../assets/gfx/fp_flail.png
+python3 pixelstyle.py ../props18/fp_orig/fp_blunderbuss.png ../../assets/gfx/fp_blunderbuss.png --opts smoke
+```
+
+Version 22, fas 3 (VAPENSTIL): handsken och treudden. Läderhandsken ligger nu i `glove_def.py` och delas av
+`tools/props18/fp_defs.py` (morgonstjärnan) och `tools/props19/fp_defs.py` (treudden, mortelns sidogrepp): tjocka fingrar
+med mörka springor, ljusa knogar, tumme, handrygg och handflata som tillplattade klot, söm vid handleden och nitad manschett,
+i ett grått, lågmättat läder som `pixelstyle.py` känner igen (`leather` i `OPTS`: ingen träådring, rost eller repor).
+Treudden har fått ett grövre skaft, en bred tvärslå av järn och tre långa, ljusa järnuddar med hullingar, och hålls mer
+upprätt i vila. Trombonen har ljusa och mörka fasetter längs pipan och ringar runt klockan. De fyra packas om som förut
+(mot en kopia av `js/weapons.js`, posterna förs över för hand) och stilas med `pixelstyle.py` ur `fp_orig/`.

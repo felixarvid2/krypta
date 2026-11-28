@@ -1,0 +1,4 @@
+out/
+shots/
+gen_stable.js
+node_modules/

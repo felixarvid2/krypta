@@ -1,0 +1,21 @@
+import { setup } from './head.mjs';
+const { pg, shot, ev, wait, ok, done } = await setup(8901, 'out/t73');
+await pg.goto('http://localhost:8901/index.html?nolock=1&god=1'); await pg.waitForFunction('!document.getElementById("start").disabled', { timeout: 60000 });
+await ev(() => { __game.profile.tutDone = true; }); await pg.click('#moremodesbtn'); await pg.click('#editorbtn'); await wait(400);
+ok(await ev(() => !!document.getElementById('editor')), 'banbyggaren öppnas');
+// rita en vägg och några fiender
+const box = await pg.locator('#editor canvas').boundingBox();
+await pg.click('#editor button:has-text("VÄGG")'); await pg.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.2); await pg.mouse.down(); await pg.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.6, { steps: 10 }); await pg.mouse.up();
+await pg.click('#editor button:has-text("SKELETT")'); await pg.mouse.click(box.x + box.width * 0.3, box.y + box.height * 0.5);
+await pg.click('#editor button:has-text("HÄLSA")'); await pg.mouse.click(box.x + box.width * 0.7, box.y + box.height * 0.7);
+await shot('editor');
+const rt = await ev(() => { const st = JSON.parse(localStorage.getItem('krypta.editor') || 'null') || null; return st; });
+const code = await ev(() => { const e = JSON.parse(localStorage.getItem('krypta.editor')); return __game.edEncode(e); });
+const back = await ev(c => __game.edDecode(c), code);
+ok(back && JSON.stringify(back.grid) === JSON.stringify(rt.grid), 'delningskoden går fram och tillbaka (' + code.length + ' tecken)');
+await pg.click('#editor button:has-text("PROVSPELA")'); await wait(1500);
+ok(await ev(() => __game.state()) === 'play' && await ev(() => __game.lvl().custom), 'den egna banan spelas');
+await shot('custom');
+await ev(() => { const ex = __game.lvl().exit; __game.P.x = ex.x + 0.5; __game.P.y = ex.y + 0.5; }); await wait(2500);
+ok(await ev(() => !!document.getElementById('editor')) && await ev(() => __game.profile.customWins) >= 1, 'utgången leder tillbaka till banbyggaren');
+await done();

@@ -10,6 +10,7 @@
 //   Music.duck(amount, seconds)                            tillfälligt lågpass + sänkning på sfx+amb
 //   Music.muffle(on)                                       bestående dämpning (under vatten)
 //   Music.sting(name)                                      engångsstinger assets/music/sting_<name>.ogg
+//   Music.rankSting(lv)                                    kort syntad stinger när stilrangen stiger (0 = A … 3 = SSS)
 //   Music.preload(...tracks)                               hämtar och avkodar i förväg
 //   Music.info(track)                                      Promise<{ duration, loop }> (slinglängd i s)
 //
@@ -21,7 +22,7 @@
 // Allt är valfritt: utan AudioContext eller filer gör anropen ingenting.
 (function () {
   'use strict';
-  const HI = ['forest', 'courtyard', 'swamp', 'frost', 'volcano', 'tomb']; // spår som har ett intensitetslager <spår>_hi.ogg
+  const HI = ['forest', 'courtyard', 'swamp', 'frost', 'volcano', 'tomb', 'crystal', 'sunken', 'clock', 'sky', 'fungus', 'mirror', 'library', 'foundry', 'cathedral', 'hive', 'garden', 'dream', 'ship', 'lab', 'circus', 'jungle', 'mine', 'observatory', 'sewer', 'desert', 'prison', 'harbor', 'bathhouse', 'purgatory', 'abattoir', 'battlefield', 'ruins', 'glassworks']; // spår som har ett intensitetslager <spår>_hi.ogg
   // efterklang: längd (RT60), ljushet (lågpass i början -> slutet), förfördröjning, tidiga reflexer, våt nivå
   const REVERBS = {
     crypt: { len: 1.7, bright: 6000, dark: 1800, pre: 0.012, taps: [[0.017, 0.5], [0.029, 0.35], [0.041, 0.3], [0.056, 0.2]], wet: 0.24 },
@@ -176,6 +177,34 @@
       return true;
     }).catch(() => false);
   }
+  // version 26C: kort syntad stinger när stilrangen stiger (lv 0 = A … 3 = SSS); ingen fil, ingen lång nedtoning av musiken
+  let noiseBuf = null, rankEnd = 0;
+  function rankSting(lv) {
+    if (!ctx) return false;
+    lv = clamp(Math.round(num(lv, 0)), 0, 3);
+    const now = ctx.currentTime + 0.01, root = 110 * Math.pow(2, [0, 3, 5, 7][lv] / 12), dur = 0.5 + lv * 0.08;
+    const out = ctx.createGain(), f = ctx.createBiquadFilter();
+    f.type = 'lowpass'; f.Q.value = 3; f.connect(out); out.connect(stingBus);
+    f.frequency.setValueAtTime(420, now); f.frequency.exponentialRampToValueAtTime(2800 + lv * 700, now + 0.035); f.frequency.exponentialRampToValueAtTime(500, now + dur);
+    out.gain.setValueAtTime(0, now); out.gain.linearRampToValueAtTime(0.2, now + 0.012); out.gain.exponentialRampToValueAtTime(0.001, now + dur);
+    const src = [];
+    for (const [m, type, det] of [[1, 'sawtooth', -8], [1, 'sawtooth', 8], [1.5, 'sawtooth', 0], [2, 'square', 0], [0.5, 'square', 0]]) {
+      const o = ctx.createOscillator(); o.type = type; o.frequency.setValueAtTime(root * m * 1.03, now); o.frequency.exponentialRampToValueAtTime(root * m, now + 0.05); o.detune.value = det;
+      o.connect(f); o.start(now); o.stop(now + dur + 0.05); src.push(o);
+    }
+    if (lv >= 1) { // S och uppåt: ett cymbalslag ovanpå
+      if (!noiseBuf) { const n = Math.floor(ctx.sampleRate * 0.6); noiseBuf = ctx.createBuffer(1, n, ctx.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; }
+      const s = ctx.createBufferSource(), hp = ctx.createBiquadFilter(), g = ctx.createGain();
+      s.buffer = noiseBuf; hp.type = 'highpass'; hp.frequency.value = 5000; s.connect(hp); hp.connect(g); g.connect(stingBus);
+      const cd = 0.25 + lv * 0.1; g.gain.setValueAtTime(0.05 + lv * 0.025, now); g.gain.exponentialRampToValueAtTime(0.001, now + cd);
+      s.start(now); s.stop(now + cd + 0.02); src.push(s);
+      s.onended = () => { try { s.disconnect(); hp.disconnect(); g.disconnect(); } catch (e) { /* redan bortkopplad */ } };
+    }
+    src[0].onended = () => { try { for (const o of src) o.disconnect(); f.disconnect(); out.disconnect(); } catch (e) { /* redan bortkopplad */ } };
+    const g = mMix.gain; // musiken viker undan en kort stund – inte om en vanlig stinger redan dämpar den
+    if (g.value > 0.9 && now > rankEnd) { rankEnd = now + dur; g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); g.linearRampToValueAtTime(0.7, now + 0.03); g.linearRampToValueAtTime(1, now + dur + 0.25); }
+    return true;
+  }
   function info(track) { // { duration, loop } för ett spår (loop = slinglängd i s)
     if (!ctx || !track) return Promise.resolve(null);
     return load(url(track)).then(b => (b ? { duration: b.duration, loop: loops.get(b) || b.duration } : null)).catch(() => null);
@@ -268,6 +297,7 @@
     reverb: safe(reverb),
     duck: safe(duck),
     muffle: safe(muffle),
+    rankSting: function (lv) { try { return rankSting(lv); } catch (e) { return false; } }, // version 26C
     get sfxIn() { return sfxIn; },
     get ambIn() { return ambIn; },
     get current() { return cur ? cur.name : null; },
