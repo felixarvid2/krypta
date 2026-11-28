@@ -99,7 +99,7 @@ await p2.evaluate(() => { const P = __game.P; const e = __game.spawnEnemy('Y', P
 T = await grab(1200, p2);
 ok(!T.some(t => t.y > 150 && t.x < 90) && !T.some(t => t.y > 150 && t.x + t.w > 230), 'pekskärm: nedre hörnen fria för tummarna ' + T.filter(t => t.y > 150).map(t => t.s).join(','));
 ok(!T.some(inCentre), 'pekskärm: inget i mitten ' + T.filter(inCentre).map(t => t.s).join(','));
-const objT = [...new Set(T.filter(t => t.x >= 200 && t.y > RT.map.y + RT.map.h && t.y < 130).map(t => t.s))];
+const objT = [...new Set(T.filter(t => t.x >= 200 && t.y > RT.map.y + RT.map.h && t.y < 130 && t.h <= 10).map(t => t.s))]; // stilbetygets stora bokstav (16 px) är inte målraden
 ok(objT.length <= 1 && objT.every(s => s.length <= 10), 'pekskärm: målet är EN kort rad under kartan (' + objT.join(' | ') + ')');
 await p2.screenshot({ path: 'out/t97/touch.png' });
 // en gång per profil: "TRYCK PÅ AMMO FÖR ATT BYTA VAPEN" när man har två vapen
