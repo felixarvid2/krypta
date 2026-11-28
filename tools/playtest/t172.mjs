@@ -29,7 +29,7 @@ async function effect(rule) { // regelns verkan på våningen
   if (rule === 'glass') { const r = await ev(() => { const g = __game, P = g.P, e = g.spawnEnemy('S', P.x + 2, P.y); e.hp = e.maxHp = 1000; e.alert = true; g.hurtEnemy(e, 4, e.x, e.y, { noProc: true }); const out = 1000 - e.hp; e.dead = true;
     const S = g.s29.S; P.iframe = 0; P.shield = 0; P.armor = 0; P.hp = 500; g.hurtPlayer(10); const a = 500 - P.hp; const keep = S.rule; S.rule = null; P.iframe = 0; P.hp = 500; g.hurtPlayer(10); const b = 500 - P.hp; S.rule = keep; P.hp = 100; return { out, taken: a, normal: b }; });
     return [Math.abs(r.out - 8) < 0.01 && r.normal > 0 && Math.abs(r.taken - 2 * r.normal) < 0.01, r]; }
-  if (rule === 'clock') { const a = await ev(() => __game.s29.clockLeft()); await gwait(2); const b = await ev(() => __game.s29.clockLeft());
+  if (rule === 'clock') { const [a, k0] = await ev(() => [__game.s29.clockLeft(), __game.kills()]); await gwait(2); const [b0, k1] = await ev(() => [__game.s29.clockLeft(), __game.kills()]); const b = b0 - 4 * (k1 - k0); // en fiende som dör av något annat under väntan ger 4 s extra
     const c = await ev(() => { const g = __game, e = g.ents().find(o => !o.dead && !o.boss && !o.guardian && !o.hidden); if (!e) return null; const t0 = g.s29.clockLeft(); g.hurtEnemy(e, 99999, e.x, e.y, { noProc: true }); return { before: t0, after: g.s29.clockLeft() }; });
     await clearUI();
     return [a > 30 && a - b > 1.6 && a - b < 2.6 && c && c.after - c.before > 3.5, { a, b, kill: c }]; }
